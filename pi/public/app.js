@@ -274,7 +274,7 @@ function renderSettings({ settings, restartNeeded, device }) {
         "details",
         { className: "group" },
         el("summary", {}, "Advanced"),
-        el("p", { className: "warn-box" }, "Wrong VLC arguments can stop playback. Network, control, streaming and scripting options are refused."),
+        el("p", { className: "warn-box" }, "Wrong mpv options can stop playback. IPC, scripting, config, file and network options are refused."),
         ...rows,
       );
     }

@@ -135,3 +135,12 @@ describe("device name", () => {
     expect(deviceName("raspberrypi", { eth0: mac("00:00:00:00:00:00") })).toBe("raspberrypi");
   });
 });
+
+describe("system/videofx.default", () => {
+  it("documents every setting's variable (regenerate with tools/gen-default.mjs)", async () => {
+    const { readFile } = await import("node:fs/promises");
+    const { SETTINGS } = await import("../src/config.js");
+    const text = await readFile(new URL("../system/videofx.default", import.meta.url), "utf8");
+    for (const s of SETTINGS.filter((x) => x.env)) expect(text, s.key).toContain(`#${[s.env].flat().at(-1)}=`);
+  });
+});

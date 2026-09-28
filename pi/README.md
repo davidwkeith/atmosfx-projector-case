@@ -1,258 +1,360 @@
-# Pi player
+# VideoFX: the Pi side of the projector case
 
-Raspberry Pi software for the projector case (Pi 3B/3B+, 4B, 5 or Zero 2 W sled, each with a HiFiBerry Amp4). The Pi shows up as a **Matter on/off plug**. Switched on, it loops a playlist full screen on HDMI with VLC (for example the AtmosFX videos you bought). Switched off, the projector shows black. A small **web page** on the LAN manages the videos, the playlist and every setting, and shows the pairing code.
+Raspberry Pi software for the projector case. The sled can be a Pi 3B/3B+, 4B, 5 or Zero 2 W, each with a HiFiBerry Amp4. The Pi shows up in Apple Home (or any Matter controller) as **VideoFX-XXXX**:
 
-**Status: untested on hardware.** The logic is unit tested and the service was run on a Mac against a fake VLC. It has not been run on a Pi, the image has not been built, and it has not been paired with Apple Home. See [What is verified](#what-is-verified).
+- **Loop mode** plays a playlist full screen, over and over, for example the AtmosFX videos you bought.
+- **Scare mode** loops a calm clip, and on a trigger plays a scare clip, then goes back to the calm clip. A trigger can be a Home automation, the PIR motion sensor, DMX or the web page.
+
+It also:
+
+- switches the projector over HDMI-CEC, a relay (plus IR) or the HDMI signal;
+- follows a weekly schedule with "on at sunset";
+- takes DMX over sACN from show software;
+- runs the case fans from temperature sensors and shuts down if it overheats.
+
+A web page on your LAN (`http://videofx-xxxx.local/`) handles videos, the playlist, scare clips, the schedule and every setting.
+
+**Status: untested on hardware.** The logic is unit tested (381 tests). The whole service was run on a Mac against a fake mpv, with real UDP sACN. Nothing has run on a Pi, the image has not been built, and nothing has been paired with Apple Home. See [What is verified](#what-is-verified).
 
 ## How it works
 
-- **Name.** Each Pi names itself `VideoFX-XXXX` on first boot, where XXXX is the last 4 hex digits of its eth0 MAC (wlan0 if there is no eth0). That name is used for the hostname, `videofx-xxxx.local`, the Bonjour entry, the Matter device name and the web page title.
-- **Matter.** [matter.js](https://github.com/matter-js/matter.js) (0.17.9, Node 24) exposes one On/Off Plug-in Unit over Wi-Fi or Ethernet. Pairing state lives in `/var/lib/videofx/matter`. The pairing passcode is random per device and is kept there.
-- **Playback.** On: `cvlc --fullscreen --loop --no-osd --no-video-title-show --drm-vout-display=HDMI-A-1 <playlist>`, with audio sent to the HiFiBerry Amp4 (ALSA `plughw:CARD=sndrpihifiberry,DEV=0`) and video via DRM/KMS (there is no desktop). If VLC crashes while on, it is restarted after 2 s. After more than 5 crashes in a minute the player gives up and reports **off** to Matter. Off: VLC is stopped and tty1 is cleared to black. Before the Pi is paired, tty1 shows the pairing QR code and web address instead.
-- **Accurate state.** The web page's Play/Stop writes the Matter on/off attribute, so Apple Home and the page always agree. Playing with an empty or missing playlist is refused, and Matter goes back to off.
-- **After a reboot or power cut** the last state is restored (`VIDEOFX_RESTORE=last`). It can be set to always `on` or always `off`.
-- **Web UI** at `http://videofx-xxxx.local/`. It lists, uploads and deletes videos, lets you reorder and enable or disable playlist entries, and has Play/Stop, a speaker volume slider with mute, **Settings** for everything in `/etc/default/videofx`, the pairing QR code, and a guarded "Reset Matter pairing". It is plain HTML, CSS and JS served by the same Node process and works on a phone. Saving the playlist while it plays restarts VLC so the change takes effect.
-- **Services.** `videofx-player.service` runs `/opt/videofx/src/main.js` as your login user, with the `video render audio tty` groups and `CAP_NET_BIND_SERVICE` for port 80. `videofx-hostname.service` runs on first boot only. Avahi publishes the name and the web page.
+- **Names.** On first boot each Pi names itself from the last 4 hex digits of its MAC (eth0, or wlan0 on a Zero 2 W). The display name is `VideoFX-ABCD`: Matter, page title, Bonjour. The hostname is `videofx-abcd` (`videofx-abcd.local`).
+- **Matter endpoints**, from [matter.js](https://github.com/matter-js/matter.js) 0.17.9 on Node 24:
+  1. **Projector** (On/Off plug): the main power.
+  2. **Scare** (On/Off plug): turning it on fires a scare. It stays on while the scare plays, then turns itself off. If the scare can't fire (off, not in scare mode, cooling down) it goes straight back off.
+  3. **Motion** (Occupancy sensor, PIR): so Home automations can use the PIR.
+  4. **Temperature** (Temperature sensor): the projector zone, so Home can alert on it.
+- **Player.** One long-lived **mpv** with DRM/KMS output and no desktop, controlled over its JSON IPC socket (`/run/videofx/mpv.sock`). Changing videos is a playlist command, not a process restart, so there is no black gap. If mpv crashes it is restarted; after more than 5 crashes in a minute the service gives up and reports "off". Off means mpv stops (it idles and releases the screen) and the console is cleared to black. Until the Pi is paired, the console shows the pairing QR code.
+- **Who controls the power.** Matter, the web page, the schedule and the restore-after-power-cut all go through one path. While a DMX source is live, only DMX may change the power (see [DMX](#dmx-sacn)). Thermal protection can always switch off.
+- **Services.** `videofx-player.service` runs `/opt/videofx/src/main.js` as your login user. It has the groups video, render, audio, tty and gpio, and `CAP_NET_BIND_SERVICE` for port 80. It never runs as root. `videofx-hostname.service` runs on first boot only. Avahi publishes the name and the web page.
 
-### mDNS: matter.js and avahi side by side
+## Supported boards
 
-matter.js runs its own mDNS responder. It cannot use avahi. It binds UDP 5353 with `SO_REUSEADDR` (`reuseAddress: true` in `@matter/general` `UdpMulticastServer`) and publishes its records under a MAC-based host name, `<MAC>0000.local` (`MdnsAdvertisement.js`). avahi (installed by default on Raspberry Pi OS) owns `videofx-xxxx.local` and publishes the web page from a static service file, `/etc/avahi/services/videofx.service` (`_http._tcp`, port 80, name = hostname). The two responders never publish the same name, and Linux delivers multicast to both sockets, so they don't conflict. The known limitation: a unicast mDNS reply sent to port 5353 reaches only one of the two sockets. Controllers query by multicast, and this setup is common for matter.js on Raspberry Pi OS, but it has not been tested here with Apple Home.
+One arm64 image and one `install.sh` cover all four sleds. pi-gen installs both kernels (`linux-image-rpi-v8` and `linux-image-rpi-2712`), and the firmware picks the right one.
+
+| Board | Projector on | DRM connector | Decoding | Amp4 powering the Pi |
+|---|---|---|---|---|
+| Pi 3B / 3B+ | the only HDMI port | `HDMI-A-1` | H.264 in hardware up to 1080p30 (V4L2 M2M) | HiFiBerry: "any Pi up to the Pi4B". Not tested here |
+| Pi 4B | **HDMI0**, next to USB-C | `HDMI-A-1` | H.264 and HEVC in hardware | HiFiBerry: "up to the Pi4B". Not tested here |
+| Pi 5 | **HDMI0**, next to USB-C | `HDMI-A-1` | **no H.264 hardware decoder**: software (about 10-20% CPU for 1080p24 per Raspberry Pi); HEVC in hardware | HiFiBerry: powers "the Pi5 alone", but no 5 V current figure. Not tested; see below |
+| Zero 2 W | mini-HDMI | `HDMI-A-1` | as the Pi 3; only 512 MB RAM, so use 720p | covered by "up to the Pi4B"; draws far less. Not tested. Solder a 40-pin header |
+
+Sources: Raspberry Pi's [video playback page](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/os/playing-audio-and-video.adoc) (connector names), its [BCM2712 page](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/processors/bcm2712.adoc) (Pi 5 decoding) and [power supply page](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/raspberry-pi/power-supplies.adoc); HiFiBerry's [Amp4 datasheet](https://www.hifiberry.com/docs/data-sheets/datasheet-amp4/) and [Pi 5 post](https://www.hifiberry.com/blog/pi5-compatibility-with-hifiberry-products/).
+
+- mpv is pinned to `--drm-connector=HDMI-A-1` (the **Video output** setting), so on a Pi 4B or 5 use **HDMI0**. The option name was checked against the mpv 0.40 manual.
+- mpv runs with `--vo=gpu --gpu-context=drm --hwdec=auto-safe`. mpv's docs don't list the Pi's V4L2 decoder in `auto`'s whitelist. If a Pi 3 or Zero 2 W struggles, add `--hwdec=v4l2m2m-copy` under Settings > Advanced (not verified).
+- **Pi 5 power is a hardware decision for you.** A Pi 5 wants 5 V/5 A over USB-C PD. The GPIO header can't negotiate PD, and HiFiBerry gives no current figure. If `vcgencmd get_throttled` isn't `0x0` or it reboots under load, use a Pi 4B sled, or check with HiFiBerry before adding a separate supply. The software doesn't work around it.
+- **config.txt:** the audio, IR and relay lines are the same on every board and go in `[all]`. The 1-wire overlay differs on the Pi 5 (`w1-gpio-pi5`), so that block uses `[pi3]`, `[pi4]`, `[pi02]` and `[pi5]` sections (names from Raspberry Pi's [conditional filters](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/config_txt/conditional.adoc)). `pwm-2chan` for the fans isn't verified on the Pi 5.
 
 ## Files
 
 ```
 pi/
-  src/main.js          Matter node + player + web server wiring
-  src/player.js        playback state machine (on/off, crash restart, restore)
-  src/config.js        every setting: env name, default, validation, when it applies
+  src/main.js          wiring: Matter endpoints, power path, player, projector, DMX, heat, web
+  src/config.js        every setting: variable, default, validation, when it applies; GPIO pin checks
   src/settings.js      settings.json store: precedence, password rules, migration
-  src/media.js         media folder and playlist file access (path checks, upload limits)
-  src/playlist-core.js playlist format and file-name rules (shared with the browser)
-  src/web.js           HTTP server: LAN-only, Host check, basic auth, CSRF header
-  src/qr.js            pairing QR code as SVG
-  src/screen.js        tty1: black screen / pairing code
-  src/volume.js        amp volume: clamp, persist, apply with amixer
-  public/              web UI (index.html, app.css, app.js)
-  system/              videofx-player.service, videofx-hostname(.service), videofx.avahi.service, videofx.default, asound.conf, setup.sh
-  image/build.sh       pi-gen image build
-  image/stage-videofx/      pi-gen custom stage
-  install.sh           set up a stock Raspberry Pi OS Lite instead of building an image
-  config.example       image build settings; copy to pi/config (gitignored)
-  test/                Vitest
+  src/player.js        playback control over mpv IPC: loop, scare mode, clip select, dimmer, mirror
+  src/mpv.js           mpv arguments, extra-options deny-list, JSON IPC client, supervisor
+  src/schedule.js      weekly schedule, NOAA sunset, scheduler
+  src/projector.js     projector power: cec / relay-ir / relay / hdmi-off / none
+  src/ir.js            IR codes: validate, learn (NEC decode or raw), send with ir-ctl
+  src/gpio.js          relay output via gpioset
+  src/pir.js           PIR input via gpiomon
+  src/dmx.js           sACN (E1.31) receiver, merge, fixture map, DMX hand-over
+  src/thermal.js       fan curves, DS18B20, over-temperature and fan-failure logic, PWM and tach
+  src/media.js, playlist-core.js, web.js, qr.js, screen.js, volume.js
+  public/              web page (plain HTML/CSS/JS)
+  system/              systemd units, udev rules, avahi service, asound.conf, videofx.default, setup.sh
+  image/               pi-gen build (build.sh, stage-videofx/)
+  dmx/DIY-VideoFX-Player.qxf   QLC+ fixture
+  tools/sacn-send.mjs  tiny sACN sender for testing; gen-default.mjs regenerates videofx.default
+  test/                Vitest (381 tests), test/fixtures/fake-mpv.mjs
+  install.sh, config.example
 ```
 
-## Supported boards
+## Install
 
-One arm64 image and one `install.sh` cover all four sleds. pi-gen's arm64 build installs both kernels (`linux-image-rpi-v8` for the Pi 3, 4 and Zero 2 W; `linux-image-rpi-2712` for the Pi 5), and the firmware picks the right one at boot.
-
-| Board | HDMI port for the projector | DRM name | Video decode | Amp4 powering the Pi |
-|---|---|---|---|---|
-| Pi 3B / 3B+ | the only HDMI port | `HDMI-A-1` | H.264 in hardware, up to 1080p30 | HiFiBerry says it's fine ("any Pi up to the Pi4B"). Not tested here |
-| Pi 4B | **HDMI0**, next to USB-C | `HDMI-A-1` | H.264 and HEVC in hardware | HiFiBerry says it's fine ("up to the Pi4B"). Not tested here |
-| Pi 5 | **HDMI0**, next to USB-C | `HDMI-A-1` | **no H.264 hardware decoder**: H.264 is decoded in software (Raspberry Pi quotes about 10-20% CPU for 1080p24); HEVC in hardware | HiFiBerry says it's fine for "the Pi5 alone" but publishes no 5 V current rating. Not tested here; see below |
-| Zero 2 W | mini-HDMI (adapter or cable) | `HDMI-A-1` | H.264 in hardware (same VideoCore IV as the Pi 3); only 512 MB RAM | covered by HiFiBerry's "up to the Pi4B" and draws far less than a Pi 4. Not tested here. Needs a 40-pin header soldered on |
-
-Sources: Raspberry Pi's [video playback guide](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/os/playing-audio-and-video.adoc) (`HDMI-A-1` is the only HDMI port on the Pi 3 and Zero, and HDMI0 on the Pi 4B and later), the [BCM2712 page](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/processors/bcm2712.adoc) (Pi 5 decode), the [Amp4 datasheet](https://www.hifiberry.com/docs/data-sheets/datasheet-amp4/) and HiFiBerry's [Pi 5 compatibility post](https://www.hifiberry.com/blog/pi5-compatibility-with-hifiberry-products/).
-
-- **Video output.** VLC is pinned to `HDMI-A-1` (`VIDEOFX_VIDEO_OUTPUT`, also in the web page), so on a Pi 4B or 5 the projector must be on **HDMI0**, the port next to USB-C. Leave HDMI1 empty. VLC's defaults use hardware decode where the board has it and fall back to software, so the Pi 5 needs nothing special.
-- **config.txt is the same on every board.** `setup.sh` only changes `dtparam=audio=off`, `vc4-kms-v3d,noaudio` and adds `dtoverlay=hifiberry-dacplus-std` in an `[all]` section. None of these differ by model: the Pi 5 firmware uses the same `vc4-kms-v3d` line, and `dtparam=audio=off` is harmless on boards without an analogue jack (Pi 5, Zero 2 W). So no `[pi3]`/`[pi4]`/`[pi5]`/`[pi02]` sections are needed, and none are added.
-- **Pi 5 power, a hardware decision for you.** A Pi 5 wants 5 V at 5 A from a USB-C PD supply. HiFiBerry says the Amp4 powers "the Pi5 alone" but gives no current figure, and power through the GPIO header can't negotiate USB-PD. Raspberry Pi's [power supply page](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/raspberry-pi/power-supplies.adoc) says a Pi 5 without a 5 A supply limits its USB ports to 600 mA in total. For this build that's fine: nothing needs USB. If a Pi 5 shows under-voltage warnings (`vcgencmd get_throttled` other than `0x0`) or reboots under load, the Amp4 can't carry it in this setup. Use a Pi 4B sled, or give the Pi 5 its own 5 A USB-C supply; HiFiBerry's docs don't say whether that is safe alongside the Amp4, so ask them first. The software makes no attempt to work around this (for example with `usb_max_current_enable`).
-- **Zero 2 W:** 512 MB is enough for this service and VLC with hardware decode. Use 720p files (see below), and expect uploads through the web page to be slower. It has no Ethernet, so the name comes from the wlan0 MAC.
-- **Detected model:** the web page shows it under Settings > Fixed (from `/proc/device-tree/model`).
-
-## Option A: build an image
-
-You need Docker (Docker Desktop on a Mac: <https://docs.docker.com/desktop/>), git, rsync and uuidgen. The build uses [pi-gen](https://github.com/RPi-Distro/pi-gen/tree/arm64) (arm64 branch, pinned to one commit in `image/build.sh`), which produces Raspberry Pi OS Lite, Debian trixie, 64-bit.
+**Option A: build an image.** You need Docker ([Docker Desktop](https://docs.docker.com/desktop/) on a Mac), git, rsync and uuidgen.
 
 ```sh
-cp pi/config.example pi/config    # fill in user, password, SSH key, Wi-Fi, country
-pi/image/build.sh                 # 30-60+ min; image lands in pi/deploy/*-videofx.img.xz
+cp pi/config.example pi/config   # user, password, SSH key, Wi-Fi, country; gitignored
+pi/image/build.sh                # pi-gen arm64 pinned to one commit; image in pi/deploy/*-videofx.img.xz
 ```
 
-`pi/config` is gitignored. Secrets are only written under `pi/.build/` (also gitignored). There is no `make` target, so the command above is the whole interface.
+Flash it with [Raspberry Pi Imager](https://github.com/raspberrypi/rpi-imager) (**Use custom**) and skip Imager's OS customisation. Every Pi flashed from the image names itself on first boot. pi-gen and npm are pinned; Debian and NodeSource packages are whatever is current on build day.
 
-Flash with [Raspberry Pi Imager](https://github.com/raspberrypi/rpi-imager): **Choose OS > Use custom**, then pick the `.img.xz`. Skip Imager's OS customisation, because the image already has your user, SSH key and Wi-Fi. Every Pi flashed from the same image picks its own `VideoFX-XXXX` name on first boot.
-
-Reproducibility: pi-gen and the npm dependencies are pinned (`package-lock.json`). Debian and NodeSource packages are whatever is current on build day.
-
-## Option B: install on a stock Raspberry Pi OS Lite
-
-1. Flash **Raspberry Pi OS Lite (64-bit)** with Raspberry Pi Imager. In its settings, set a user, SSH key and Wi-Fi.
-2. Copy this folder over and run the installer:
-   ```sh
-   scp -r pi/ you@raspberrypi.local:videofx-setup
-   ssh you@raspberrypi.local 'cd videofx-setup && sudo ./install.sh'
-   ssh you@raspberrypi.local 'sudo reboot'
-   ```
-   The installer adds NodeSource's Node 24 repo if the system Node is older than 20.19, installs VLC (no GUI), avahi and the app, sets up the Amp4 (see Audio), disables the tty1 login prompt, adds `consoleblank=0 logo.nologo vt.global_cursor_default=0` to `cmdline.txt`, and renames the Pi to `VideoFX-XXXX`. It prints the new name. Run it again to update the app. Your settings in `/etc/default/videofx` are kept.
-
-## Videos and playlist
-
-The videos are your purchased files. None are included or downloaded.
-
-- **Easiest:** open `http://videofx-xxxx.local/`, upload the videos, add them to the playlist, then **Save playlist**.
-- **Or copy them yourself:** `scp *.mp4 you@videofx-xxxx.local:media/`. They go in `~/media/` of the login user, next to the playlist `~/media/playlist.m3u`. The playlist is a plain `.m3u` with one file name per line. The web UI marks disabled entries as `#VIDEOFX-DISABLED:name.mp4`, which VLC skips as a comment. You can also upload a `.m3u` through the page; it replaces the playlist after the file names are checked.
-- Accepted files: `.mp4 .m4v .mov .mkv .webm .avi .mpg .mpeg .ts .wmv .mp3 .m4a .aac .wav .ogg .oga .flac`, and `.m3u`/`.m3u8` for the playlist. Uploads are capped at `VIDEOFX_MAX_UPLOAD_MB` (default 4096).
-
-### Recommended encode
-
-H.264 plays on every board: in hardware on the 3, 4 and Zero 2 W, and in software on the 5, which is fast enough. Use:
-
-- **Pi 3 / 4 / 5:** H.264 High profile, level 4.1 or lower, 1080p, 30 fps or less, 8-bit 4:2:0, in `.mp4`, with AAC stereo 48 kHz audio.
-- **Zero 2 W:** the same at **720p**, which is easy on its 512 MB and decoder.
-
-Most AtmosFX downloads are already H.264 MP4. Only re-encode files that stutter or won't play. Do that on your computer with [ffmpeg](https://ffmpeg.org/); the Pi never transcodes on its own:
+**Option B: install on stock Raspberry Pi OS Lite (64-bit).**
 
 ```sh
-# 1080p (Pi 3 / 4 / 5). Keeps the frame rate; add -r 30 only if the source is above 30 fps.
-ffmpeg -i in.mp4 -vf "scale=-2:'min(1080,ih)',format=yuv420p" \
-  -c:v libx264 -profile:v high -level:v 4.1 -preset slow -crf 20 \
-  -c:a aac -b:a 160k -ac 2 -ar 48000 -movflags +faststart out-1080p.mp4
-
-# 720p (Zero 2 W)
-ffmpeg -i in.mp4 -vf "scale=-2:'min(720,ih)',format=yuv420p" \
-  -c:v libx264 -profile:v high -level:v 4.0 -preset slow -crf 21 \
-  -c:a aac -b:a 160k -ac 2 -ar 48000 -movflags +faststart out-720p.mp4
+scp -r pi/ you@raspberrypi.local:videofx-setup
+ssh you@raspberrypi.local 'cd videofx-setup && sudo ./install.sh && sudo reboot'
 ```
+
+`setup.sh` does the following (both options):
+
+- installs `mpv gpiod v4l-utils alsa-utils avahi-daemon`, plus Node 24 from NodeSource if the system Node is older than 20.19;
+- installs the app, udev rules for CEC, lirc, GPIO, PWM and fb blank, and the systemd units;
+- disables the tty1 login prompt;
+- edits `config.txt` (see [GPIO pins](#gpio-pins-and-wiring)). It is idempotent.
+
+## Videos, playlist, scare mode
+
+Your purchased videos are not included or downloaded. Upload them on the web page, or `scp` them to `~/media/` on the Pi.
+
+- **Loop mode:** build the playlist on the page (order, enable/disable, save). Saving while playing reloads it in mpv.
+- **Scare mode:**
+  1. Upload the calm clip and the scare clips. Files named like `Ghost_Buffer.mp4` and `Ghost_Scare1.mp4` get paired by **Suggest from file names**.
+  2. Pick the calm clip and the scare clips in **Scare mode**, and save.
+  3. Set Settings > Playback > **Mode** to `scare`.
+  4. Tune the order (sequential/random), the cooldown (default 20 s, counted from the end of a scare), and what happens to a trigger during a scare: `ignore` (default) or `queue` (one scare, played after the cooldown).
+  5. Trigger with **Scare now**, the **Scare** switch in Home (for example, "when the doorbell rings, turn on Scare"), the PIR, or DMX.
+- **The seam.** The calm clip loops with `loop-file=inf`. The next scare clip and the calm clip after it are already queued, so mpv's `--prefetch-playlist` opens them early. A trigger sets `loop-file=no` and sends `playlist-next`. The service measures each seam from mpv's events and logs it (`journalctl -u videofx-player | grep seam`); the page shows it too. **It has not been measured on a Pi:** the Mac test used a fake mpv, whose ~50 ms is its own simulated delay.
+- **Recommended encode:** H.264 High, level 4.1 or lower, 1080p30 (720p for the Zero 2 W), 8-bit 4:2:0 MP4, AAC stereo 48 kHz. Re-encode on your computer only if a file stutters:
+
+  ```sh
+  ffmpeg -i in.mp4 -vf "scale=-2:'min(1080,ih)',format=yuv420p" -c:v libx264 -profile:v high -level:v 4.1 \
+    -preset slow -crf 20 -c:a aac -b:a 160k -ac 2 -ar 48000 -movflags +faststart out.mp4
+  ```
+
+  Use `min(720,ih)` and `-level:v 4.0` for the Zero 2 W. For rear projection on a Pi 3 or Zero 2 W, pre-flip the files with `-vf "hflip,scale=..."` instead of using the Mirror setting (below).
+- **Mirror** (Settings > Display): flips left-right at once through mpv IPC (`vf add @mirror:hflip`). The flip runs on the CPU, so it switches decoding to `auto-copy`. That's fine on a 4B or 5 and probably too heavy for 1080p on a 3 or Zero 2 W (not measured).
+
+## Schedule
+
+On the page: an on time and an off time per weekday. The on time can be **At sunset**, plus or minus an offset. An off time earlier than the on time means after midnight.
+
+- Sunset is computed on the Pi from Settings > Schedule > Latitude/Longitude, using NOAA's general solar position equations (tested within 5 minutes of published times). Days with no sunset (polar summer or winter) get no on event.
+- Times use the Pi's time zone (`sudo raspi-config` > Localisation). Tested across both DST changes: a time in the spring-forward gap fires once, at 03:30; a time in the fall-back hour fires once.
+- **The schedule only acts at its event times.** Switching on or off by hand (Home, the page) holds until the next scheduled event. The page shows the next event.
+- A Pi has no real-time clock. Events more than 5 minutes stale, for example after NTP corrects the clock at boot, are skipped rather than replayed.
+- While DMX is in control the schedule is paused. When DMX lets go, the schedule's current wish is applied.
+
+## Projector power
+
+Setting: **Projector power** = `cec` (default) | `relay-ir` | `relay` | `hdmi-off` | `none`. The page shows the projector's state and the CEC result.
+
+- **cec.** Uses `cec-ctl` (v4l-utils) on `/dev/cec0`, the kernel's CEC under KMS (HDMI0 on the 4B and 5; the only port on the 3 and Zero 2 W). No libcec daemon, and access is through the video group via udev.
+  - On: configure as a playback device, then Image View On, Text View On and Active Source (One Touch Play), then ask for the power status. If the projector isn't "on" yet, the wake is retried once after 8 s.
+  - Off: Standby.
+  - If the projector never answers, the service falls back to `hdmi-off` with a notice, and tries CEC again at the next power-on. CEC is only used on power changes, never on page polls.
+  - **Buying:** many mini projectors have no CEC. Look for "HDMI-CEC" in the projector's own spec. Brand names like Anynet+, SimpLink or Bravia Sync are the TV makers' CEC and don't tell you anything about a projector.
+  - **Test** on the Pi: `cec-ctl -d /dev/cec0 --playback -S` shows the CEC devices. `cec-ctl -d0 --to 0 --image-view-on` should wake it.
+- **hdmi-off.** Powers the HDMI signal down (fbdev blank) when stopped. Many projectors drop to standby after their own no-signal timeout. **Waking may still need the remote.** Before the Pi is paired, the signal stays on so the pairing code is visible.
+- **relay / relay-ir.** A relay on the projector's DC feed. Off: stop playback, then open the relay. On: close it, wait the settle time (default 3 s), then:
+  - `relay`: nothing more, for projectors that power up by themselves.
+  - `relay-ir`: send the IR power code (twice if "needs two presses" is set). The relay forces a known "off" first, so the IR toggle can't get out of step.
+- **Relay safety:**
+  - Use a relay module rated for the projector's DC current, with an opto-isolated input and a flyback diode (most modules have one).
+  - Switch the **+ line (high side) only**. Never switch the projector's ground: the HDMI shield would carry its return current.
+  - At boot the firmware drives the relay line to "open" before Linux runs (`gpio=27=op,dh` for active-low modules; use `dl` for active-high). The service keeps it open until it decides.
+  - Cutting power suits LED mini projectors; don't do it to a lamp projector that needs a cool-down.
+- **IR** uses the `gpio-ir-tx` overlay for the LED and `gpio-ir` for a TSOP38238-style receiver, driven with `ir-ctl`.
+  - On the page: **Learn power button**, then press the remote's power button at the receiver. The capture is decoded as NEC (`nec`, `necx` or `nec32`, the same scancode forms the kernel's encoder sends) or kept as raw pulse/space data.
+  - Or paste a code (`nec:0x40bf`, `rc5:0x1e01`, `raw:+9000 -4500 ...`). **Send test** fires it.
+  - `pwm-ir-tx` is refused, because its PWM0 channel drives the projector fan.
+
+## GPIO pins and wiring
+
+**The Amp4 uses GPIO 2 and 3 (I2C), 4 (mute) and 18-21 (I2S)**, per HiFiBerry's [GPIO usage page](https://www.hifiberry.com/docs/hardware/gpio-usage-of-hifiberry-boards/), updated 29 September 2025. GPIO 0/1 are always reserved for the ID EEPROM. That leaves 19 free GPIOs; VideoFX uses 9, so **no expander is needed**. The service refuses two roles on one pin and any Amp4 pin.
+
+| Role | GPIO | Pin | Notes |
+|---|---|---|---|
+| Amp4 | 2, 3, 4, 18, 19, 20, 21 | 3, 5, 7, 12, 35, 38, 40 | reserved |
+| PIR in | 17 | 11 | setting (live) |
+| Relay out | 27 | 13 | file only (boot level in config.txt) |
+| IR LED out | 22 | 15 | file only (overlay) |
+| IR receiver in | 23 | 16 | file only (overlay) |
+| Projector fan PWM | 12 | 32 | hardware PWM0 |
+| Pi/brick fan PWM | 13 | 33 | hardware PWM1 |
+| Fan tach in | 24, 25 | 18, 22 | pull-ups to 3.3 V |
+| 1-wire (DS18B20) | 26 | 37 | overlay |
+| 5 V / 3.3 V / GND | | 2, 4 / 1, 17 / 6, 9, 14, 20, 25, 30, 34, 39 | |
+
+**Reaching the pins.** The Amp4 covers the header, and HiFiBerry's pages show no pass-through header. Check your board. Options:
+
+- a 2×20 stacking (extra-tall) header between the Pi and the Amp4;
+- short wires soldered to the underside of the Pi's header joints for the pins above. Soldering on the HiFiBerry board voids its warranty; on the Pi's joints it doesn't touch the Amp4;
+- on the Zero 2 W, which needs a header soldered anyway, leave the pins long.
+
+If you ever need more I/O, an I2C expander (MCP23017) or an I2C fan controller (EMC2301) can share GPIO 2/3; HiFiBerry allows extra I2C devices for experienced users.
+
+**Wiring:**
+
+- **PIR (HC-SR501):** VCC to 5 V (pin 2), GND (pin 9), OUT (3.3 V logic) to GPIO17 (pin 11). Use the retrigger jumper (H), a short hold time, and allow about a minute of warm-up after power-on.
+- **Relay module (5 V coil, opto input):** VCC 5 V (pin 4), GND (pin 14), IN to GPIO27 (pin 13). The contacts (COM/NO) go in series with the projector's DC **+** only.
+- **IR LED (940 nm):** don't drive it straight from the pin (16 mA max). Use GPIO22 (pin 15), then 1 kΩ, then an NPN transistor base (BC337/2N2222). LED plus series resistor (about 47 Ω) from 5 V to the collector; emitter to GND.
+- **IR receiver (TSOP38238):** VS to 3.3 V (pin 17), GND, OUT to GPIO23 (pin 16). Powering it at 3.3 V keeps its output at 3.3 V.
+- **Fans (12 V 4-pin PWM, for example Noctua NF-A4x10 PWM):**
+  - 12 V and GND from the DC splice, with a **common ground with the Pi**.
+  - PWM (blue): GPIO12 (pin 32) or GPIO13 (pin 33) through 1 kΩ. Noctua's PWM white paper (via its search summary; the PDF was rate-limited) gives 25 kHz (21-28 kHz), 3.3 V logic accepted, input pulled up inside the fan, so it's driven directly with no transistor.
+  - Tach (green, open collector, 2 pulses per revolution): GPIO24 (pin 18) or GPIO25 (pin 22), with 10 kΩ to **3.3 V** (never 12 V).
+- **DS18B20 (one per zone, same bus):** VDD 3.3 V, GND, DQ to GPIO26 (pin 37) with 4.7 kΩ to 3.3 V. Put the projector-zone sensor near the projector exhaust. Choose which ROM ID is which zone under **Cooling** on the page.
 
 ## Audio
 
-Sound comes from a **HiFiBerry Amp4** HAT on the Pi (TAS5756M, 2 channels) driving speakers behind the projection. The Amp4 is powered at 12-24 V (HiFiBerry recommends 12-20 V; 24 V is the absolute maximum) from the DC brick splice, **and it powers the Pi through the GPIO header**. There is no buck converter and no micro-USB supply. Per the [Amp4 datasheet](https://www.hifiberry.com/docs/data-sheets/datasheet-amp4/), it delivers about 14 W per channel into 4 Ω or 8 W into 8 Ω at 12 V, and more at higher voltage.
+A **HiFiBerry Amp4** (TAS5756M, 2 channels) drives 4-8 Ω speakers behind the projection. It runs from the DC splice (12-20 V recommended, 24 V max) and **powers the Pi through the header**. About 14 W per channel into 4 Ω at 12 V ([datasheet](https://www.hifiberry.com/docs/data-sheets/datasheet-amp4/)).
 
-- **Speakers:** 4-8 Ω passive speakers, one per channel. Run ordinary speaker wire from the Amp4's screw terminals to each speaker: L+ to the left speaker's +, L- to its -, and the same for R. Keep the polarity the same on both speakers; the marked or ridged conductor goes to +. Swapped polarity on one speaker thins out the bass. The outputs **can't be bridged**. Never connect a speaker lead to ground or to the other channel.
-- **Power budget:** the brick must supply the projector, the Pi and the amp at the same time. The amp draws most at high volume. Check the brick's label (volts and amps) against the projector's input, plus the Pi (at 5 V: roughly 1-1.5 A for a Pi 3, up to 3 A for a Pi 4, up to 5 A for a Pi 5, well under 1 A for a Zero 2 W, all before conversion losses in the Amp4), plus the amp's share at the volume you use. See [Supported boards](#supported-boards) for the Pi 5 caveat. If the Pi reboots on loud passages, the supply is short. See the case README's safety notes for the mains side.
-- **Software (done by `setup.sh`):** `config.txt` gets `dtoverlay=hifiberry-dacplus-std` (HiFiBerry's [current overlay](https://www.hifiberry.com/docs/software/configuring-linux-3-18-x/) for the Amp4 on kernel 6.1.77 and newer; the datasheet's older `hifiberry-dacplus` is for earlier kernels), `dtparam=audio=off` (onboard audio off) and `vc4-kms-v3d,noaudio` (HDMI audio off). `/etc/asound.conf` pins the ALSA default to the card by name (`sndrpihifiberry`), and VLC is pointed at it explicitly.
-- **Volume** uses the amp's hardware mixer, the `Digital` control, set through `amixer -M`. The web UI's slider and **Mute** save to `/var/lib/videofx/settings.json` and are reapplied at every start. An older `volume.json` is moved into it automatically. First boot starts at **30%**, because outdoor speakers can be loud. By default the kernel caps `Digital` at 0 dB, so 100% can't clip digitally.
+- **Speakers:** speaker wire from the Amp4's terminals, same polarity on both speakers; the outputs can't be bridged.
+- **Power budget:** the brick must supply the projector, the Pi, the amp and the fans at once. Check its label.
+- **Software:**
+  - `dtoverlay=hifiberry-dacplus-std` (HiFiBerry's [current](https://www.hifiberry.com/docs/software/configuring-linux-3-18-x/) overlay for kernel ≥ 6.1.77);
+  - `dtparam=audio=off` and `vc4-kms-v3d,noaudio`;
+  - ALSA default pinned by card name in `/etc/asound.conf`;
+  - mpv uses `--audio-device=alsa/plughw:CARD=sndrpihifiberry,DEV=0`.
+- **Volume:** hardware mixer `Digital` via `amixer -M`, saved in settings.json. The first boot starts at 30%.
+
+## Cooling
+
+Settings > Cooling: turn it on once the fans and sensors are wired.
+
+- **Fans:** 25 kHz hardware PWM through `/sys/class/pwm` (the `pwm-2chan` overlay).
+  - Fan 1 follows the projector-zone sensor; fan 2 follows the hotter of the Pi-zone sensor and the SoC.
+  - Each fan has a curve (°C:duty%, linear). Defaults: `30:25 40:50 50:100` and `45:25 60:60 70:100`.
+  - Minimum 30% while the projector is on, and the projector fan keeps running for 120 s after power-off.
+  - A missing reading runs the fan at 100%.
+- **Warning** (default 45 °C): banner on the page.
+- **Critical** (projector zone, default 55 °C):
+  - stops playback and switches the projector off through its configured path, even under DMX;
+  - blocks switching on;
+  - fans go to 100%;
+  - it switches back on (only if it was on) once the zone is 5 °C below critical.
+- **Fan failure:** tach under 200 rpm for 5 s while driven at or above the minimum raises an alarm. An unwired tach isn't counted.
+- **Matter:** the projector-zone temperature is endpoint 4.
+
+## DMX (sACN)
+
+VideoFX is a **receive-only 8-channel fixture** over **E1.31 (sACN)**, on Wi-Fi or Ethernet (UDP 5568, unicast and optionally multicast 239.255.hi.lo). Settings > DMX sets: enable, universe (1-63999), start address (1-505), hold time (default 5 s) and accept multicast. The page shows the live sources (name, IP, priority, packet rate) and our 8 values.
+
+| Ch | Function | Values |
+|---|---|---|
+| 1 | Power | 0-127 off, 128-255 on (same projector power path as Matter) |
+| 2 | Mode | 0-127 loop, 128-255 scare |
+| 3 | Clip select | 0 = normal (playlist or calm clip); N = playlist entry N, looped |
+| 4 | Scare trigger | fires on the rise through 128; the cooldown still applies |
+| 5 | Volume | 0-255 → 0-100% |
+| 6 | Mute | 128-255 muted |
+| 7 | Video dimmer | 0 black … 255 normal (mpv brightness) |
+| 8 | Reserved | send 0 |
+
+**Hand-over rules:**
+
+- While any valid source for our universe is live, **DMX owns power, mode, clip, volume, mute and dimmer**.
+  - Matter writes are refused, and Matter's attribute is put back to the real state.
+  - The page shows "DMX in control" and disables those controls; its power and volume calls get 409.
+  - The schedule pauses.
+  - DMX values are not saved.
+- A source is lost after 2.5 s without data (E1.31 data loss) or at once on Stream_Terminated. After the last source is lost and the hold time passes, control returns:
+  - to the schedule's current wish if the schedule is on;
+  - otherwise to the power state from before DMX took over.
+  - Mode, volume, clip and dimmer go back to their saved settings.
+- **Pacing:** power changes at most once a second, mode every 0.5 s, and clip select must hold 300 ms. Volume and dimmer are limited to 10 updates a second.
+- **Merging:** highest priority wins; equal top priorities merge highest-takes-precedence per channel. Out-of-order packets are dropped, using ETC's rule: accept if newer, or 20 or more behind. Preview-flagged data and non-zero start codes are ignored.
+
+**Where the E1.31 details come from.** Packet layout, the sequence rule, the 2.5 s timeout, the flags and the universe range were checked against ETC's open-source reference receiver ([ETCLabs/sACN](https://github.com/ETCLabs/sACN)). The ESTA PDF sits behind a terms form and was not read directly.
+
+**Show software:**
+
+- **QLC+:** import `dmx/DIY-VideoFX-Player.qxf` (Fixture Definition Editor, or copy it to your user fixtures folder). It validates against QLC+'s own `fixture.xsd`. Output on E1.31, **unicast** to the Pi's IP.
+- **xLights:** Controllers > Add Ethernet, Protocol E1.31, the Pi's **IP address** (unicast), start universe = ours ([xLights manual](https://manual.xlights.org/xlights/chapters/chapter-four-set-up/lighting-networks/ethernet-controller)). Add a DMX model with 8 channels at the start address. The DMX model type's name wasn't verified.
+- **Falcon Player:** Channel Outputs > **E1.31 / ArtNet / DDP / KiNet**, add a universe with type **E1.31 Unicast** and the Pi's IP.
+- **Manual test:** `node tools/sacn-send.mjs --to <pi-ip> --universe 1 --values 255,0,0,0,76,0,255,0 --seconds 10`. Add `--pulse-trigger` for a scare. It ends with Stream_Terminated.
+
+**Network:** multicast over Wi-Fi is unreliable (converted, rate-limited or dropped by APs), so **send unicast to the Pi's IP**; a fixed IP or DHCP reservation helps. On UniFi, sACN multicast (239.255.x.x) is outside the always-flooded 224.0.0.0/24, so **IGMP Snooping** with "Forward Unknown Multicast" set to Drop can block it, and **Multicast Enhancement** converts it per client ([Switch Settings](https://help.ui.com/hc/en-us/articles/33402927617047-UniFi-Switch-Settings), [WiFi SSID settings](https://help.ui.com/hc/en-us/articles/32065480092951-UniFi-WiFi-SSID-and-AP-Settings-Overview)). Unicast avoids all of that.
 
 ## Pair with Apple Home
 
-1. Power on with the projector connected. Until the Pi is paired, the projector shows a QR code, the manual code and `http://videofx-xxxx.local/`. The web page shows the same code, and so does `journalctl -u videofx-player -b | grep -A25 uncommissioned`.
-2. iPhone (on the same Wi-Fi as the Pi and your home hub): **Home > + > Add Accessory**, then scan the code. If the camera won't read the white-on-black code on the projector, scan the one on the web page or choose **More options** and type the 11-digit code.
-3. Home warns that the accessory is **not certified**, because it uses the Matter test vendor ID 0xFFF1. Choose **Add Anyway**.
-4. It appears as a plug named `VideoFX-XXXX`. Rename it, put it in a room, and automate it (for example on at sunset, off at 11 pm).
+1. Power on with the projector connected. Until paired, the projector and the web page show the QR code and manual code.
+2. On the iPhone (same Wi-Fi as the Pi and your home hub): Home > **+ > Add Accessory**, then scan. If the camera won't read the projector, scan the page or type the 11-digit code.
+3. Choose **Add Anyway** at the not-certified warning (test vendor ID 0xFFF1).
+4. You get the Projector and Scare switches, a Motion sensor and a Temperature sensor. Name them, and automate, for example: sunset → Projector on; doorbell → Scare on.
 
-To unpair from everything: web page > **Matter > Reset Matter pairing** (type `reset` to confirm). This does a Matter factory reset. Videos and the playlist are kept, the service restarts, and a new pairing code appears. You can also run `sudo systemctl stop videofx-player && sudo rm -rf /var/lib/videofx/matter && sudo systemctl start videofx-player`. Remove the old tile from Apple Home as well.
+To unpair: web page > Matter > **Reset Matter pairing**. Videos and settings are kept.
 
 ## Settings
 
-Everything can be changed on the web page under **Settings**, so you don't need SSH for day-to-day use. Each setting shows its current value, where it comes from (*set here*, *from /etc/default/videofx*, or *default*), its default, and a **Reset** button that drops the web value.
+Everything is on the web page under **Settings**. Each setting shows its value, where it comes from (*set here* / *from /etc/default/videofx* / *default*), its default, when it takes effect (at once / next play / after a restart), and a **Reset**.
 
-- **Precedence:** web page (`/var/lib/videofx/settings.json`) > `/etc/default/videofx` > built-in default. The web page validates with the same rules as the file and rejects bad values with a message. `settings.json` is written to a temp file and renamed into place (mode 600). If it is ever corrupt, the service logs a warning, keeps a copy as `settings.json.corrupt`, and uses the file values and defaults.
-- **Web password:** set it on the page (stored as a scrypt hash, never shown back; the page only says *set* or *not set*). Changing it needs the current password. Removing it needs the current password and a confirmation. Reset goes back to the password in `/etc/default/videofx`, if there is one.
-- **Advanced:** extra VLC arguments. They go to VLC directly with no shell, and anything that opens a network, control or scripting interface is refused: `--extraintf`, `--intf`/`-I`, `--control`, `--lua-*`, `--http-*`, `--telnet-*`, `--rc-*`, `--cli-*`, `--sout*`, `--config`, `--plugin(s)-path`, `--daemon`, and any `://` URL.
-- **Restart service** is on the page too. It uses the same clean exit as the Matter reset, and systemd starts the service again.
-
-`/etc/default/videofx` is root-only (mode 600, because it may hold the password). Run `sudo systemctl restart videofx-player` after editing it.
-
-| Key | Default | Takes effect | |
-|---|---|---|---|
-| `VIDEOFX_NAME` | hostname (`videofx-xxxx`) | at once (Matter node label updated live; Apple Home keeps any name you gave it) | Matter and web name |
-| `VIDEOFX_RESTORE` | `last` | at once | state after power loss: `last`, `on`, `off` |
-| `VIDEOFX_WEB_PASSWORD` | empty | at once | basic-auth password (any user name). Also settable in `pi/config` |
-| `VIDEOFX_WEB_HOSTS` | | at once | extra host names the page answers to (e.g. a UniFi local DNS name) |
-| `VIDEOFX_MAX_UPLOAD_MB` | 4096 | at once | upload cap |
-| `VIDEOFX_VOLUME_DEFAULT` | 30 | at once | starting speaker volume; the slider saves its own value |
-| `VIDEOFX_AUDIO_CARD`, `VIDEOFX_MIXER_CONTROL` | `sndrpihifiberry`, `Digital` | next play | ALSA card name and mixer control |
-| `VIDEOFX_VIDEO_OUTPUT` | `HDMI-A-1` | next play | DRM connector; empty lets VLC choose |
-| `VIDEOFX_VLC_EXTRA_ARGS` | `--aout=alsa --alsa-audio-device=plughw:CARD=<card>,DEV=0` | next play | Advanced; replaces the audio args |
-| `VIDEOFX_CONSOLE` | `/dev/tty1` | service restart | empty disables the black/pairing screen |
-| `VIDEOFX_HTTP_PORT` | 80 | file only | also change `<port>` in `/etc/avahi/services/videofx.service` |
-| `VIDEOFX_MATTER_PORT` | 5540 | file only | |
-| `VIDEOFX_MEDIA_DIR`, `VIDEOFX_PLAYLIST` | `~/media`, `~/media/playlist.m3u` | file only | |
-| `VIDEOFX_VLC` | `cvlc` | file only | |
-
-The ports, paths and VLC command are **file only** on purpose. Changing the ports needs root (the port-80 capability and the avahi file), and letting the web page change paths or the VLC command would let it point the service at anything the user can reach. The service does not run as root just to allow that.
+- **Precedence:** web page (`/var/lib/videofx/settings.json`, written atomically, mode 600) > `/etc/default/videofx` > default. A corrupt settings.json is backed up to `settings.json.corrupt` and ignored, with a warning.
+- **Password:** stored as a scrypt hash and never sent back. Changing it needs the current password; removing it needs the current password and a confirmation.
+- **Extra mpv options (Advanced):** only `--name=value`, no shell. The following are refused: `--input-*` (including `--input-ipc-server`), `--script*`, `--load-*`, `--config*`, `--include`, `--ytdl*`, `--http-*` and other network options, file-writing options (`--o`, `--log-file`, `--screenshot-*`, `--record-file`, `--stream-*`), `--lavfi-complex`, lavfi `movie=` sources, `--external-files`, `--idle`, `--terminal`, and any URL.
+- **File only** (need root, or would let the page point the service anywhere): ports, media folder, playlist path, mpv command, state folder, and the relay, IR, fan and 1-wire pins. Edit `/etc/default/videofx` (every key is listed there, commented) and restart.
+- **Migration from the VLC version:** `VIDEOFX_VLC*` in the file and `vlcExtraArgs` in settings.json are ignored, with a warning. VLC options don't translate to mpv; the audio card and video output settings carry over as they are.
 
 ### Web page security
 
-- The page answers only requests from private, link-local, loopback or ULA addresses (10/8, 172.16/12, 192.168/16, 169.254/16, 127/8, fc00::/7, fe80::/10). A port forward from the internet gets 403. Do not forward port 80 anyway.
-- It only accepts `Host:` values that are an IP, `localhost`, `videofx-xxxx`, `videofx-xxxx.local`, the device name or `VIDEOFX_WEB_HOSTS`. This blocks DNS rebinding.
-- Every write needs an `X-VideoFX: 1` header, so another web site can't post to it from your browser (CSRF). The optional password uses HTTP basic auth. It is plain HTTP on your LAN, not HTTPS.
-- File names must be plain names directly in the media folder: no `/`, `\`, leading `.` or control characters, resolved and re-checked against the folder. Symlinks are not listed or deleted. Media files are never served back. Only the four UI files are served from disk. Uploads go to a temp file and are renamed into place, and they are limited by size and by extension.
+- The page answers only private, link-local and ULA addresses.
+- The Host header must be an IP, `localhost`, `videofx-xxxx(.local)`, the device name or an extra host name (case-insensitive). This blocks DNS rebinding.
+- Every write needs an `X-VideoFX: 1` header (CSRF). The optional password uses basic auth, over plain HTTP.
+- Uploads: file names are checked, the size is capped, extensions are limited, and media is never served back.
 
 ## UniFi networks
 
-Checked against Ubiquiti's help articles as of September 2026 (UniFi Network 9.x/10.x). UniFi renames menus often; if a name doesn't match what you see, search for the setting in the UI.
+Keep the Pi, the Apple home hub and your iPhone **on the same network (VLAN)**. On the Wi-Fi, turn off **Client Device Isolation** and **Multicast and Broadcast Control** (or add exceptions). Try turning **Multicast Enhancement** off if discovery is flaky. With **IGMP Snooping** on, set **Forward Unknown Multicast Traffic** to flood. Across VLANs you need the gateway's **mDNS Proxy** (add `_matter._tcp.local` in Custom mode) *and* routable IPv6 plus firewall rules for UDP 5540. The Pi sends `videofx-xxxx` as its DHCP hostname.
 
-**Short version:** put the Pi, the Apple home hub (HomePod or Apple TV) and the iPhone you pair with on **the same network (VLAN)**, then check the Wi-Fi settings below.
+Sources: [Gateway mDNS Proxy](https://help.ui.com/hc/en-us/articles/12648701398807-UniFi-Gateway-Multicast-DNS-mDNS-Proxy), [Switch Settings](https://help.ui.com/hc/en-us/articles/33402927617047-UniFi-Switch-Settings), [WiFi SSID settings](https://help.ui.com/hc/en-us/articles/32065480092951-UniFi-WiFi-SSID-and-AP-Settings-Overview), [Optimizing WiFi](https://help.ui.com/hc/en-us/articles/221029967-Optimizing-WiFi-Connectivity-and-Reducing-Latency), [Network isolation](https://help.ui.com/hc/en-us/articles/18965560820247-Implementing-Network-and-Client-Isolation-in-UniFi), [Configuring IPv6](https://help.ui.com/hc/en-us/articles/36378535649687-Configuring-IPv6-in-UniFi), [Local DNS records](https://help.ui.com/hc/en-us/articles/15179064940439-UniFi-DNS-Records-and-Local-Hostnames); Apple's [accessory troubleshooting](https://support.apple.com/en-us/126198). help.ui.com blocks scripted fetches, so these were read through its article API; they open normally in a browser.
 
-**Same network, no IoT VLAN (recommended)**
-- Matter finds devices over mDNS (`_matterc._udp` while pairing, `_matter._tcp` afterwards) and talks over IPv6. On one Layer 2 network, IPv6 link-local (`fe80::`) addresses work with no router setup. Apple says to keep iPhone, accessories and home hubs on the same Wi-Fi network ([Apple](https://support.apple.com/en-us/126198)). A matter.js-based project makes the same point about VLANs ([HAMH connectivity guide](https://riddix.github.io/home-assistant-matter-hub/guides/connectivity-issues)).
-- Leave **Network Isolation** off for that network: Settings > Networks > *network* ([Ubiquiti: Network and Client Isolation](https://help.ui.com/hc/en-us/articles/18965560820247-Implementing-Network-and-Client-Isolation-in-UniFi)).
-
-**If the Pi has to be on another VLAN**
-- The gateway's **mDNS Proxy** (Settings > Networks) repeats mDNS between networks, in **Auto / Off / Custom** mode. In Custom mode you pick the VLANs and services and can add your own `_service._protocol.local` ([Ubiquiti: Gateway mDNS Proxy](https://help.ui.com/hc/en-us/articles/12648701398807-UniFi-Gateway-Multicast-DNS-mDNS-Proxy)). Ubiquiti's Auto list includes Matter `_matterc._udp`/`_matterd._udp` and Web Servers `_http._tcp`, but **not `_matter._tcp`** ([Ubiquiti: Switch Settings](https://help.ui.com/hc/en-us/articles/33402927617047-UniFi-Switch-Settings)). In Custom mode, add `_matter._tcp.local` yourself. One of Ubiquiti's articles names the modes All/Auto/Custom instead, so check the UI.
-- mDNS repeating is not enough on its own. Link-local IPv6 doesn't cross VLANs, so both networks need routable IPv6 (a ULA `fd00::/8` or a global prefix) and firewall rules that allow UDP 5540 and its replies between them ([Ubiquiti: Configuring IPv6](https://help.ui.com/hc/en-us/articles/36378535649687-Configuring-IPv6-in-UniFi)). This is why one network is simpler.
-
-**IPv6**
-- Matter uses IPv6 for its operational traffic ([Google Matter primer](https://developers.home.google.com/matter/primer/thread-and-ipv6)). Don't disable IPv6 on the Pi; Raspberry Pi OS leaves it on. On one flat network, link-local is enough even if the UniFi network has no IPv6 prefix configured. That is reasoning from how link-local works (it stays at Layer 2 and never reaches the gateway); Ubiquiti doesn't document it.
-
-**Wi-Fi** (Settings > WiFi > *SSID*; names from [Ubiquiti: WiFi SSID and AP Settings](https://help.ui.com/hc/en-us/articles/32065480092951-UniFi-WiFi-SSID-and-AP-Settings-Overview))
-- **Client Device Isolation**: off.
-- **Multicast and Broadcast Control**: off, or add the Pi, the home hub and the iPhone as exceptions. It limits mDNS to listed clients.
-- **Multicast Enhancement** (multicast to unicast): try off if discovery is flaky. Ubiquiti notes that some smart home devices need it disabled ([Ubiquiti: Optimizing WiFi](https://help.ui.com/hc/en-us/articles/221029967-Optimizing-WiFi-Connectivity-and-Reducing-Latency)).
-- **Proxy ARP** answers ARP/NDP on clients' behalf. If you have trouble, try turning it off. This is a guess; no source ties it to Matter.
-
-**Switches** (Settings > Networks > *network*)
-- **IGMP Snooping**: if it is on, set **Forward Unknown Multicast Traffic** to flood, or turn snooping off. The default is Drop. Only 224.0.0.0/24, which includes IPv4 mDNS, is always flooded; IPv6 mDNS `ff02::fb` is not covered by that note ([Switch Settings](https://help.ui.com/hc/en-us/articles/33402927617047-UniFi-Switch-Settings)).
-
-**Name in the client list and DNS**
-- The Pi sends its hostname (`videofx-xxxx`) in DHCP. The image's Wi-Fi profile sets `dhcp-send-hostname=true`, and NetworkManager's default does the same for `install.sh`. UniFi normally lists clients by that name. That is expected behaviour, not confirmed in Ubiquiti's docs. Reboot after `install.sh` so the new name goes out in DHCP.
-- `videofx-xxxx.local` works on the same network, or across VLANs with the mDNS Proxy (Auto includes `_http._tcp`). For a name that doesn't use mDNS: Client Devices > *the Pi* > Settings > **Fixed IP Address** + **Local DNS Record** ([Ubiquiti: DNS Records and Local Hostnames](https://help.ui.com/hc/en-us/articles/15179064940439-UniFi-DNS-Records-and-Local-Hostnames)). Add that name to `VIDEOFX_WEB_HOSTS`.
-
-(help.ui.com blocks scripted fetches with a bot check. The pages open in a browser; they were read through the help centre's article API.)
+**mDNS:** matter.js runs its own responder on UDP 5353 (`SO_REUSEADDR`) under a MAC-based name. avahi owns `videofx-xxxx.local` and the `_http._tcp` entry ("VideoFX-XXXX"). They don't share names, so they coexist. A unicast mDNS reply reaches only one of the two sockets; that case is untested.
 
 ## Troubleshooting
 
 ```sh
-journalctl -u videofx-player -f          # player, Matter and web logs
-systemctl status videofx-player
-cat /var/lib/videofx-name                # this Pi's name
-aplay -l                            # should list sndrpihifiberry and nothing else
-amixer -c sndrpihifiberry sget Digital
+journalctl -u videofx-player -f        # everything: player, Matter, DMX, schedule, seams, thermal
+cat /var/lib/videofx-name
+kmsprint | grep Connector              # HDMI connectors (Pi 5: first card only)
+cec-ctl -d /dev/cec0 --playback -S     # is there CEC?
+ir-ctl -f -d /dev/lirc0                # IR devices (TX and RX may swap numbers)
+aplay -l; amixer -c sndrpihifiberry sget Digital
+ls /sys/bus/w1/devices/                # DS18B20 ROM IDs (28-...)
+vcgencmd get_throttled                 # under-voltage (Pi 5 on the Amp4)
 ```
 
-- **No picture when the projector is powered after the Pi:** KMS may not see the HDMI display. Add `video=HDMI-A-1:1280x720@60D` (use the projector's native mode) to `/boot/firmware/cmdline.txt` and reboot.
-- **No picture on a Pi 4B / 5:** the projector must be on HDMI0, next to USB-C. `kmsprint | grep Connector` lists the connectors; on a Pi 5, `kmsprint` only shows the first card.
-- **VLC says no video output:** add `--vout=drm_vout` to the extra VLC arguments, or `sudo apt install vlc` (the full package) in case a plugin is missing.
-- **Pi 5 reboots or is throttled:** `vcgencmd get_throttled` should say `0x0`. See the Pi 5 power note under [Supported boards](#supported-boards).
-- **No sound:** `aplay -l` must show `sndrpihifiberry`. If it doesn't, check the `dtoverlay=hifiberry-dacplus-std` line in `/boot/firmware/config.txt` (on a kernel older than 6.1.77 use `hifiberry-dacplus`) and reboot. Test with `speaker-test -c2 -t wav` at low volume. Check the web UI isn't muted.
-- **Apple Home can't find it:** make sure the iPhone and home hub are on the same network as the Pi (see UniFi above), and check the journal for "uncommissioned".
+- **No picture on a 4B or 5:** use HDMI0. **No picture when the projector is powered after the Pi:** add `video=HDMI-A-1:1280x720@60D` to `cmdline.txt`.
+- **mpv errors about the DRM device on a Pi 5:** add `--drm-device=/dev/dri/card1` in Settings > Advanced.
+- **Stutter on a Pi 3 or Zero 2 W:** re-encode (above), or add `--hwdec=v4l2m2m-copy`.
 
 ## Development
 
 ```sh
-cd pi
-npm ci
-npm test        # Vitest. The web tests open a local port: run outside a sandbox that blocks binding
-VIDEOFX_VLC=/bin/cat VIDEOFX_CONSOLE= VIDEOFX_MEDIA_DIR=/tmp/videofx-media VIDEOFX_STATE_DIR=/tmp/videofx-state \
-  VIDEOFX_HTTP_PORT=8080 VIDEOFX_NAME=VideoFX-TEST node src/main.js   # then open http://localhost:8080
+cd pi && npm ci && npm test             # Vitest; a few tests bind 127.0.0.1 and a Unix socket
+VIDEOFX_MPV=$PWD/test/fixtures/fake-mpv.mjs VIDEOFX_CONSOLE= VIDEOFX_MEDIA_DIR=/tmp/vfx-media \
+  VIDEOFX_STATE_DIR=/tmp/vfx-state RUNTIME_DIRECTORY=/tmp/vfx-run VIDEOFX_HTTP_PORT=8080 \
+  VIDEOFX_PROJECTOR_POWER=none node src/main.js      # then open http://localhost:8080
+node tools/gen-default.mjs > system/videofx.default   # after adding a setting
 ```
 
-Needs Node 20.19+ to run and Node 22.12+ for the tests (Vitest 5).
+Node 20.19+ to run, 22.12+ for the tests. On macOS keep `RUNTIME_DIRECTORY` short: Unix socket paths are limited to 104 bytes.
 
 ## What is verified
 
-Verified on a Mac (Node 26, `npx vitest run` in `pi/`, run outside the sandbox because the web tests bind 127.0.0.1):
-- `npm install` of `@matter/main` 0.17.9 and `vitest` 5.0.2, pinned in `package-lock.json`. Production dependencies are pure JS.
-- The matter.js API used here was checked against the installed package, not written from memory: `ServerNode.create`, `OnOffPlugInUnitDevice`, `endpoint.set({ onOff: { onOff } })`, `server.set({ basicInformation: { nodeLabel } })` at runtime, `events.onOff.onOff$Changed`, `lifecycle.{online,commissioned,decommissioned,isCommissioned}`, `state.commissioning.{pairingCodes,fabrics}`, `server.erase()`, the `storage.path` variable and `QrCode.get`.
-- 217 Vitest tests pass. They cover:
-  - the player state machine
-  - the playlist, media store and path traversal
-  - the web server guards
-  - volume
-  - QR-to-SVG
-  - settings: precedence and source reporting, validation for every field, the VLC deny-list, the password set/change/clear/reset rules and hashing, the `volume.json` migration, atomic writes and write failure, a corrupt or partly invalid `settings.json`
-  - the settings HTTP API
-- The full service ran against a fake `cvlc`. Upload, save, play, restart-on-save, stop, delete, volume, the Matter reset and SIGTERM all worked. Settings were changed over HTTP: the device name updated the Matter node label live, a bad VLC argument was refused, a console change flagged "restart needed", and an existing `volume.json` was migrated at startup.
-- The web UI was checked in a browser at phone size, including Settings.
-- `image/build.sh` was run up to the Docker step. shellcheck passes on all scripts. The `config.txt` edits were run twice on a copy of pi-gen's stock `config.txt`: the result is correct and the second run changes nothing.
-- The board facts in [Supported boards](#supported-boards) come from Raspberry Pi's and HiFiBerry's docs (linked there), not from hardware.
+**Verified** (Mac, Node 26, `npx vitest run` in `pi/` outside the sandbox, because some tests bind local sockets):
 
-Untested (no Pi, no Docker here):
-- The image build itself, first boot on each of the four boards, and `videofx-hostname` (including skipping the eth0 wait on a Zero 2 W).
-- `install.sh` and `setup.sh` on Raspberry Pi OS: package names `vlc-bin vlc-plugin-base vlc-plugin-video-output`, NodeSource on arm64, `npm ci` on the Pi.
-- VLC on each board: DRM/KMS output as a non-root user, `--drm-vout-display=HDMI-A-1`, hardware decode on the 3 / 4 / Zero 2 W, software H.264 on the 5, looping.
-- The Amp4 on each board: overlay, card name `sndrpihifiberry` (taken from the kernel driver source, not seen on a device), the `Digital` control, and the Amp4 powering the Pi (above all the Pi 5).
-- tty1 blanking and pairing screen (which HDMI port the console uses on a Pi 4 / 5), and the QR code being readable on the projector.
-- Commissioning with Apple Home, avahi and matter.js together on 5353, and the UniFi behaviour described above.
+- **381 tests pass.** They cover:
+  - the player: loop, scare arm/trigger/re-arm, sequential and random order, cooldown, ignore and queue, off during a scare, seam measurement, command ordering, mirror, clip and dimmer;
+  - mpv: the deny-list, the IPC client on a real Unix socket, supervisor crash/restart/give-up;
+  - schedule: sunset against published times, polar days, both DST changes, the manual-override rule, stale events, the desired state for the DMX hand-back;
+  - projector: the CEC sequence, retry, fallback, relay and relay-IR timing, double press;
+  - IR: code validation, NEC decoding (nec, necx, nec32), learn and timeout, send;
+  - GPIO: the pin budget and conflicts, the relay holder, PIR debounce and restart;
+  - DMX: packet parsing (valid and malformed), universe, preview and terminated flags, sequence wrap, priority and HTP merge, the 2.5 s timeout, hold and hand-over, channel map, pacing, rising-edge trigger, the arbiter refusing Matter writes;
+  - thermal: curves, cool-down, hysteresis, the over-temperature shutdown and resume rule, fan failure, DS18B20 parsing, PWM and tach adapters;
+  - settings, the web API and all earlier features.
+- **matter.js API** checked against the installed 0.17.9 package: `OccupancySensorDevice` + `OccupancySensingServer.with("PassiveInfrared","OccupancyEvent")`, `TemperatureSensorDevice`, a second On/Off endpoint, runtime `server.set({basicInformation:{nodeLabel}})`.
+- **mpv** options and IPC commands checked against the v0.40.0 manual source (`--drm-connector`, `--input-ipc-server`, `--prefetch-playlist`, `--audio-device=alsa/...`, `loadfile`/`loadlist`/`playlist-next`/`playlist-clear`/`stop`, `vf add/remove @label`, the `hwdec` values).
+- **cec-ctl, ir-ctl and gpiomon/gpioset** options checked against the v4l-utils and libgpiod 2.2 sources. Overlay parameters and the Amp4 GPIO usage checked against Raspberry Pi's overlay README and HiFiBerry's GPIO page.
+- **Full-service smoke run** against the fake mpv, with real UDP sACN:
+  - loop and scare mode;
+  - trigger, ignore during a scare, cooldown;
+  - mirror through IPC;
+  - schedule next-event;
+  - DMX takeover (web power and volume refused with 409, live values shown), Stream_Terminated, then hand-back after the hold;
+  - the page at phone width.
+- The smoke run found and fixed two real bugs: interleaved mpv commands from quick reloads, and banners that ignored `hidden`.
+- **QLC+ fixture** validates against QLC+'s `fixture.xsd`. **config.txt edits** are correct and idempotent on pi-gen's stock file. shellcheck is clean.
+
+**Untested** (no Pi, no mpv, no Docker here):
+
+- The image build, first boot on each board, and `install.sh` on Raspberry Pi OS.
+- mpv on the Pi: DRM output as non-root, `HDMI-A-1`, hardware decoding per board, **the real seam times**, and mirror CPU cost.
+- CEC with a real projector (including the `pwr-state:` output format), relay switching, IR send and learn, gpiomon, gpioset and gpio-ir on hardware, and the Pi 5 GPIO/PWM overlays.
+- The Amp4 on each board and powering a Pi 5; fans, tach and DS18B20 on real hardware; the fbdev blank turning HDMI off.
+- Apple Home pairing, the Scare switch in Home automations, the Occupancy and Temperature endpoints in Home, avahi and matter.js together, UniFi behaviour, and sACN from QLC+, xLights or FPP over Wi-Fi.

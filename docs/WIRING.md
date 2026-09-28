@@ -43,7 +43,7 @@ flowchart LR
   RPI -. "GPIO" .-> RELAY
 ```
 
-Solid lines carry power. Dotted lines are signals. The relay is only fitted if the projector lacks HDMI-CEC (see `pi/README.md`, "Projector power"). GPIO pin assignments for the relay, IR, PIR, fans and temperature sensors are in `pi/README.md`.
+Solid lines carry power. Dotted lines are signals. The relay is only fitted if the projector lacks HDMI-CEC (see `pi/README.md`, "Projector power"). GPIO pin assignments are in `pi/README.md` (PIR 17, relay 27, IR LED 22, IR receiver 23, fan PWM 12/13, fan tach 24/25, 1-wire 26; the Amp4 uses 2, 3, 4 and 18-21). The Amp4 covers the header, so fit a stacking header or solder leads under the Pi.
 
 ## AC side
 
@@ -66,7 +66,7 @@ Right of the barrier, and down to the Pi sled.
 | Splice to projector | 18 AWG | Keep the projector's own barrel plug; splice into its cable |
 | Splice to Amp4 power input | 20 AWG (0.5 mm²) | Amp4 accepts 12-24 V; it powers the Pi, so don't also power the Pi by USB |
 | Splice to fans | 24 AWG | 12 V fans; PWM and tach go to the Pi |
-| Relay (fallback only) | 18 AWG | Switch the **+** line to the projector. Never switch its ground: the HDMI cable would carry the return current |
+| Relay (fallback only) | 18 AWG | Switch the **+** line to the projector. Never switch its ground: the HDMI cable would carry the return current. Use an **active-low** module: the Pi holds GPIO 27 high (relay open, projector off) from boot |
 | Amp4 to speakers | 16 AWG zip cord | Out through the floor chimney; red/striped to + on both ends |
 
 Use lever-nut connectors (e.g. Wago 221) for the splice so it can be undone. Pass low-voltage wires from the shelf to the Pi through the wire slot at the back of the shelf, never across the barrier's AC side.

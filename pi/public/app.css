@@ -28,6 +28,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; } /* author display rules would otherwise win */
 
 body {
   margin: 0;

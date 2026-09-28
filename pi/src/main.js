@@ -385,6 +385,7 @@ const fans = [new SysfsPwm({ channel: 0, fs: sysfs }), new SysfsPwm({ channel: 1
 let tach = null;
 let sensorsSeen = [];
 let lastRpm = [null, null];
+const fanErrors = [null, null];
 let thermalTimer = null;
 
 async function readSensor(id) {
@@ -410,7 +411,17 @@ async function thermalTick() {
     ]);
     lastRpm = tach?.rpm() ?? [null, null];
     const state = thermal.update({ projectorC, piC, socC, rpm: lastRpm, on: player.isOn });
-    await Promise.all(fans.map((f, i) => f.set(state.duty[i]).catch((err) => console.warn(`Fan ${i + 1}: ${err.message}`))));
+    await Promise.all(
+      fans.map((f, i) =>
+        f.set(state.duty[i]).then(
+          () => (fanErrors[i] = null),
+          (err) => {
+            if (fanErrors[i] !== err.message) console.warn(`Fan ${i + 1}: ${err.message}`); // once per new error
+            fanErrors[i] = err.message;
+          },
+        ),
+      ),
+    );
     const value = projectorC === null ? null : Math.round(projectorC * 100);
     if (temperature.state.temperatureMeasurement.measuredValue !== value) {
       await temperature.set({ temperatureMeasurement: { measuredValue: value } });

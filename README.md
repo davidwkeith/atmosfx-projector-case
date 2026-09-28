@@ -69,7 +69,8 @@ Material: PETG or ASA, not PLA. Colour: Disney's ["Go Away Green"](https://en.wi
 - 4x M2.5 self-tapping screws (Pi to sled), 1x M3 thumbscrew and 1x M3 heat-set insert (sled to floor)
 - 3 x 5 in (127 x 76.2 mm) clear acrylic pane, 1/8 in (3.2 mm) thick, e.g. [Acme Plastics cut-to-size](https://www.acmeplastics.com/acrylic-sheets-cut-to-size); photo-frame glazing is usually too thin. Foam tape for gaskets
 - Insect screen (aluminium or stainless, mosquito grade, about 18 x 16 mesh) for the caps and to clamp behind both fans; 8x M2 x 6 self-tapping screws; a foam plug for the speaker-wire chimney
-- 2x 40 mm 12 V 4-pin PWM fans (e.g. Noctua NF-A4x10 PWM), 2x DS18B20 temperature sensors, small transistors for the PWM lines (see `pi/README.md` for wiring)
+- 2x 40 mm 12 V 4-pin PWM fans (e.g. Noctua NF-A4x10 PWM), 2x DS18B20 temperature sensors (see `pi/README.md` for wiring; the fans' PWM inputs take 3.3 V logic directly, per the Noctua spec)
+- A stacking 2x20 header (or wires soldered under the Pi) so the GPIO pins stay reachable under the Amp4
 - Projector-power fallback, only if the projector lacks HDMI-CEC: relay module (5 V coil, opto-isolated input, rated for the projector's DC current) on the + line to the projector, a 940 nm IR LED with a transistor driver, and optionally a TSOP38238 IR receiver to learn the remote's power code
 - HC-SR501 PIR motion sensor (2x M2 screws), jumper wires to the Pi GPIO; silicone to seal the dome in its hole
 - [HiFiBerry Amp4](https://www.hifiberry.com/shop/boards/hifiberry-amp4/) HAT (12-24 V in, powers the Pi; [datasheet](https://www.hifiberry.com/docs/data-sheets/datasheet-amp4/)), two 4-8 ohm outdoor speakers, 16 AWG speaker wire

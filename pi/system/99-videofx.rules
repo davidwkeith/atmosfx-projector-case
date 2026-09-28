@@ -6,3 +6,5 @@ SUBSYSTEM=="lirc", KERNEL=="lirc[0-9]*", GROUP="video", MODE="0660"
 SUBSYSTEM=="gpio", KERNEL=="gpiochip[0-9]*", GROUP="gpio", MODE="0660"
 # fbdev blank, for projector power "hdmi-off": let the video group write it.
 SUBSYSTEM=="graphics", KERNEL=="fb0", RUN+="/bin/chgrp video /sys%p/blank", RUN+="/bin/chmod g+w /sys%p/blank"
+# Hardware PWM (fans): the gpio group may export channels and set duty.
+SUBSYSTEM=="pwm*", KERNEL=="pwmchip*", RUN+="/bin/sh -c 'chgrp -R gpio /sys%p && chmod -R g+w /sys%p'"

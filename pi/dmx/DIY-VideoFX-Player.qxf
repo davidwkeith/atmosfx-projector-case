@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE FixtureDefinition>
+<FixtureDefinition xmlns="http://www.qlcplus.org/FixtureDefinition">
+ <Creator>
+  <Name>Q Light Controller Plus</Name>
+  <Version>4.14.0</Version>
+  <Author>VideoFX (pi/dmx in the projector-case repo)</Author>
+ </Creator>
+ <Manufacturer>DIY</Manufacturer>
+ <Model>VideoFX Player</Model>
+ <Type>Effect</Type>
+ <Channel Name="Power">
+  <Group Byte="0">Maintenance</Group>
+  <Capability Min="0" Max="127">Off</Capability>
+  <Capability Min="128" Max="255">On</Capability>
+ </Channel>
+ <Channel Name="Mode">
+  <Group Byte="0">Effect</Group>
+  <Capability Min="0" Max="127">Loop (playlist)</Capability>
+  <Capability Min="128" Max="255">Scare (calm clip, scare on trigger)</Capability>
+ </Channel>
+ <Channel Name="Clip select">
+  <Group Byte="0">Effect</Group>
+  <Capability Min="0" Max="0">Normal (playlist or calm clip)</Capability>
+  <Capability Min="1" Max="255">Loop playlist entry 1-255</Capability>
+ </Channel>
+ <Channel Name="Scare trigger">
+  <Group Byte="0">Effect</Group>
+  <Capability Min="0" Max="127">Idle</Capability>
+  <Capability Min="128" Max="255">Fire (on the rise through 128)</Capability>
+ </Channel>
+ <Channel Name="Volume" Default="76">
+  <Group Byte="0">Maintenance</Group>
+  <Capability Min="0" Max="255">Volume 0-100%</Capability>
+ </Channel>
+ <Channel Name="Mute">
+  <Group Byte="0">Maintenance</Group>
+  <Capability Min="0" Max="127">Sound on</Capability>
+  <Capability Min="128" Max="255">Muted</Capability>
+ </Channel>
+ <Channel Name="Video dimmer" Default="255">
+  <Group Byte="0">Intensity</Group>
+  <Capability Min="0" Max="255">Black to normal</Capability>
+ </Channel>
+ <Channel Name="Reserved">
+  <Group Byte="0">Nothing</Group>
+  <Capability Min="0" Max="255">Reserved (send 0)</Capability>
+ </Channel>
+ <Mode Name="8 channel">
+  <Channel Number="0">Power</Channel>
+  <Channel Number="1">Mode</Channel>
+  <Channel Number="2">Clip select</Channel>
+  <Channel Number="3">Scare trigger</Channel>
+  <Channel Number="4">Volume</Channel>
+  <Channel Number="5">Mute</Channel>
+  <Channel Number="6">Video dimmer</Channel>
+  <Channel Number="7">Reserved</Channel>
+ </Mode>
+</FixtureDefinition>

@@ -84,6 +84,24 @@ grep -q '^dtoverlay=gpio-ir-tx\|^dtoverlay=pwm-ir-tx' "$config" || missing+=$'# 
 grep -q '^dtoverlay=gpio-ir,' "$config" || missing+=$'# IR receiver (learning remote codes)\ndtoverlay=gpio-ir,gpio_pin=23\n'
 grep -q '^gpio=27=' "$config" || missing+=$'# Projector relay open at boot (active-low module)\ngpio=27=op,dh\n'
 [ -z "$missing" ] || printf '\n[all]\n%s' "$missing" >>"$config"
+# Fans (hardware PWM, 25 kHz) and 1-wire temperature sensors. The w1 overlay has
+# a Pi 5 variant, so this block uses model sections; it ends with [all].
+grep -q '^# videofx: fans and 1-wire' "$config" || cat >>"$config" <<'CFG'
+
+# videofx: fans and 1-wire
+[all]
+# Fan PWM: PWM0 on GPIO12, PWM1 on GPIO13 (GPIO18/19 are the Amp4's I2S)
+dtoverlay=pwm-2chan,pin=12,func=4,pin2=13,func2=4
+[pi3]
+dtoverlay=w1-gpio,gpiopin=26
+[pi4]
+dtoverlay=w1-gpio,gpiopin=26
+[pi02]
+dtoverlay=w1-gpio,gpiopin=26
+[pi5]
+dtoverlay=w1-gpio-pi5,gpiopin=26
+[all]
+CFG
 install -m 644 "$src/system/asound.conf" /etc/asound.conf
 
 echo "== console: tty1 is the projector's idle screen"

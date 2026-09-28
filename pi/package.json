@@ -1,8 +1,8 @@
 {
-  "name": "videofx-player",
+  "name": "videofx",
   "version": "0.1.0",
   "private": true,
-  "description": "Matter On/Off plug that loops a video playlist full screen with cvlc on a Raspberry Pi, with a LAN web UI",
+  "description": "VideoFX: a Matter device for a Raspberry Pi that loops videos or runs startle scares full screen with mpv, with projector power, PIR, DMX (sACN), fans and a LAN web UI",
   "type": "module",
   "main": "src/main.js",
   "scripts": {
