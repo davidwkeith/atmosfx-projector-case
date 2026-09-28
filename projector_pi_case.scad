@@ -100,6 +100,12 @@ collar_t = 6;        // screw collars on the rear tile's side walls, just behind
 collar_d = 10;
 seam_screw_z = [10, 42];   // M3 screws through the divider into the collars, above the floor
 
+/* [Ground anchors] */
+stakes = true;       // sealed stake tubes inside the four corners: drive tent stakes from inside, lid on = can't pull them
+stake_d = 9;         // bore for 8 mm tent stakes / 1/4 in pins
+stake_collar = 15;   // tube rises this far above the floor so water can't reach the bore
+stake_x = 78;        // inside the channel between the +/-68 and +/-88 ribs
+
 /* [Tripod mount] */
 tripod = true;
 tripod_y = 12;       // 3/8-16 insert near the estimated centre of mass (brick and Pi sit rearward)
@@ -170,6 +176,7 @@ base_seam = y_div + div_t + 0.01;
 shelf_zz = z_floor + shelf_z;
 pi_fan_z = shelf_zz + 3 + pi_fan_dz;
 fans = [[proj_cy, fan_z], [pi_cy, pi_fan_z]];
+stake_pts = [for (sx=[-1,1], y=[y0+12, y_back-12]) [sx*stake_x, y]];
 vents = [[-1, pi_cy, z_floor+24], [-1, pi_cy, shelf_zz+26], [1, pi_cy, z_floor+24]];   // passive louver banks [side, y, centre z]
 vent_open = [26, 42];                      // louver bank opening a wall cap covers (Z, Y); tabs go top/bottom (clear driver access)
 intake_c = [0, y0+39, z_floor];            // floor intake slots centre
@@ -275,6 +282,7 @@ module cuts() {
     translate([sx*(inner_w/2-collar_t/2), y_div-1, z_floor+z]) rotate([-90,0,0]) cylinder(d=3.4, h=div_t+1.1);
     translate([sx*(inner_w/2-collar_t/2), y_pi0-0.1, z_floor+z]) rotate([-90,0,0]) cylinder(d=2.6, h=collar_d-1);
   }
+  if (stakes) for (p=stake_pts) translate([p[0], p[1], -1]) cylinder(d=stake_d, h=z_floor+stake_collar+2);
   // tripod inserts, from below
   if (tripod) {
     translate([0, tripod_y, -1]) cylinder(d=insert38_d, h=insert38_len+1);
@@ -299,6 +307,7 @@ module base_all() {
       for (sx=[-1,1])   // seam collars (rear tile); stop below the shelf ledges
         translate([sx > 0 ? inner_w/2-collar_t : -inner_w/2, y_pi0-0.01, z_floor-0.1])
           cube([collar_t, collar_d, shelf_zz-ledge_w-3-z_floor+0.1]);
+      if (stakes) for (p=stake_pts) translate([p[0], p[1], z_floor-0.1]) cylinder(d=stake_d+5, h=stake_collar+0.1);
       if (tripod) {   // pad flush with the rib bottoms, plus a boss inside so the 3/8 insert has room
         hull() for (y=[tripod_y, tripod_y2]) translate([0, y, 0]) cylinder(d=30, h=foot_h+0.1);
         translate([0, tripod_y, z_floor-0.1]) cylinder(d=18, h=insert38_len+2-z_floor+0.1);   // 2 mm above the insert

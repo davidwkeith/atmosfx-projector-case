@@ -7,6 +7,7 @@ Parametric [OpenSCAD](https://openscad.org) design for a ground-standing, rain-p
 ## Features
 
 - Stands on the ground or mounts on a tripod: a 3/8"-16 insert near the centre of mass and a 1/4"-20 insert 30 mm forward, in a pad flush with the floor ribs.
+- Anchors: sealed stake tubes inside the four corners take 8 mm tent stakes, driven from inside with the lid off. With the lid screwed on (use security screws) they can't be pulled, which deters theft and holds the case against wind.
 - Sits on the ground on eight 6 mm ribs running front to back; the channels between them drain rain, feed intake air and carry the speaker wire.
 - Projector rides on an internal ball head (pedestal takes a 1/4-20 stud). Aim range +/-15 deg pan or tilt, +/-10 deg both at once (checked by `scripts/check_clash.sh`).
 - Tool-free aim hatch (a 45 deg diamond, so it prints without supports) on the left wall: lift the cover about 8 mm off its four keyholes, loosen the ball head, aim, lock. Lid stays on.
@@ -27,7 +28,7 @@ make parts                              # writes stl/*.stl
 scripts/check_clash.sh                  # interference checks (needs python3)
 ```
 
-CI builds the STLs on every push (Actions > Build STLs > artifacts).
+CI builds the STLs, runs the interference checks and runs the Pi tests on every push (Actions > Build STLs; STLs are under artifacts).
 
 Preview in OpenSCAD: open `projector_pi_case.scad`, set `part` and `tile` in the Customizer. `part = "assembly"` shows everything with ghosted projector and ball head. On iOS, the [OpenSCAD Playground](https://github.com/openscad/openscad-playground) works in Safari.
 
@@ -65,7 +66,7 @@ Material: PETG or ASA, not PLA. Colour: Disney's ["Go Away Green"](https://en.wi
 - Raspberry Pi 3
 - Mini ball head rated above the projector's weight, and a 1/4-20 stud
 - 1/4-20 heat-set inserts (pedestal, tripod), 3/8-16 heat-set insert (tripod), 4x M4 heat-set inserts and 4x M4x12 button-head bolts (hatch)
-- M3 screws: 4x M3 x 12 for the lid (they go sideways through the lid skirt, so the roof has no holes), window frame, fans
+- M3 screws: 4x M3 x 12 for the lid (pin-Torx or pin-hex security screws deter theft) (they go sideways through the lid skirt, so the roof has no holes), window frame, fans
 - 4x M2.5 self-tapping screws (Pi to sled), 1x M3 thumbscrew and 1x M3 heat-set insert (sled to floor)
 - 3 x 5 in (127 x 76.2 mm) clear acrylic pane, 1/8 in (3.2 mm) thick, e.g. [Acme Plastics cut-to-size](https://www.acmeplastics.com/acrylic-sheets-cut-to-size); photo-frame glazing is usually too thin. Foam tape for gaskets
 - Insect screen (aluminium or stainless, mosquito grade, about 18 x 16 mesh) for the caps and to clamp behind both fans; 8x M2 x 6 self-tapping screws; a foam plug for the speaker-wire chimney
@@ -96,7 +97,7 @@ Mains is inside a printed box in this design. Feed it from a GFCI outlet, fuse t
 
 ## Changelog
 
-- v0.8: lid screws moved from the roof to the skirt sides, screwed base seam, tripod mount, insect-screen caps, second fan for the Pi/brick zone, shelf vents, support-free printing (ribbed floor, diamond hatch, snap-out window ribs, gabled pass-through), IR LED holder, rear-wall PIR mount, Pi sleds for 3B/3B+/4B/5/Zero 2 W, audio (Amp4 HAT, floor chimney for speaker wire, shelf raised 5 mm), 3 x 5 in stock acrylic pane (wider window), AC gland above the shelf, taller barrier, keyholes flipped to lift off, lid scarf joint and gasket land, larger front/rear gaps so the aim range actually clears
+- v0.8: interior stake tubes, lid screws moved from the roof to the skirt sides, screwed base seam, tripod mount, insect-screen caps, second fan for the Pi/brick zone, shelf vents, support-free printing (ribbed floor, diamond hatch, snap-out window ribs, gabled pass-through), IR LED holder, rear-wall PIR mount, Pi sleds for 3B/3B+/4B/5/Zero 2 W, audio (Amp4 HAT, floor chimney for speaker wire, shelf raised 5 mm), 3 x 5 in stock acrylic pane (wider window), AC gland above the shelf, taller barrier, keyholes flipped to lift off, lid scarf joint and gasket land, larger front/rear gaps so the aim range actually clears
 - v0.7: DC brick inside on the power shelf, barrier, heat louvers
 - v0.6: low-voltage DC splice, zip-tie shelf
 - v0.5: single power cord, power shelf on ledges
@@ -107,4 +108,4 @@ Mains is inside a printed box in this design. Feed it from a GFCI outlet, fuse t
 
 ## License
 
-Designs and documentation: CC BY-SA 4.0 (see `LICENSE`).
+Designs and documentation: CC BY-SA 4.0 (see `LICENSE`). Software in `pi/`: MIT (see `pi/LICENSE`).

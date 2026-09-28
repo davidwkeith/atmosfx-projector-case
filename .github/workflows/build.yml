@@ -10,7 +10,24 @@ jobs:
       - uses: actions/checkout@v4
       - run: sudo apt-get update && sudo apt-get install -y openscad
       - run: make parts
+      - name: Interference checks
+        run: scripts/check_clash.sh
+        timeout-minutes: 30
       - uses: actions/upload-artifact@v4
         with:
           name: stl
           path: stl/*.stl
+  pi:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: pi
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: pi/package-lock.json
+      - run: npm ci
+      - run: npx vitest run
