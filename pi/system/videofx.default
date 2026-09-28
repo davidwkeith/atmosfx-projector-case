@@ -122,6 +122,14 @@
 # Accept multicast. Off: unicast only (recommended on Wi-Fi; send to this Pi's IP address).
 #VIDEOFX_DMX_MULTICAST=true
 
+# --- Schedule
+# Quiet hours. In /etc/default/videofx: JSON.
+#VIDEOFX_QUIET_HOURS={"enabled":false,"volumeCap":10,"disableScares":true,"dmxBypass":false,"days":{"sun":{"start":"","end":""},"mon":{"start":"","end":""},"tue":{"start":"","end":""},"wed":{"start":"","end":""},"thu":{"start":"","end":""},"fri":{"start":"","end":""},"sat":{"start":"","end":""}}}
+
+# --- Web page
+# Hide the Matter pairing code once paired. Anyone who can open this page could use the code while pairing mode is open.
+#VIDEOFX_HIDE_PAIRING_WHEN_PAIRED=true
+
 # --- Display
 # Console for the black / pairing screen (needs a service restart). Empty disables it.
 #VIDEOFX_CONSOLE=/dev/tty1

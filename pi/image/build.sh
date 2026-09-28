@@ -39,6 +39,7 @@ rsync -a --delete "$pi/image/stage-videofx/" "$stage/"
 files=$stage/00-videofx/files
 mkdir -p "$files/app"
 cp -r "$pi/src" "$pi/public" "$pi/system" "$pi/package.json" "$pi/package-lock.json" "$files/app/"
+printf '{"version":"%s","sha":"%s"}\n' "$(node -p "require('$pi/package.json').version")" "$(git -C "$pi" rev-parse --short HEAD 2>/dev/null || echo unknown)" >"$files/app/version.json"
 
 # /etc/default/videofx: defaults plus the owner's settings. systemd reads it as an
 # EnvironmentFile (not a shell), so values are written unquoted.

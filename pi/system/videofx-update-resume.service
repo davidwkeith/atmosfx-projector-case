@@ -1,0 +1,16 @@
+# Continues a videofx-update after the reboot into maintenance mode.
+[Unit]
+Description=VideoFX update (after the maintenance reboot)
+After=network-online.target local-fs.target
+Wants=network-online.target
+Before=videofx-player.service
+ConditionPathExists=|/srv/videofx/update/pending
+ConditionPathExists=|/var/lib/videofx-update/pending
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/videofx-update --resume
+TimeoutStartSec=30min
+
+[Install]
+WantedBy=multi-user.target

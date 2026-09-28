@@ -10,6 +10,7 @@ import { parseIrCode } from "./ir.js";
 import { RESERVED_GPIOS } from "./pir.js";
 import { PROJECTOR_MODES } from "./projector.js";
 import { isMediaFile } from "./playlist-core.js";
+import { DEFAULT_QUIET, parseQuiet } from "./quiet.js";
 import { DEFAULT_SCHEDULE, parseSchedule } from "./schedule.js";
 import { parseCurve } from "./thermal.js";
 import { clampLevel } from "./volume.js";
@@ -604,6 +605,27 @@ export const SETTINGS = [
     group: "DMX",
     label: "Accept multicast",
     help: "Off: unicast only (recommended on Wi-Fi; send to this Pi's IP address).",
+    apply: "live",
+    default: () => true,
+    parse: bool,
+  },
+  {
+    key: "quietHours",
+    env: "VIDEOFX_QUIET_HOURS",
+    group: "Schedule",
+    label: "Quiet hours",
+    help: "In /etc/default/videofx: JSON.",
+    apply: "live",
+    custom: true,
+    default: () => structuredClone(DEFAULT_QUIET),
+    parse: parseQuiet,
+  },
+  {
+    key: "hidePairingWhenPaired",
+    env: "VIDEOFX_HIDE_PAIRING_WHEN_PAIRED",
+    group: "Web page",
+    label: "Hide the Matter pairing code once paired",
+    help: "Anyone who can open this page could use the code while pairing mode is open.",
     apply: "live",
     default: () => true,
     parse: bool,

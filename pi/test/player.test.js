@@ -380,3 +380,16 @@ describe("command ordering", () => {
     ]);
   });
 });
+
+describe("quiet hours gate", () => {
+  it("a gate (quiet hours) blocks triggers with its reason", async () => {
+    let blocked = "quiet hours";
+    const { mpv, player } = setup({ mode: "scare" }, { gate: () => blocked });
+    mpv.up();
+    player.setOn(true);
+    await flush();
+    expect(player.trigger("Matter")).toMatchObject({ result: "ignored", reason: "quiet hours" });
+    blocked = null;
+    expect(player.trigger("Matter").result).toBe("fired");
+  });
+});

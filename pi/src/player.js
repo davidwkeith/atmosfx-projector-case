@@ -19,6 +19,7 @@ export class Player extends EventEmitter {
   #store;
   #blank;
   #preflight;
+  #gate;
   #log;
   #now;
   #setTimer;
@@ -57,6 +58,7 @@ export class Player extends EventEmitter {
     this.#store = o.store ?? { load: () => undefined, save: () => {} };
     this.#blank = o.blank ?? (() => {});
     this.#preflight = o.preflight ?? (() => undefined);
+    this.#gate = o.gate ?? (() => null);
     this.#log = o.log ?? console;
     this.#now = o.now ?? Date.now;
     this.#setTimer = o.setTimeout ?? setTimeout;
@@ -191,6 +193,8 @@ export class Player extends EventEmitter {
       return { result: "ignored", reason };
     };
     if (!this.#on) return ignore("playback is off");
+    const blocked = this.#gate(source); // quiet hours
+    if (blocked) return ignore(blocked);
     if (c.mode !== "scare") return ignore("scare mode is off");
     if (!this.#mpv.ready || this.#phase === "idle") return ignore("the player is starting");
     if (this.#phase === "clip") return ignore("a DMX clip is selected");

@@ -14,6 +14,7 @@ import dgram from "node:dgram";
 import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { access, readFile, readdir, writeFile } from "node:fs/promises";
 import { hostname } from "node:os";
+import { fileURLToPath } from "node:url";
 import { monitorEventLoopDelay } from "node:perf_hooks";
 import { join } from "node:path";
 import { promisify } from "node:util";
@@ -21,6 +22,7 @@ import { DeviceTypeId, Environment, ServerNode, VendorId } from "@matter/main";
 import { OccupancySensingServer } from "@matter/main/behaviors";
 import { OccupancySensorDevice, OnOffPlugInUnitDevice, TemperatureSensorDevice } from "@matter/main/devices";
 import { QrCode } from "@matter/main/types";
+import { applyStagedRestore, createBackup, stageRestore, validateBackup } from "./backup.js";
 import { defaultContext, resolveSettings } from "./config.js";
 import { DmxControl, PowerArbiter, SACN_PORT, SacnReceiver, fixtureValues, interpret, multicastGroup } from "./dmx.js";
 import { writeFileAtomicSync } from "./fsutil.js";
@@ -38,11 +40,15 @@ import { createScreen } from "./screen.js";
 import { Settings } from "./settings.js";
 import { TIMESYNC_FLAG, parseIwLink, parseNmcliDevices, signalVerdict, storageStatus } from "./system.js";
 import { Watchdog } from "./watchdog.js";
+import { capVolume, quietNow, scareBlocked } from "./quiet.js";
+import { readVersion, updateStatus } from "./update.js";
 import { OverTempGuard, SysfsPwm, Tach, ThermalControl, parseDs18b20, parseMilli, tachArgs } from "./thermal.js";
 import { Volume, amixerArgs } from "./volume.js";
 import { createWebServer } from "./web.js";
 
 const run = promisify(execFile);
+// No RTC on the Pi 3/4/Zero 2 W: time-based rules wait for NTP (see schedule.js, quiet.js).
+const clockSynced = () => existsSync(TIMESYNC_FLAG);
 const ctx = defaultContext();
 // The state folder holds settings.json, so it comes from the environment only.
 const stateDir = resolveSettings({ env: process.env, ctx }).values.stateDir;
@@ -52,9 +58,14 @@ const runDir = process.env.RUNTIME_DIRECTORY || stateDir;
 const settings = new Settings({ dir: stateDir, env: process.env, ctx });
 const get = (key) => settings.get(key);
 
+// A restore from the web page staged Matter storage: swap it in before matter.js opens it.
+await applyStagedRestore(stateDir);
+
 // Matter fabrics, keys and the random pairing passcode live here. Deleting this
 // directory (or "Reset Matter pairing" in the web UI) is a factory reset.
 Environment.default.vars.set("storage.path", join(stateDir, "matter"));
+const appDir = fileURLToPath(new URL("..", import.meta.url));
+const currentVersion = readVersion(appDir);
 
 // --- audio, screen, media
 
@@ -63,7 +74,7 @@ const volume = new Volume({
     load: () => ({ level: get("volume"), muted: get("muted") }),
     save: ({ level, muted }) => settings.update({ volume: level, muted }),
   },
-  apply: (v) => run("amixer", amixerArgs(get("audioCard"), get("mixerControl"), v)),
+  apply: (v) => run("amixer", amixerArgs(get("audioCard"), get("mixerControl"), capVolume(v, get("quietHours"), new Date(), { clockOk: clockSynced() }))),
 });
 // First boot: the safe default; later: the saved level. A missing card is logged, not fatal.
 volume.applyCurrent().catch(() => {});
@@ -121,8 +132,8 @@ const temperature = await server.add(TemperatureSensorDevice, {
   temperatureMeasurement: { measuredValue: null, minMeasuredValue: -2000, maxMeasuredValue: 12000 }, // 0.01 °C
 });
 
-function pairingCodes() {
-  if (server.lifecycle.isCommissioned) return undefined;
+function pairingCodes({ evenIfPaired = false } = {}) {
+  if (server.lifecycle.isCommissioned && !evenIfPaired) return undefined;
   const { qrPairingCode, manualPairingCode } = server.state.commissioning.pairingCodes;
   return { qrText: QrCode.get(qrPairingCode).trim(), qrPairingCode, manualPairingCode };
 }
@@ -172,6 +183,7 @@ const player = new Player({
     save: (on) => writeFileAtomicSync(playerState, JSON.stringify({ on }) + "\n"),
   },
   preflight: () => media.problem({ mode: dmxOverride.mode ?? get("mode"), buffer: get("scareBuffer"), scares: get("scareClips") }),
+  gate: (source) => scareBlocked(get("quietHours"), new Date(), { source, clockOk: clockSynced() }),
 });
 
 // --- projector power (CEC / relay / IR / HDMI signal)
@@ -290,7 +302,6 @@ startPir();
 
 // --- clock (no RTC on the Pi 3/4/Zero 2 W): the schedule waits for NTP
 
-const clockSynced = () => existsSync(TIMESYNC_FLAG);
 let wasSynced = clockSynced();
 setInterval(() => {
   const now = clockSynced();
@@ -311,6 +322,7 @@ const scheduler = new Scheduler({
 // --- DMX (sACN receive): overrides while a source is live
 
 let beforeDmx = null;
+let dmxVolume = null; // last DMX volume, re-applied when quiet hours start or end
 const dmx = new DmxControl({
   holdMs: get("dmxHoldSec") * 1000,
   act: {
@@ -345,7 +357,10 @@ const dmx = new DmxControl({
         .catch((err) => console.error(`DMX clip: ${err.message}`));
     },
     trigger: () => player.trigger("DMX"),
-    setVolume: (v) => run("amixer", amixerArgs(get("audioCard"), get("mixerControl"), v)).catch(() => {}),
+    setVolume: (v) => {
+      dmxVolume = v;
+      return run("amixer", amixerArgs(get("audioCard"), get("mixerControl"), capVolume(v, get("quietHours"), new Date(), { source: "dmx", clockOk: clockSynced() }))).catch(() => {});
+    },
     setDimmer: (v) => player.setDimmer(v),
   },
 });
@@ -463,6 +478,17 @@ function startThermal() {
   thermalTick();
 }
 startThermal();
+
+// --- quiet hours: re-apply the volume when they start or end
+
+let quietActive = null;
+setInterval(() => {
+  const now = quietNow(get("quietHours"), new Date(), { clockOk: clockSynced() });
+  if (now === quietActive) return;
+  quietActive = now;
+  if (dmx.inControl && dmxVolume) run("amixer", amixerArgs(get("audioCard"), get("mixerControl"), capVolume(dmxVolume, get("quietHours"), new Date(), { source: "dmx", clockOk: clockSynced() }))).catch(() => {});
+  else volume.applyCurrent().catch(() => {});
+}, 30_000).unref();
 
 // --- OS status for the page: network, power-cut protection
 
@@ -604,7 +630,7 @@ const web = createWebServer({
     return [hostname(), `${hostname()}.local`, ctx.hostName, `${ctx.hostName}.local`, name, `${name}.local`, ...get("webHosts")];
   },
   status: () => {
-    const codes = pairingCodes();
+    const codes = pairingCodes({ evenIfPaired: !get("hidePairingWhenPaired") });
     const next = scheduler.next;
     return {
       name: get("name"),
@@ -620,6 +646,9 @@ const web = createWebServer({
       thermal: { enabled: get("thermalEnabled"), ...thermal.state, rpm: lastRpm, sensors: sensorsSeen, tripped: guard.blocked },
       schedule: { enabled: get("schedule").enabled, waitingForClock: scheduler.waitingForClock, next: next && { at: new Date(next.at).toISOString(), on: next.on, label: next.label } },
       clock: { synced: clockSynced(), now: new Date().toISOString() },
+      quiet: { active: quietNow(get("quietHours"), new Date(), { clockOk: clockSynced() }), cap: get("quietHours").volumeCap, noScares: get("quietHours").disableScares },
+      version: updateStatus(currentVersion, (() => { try { return readFileSync(join(stateDir, "update-check.json"), "utf8"); } catch { return ""; } })()),
+      web: { passwordSet: settings.passwordSet },
       network,
       storage,
       matter: {
@@ -638,6 +667,31 @@ const web = createWebServer({
     return volume.set(v);
   },
   scare: () => player.trigger("web page"),
+  backup: () =>
+    createBackup({
+      settingsFile: settings.file,
+      playlistPath: get("playlist"),
+      matterDir: join(stateDir, "matter"),
+      device: ctx.hostName,
+      version: currentVersion,
+    }),
+  restore: async (body) => {
+    let v;
+    try {
+      v = validateBackup(body.backup);
+    } catch (err) {
+      throw new HttpError(400, err.message);
+    }
+    if (body.includeMatter === true && body.confirmMatter !== true) {
+      throw new HttpError(400, "Restoring the Matter pairing needs confirmation");
+    }
+    // Entries may carry the other Pi's absolute paths: keep the file names.
+    const entries = parsePlaylist(v.playlist, "").map((e) => ({ ...e, file: e.file.split("/").pop() }));
+    if (entries.length) await media.writePlaylist(entries);
+    const r = await stageRestore(v, { settingsFile: settings.file, stateDir, includeMatter: body.includeMatter === true });
+    restartService();
+    return { restored: { settings: true, playlist: entries.length, matter: r.matter }, restarting: true };
+  },
   irLearn: () => ir.learn(),
   irTest: (code) => ir.send(code ?? get("irPowerCode")),
   afterSettingChange,
@@ -651,7 +705,7 @@ const web = createWebServer({
     if (Object.keys(changes).length) settings.update(changes);
   },
   pairingSvg: () => {
-    const codes = pairingCodes();
+    const codes = pairingCodes({ evenIfPaired: !get("hidePairingWhenPaired") });
     return codes && qrTextToSvg(codes.qrText);
   },
   // Factory reset of the Matter node only (media, playlist and settings stay).

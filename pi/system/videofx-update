@@ -1,0 +1,147 @@
+#!/bin/bash
+# Update VideoFX (and optionally the OS) with the read-only root in mind.
+#
+#   sudo videofx-update                        latest GitHub release of pi/
+#   sudo videofx-update --tag v0.3.0           a given release
+#   sudo videofx-update --tarball FILE         offline: a videofx-pi-X.Y.Z.tar.gz copied over SSH
+#   sudo videofx-update --os                   also apt full-upgrade
+#   sudo videofx-update --rollback             back to the previous version (/opt/videofx.prev)
+#   sudo videofx-update --check                only check GitHub; the web page then shows "update available"
+#
+# If the root is protected (overlay), it records what to do on the data
+# partition, switches to maintenance mode and reboots; videofx-update-resume.service
+# carries on after the reboot, then switches protection back on and reboots again.
+# The repo is private for now: put a GitHub token (read access to the repo's
+# contents) in /srv/videofx/update/github-token, mode 600.
+set -euo pipefail
+
+APP=/opt/videofx
+PREV=/opt/videofx.prev
+WORK=/srv/videofx/update
+[ -d /srv/videofx ] || WORK=/var/lib/videofx-update # no data partition: root is writable anyway
+TOKEN=$WORK/github-token
+CHECK_OUT=/var/lib/videofx/update-check.json
+PENDING=$WORK/pending
+
+die() {
+  echo "videofx-update: $*" >&2
+  exit 1
+}
+protected() { [ "$(findmnt -no FSTYPE /)" = overlay ]; }
+service_user() { stat -c %U /var/lib/videofx 2>/dev/null || getent passwd 1000 | cut -d: -f1; }
+current_version() { node -e 'console.log(require(process.argv[1]).version)' "$APP/package.json" 2>/dev/null || echo 0.0.0; }
+
+MODE=update TAG="" TARBALL="" OS=0
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --tag) TAG=$2; shift ;;
+    --tarball) TARBALL=$2; shift ;;
+    --os) OS=1 ;;
+    --rollback) MODE=rollback ;;
+    --check) MODE=check ;;
+    --resume) MODE=resume ;;
+    -h | --help) sed -n '2,17p' "$0"; exit 0 ;;
+    *) die "unknown option $1" ;;
+  esac
+  shift
+done
+
+if [ "$MODE" = check ]; then
+  node "$APP/src/update-cli.js" check --token-file "$TOKEN" --out "$CHECK_OUT" --current "$(current_version)"
+  exit 0
+fi
+
+[ "$(id -u)" -eq 0 ] || die "run with sudo"
+install -d -m 700 "$WORK"
+
+# Protected root: park the job on the data partition, reboot writable, resume.
+park_and_reboot() {
+  {
+    printf 'MODE=%q\nTAG=%q\nOS=%q\nRESTORE_PROTECTION=1\n' "$MODE" "$TAG" "$OS"
+  } >"$PENDING"
+  sync
+  /usr/local/sbin/videofx-maint on
+  echo "Rebooting into maintenance mode; the update continues after the reboot (journalctl -u videofx-update-resume)."
+  systemctl reboot
+  exit 0
+}
+
+finish() {
+  rm -f "$PENDING"
+  sync
+  if [ "${RESTORE_PROTECTION:-0}" = 1 ]; then
+    /usr/local/sbin/videofx-maint off
+    echo "Done; rebooting with protection back on."
+    systemctl reboot
+  else
+    systemctl restart videofx-player.service
+    echo "Done."
+  fi
+}
+
+do_update() {
+  local tarball=$WORK/release.tar.gz src
+  if [ ! -s "$tarball" ]; then
+    echo "== fetching the release from GitHub"
+    local meta url
+    meta=$(node "$APP/src/update-cli.js" latest --token-file "$TOKEN" ${TAG:+--tag "$TAG"})
+    url=$(node -e 'console.log(JSON.parse(process.argv[1]).url)' "$meta")
+    node "$APP/src/update-cli.js" download --token-file "$TOKEN" --url "$url" --out "$tarball"
+  fi
+  rm -rf "$WORK/new"
+  mkdir -p "$WORK/new"
+  tar -xzf "$tarball" -C "$WORK/new"
+  src=$(dirname "$(find "$WORK/new" -maxdepth 2 -name package.json | head -1)")
+  [ -f "$src/package.json" ] && [ -f "$src/system/setup.sh" ] || die "not a VideoFX release tarball"
+  [ "$(node -e 'console.log(require(process.argv[1]).name)' "$src/package.json")" = videofx ] || die "tarball is not VideoFX"
+  echo "== $(current_version) -> $(node -e 'console.log(require(process.argv[1]).version)' "$src/package.json")"
+
+  systemctl stop videofx-player.service || true
+  rm -rf "$PREV"
+  cp -a "$APP" "$PREV" # with node_modules, so a rollback works offline
+  "$src/system/setup.sh" "$(service_user)" "$src" # app, npm ci --omit=dev, units, config
+  if [ "$OS" = 1 ]; then
+    echo "== OS: apt full-upgrade"
+    apt-get update
+    DEBIAN_FRONTEND=noninteractive apt-get -y full-upgrade
+  fi
+  rm -rf "$WORK/new" "$tarball"
+}
+
+do_rollback() {
+  [ -d "$PREV" ] || die "no previous version in $PREV"
+  systemctl stop videofx-player.service || true
+  mv "$APP" "$APP.bad"
+  mv "$PREV" "$APP"
+  mv "$APP.bad" "$PREV"
+  # The unit file of the restored version.
+  if [ -f "$APP/system/videofx-player.service" ]; then
+    home=$(getent passwd "$(service_user)" | cut -d: -f6)
+    sed -e "s/^User=.*/User=$(service_user)/" -e "s#MEDIA_DIR#$home/media#" "$APP/system/videofx-player.service" >/etc/systemd/system/videofx-player.service
+    systemctl daemon-reload
+  fi
+  echo "== rolled back to $(current_version) (the other version is now in $PREV)"
+}
+
+case "$MODE" in
+  resume)
+    [ -f "$PENDING" ] || exit 0
+    # shellcheck source=/dev/null
+    . "$PENDING"
+    mv "$PENDING" "$PENDING.running" # never loop on a failing update
+    PENDING=$PENDING.running
+    if [ "$MODE" = rollback ]; then do_rollback; else do_update; fi
+    finish
+    ;;
+  update)
+    [ -z "$TARBALL" ] || install -m 600 "$TARBALL" "$WORK/release.tar.gz"
+    protected && park_and_reboot
+    do_update
+    finish
+    ;;
+  rollback)
+    protected && park_and_reboot
+    do_rollback
+    finish
+    ;;
+esac

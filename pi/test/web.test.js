@@ -304,3 +304,61 @@ describe("settings API", () => {
     expect(restart).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("backup/restore routes", () => {
+  let server;
+  let port;
+  let restored;
+  let password = "";
+  beforeEach(async () => {
+    restored = null;
+    server = createWebServer({
+      media: createMediaStore({ dir: tmpdir(), playlist: join(tmpdir(), "x.m3u") }),
+      auth: { get passwordSet() { return password !== ""; }, verifyPassword: (p) => p === password },
+      hostNames: () => [],
+      status: () => ({}),
+      backup: async () => ({ format: "videofx-backup", device: "videofx-beef", createdAt: "2026-10-01T00:00:00.000Z", matter: { a: "AA==" } }),
+      restore: async (body) => ((restored = body), { restarting: true }),
+      log: { error() {} },
+    });
+    await new Promise((r) => server.listen(0, "127.0.0.1", r));
+    port = server.address().port;
+  });
+  afterEach(() => {
+    server.close();
+    password = "";
+  });
+  const call = (method, path, { body, headers = {} } = {}) =>
+    new Promise((resolve, reject) => {
+      const data = body === undefined ? undefined : JSON.stringify(body);
+      const req = request({ host: "127.0.0.1", port, method, path, headers: { "x-videofx": "1", ...(data ? { "content-length": Buffer.byteLength(data) } : {}), ...headers } }, (res) => {
+        let text = "";
+        res.on("data", (c) => (text += c));
+        res.on("end", () => resolve({ status: res.statusCode, headers: res.headers, text }));
+      });
+      req.on("error", reject);
+      req.end(data);
+    });
+
+  it("downloads as an attachment, never cached", async () => {
+    const res = await call("GET", "/api/backup");
+    expect(res.status).toBe(200);
+    expect(res.headers["content-disposition"]).toBe('attachment; filename="videofx-beef-backup-2026-10-01.json"');
+    expect(res.headers["cache-control"]).toBe("no-store");
+  });
+
+  it("the download needs the password when one is set", async () => {
+    password = "pumpkin-42";
+    expect((await call("GET", "/api/backup")).status).toBe(401);
+    const auth = { authorization: `Basic ${Buffer.from("u:pumpkin-42").toString("base64")}` };
+    expect((await call("GET", "/api/backup", { headers: auth })).status).toBe(200);
+  });
+
+  it("restore takes a large body and needs the write header", async () => {
+    const big = { backup: { format: "videofx-backup", matter: { a: "A".repeat(2_000_000) } }, includeMatter: false };
+    expect((await call("POST", "/api/restore", { body: big })).status).toBe(200);
+    expect(restored.includeMatter).toBe(false);
+    // Refused before the body is read (small body: a big one would see the socket closed mid-send).
+    expect((await call("POST", "/api/restore", { body: { backup: {} }, headers: { "x-videofx": "" } })).status).toBe(403);
+  });
+});

@@ -14,7 +14,7 @@ It also:
 
 A web page on your LAN (`http://videofx-xxxx.local/`) handles videos, the playlist, scare clips, the schedule and every setting.
 
-**Status: untested on hardware.** The logic is unit tested (398 tests). The whole service was run on a Mac against a fake mpv, with real UDP sACN. Nothing has run on a Pi, the image has not been built, and nothing has been paired with Apple Home. See [What is verified](#what-is-verified).
+**Status: untested on hardware.** The logic is unit tested (426 tests). The whole service was run on a Mac against a fake mpv, with real UDP sACN. Nothing has run on a Pi, the image has not been built, and nothing has been paired with Apple Home. See [What is verified](#what-is-verified).
 
 ## How it works
 
@@ -65,14 +65,19 @@ pi/
   src/fsutil.js        durable atomic writes (temp, fsync, rename, fsync dir)
   src/watchdog.js      systemd READY/WATCHDOG pings
   src/system.js        clock sync, Wi-Fi link, power-cut protection status
+  src/quiet.js         quiet hours: windows, volume cap, scare gate
+  src/backup.js        backup / staged restore
+  src/update.js, update-cli.js   version, release lookup and download for videofx-update
   src/media.js, playlist-core.js, web.js, qr.js, screen.js, volume.js
   public/              web page (plain HTML/CSS/JS)
   system/              systemd units, udev rules, avahi service, asound.conf, videofx.default, setup.sh,
-                       videofx-storage (+ .service), videofx-maint, NetworkManager/timesyncd/watchdog config
+                       videofx-storage (+ .service), videofx-maint, videofx-update (+ resume service),
+                       NetworkManager/timesyncd/watchdog config
+  tools/make-release.sh  release tarball for GitHub Releases
   image/               pi-gen build (build.sh, stage-videofx/)
   dmx/DIY-VideoFX-Player.qxf   QLC+ fixture
   tools/sacn-send.mjs  tiny sACN sender for testing; gen-default.mjs regenerates videofx.default
-  test/                Vitest (398 tests), test/fixtures/fake-mpv.mjs
+  test/                Vitest (426 tests), test/fixtures/fake-mpv.mjs
   install.sh, config.example
 ```
 
@@ -158,6 +163,54 @@ The Pi 3, 4 and Zero 2 W have no real-time clock, so after a power cut the clock
 - **Hardware watchdog:** `RuntimeWatchdogSec=14s` in `/etc/systemd/system.conf.d/`. systemd pets the Broadcom watchdog, and if the kernel or systemd hangs the board resets. 14 s stays under the chip's roughly 15 s limit.
 - **Service watchdog:** `videofx-player` is `Type=notify` with `WatchdogSec=30`. It sends `READY=1` once Matter is online, then `WATCHDOG=1` every 15 s from the main event loop, but only while healthy. It stops pinging if the loop was blocked for more than 5 s, and systemd then restarts it.
 - Node can't write to the notify socket without a native addon, so pings go through `systemd-notify` with `NotifyAccess=all`. Crediting that short-lived helper's message to our unit needs kernel ≥ 6.5 and systemd ≥ 254, which trixie has; on older systems the pings may be lost. At most one helper runs at a time.
+
+### Updates
+
+VideoFX never updates itself, and the web page never touches the network. With the read-only root, updates go through maintenance mode, which `videofx-update` handles:
+
+```sh
+sudo videofx-update --check                   # asks GitHub; the page then shows "update available"
+sudo videofx-update                           # latest release
+sudo videofx-update --tag v0.3.0 --os         # a given release, plus apt full-upgrade
+sudo videofx-update --tarball ~/videofx-pi-0.3.0.tar.gz   # offline: scp the tarball over first
+sudo videofx-update --rollback                # back to the previous version
+```
+
+- **What it does:**
+  1. If the root is protected, it records the job and any tarball on the data partition, switches maintenance mode on and reboots. `videofx-update-resume.service` picks the job up after the reboot.
+  2. Downloads the release asset `videofx-pi-X.Y.Z.tar.gz` and checks it's VideoFX.
+  3. Copies the running version to `/opt/videofx.prev` (with its `node_modules`, so a rollback works offline).
+  4. Runs the new release's `system/setup.sh`, which does `npm ci --omit=dev`, units and config.
+  5. With `--os`, runs `apt full-upgrade`.
+  6. Switches maintenance off and reboots.
+  7. A failed update leaves maintenance mode on and doesn't retry; fix it or `--rollback`.
+- **Private repo:** until it's public, put a GitHub token with read access to the repo's contents (a fine-grained token, "Contents: read") in `/srv/videofx/update/github-token`, mode 600, owned by root. It lives on the data partition so it survives the read-only root. Or use `--tarball`.
+- **Making a release** (on your computer): `pi/tools/make-release.sh` builds `pi/dist/videofx-pi-<version>.tar.gz` with `version.json` (version plus git sha), then run `gh release create vX.Y.Z pi/dist/videofx-pi-X.Y.Z.tar.gz`. The page footer shows the version and sha, and "update available" when the last `--check` found a newer release.
+
+### Backup and restore
+
+Web page > **Backup** > **Download backup**. That's one JSON file with the settings, schedule, quiet hours, playlist, and the Matter storage (fabrics, keys). Videos aren't included; copy those yourself. The file holds the pairing keys and the password hash, so keep it private. When a password is set, downloading needs it.
+
+**Restore:** pick the file, choose whether to include the Matter pairing, confirm. Settings and playlist apply straight away and the service restarts. A restored pairing is swapped in at that restart, and the previous one is kept as `matter.before-restore`.
+
+- Restore the **pairing** only onto the same Pi, or onto a replacement when the old one is gone for good. Two devices with one Matter identity confuse Apple Home and both misbehave.
+- To clone settings onto a second VideoFX, restore **without** the pairing and pair the new one separately.
+
+### Guest access
+
+With no password set, the page shows a warning: anyone on your network can control VideoFX and download its pairing keys.
+
+- Set a password, and keep the Pi off networks that guests can reach. On UniFi that means a separate guest network with **Network Isolation** on (Settings > Networks) and, on its SSID, **Client Device Isolation**, as in Ubiquiti's [Guest WiFi best practices](https://help.ui.com/hc/en-us/articles/23948850278295-Best-Practices-Guest-WiFi). Keep VideoFX on your own network with the home hub, since it must share one with Matter.
+- Once paired, the page hides the Matter pairing code (Settings > Web page > **Hide the Matter pairing code once paired**, on by default).
+
+### Quiet hours
+
+Web page > **Quiet hours**: per weekday, a window (an end earlier than the start runs past midnight; start = end means all day) during which:
+
+- **the volume is capped** at a percentage (0 mutes). The cap applies to the web slider, the saved level at start-up, and DMX (unless **DMX ignores quiet hours** is on). The mixer is re-set when a window starts or ends;
+- **scares are off** (optional), whatever the trigger: Home's Scare switch, the motion sensor, the web button, and DMX unless it bypasses.
+
+Power on/off (Home, the schedule) isn't affected. Until the clock is synchronised, quiet hours count as active if any window is set, the neighbour-friendly guess.
 
 ## Videos, playlist, scare mode
 
@@ -416,6 +469,7 @@ Node 20.19+ to run, 22.12+ for the tests. On macOS keep `RUNTIME_DIRECTORY` shor
   - the page at phone width.
 - The smoke run found and fixed two real bugs: interleaved mpv commands from quick reloads, and banners that ignored `hidden`.
 - **Reliability:** durable writes (the call order is tested, and the files were written on disk); watchdog pinging (interval, READY once, stops while unhealthy, no pile-up); schedule gated on clock sync; Wi-Fi and storage-status parsers. Checked against the sources: raspi-config trixie (`overlayroot`), overlayroot's `recurse` option, the timesyncd `synchronized` file and drop-in dirs (systemd v257 man pages), NetworkManager's `DHCP4_*` dispatcher variables and its `ntp_servers` request, the UniFi DHCP option 42, Raspberry Pi board bands and the Pi 5 RTC battery.
+- **This round:** quiet hours (windows including past midnight, cap and mute, the DMX bypass, the scare gate for every source, unsynced clock); version compare, release-asset pick and update status; backup create/validate/stage/apply on disk (path traversal and bad content refused, locks skipped, old pairing kept aside); backup and restore routes (attachment, no-store, password, big body, write header). Smoke run: quiet hours active, the scare refused, a backup downloaded, a restore with the pairing refused without confirmation, then staged, then applied on restart.
 - **QLC+ fixture** validates against QLC+'s `fixture.xsd`. **config.txt edits** are correct and idempotent on pi-gen's stock file. shellcheck is clean.
 
 **Untested** (no Pi, no mpv, no Docker here):
@@ -423,6 +477,7 @@ Node 20.19+ to run, 22.12+ for the tests. On macOS keep `RUNTIME_DIRECTORY` shor
 - The image build, first boot on each board, and `install.sh` on Raspberry Pi OS.
 - mpv on the Pi: DRM output as non-root, `HDMI-A-1`, hardware decoding per board, **the real seam times**, and mirror CPU cost.
 - CEC with a real projector (including the `pwr-state:` output format), relay switching, IR send and learn, gpiomon, gpioset and gpio-ir on hardware, and the Pi 5 GPIO/PWM overlays.
+- `videofx-update` end to end (GitHub download with a token, maintenance reboot and resume, rollback), `make-release.sh` from a clean checkout.
 - The first-boot repartitioning (`videofx-storage`), overlayroot with `recurse=0` on a real card, maintenance mode, fsck after a real power cut, timesyncd with DHCP NTP, Wi-Fi power save and route metrics, the hardware watchdog and `systemd-notify` pings under systemd.
 - The Amp4 on each board and powering a Pi 5; fans, tach and DS18B20 on real hardware; the fbdev blank turning HDMI off.
 - Apple Home pairing, the Scare switch in Home automations, the Occupancy and Temperature endpoints in Home, avahi and matter.js together, UniFi behaviour, and sACN from QLC+, xLights or FPP over Wi-Fi.

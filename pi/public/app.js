@@ -247,6 +247,7 @@ async function refreshSettings() {
   renderSettings(settingsData);
   renderScare();
   renderSchedule();
+  renderQuiet();
   $("ir-code").value = setting("irPowerCode") ?? "";
 }
 
@@ -423,6 +424,8 @@ function renderSystem(st) {
     );
   }
   if (sto?.state && sto.state !== "ok") notes.push(`Power-cut protection: ${sto.state}.`);
+  if (st.web && !st.web.passwordSet) notes.push("No password: anyone on this network can control VideoFX and download its pairing keys. Set one in Settings > Web page.");
+  if (st.quiet?.active) $("scare-state").textContent += ` · quiet hours (volume ≤ ${st.quiet.cap}%${st.quiet.noScares ? ", no scares" : ""})`;
   if (st.clock && !st.clock.synced) notes.push("Time not synced yet: the schedule and sunset wait until the Pi has the correct time from the network.");
   $("system-banner").hidden = notes.length === 0;
   $("system-banner").replaceChildren(...notes.map((n) => el("p", {}, n)));
@@ -432,6 +435,13 @@ function renderSystem(st) {
   const wifi = w.connected ? `Wi-Fi "${w.ssid}" ${w.band}, ${w.signalDbm} dBm (${w.quality}%, ${w.verdict})` : "Wi-Fi not connected";
   $("network-state").textContent = n.ethernet ? `Network: Ethernet (preferred) · ${wifi}` : `Network: ${wifi}`;
   if (st.schedule?.waitingForClock) $("schedule-next").textContent = "Schedule waiting for the network time.";
+  const v = st.version;
+  if (v) {
+    const base = `VideoFX ${v.version}${v.sha ? ` (${v.sha})` : ""}`;
+    $("version").textContent = v.available
+      ? `${base} · update available: ${v.latest}. Run "sudo videofx-update" on the Pi.`
+      : `${base}${v.checkedAt ? ` · up to date as of ${new Date(v.checkedAt).toLocaleDateString()}` : ""}`;
+  }
 }
 
 function renderCooling(t) {
@@ -541,6 +551,69 @@ function renderSchedule() {
     lat === null || lon === null ? "For sunset, set Latitude and Longitude in Settings > Schedule." : `Sunset for ${lat}, ${lon}. Days with no sunset (polar summer or winter) have no on time.`;
 }
 
+// --- quiet hours
+
+function renderQuiet() {
+  const qh = setting("quietHours");
+  if (!qh || document.activeElement?.closest?.("#quiet-days")) return;
+  $("quiet-enabled").checked = qh.enabled;
+  $("quiet-cap").value = qh.volumeCap;
+  $("quiet-noscares").checked = qh.disableScares;
+  $("quiet-dmx").checked = qh.dmxBypass;
+  $("quiet-days").replaceChildren(
+    ...Object.keys(DAY_NAMES).map((d) => {
+      const row = el("tr", {}, el("td", {}, DAY_NAMES[d]), el("td", {}, el("input", { type: "time", value: qh.days[d].start })), el("td", {}, el("input", { type: "time", value: qh.days[d].end })));
+      row.dataset.day = d;
+      return row;
+    }),
+  );
+}
+
+async function saveQuiet() {
+  const days = {};
+  for (const row of $("quiet-days").children) {
+    const [start, end] = row.querySelectorAll("input");
+    days[row.dataset.day] = { start: start.value, end: end.value };
+  }
+  const value = {
+    enabled: $("quiet-enabled").checked,
+    volumeCap: Number($("quiet-cap").value || 0),
+    disableScares: $("quiet-noscares").checked,
+    dmxBypass: $("quiet-dmx").checked,
+    days,
+  };
+  await changeSetting("PUT", { key: "quietHours", label: "Quiet hours" }, { value });
+}
+
+// --- restore
+
+let restoreData = null;
+
+async function pickRestore(file) {
+  restoreData = null;
+  $("restore-panel").hidden = true;
+  if (!file) return;
+  const data = JSON.parse(await file.text());
+  if (data.format !== "videofx-backup") throw new Error("That is not a VideoFX backup file.");
+  restoreData = data;
+  const matterFiles = Object.keys(data.matter ?? {}).length;
+  $("restore-info").textContent = `Backup of ${data.device ?? "a VideoFX"} from ${data.createdAt ? new Date(data.createdAt).toLocaleString() : "?"}${matterFiles ? "" : " (no Matter pairing in it)"}.`;
+  $("restore-matter").checked = false;
+  $("restore-matter").disabled = matterFiles === 0;
+  $("restore-panel").hidden = false;
+}
+
+async function doRestore() {
+  const includeMatter = $("restore-matter").checked;
+  const msg = includeMatter
+    ? "Restore settings, playlist AND the Matter pairing? Only do this on the same Pi, or if the old one is gone for good. The service restarts."
+    : "Restore settings and playlist? This Pi keeps its own Matter pairing. The service restarts.";
+  if (!confirm(msg)) return;
+  await api("/api/restore", json("POST", { backup: restoreData, includeMatter, confirmMatter: includeMatter }));
+  toast("Restored. Restarting… this page reloads by itself.");
+  setTimeout(() => location.reload(), 10_000);
+}
+
 async function saveSchedule() {
   const days = {};
   for (const row of $("sched-days").children) {
@@ -593,6 +666,9 @@ $("scare-save").addEventListener("click", () =>
   }),
 );
 $("sched-save").addEventListener("click", () => run(saveSchedule));
+$("quiet-save").addEventListener("click", () => run(saveQuiet));
+$("restore-file").addEventListener("change", (e) => run(() => pickRestore(e.target.files[0])));
+$("restore-go").addEventListener("click", () => run(doRestore));
 $("ir-learn").addEventListener("click", () =>
   run(async () => {
     $("ir-learn").disabled = true;

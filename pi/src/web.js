@@ -68,12 +68,12 @@ function send(res, status, body, type = "application/json; charset=utf-8") {
   res.end(data);
 }
 
-async function readJson(req) {
+async function readJson(req, limit = JSON_LIMIT) {
   let size = 0;
   const chunks = [];
   for await (const chunk of req) {
     size += chunk.length;
-    if (size > JSON_LIMIT) throw new HttpError(413, "request too large");
+    if (size > limit) throw new HttpError(413, "request too large");
     chunks.push(chunk);
   }
   try {
@@ -182,6 +182,16 @@ export function createWebServer(o) {
         o.playlistChanged();
         return send(res, 200, { deleted: name });
       }
+    }
+    if (method === "GET" && path === "/api/backup") {
+      // Sensitive (Matter keys, password hash): behind the password when one is
+      // set, and never cached.
+      const backup = await o.backup();
+      res.setHeader("content-disposition", `attachment; filename="${backup.device}-backup-${backup.createdAt.slice(0, 10)}.json"`);
+      return send(res, 200, backup);
+    }
+    if (method === "POST" && path === "/api/restore") {
+      return send(res, 200, await o.restore(await readJson(req, 24 * 1024 * 1024)));
     }
     if (method === "POST" && path === "/api/scare") {
       await readJson(req);

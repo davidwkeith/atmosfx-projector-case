@@ -40,9 +40,18 @@ fi
 node --version
 
 echo "== app -> $app"
-rm -rf "$app/src" "$app/public"
+rm -rf "$app/src" "$app/public" "$app/system"
 install -d "$app"
-cp -r "$src/src" "$src/public" "$src/package.json" "$src/package-lock.json" "$app/"
+# system/ too, so videofx-update --rollback can restore the matching unit files.
+cp -r "$src/src" "$src/public" "$src/system" "$src/package.json" "$src/package-lock.json" "$app/"
+# version.json (package version + git sha) comes with releases and images; from a
+# git checkout, bake the sha here.
+if [ -f "$src/version.json" ]; then
+  cp "$src/version.json" "$app/"
+else
+  sha=$(git -C "$src" rev-parse --short HEAD 2>/dev/null || echo unknown)
+  printf '{"version":"%s","sha":"%s"}\n' "$(node -p "require('$src/package.json').version")" "$sha" >"$app/version.json"
+fi
 (cd "$app" && npm ci --omit=dev --no-audit --no-fund)
 
 echo "== systemd units"
@@ -57,6 +66,9 @@ install -m 644 "$src/system/99-videofx.rules" /etc/udev/rules.d/99-videofx.rules
 install -m 644 "$src/system/videofx-storage.service" /etc/systemd/system/videofx-storage.service
 install -m 755 "$src/system/videofx-storage" /usr/local/sbin/videofx-storage
 install -m 755 "$src/system/videofx-maint" /usr/local/sbin/videofx-maint
+install -m 755 "$src/system/videofx-update" /usr/local/sbin/videofx-update
+install -m 644 "$src/system/videofx-update-resume.service" /etc/systemd/system/videofx-update-resume.service
+systemctl enable videofx-update-resume.service
 systemctl enable videofx-hostname.service videofx-player.service avahi-daemon.service
 
 echo "== reliability: watchdog, Wi-Fi power save off, Ethernet first, NTP"

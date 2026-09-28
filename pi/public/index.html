@@ -91,6 +91,21 @@
       <div class="actions"><button id="sched-save" type="button" class="primary">Save schedule</button></div>
     </section>
 
+    <section aria-labelledby="h-quiet">
+      <h2 id="h-quiet">Quiet hours</h2>
+      <p class="hint">While quiet, the volume is capped (0 mutes) and scares can be off, whoever asks: this page, Home, the schedule, the motion sensor. An end earlier than the start runs past midnight.</p>
+      <label class="check"><input id="quiet-enabled" type="checkbox"> Use quiet hours</label>
+      <table class="sched">
+        <thead><tr><th>Day</th><th>From</th><th>Until</th></tr></thead>
+        <tbody id="quiet-days"></tbody>
+      </table>
+      <label class="title" for="quiet-cap">Volume cap (%)</label>
+      <input id="quiet-cap" type="number" min="0" max="100" step="1" inputmode="numeric">
+      <label class="check"><input id="quiet-noscares" type="checkbox"> No scares during quiet hours</label>
+      <label class="check"><input id="quiet-dmx" type="checkbox"> DMX ignores quiet hours</label>
+      <div class="actions"><button id="quiet-save" type="button" class="primary">Save quiet hours</button></div>
+    </section>
+
     <section aria-labelledby="h-projector">
       <h2 id="h-projector">Projector IR code</h2>
       <p class="hint">For projector power "relay-ir". Point the remote at the IR receiver and press its power button after choosing Learn.</p>
@@ -125,6 +140,19 @@
       </details>
     </section>
 
+    <section aria-labelledby="h-backup">
+      <h2 id="h-backup">Backup</h2>
+      <p class="hint">One file with the settings, schedule, quiet hours, playlist and Matter pairing (not the videos). It contains the pairing keys and the password hash: keep it private.</p>
+      <div class="actions"><a id="backup-download" class="button" href="/api/backup" download>Download backup</a></div>
+      <label class="upload"><span>Restore from a backup file</span><input id="restore-file" type="file" accept=".json,application/json"></label>
+      <div id="restore-panel" hidden>
+        <p id="restore-info" class="hint"></p>
+        <label class="check"><input id="restore-matter" type="checkbox"> Also restore the Matter pairing</label>
+        <p class="warn-box">Only restore the pairing onto the same Pi, or when the old Pi is gone for good. Two devices with one Matter identity confuse Apple Home and both misbehave. Without it, this Pi keeps its own pairing (pair it again if it's new).</p>
+        <button id="restore-go" type="button" class="primary">Restore</button>
+      </div>
+    </section>
+
     <section aria-labelledby="h-matter">
       <h2 id="h-matter">Matter</h2>
       <div id="unpaired" hidden>
@@ -143,6 +171,7 @@
     </section>
   </main>
 
+  <footer id="version" class="hint"></footer>
   <p id="toast" role="status" aria-live="polite" hidden></p>
 </body>
 </html>
