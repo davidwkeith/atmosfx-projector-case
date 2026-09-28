@@ -409,6 +409,29 @@ function renderLive(st) {
 
   renderCooling(st.thermal);
   renderDmx(dmx);
+  renderSystem(st);
+}
+
+function renderSystem(st) {
+  const notes = [];
+  const sto = st.storage;
+  if (sto && (sto.maintenance || !sto.dataMounted)) {
+    notes.push(
+      sto.maintenance
+        ? `Maintenance mode: the system is writable${sto.rebootPending ? " (protection returns after a reboot)" : ""}. A power cut now can damage the SD card. Run "sudo videofx-maint off" when done.`
+        : "The data partition is not mounted: settings and videos may not survive a restart.",
+    );
+  }
+  if (sto?.state && sto.state !== "ok") notes.push(`Power-cut protection: ${sto.state}.`);
+  if (st.clock && !st.clock.synced) notes.push("Time not synced yet: the schedule and sunset wait until the Pi has the correct time from the network.");
+  $("system-banner").hidden = notes.length === 0;
+  $("system-banner").replaceChildren(...notes.map((n) => el("p", {}, n)));
+
+  const n = st.network ?? {};
+  const w = n.wifi ?? {};
+  const wifi = w.connected ? `Wi-Fi "${w.ssid}" ${w.band}, ${w.signalDbm} dBm (${w.quality}%, ${w.verdict})` : "Wi-Fi not connected";
+  $("network-state").textContent = n.ethernet ? `Network: Ethernet (preferred) · ${wifi}` : `Network: ${wifi}`;
+  if (st.schedule?.waitingForClock) $("schedule-next").textContent = "Schedule waiting for the network time.";
 }
 
 function renderCooling(t) {

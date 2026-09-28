@@ -1,0 +1,16 @@
+# First boot only: data partition + read-only root, then one reboot.
+[Unit]
+Description=VideoFX power-cut protection (data partition, read-only root)
+After=local-fs.target videofx-hostname.service
+Before=videofx-player.service
+ConditionPathExists=!/var/lib/videofx-storage.state
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/videofx-storage
+# Reboot so the overlay and the data mounts take effect (only if it succeeded).
+ExecStartPost=/bin/sh -c 'grep -qx ok /var/lib/videofx-storage.state && systemctl reboot --no-block || true'
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

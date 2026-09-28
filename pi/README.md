@@ -14,7 +14,7 @@ It also:
 
 A web page on your LAN (`http://videofx-xxxx.local/`) handles videos, the playlist, scare clips, the schedule and every setting.
 
-**Status: untested on hardware.** The logic is unit tested (381 tests). The whole service was run on a Mac against a fake mpv, with real UDP sACN. Nothing has run on a Pi, the image has not been built, and nothing has been paired with Apple Home. See [What is verified](#what-is-verified).
+**Status: untested on hardware.** The logic is unit tested (398 tests). The whole service was run on a Mac against a fake mpv, with real UDP sACN. Nothing has run on a Pi, the image has not been built, and nothing has been paired with Apple Home. See [What is verified](#what-is-verified).
 
 ## How it works
 
@@ -62,13 +62,17 @@ pi/
   src/pir.js           PIR input via gpiomon
   src/dmx.js           sACN (E1.31) receiver, merge, fixture map, DMX hand-over
   src/thermal.js       fan curves, DS18B20, over-temperature and fan-failure logic, PWM and tach
+  src/fsutil.js        durable atomic writes (temp, fsync, rename, fsync dir)
+  src/watchdog.js      systemd READY/WATCHDOG pings
+  src/system.js        clock sync, Wi-Fi link, power-cut protection status
   src/media.js, playlist-core.js, web.js, qr.js, screen.js, volume.js
   public/              web page (plain HTML/CSS/JS)
-  system/              systemd units, udev rules, avahi service, asound.conf, videofx.default, setup.sh
+  system/              systemd units, udev rules, avahi service, asound.conf, videofx.default, setup.sh,
+                       videofx-storage (+ .service), videofx-maint, NetworkManager/timesyncd/watchdog config
   image/               pi-gen build (build.sh, stage-videofx/)
   dmx/DIY-VideoFX-Player.qxf   QLC+ fixture
   tools/sacn-send.mjs  tiny sACN sender for testing; gen-default.mjs regenerates videofx.default
-  test/                Vitest (381 tests), test/fixtures/fake-mpv.mjs
+  test/                Vitest (398 tests), test/fixtures/fake-mpv.mjs
   install.sh, config.example
 ```
 
@@ -96,6 +100,64 @@ ssh you@raspberrypi.local 'cd videofx-setup && sudo ./install.sh && sudo reboot'
 - installs the app, udev rules for CEC, lirc, GPIO, PWM and fb blank, and the systemd units;
 - disables the tty1 login prompt;
 - edits `config.txt` (see [GPIO pins](#gpio-pins-and-wiring)). It is idempotent.
+
+## Reliability
+
+The case lives on an outdoor extension cord that will get unplugged.
+
+### Power-cut safety
+
+- **Read-only root.** The system partition runs read-only under an overlay. Changes go to RAM and vanish at reboot, so a power cut can't corrupt the OS.
+  - It uses Debian's `overlayroot`, the same mechanism as `raspi-config nonint do_overlayfs` on trixie. That was checked in raspi-config's trixie source.
+  - The kernel flag is `overlayroot=tmpfs:recurse=0`. raspi-config uses the default `recurse=1`, which would also make the data partition read-only, so writes to it would vanish at reboot (checked in overlayroot's docs).
+  - The overlay needs at least 512 MB of RAM (raspi-config's own limit), so the Zero 2 W just qualifies.
+- **Data partition.** `/srv/videofx` is ext4, labelled `videofx-data`. It holds everything that must persist, through bind mounts:
+  - `/var/lib/videofx`: settings, Matter pairing, last power state;
+  - `~/media`: videos and the playlist;
+  - `/var/lib/systemd/timesync`: the saved clock.
+- **Mount options:** `noatime,commit=5,errors=remount-ro` in the default `data=ordered` mode, with fsck at boot (fstab pass 2; `fsck.repair=yes` is already on `cmdline.txt`).
+  - Why not `data=journal`? Every write here, from us, matter.js or timesyncd, is write-temp-then-rename. `data=ordered` plus ext4's `auto_da_alloc` puts the data on disk before the rename is committed, so a power cut leaves the old file or the new one.
+  - `data=journal` would write every multi-GB video upload twice (slower, more SD wear) without adding safety for that pattern.
+  - `commit=5` bounds loss to 5 s for anything not fsynced; `errors=remount-ro` stops writing on corruption.
+- **Our own writes** (settings.json, player state, playlists, uploads) all go: temp file, fsync, rename, fsync of the folder (`src/fsutil.js`).
+- **Sizes.** On first boot `videofx-storage` grows the root partition to `ROOT_SIZE_MB`, makes the data partition from the rest of the card (at least `DATA_MIN_MB`), turns the overlay on and reboots once. Both sizes are in `pi/config`; defaults 6144 and 1024. The image disables Pi OS's own "grow root over the whole card" (`resize` / `rpi-resize`).
+- **install.sh on an existing Pi:** Pi OS has usually already grown root over the whole card, and a mounted root can't shrink, so the page reports "no-space" and protection stays off. Fix: flash a fresh card, and before its first boot remove the word ` resize` from `cmdline.txt` on the boot partition. Then run install.sh.
+- **OS updates: maintenance mode.**
+
+  ```sh
+  sudo videofx-maint on && sudo reboot      # root writable; the page shows a warning banner
+  sudo apt update && sudo apt full-upgrade  # or edit /etc/default/videofx, Wi-Fi, ...
+  sudo videofx-maint off && sudo reboot     # protected again
+  videofx-maint status
+  ```
+
+  With the overlay on, edits to `/etc` (including `/etc/default/videofx` and NetworkManager Wi-Fi profiles) are lost at reboot. Use maintenance mode for those, or the web page, whose settings live on the data partition.
+- **Logs** are kept in RAM while protected. `journalctl` works until the next reboot.
+
+### Time (no RTC)
+
+The Pi 3, 4 and Zero 2 W have no real-time clock, so after a power cut the clock starts wrong.
+
+- **Gating.** The schedule and sunset don't act until `systemd-timesyncd` has synchronised (it touches `/run/systemd/timesync/synchronized`, per its man page). Until then the page says **"Time not synced"**. When sync arrives, the schedule plans from the real time and doesn't replay what it missed.
+- **Monotonic clock.** timesyncd saves the time to `/var/lib/systemd/timesync/clock` and never boots behind it. That file is on the data partition, so it survives the read-only root. This is the built-in equivalent of fake-hwclock, which Pi OS Lite doesn't ship.
+- **Servers.** NTP servers from DHCP come first, then `pool.ntp.org`. NetworkManager passes DHCP option 42 to a dispatcher script (`DHCP4_NTP_SERVERS`), which writes a runtime timesyncd drop-in. On UniFi, set it in the network's DHCP options under **NTP Server (Option 42)** ([UniFi DHCP Server](https://help.ui.com/hc/en-us/articles/360012097513-UniFi-DHCP-Server)). The gateway's own address works if it serves NTP.
+- **Pi 5 (optional):** it has an RTC. Add the official rechargeable battery on the **J5** connector to keep time across power cuts, and enable charging with `dtparam=rtc_bbat_vchg=3000000` in config.txt ([Raspberry Pi RTC docs](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/raspberry-pi/rtc.adoc)). Don't fit a non-rechargeable cell. The time gate still applies.
+
+### Wi-Fi
+
+- **Power save is off** (NetworkManager `wifi.powersave=2`); it causes latency spikes and missed mDNS/Matter traffic.
+- **Ethernet is preferred** when plugged in (route metric 100 vs 600), and Wi-Fi stays up as a fallback.
+- The page shows the SSID, signal (dBm and %), a verdict and the band.
+- **Bands:** the Pi 3B+, 4B and 5 are dual-band (2.4/5 GHz). The **Pi 3B and Zero 2 W are 2.4 GHz only** ([Raspberry Pi specs](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/raspberry-pi/introduction.adoc)), so the SSID must offer 2.4 GHz.
+- **UniFi placement.** An outdoor case sits at ground level, often behind a wall, so give it a real AP view: an outdoor AP or a window-facing one, or Ethernet if you can. Aim for better than **-70 dBm** at the Pi. Ubiquiti's guide calls -60 to -70 acceptable and warns of drops below -80 ([WiFi Troubleshooting Guide](https://help.ui.com/hc/en-us/articles/32064585817495)). Caveats:
+  - **Minimum RSSI** disconnects clients below a threshold, and some devices refuse to reconnect after being kicked repeatedly ([Minimum RSSI](https://help.ui.com/hc/en-us/articles/221321728-Understanding-and-Implementing-Minimum-RSSI), [SSID settings](https://help.ui.com/hc/en-us/articles/32065480092951-UniFi-WiFi-SSID-and-AP-Settings-Overview)). Leave it off on the APs that cover the case, or set it well below the Pi's signal.
+  - **Band Steering** nudges clients from 2.4 GHz to 5 GHz with BSS transition frames. At the edge of coverage 2.4 GHz often reaches further. If a dual-band Pi keeps hopping, give it a 2.4 GHz-only SSID; a 3B or Zero 2 W ignores steering anyway.
+
+### Hang recovery
+
+- **Hardware watchdog:** `RuntimeWatchdogSec=14s` in `/etc/systemd/system.conf.d/`. systemd pets the Broadcom watchdog, and if the kernel or systemd hangs the board resets. 14 s stays under the chip's roughly 15 s limit.
+- **Service watchdog:** `videofx-player` is `Type=notify` with `WatchdogSec=30`. It sends `READY=1` once Matter is online, then `WATCHDOG=1` every 15 s from the main event loop, but only while healthy. It stops pinging if the loop was blocked for more than 5 s, and systemd then restarts it.
+- Node can't write to the notify socket without a native addon, so pings go through `systemd-notify` with `NotifyAccess=all`. Crediting that short-lived helper's message to our unit needs kernel ≥ 6.5 and systemd ≥ 254, which trixie has; on older systems the pings may be lost. At most one helper runs at a time.
 
 ## Videos, playlist, scare mode
 
@@ -312,6 +374,10 @@ vcgencmd get_throttled                 # under-voltage (Pi 5 on the Amp4)
 - **mpv errors about the DRM device on a Pi 5:** add `--drm-device=/dev/dri/card1` in Settings > Advanced.
 - **Stutter on a Pi 3 or Zero 2 W:** re-encode (above), or add `--hwdec=v4l2m2m-copy`.
 
+## License
+
+The software in `pi/` is MIT (see `pi/LICENSE`). The case design in the rest of the repository is CC BY-SA 4.0.
+
 ## Development
 
 ```sh
@@ -349,6 +415,7 @@ Node 20.19+ to run, 22.12+ for the tests. On macOS keep `RUNTIME_DIRECTORY` shor
   - DMX takeover (web power and volume refused with 409, live values shown), Stream_Terminated, then hand-back after the hold;
   - the page at phone width.
 - The smoke run found and fixed two real bugs: interleaved mpv commands from quick reloads, and banners that ignored `hidden`.
+- **Reliability:** durable writes (the call order is tested, and the files were written on disk); watchdog pinging (interval, READY once, stops while unhealthy, no pile-up); schedule gated on clock sync; Wi-Fi and storage-status parsers. Checked against the sources: raspi-config trixie (`overlayroot`), overlayroot's `recurse` option, the timesyncd `synchronized` file and drop-in dirs (systemd v257 man pages), NetworkManager's `DHCP4_*` dispatcher variables and its `ntp_servers` request, the UniFi DHCP option 42, Raspberry Pi board bands and the Pi 5 RTC battery.
 - **QLC+ fixture** validates against QLC+'s `fixture.xsd`. **config.txt edits** are correct and idempotent on pi-gen's stock file. shellcheck is clean.
 
 **Untested** (no Pi, no mpv, no Docker here):
@@ -356,5 +423,6 @@ Node 20.19+ to run, 22.12+ for the tests. On macOS keep `RUNTIME_DIRECTORY` shor
 - The image build, first boot on each board, and `install.sh` on Raspberry Pi OS.
 - mpv on the Pi: DRM output as non-root, `HDMI-A-1`, hardware decoding per board, **the real seam times**, and mirror CPU cost.
 - CEC with a real projector (including the `pwr-state:` output format), relay switching, IR send and learn, gpiomon, gpioset and gpio-ir on hardware, and the Pi 5 GPIO/PWM overlays.
+- The first-boot repartitioning (`videofx-storage`), overlayroot with `recurse=0` on a real card, maintenance mode, fsck after a real power cut, timesyncd with DHCP NTP, Wi-Fi power save and route metrics, the hardware watchdog and `systemd-notify` pings under systemd.
 - The Amp4 on each board and powering a Pi 5; fans, tach and DS18B20 on real hardware; the fbdev blank turning HDMI off.
 - Apple Home pairing, the Scare switch in Home automations, the Occupancy and Temperature endpoints in Home, avahi and matter.js together, UniFi behaviour, and sACN from QLC+, xLights or FPP over Wi-Fi.

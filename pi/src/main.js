@@ -11,9 +11,10 @@
 
 import { execFile, spawn } from "node:child_process";
 import dgram from "node:dgram";
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync } from "node:fs";
 import { access, readFile, readdir, writeFile } from "node:fs/promises";
 import { hostname } from "node:os";
+import { monitorEventLoopDelay } from "node:perf_hooks";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { DeviceTypeId, Environment, ServerNode, VendorId } from "@matter/main";
@@ -22,6 +23,7 @@ import { OccupancySensorDevice, OnOffPlugInUnitDevice, TemperatureSensorDevice }
 import { QrCode } from "@matter/main/types";
 import { defaultContext, resolveSettings } from "./config.js";
 import { DmxControl, PowerArbiter, SACN_PORT, SacnReceiver, fixtureValues, interpret, multicastGroup } from "./dmx.js";
+import { writeFileAtomicSync } from "./fsutil.js";
 import { GpioOut, gpiosetArgs } from "./gpio.js";
 import { Ir, lircFeatures } from "./ir.js";
 import { HttpError, createMediaStore } from "./media.js";
@@ -34,6 +36,8 @@ import { qrTextToSvg } from "./qr.js";
 import { Scheduler } from "./schedule.js";
 import { createScreen } from "./screen.js";
 import { Settings } from "./settings.js";
+import { TIMESYNC_FLAG, parseIwLink, parseNmcliDevices, signalVerdict, storageStatus } from "./system.js";
+import { Watchdog } from "./watchdog.js";
 import { OverTempGuard, SysfsPwm, Tach, ThermalControl, parseDs18b20, parseMilli, tachArgs } from "./thermal.js";
 import { Volume, amixerArgs } from "./volume.js";
 import { createWebServer } from "./web.js";
@@ -165,7 +169,7 @@ const player = new Player({
         return undefined;
       }
     },
-    save: (on) => writeFileSync(playerState, JSON.stringify({ on }) + "\n"),
+    save: (on) => writeFileAtomicSync(playerState, JSON.stringify({ on }) + "\n"),
   },
   preflight: () => media.problem({ mode: dmxOverride.mode ?? get("mode"), buffer: get("scareBuffer"), scares: get("scareClips") }),
 });
@@ -284,7 +288,21 @@ startPir();
 
 // --- schedule
 
+// --- clock (no RTC on the Pi 3/4/Zero 2 W): the schedule waits for NTP
+
+const clockSynced = () => existsSync(TIMESYNC_FLAG);
+let wasSynced = clockSynced();
+setInterval(() => {
+  const now = clockSynced();
+  if (now && !wasSynced) {
+    console.info("Clock synchronised: schedule active");
+    scheduler.start();
+  }
+  wasSynced = now;
+}, 15_000).unref();
+
 const scheduler = new Scheduler({
+  clockOk: clockSynced,
   getSchedule: () => get("schedule"),
   getGeo: () => (get("latitude") !== null && get("longitude") !== null ? { lat: get("latitude"), lon: get("longitude") } : null),
   setPower: (on) => requestPower("schedule", on),
@@ -446,6 +464,49 @@ function startThermal() {
 }
 startThermal();
 
+// --- OS status for the page: network, power-cut protection
+
+let network = { wifi: { connected: false }, ethernet: false, active: null };
+async function refreshNetwork() {
+  const out = (cmd, args) => run(cmd, args).then((r) => r.stdout, () => "");
+  const [iw, nm] = await Promise.all([out("iw", ["dev", "wlan0", "link"]), out("nmcli", ["-t", "-f", "DEVICE,TYPE,STATE", "device"])]);
+  const wifi = parseIwLink(iw);
+  network = { wifi: { ...wifi, verdict: signalVerdict(wifi.signalDbm) }, ...parseNmcliDevices(nm) };
+}
+refreshNetwork();
+setInterval(refreshNetwork, 30_000).unref();
+
+let storage = null;
+async function refreshStorage() {
+  const read = (f) => readFile(f, "utf8").catch(() => "");
+  storage = storageStatus({
+    procCmdline: await read("/proc/cmdline"),
+    bootCmdline: (await read("/boot/firmware/cmdline.txt")) || (await read("/boot/cmdline.txt")),
+    procMounts: await read("/proc/mounts"),
+    storageState: await read("/var/lib/videofx-storage.state"),
+  });
+}
+refreshStorage();
+setInterval(refreshStorage, 60_000).unref();
+
+// --- watchdog: systemd restarts us if the event loop stops pinging
+
+const loopDelay = monitorEventLoopDelay({ resolution: 50 });
+loopDelay.enable();
+const watchdog = new Watchdog({
+  watchdogUsec: process.env.WATCHDOG_USEC,
+  // Not under systemd (development): nothing to tell.
+  notify: (message) => (process.env.NOTIFY_SOCKET ? run("systemd-notify", [message], { timeout: 5000 }).then(() => {}) : Promise.resolve()),
+  healthy: () => {
+    const lagMs = loopDelay.max / 1e6;
+    loopDelay.reset();
+    return lagMs > 5000 ? `event loop blocked for ${Math.round(lagMs)} ms` : null;
+  },
+});
+server.lifecycle.online.on(() => {
+  watchdog.ready().catch(() => {});
+});
+
 // --- lifecycle and settings
 
 server.lifecycle.online.on(() => {
@@ -557,7 +618,10 @@ const web = createWebServer({
       projector: projector.state,
       dmx: { enabled: get("dmxEnabled"), inControl: dmx.inControl, values: dmx.values, ...receiver.status() },
       thermal: { enabled: get("thermalEnabled"), ...thermal.state, rpm: lastRpm, sensors: sensorsSeen, tripped: guard.blocked },
-      schedule: { enabled: get("schedule").enabled, next: next && { at: new Date(next.at).toISOString(), on: next.on, label: next.label } },
+      schedule: { enabled: get("schedule").enabled, waitingForClock: scheduler.waitingForClock, next: next && { at: new Date(next.at).toISOString(), on: next.on, label: next.label } },
+      clock: { synced: clockSynced(), now: new Date().toISOString() },
+      network,
+      storage,
       matter: {
         commissioned: server.lifecycle.isCommissioned,
         fabrics: Object.keys(server.state.commissioning.fabrics ?? {}).length,
@@ -615,6 +679,7 @@ await writePower(initial);
 // SIGTERM/SIGINT. While not commissioned it logs the pairing QR code and manual
 // code to stdout, which is the journal under systemd.
 await server.run();
+await watchdog.stopping();
 web.close();
 scheduler.stop();
 pir?.stop();

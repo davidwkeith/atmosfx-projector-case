@@ -147,11 +147,17 @@ export class Scheduler {
   #setTimer;
   #clearTimer;
   #log;
+  #clockOk;
   #timer = null;
   #next = null;
   #lastFired = 0;
 
-  constructor({ getSchedule, getGeo, setPower, now = Date.now, setTimeout: st = setTimeout, clearTimeout: ct = clearTimeout, log = console }) {
+  /**
+   * clockOk: false until the clock is known good (NTP synchronised). No RTC on the
+   * Pi 3/4/Zero 2 W: until then the schedule neither acts nor answers desiredNow().
+   */
+  constructor({ getSchedule, getGeo, setPower, clockOk = () => true, now = Date.now, setTimeout: st = setTimeout, clearTimeout: ct = clearTimeout, log = console }) {
+    this.#clockOk = clockOk;
     this.#getSchedule = getSchedule;
     this.#getGeo = getGeo;
     this.#setPower = setPower;
@@ -165,8 +171,13 @@ export class Scheduler {
     return this.#next;
   }
 
+  get waitingForClock() {
+    return !this.#clockOk();
+  }
+
   /** What the schedule wants right now (its latest past event), or null if it has no opinion. */
   desiredNow() {
+    if (!this.#clockOk()) return null;
     return lastEvent(this.#getSchedule(), this.#now(), this.#getGeo())?.on ?? null;
   }
 
@@ -185,6 +196,13 @@ export class Scheduler {
   #plan() {
     if (this.#timer) this.#clearTimer(this.#timer);
     this.#timer = null;
+    if (!this.#clockOk()) {
+      // Wrong clock: act on nothing; look again in a minute.
+      this.#next = null;
+      this.#timer = this.#setTimer(() => this.start(), 60_000);
+      this.#timer?.unref?.();
+      return;
+    }
     this.#next = nextEvent(this.#getSchedule(), this.#lastFired, this.#getGeo());
     if (!this.#next) return;
     const delay = Math.min(Math.max(0, this.#next.at - this.#now()), 3_600_000);
@@ -195,6 +213,10 @@ export class Scheduler {
   #tick() {
     this.#timer = null;
     const now = this.#now();
+    if (!this.#clockOk()) {
+      this.#lastFired = now;
+      return this.#plan();
+    }
     const due = this.#next;
     if (due && now >= due.at) {
       this.#lastFired = due.at;

@@ -1,0 +1,99 @@
+#!/bin/bash
+# Power-cut protection, run once (first boot of the image, or from install.sh).
+#   1. Grow the root partition to ROOT_SIZE_MB (room for OS updates).
+#   2. Make a data partition (ext4, label videofx-data) from the rest of the card
+#      and mount it at /srv/videofx. Everything that must persist lives there:
+#      /var/lib/videofx (settings, Matter pairing), the media folder with the
+#      playlist, and timesyncd's saved clock.
+#   3. Turn on the read-only root: overlayroot=tmpfs:recurse=0 (recurse=0 keeps
+#      the data partition writable; the default would overlay it too).
+# Then reboots. Writes its result to /var/lib/videofx-storage.state.
+set -euo pipefail
+
+ROOT_SIZE_MB=6144
+DATA_MIN_MB=1024
+# shellcheck source=/dev/null
+[ -r /etc/videofx-storage.conf ] && . /etc/videofx-storage.conf
+state=/var/lib/videofx-storage.state
+say() {
+  echo "$1" >"$state"
+  sync "$state"
+  echo "videofx-storage: $1"
+}
+
+user=${1:-$(getent passwd 1000 | cut -d: -f1)}
+home=$(getent passwd "$user" | cut -d: -f6)
+
+if blkid -L videofx-data >/dev/null 2>&1 && grep -q '/srv/videofx' /etc/fstab; then
+  say ok
+  exit 0
+fi
+
+root_dev=$(findmnt -no SOURCE /)
+root_name=$(basename "$root_dev")
+[ -e "/sys/class/block/$root_name/partition" ] || { say "unexpected storage layout (root is $root_dev)"; exit 0; }
+[ "$(cat "/sys/class/block/$root_name/partition")" = 2 ] || { say "unexpected storage layout (root is not partition 2)"; exit 0; }
+disk_name=$(lsblk -no PKNAME "$root_dev")
+disk=/dev/$disk_name
+part3=${disk}3
+[[ $disk_name =~ [0-9]$ ]] && part3=${disk}p3
+[ -e "$part3" ] && { say "a third partition already exists on $disk; not touching it"; exit 0; }
+
+align=16384 # 8 MiB in 512-byte sectors
+disk_sectors=$(cat "/sys/block/$disk_name/size")
+root_start=$(cat "/sys/class/block/$root_name/start")
+root_end=$((root_start + $(cat "/sys/class/block/$root_name/size")))
+want_end=$((root_start + ROOT_SIZE_MB * 2048))
+bigger=$((root_end > want_end ? root_end : want_end))
+new_root_end=$(((bigger + align - 1) / align * align))
+data_sectors=$((disk_sectors - new_root_end))
+if [ "$data_sectors" -lt $((DATA_MIN_MB * 2048)) ]; then
+  say "no-space: the root partition already fills the card, so there is no room for a data partition (see README, Power-cut safety)"
+  exit 0
+fi
+
+echo "== root: grow partition 2 to $((new_root_end / 2048)) MiB from the start of the card"
+if [ "$new_root_end" -gt "$root_end" ]; then
+  parted -s "$disk" unit s resizepart 2 $((new_root_end - 1))
+  partx -u "$disk" || true
+  resize2fs "$root_dev"
+fi
+
+echo "== data: $part3, $((data_sectors / 2048)) MiB"
+parted -s "$disk" unit s mkpart primary ext4 "$new_root_end" 100%
+partx -a "$disk" 2>/dev/null || partx -u "$disk"
+udevadm settle
+mkfs.ext4 -F -q -L videofx-data "$part3"
+
+mkdir -p /srv/videofx
+mount "$part3" /srv/videofx
+install -d -m 700 -o "$user" /srv/videofx/state
+install -d -m 755 -o "$user" -g "$(id -gn "$user")" /srv/videofx/media
+install -d -m 755 -o systemd-timesync -g systemd-timesync /srv/videofx/timesync 2>/dev/null || install -d -m 755 /srv/videofx/timesync
+# Carry over anything already there (install.sh on a used Pi).
+[ -d /var/lib/videofx ] && cp -a /var/lib/videofx/. /srv/videofx/state/ || true
+[ -d "$home/media" ] && cp -a "$home/media/." /srv/videofx/media/ || true
+[ -d /var/lib/systemd/timesync ] && cp -a /var/lib/systemd/timesync/. /srv/videofx/timesync/ || true
+sync
+umount /srv/videofx
+mkdir -p /var/lib/videofx "$home/media" /var/lib/systemd/timesync
+
+# ext4 in the default data=ordered mode with auto_da_alloc: file data reaches the
+# disk before the metadata that points at it, so write-temp-then-rename (what the
+# service, matter.js and timesyncd do) leaves the old or the new file after a
+# power cut. The service also fsyncs. data=journal would write every upload twice
+# (GB-sized videos, SD wear) for no extra safety with that pattern.
+# commit=5: at most 5 s of un-fsynced changes lost. errors=remount-ro: stop
+# writing on corruption. Pass 2: fsck at boot (fsck.repair=yes on cmdline.txt).
+sed -i '/videofx-data\|\/srv\/videofx/d' /etc/fstab
+cat >>/etc/fstab <<FSTAB
+LABEL=videofx-data /srv/videofx ext4 defaults,noatime,commit=5,errors=remount-ro,x-systemd.device-timeout=30s 0 2
+/srv/videofx/state /var/lib/videofx none bind,x-systemd.requires-mounts-for=/srv/videofx 0 0
+/srv/videofx/media $home/media none bind,x-systemd.requires-mounts-for=/srv/videofx 0 0
+/srv/videofx/timesync /var/lib/systemd/timesync none bind,x-systemd.requires-mounts-for=/srv/videofx 0 0
+FSTAB
+systemctl daemon-reload
+
+echo "== read-only root (overlay)"
+/usr/local/sbin/videofx-maint off --no-reboot-hint
+say ok

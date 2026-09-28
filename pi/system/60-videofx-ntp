@@ -1,0 +1,20 @@
+#!/bin/sh
+# /etc/NetworkManager/dispatcher.d/60-videofx-ntp
+# NTP servers from DHCP (option 42; a UniFi gateway sets it under the network's
+# DHCP options) go to systemd-timesyncd, ahead of pool.ntp.org.
+# NetworkManager passes them as DHCP4_NTP_SERVERS.
+case "$2" in
+  up | dhcp4-change) ;;
+  *) exit 0 ;;
+esac
+dir=/run/systemd/timesyncd.conf.d
+mkdir -p "$dir"
+if [ -n "${DHCP4_NTP_SERVERS:-}" ]; then
+  printf '[Time]\nNTP=%s\n' "$DHCP4_NTP_SERVERS" >"$dir/60-videofx-dhcp.conf.new"
+  if ! cmp -s "$dir/60-videofx-dhcp.conf.new" "$dir/60-videofx-dhcp.conf"; then
+    mv "$dir/60-videofx-dhcp.conf.new" "$dir/60-videofx-dhcp.conf"
+    systemctl try-restart systemd-timesyncd.service
+  else
+    rm -f "$dir/60-videofx-dhcp.conf.new"
+  fi
+fi

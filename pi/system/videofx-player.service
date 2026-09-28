@@ -2,10 +2,17 @@
 [Unit]
 Description=VideoFX player (Matter device driving mpv, projector power, web UI)
 Wants=network-online.target
-After=network-online.target sound.target videofx-hostname.service
+After=network-online.target sound.target videofx-hostname.service videofx-storage.service
+# Settings, pairing and videos live on the data partition (bind mounts).
+RequiresMountsFor=/var/lib/videofx MEDIA_DIR
 
 [Service]
-Type=simple
+# notify: READY=1 once Matter is online, then WATCHDOG=1 from the main loop.
+# The pings come from a short-lived systemd-notify, hence NotifyAccess=all.
+Type=notify
+NotifyAccess=all
+WatchdogSec=30
+TimeoutStartSec=120
 User=pi
 # DRM/KMS output, hardware decode, CEC and IR (video), ALSA, tty1 for the
 # black/pairing screen, and GPIO (PIR, relay).

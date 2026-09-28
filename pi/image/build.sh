@@ -50,6 +50,10 @@ umask 077
 } > "$files/videofx.env"
 umask 022
 
+# Partition sizes for the first-boot storage setup: root grows to ROOT_SIZE_MB,
+# the data partition takes the rest of the card (at least DATA_MIN_MB).
+printf 'ROOT_SIZE_MB=%d\nDATA_MIN_MB=%d\n' "${ROOT_SIZE_MB:-6144}" "${DATA_MIN_MB:-1024}" >"$files/videofx-storage.conf"
+
 if [ -n "${WIFI_SSID:-}" ]; then
   umask 077
   cat > "$files/wifi.nmconnection" <<EOF

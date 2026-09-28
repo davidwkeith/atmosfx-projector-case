@@ -20,6 +20,11 @@ WPA_COUNTRY=US
 WIFI_SSID='MyNetwork'
 WIFI_PSK='my-wifi-password'
 
+# --- Power-cut protection: on first boot the root partition grows to this size
+# (room for OS updates) and a data partition fills the rest of the card.
+ROOT_SIZE_MB=6144
+DATA_MIN_MB=1024
+
 # --- /etc/default/videofx on the image
 # State after power loss: last | on | off
 VIDEOFX_RESTORE=last

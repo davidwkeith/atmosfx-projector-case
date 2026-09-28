@@ -3,11 +3,12 @@
 // the media folder.
 
 import { createWriteStream, lstatSync, readFileSync } from "node:fs";
-import { lstat, mkdir, readFile, readdir, rename, statfs, unlink, writeFile } from "node:fs/promises";
+import { lstat, mkdir, readFile, readdir, statfs, unlink } from "node:fs/promises";
 import { randomBytes } from "node:crypto";
 import { dirname, join, resolve as resolvePath, sep } from "node:path";
 import { Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
+import { commitFile, writeFileAtomic } from "./fsutil.js";
 import {
   enabledCount,
   isMediaFile,
@@ -63,11 +64,8 @@ export function createMediaStore({ dir, playlist, maxUploadBytes: limit = 4 * 10
     return valid;
   }
 
-  async function atomicWrite(path, data) {
-    const tmp = join(dirname(path), `.tmp-${randomBytes(6).toString("hex")}`);
-    await writeFile(tmp, data);
-    await rename(tmp, path);
-  }
+  // Durable: temp file, fsync, rename, fsync of the folder (power cuts).
+  const atomicWrite = (path, data) => writeFileAtomic(path, data);
 
   return {
     root,
@@ -147,7 +145,7 @@ export function createMediaStore({ dir, playlist, maxUploadBytes: limit = 4 * 10
       });
       try {
         await pipeline(stream, limit, createWriteStream(tmp, { flags: "wx" }));
-        await rename(tmp, path);
+        await commitFile(tmp, path); // fsync, rename, fsync of the folder
       } catch (err) {
         await unlink(tmp).catch(() => {});
         throw err;

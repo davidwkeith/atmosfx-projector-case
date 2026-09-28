@@ -177,3 +177,47 @@ describe("desired state now (for handing back from DMX)", () => {
     vi.useRealTimers();
   });
 });
+
+describe("clock gating (no RTC)", () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it("does nothing until the clock is synchronised, then plans from the real time without replaying", async () => {
+    vi.setSystemTime(new Date(2026, 0, 1, 12, 0)); // fake-hwclock / last saved time: wrong
+    let synced = false;
+    const calls = [];
+    const s = new Scheduler({
+      getSchedule: () => week("18:00", "23:00"),
+      getGeo: () => null,
+      setPower: (on) => calls.push([local(new Date()), on]),
+      clockOk: () => synced,
+      log: { info() {}, warn() {}, error() {} },
+    });
+    s.start();
+    expect(s.next).toBeNull();
+    expect(s.waitingForClock).toBe(true);
+    expect(s.desiredNow()).toBeNull();
+    await vi.advanceTimersByTimeAsync(10 * 3600_000); // a whole evening passes on the wrong clock
+    expect(calls).toEqual([]);
+    vi.setSystemTime(new Date(2026, 9, 30, 20, 0)); // NTP steps the clock
+    synced = true;
+    await vi.advanceTimersByTimeAsync(60_000); // the one-minute re-check notices
+    expect(s.waitingForClock).toBe(false);
+    expect(local(new Date(s.next.at))).toBe("2026-10-30 23:00");
+    expect(calls).toEqual([]); // 18:00 today is not replayed
+    expect(s.desiredNow()).toBe(true);
+    await vi.advanceTimersByTimeAsync(3 * 3600_000);
+    expect(calls).toEqual([["2026-10-30 23:00", false]]);
+  });
+
+  it("stops acting if the sync flag goes away", async () => {
+    vi.setSystemTime(new Date(2026, 9, 30, 17, 0));
+    let synced = true;
+    const calls = [];
+    const s = new Scheduler({ getSchedule: () => week("18:00", "23:00"), getGeo: () => null, setPower: (on) => calls.push(on), clockOk: () => synced, log: { info() {}, warn() {}, error() {} } });
+    s.start();
+    synced = false;
+    await vi.advanceTimersByTimeAsync(2 * 3600_000);
+    expect(calls).toEqual([]);
+  });
+});

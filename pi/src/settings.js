@@ -5,9 +5,10 @@
 
 import { createHash, randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 import { EventEmitter } from "node:events";
-import { copyFileSync, readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
+import { copyFileSync, readFileSync, unlinkSync } from "node:fs";
 import { join } from "node:path";
 import { SETTING, SETTINGS, checkPins, defaultContext, resolveSettings } from "./config.js";
+import { writeFileAtomicSync } from "./fsutil.js";
 import { HttpError } from "./media.js";
 
 const sha = (s) => createHash("sha256").update(s).digest();
@@ -26,20 +27,9 @@ function matchesHash(password, stored) {
 
 const isHash = (v) => typeof v === "object" && v !== null && typeof v.scrypt === "string" && v.scrypt.includes(":");
 
-/** Atomic JSON write: temp file in the same folder, then rename over the target. */
+/** Durable atomic JSON write (temp file, fsync, rename, fsync of the folder). */
 export function writeJsonAtomic(file, value) {
-  const tmp = `${file}.tmp-${randomBytes(4).toString("hex")}`;
-  try {
-    writeFileSync(tmp, JSON.stringify(value, null, 2) + "\n", { mode: 0o600 });
-    renameSync(tmp, file);
-  } catch (err) {
-    try {
-      unlinkSync(tmp);
-    } catch {
-      // nothing to clean up
-    }
-    throw err;
-  }
+  writeFileAtomicSync(file, JSON.stringify(value, null, 2) + "\n", { mode: 0o600 });
 }
 
 export class Settings extends EventEmitter {

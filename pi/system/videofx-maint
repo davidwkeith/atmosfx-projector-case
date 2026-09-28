@@ -1,0 +1,40 @@
+#!/bin/bash
+# Maintenance mode = the root filesystem is writable, for OS updates.
+#   sudo videofx-maint on      # after the next reboot, / is writable (apt upgrade etc.)
+#   sudo videofx-maint off     # after the next reboot, / is read-only again (normal)
+#   videofx-maint status
+# The data partition (/srv/videofx: settings, pairing, videos) is always writable.
+set -euo pipefail
+cmdline=/boot/firmware/cmdline.txt
+[ -e "$cmdline" ] || cmdline=/boot/cmdline.txt
+flag='overlayroot=tmpfs:recurse=0'
+
+now() { grep -q 'overlayroot=tmpfs' /proc/cmdline && [ "$(findmnt -no FSTYPE /)" = overlay ] && echo protected || echo writable; }
+next() { grep -q 'overlayroot=tmpfs' "$cmdline" && echo protected || echo writable; }
+
+case "${1:-status}" in
+  status)
+    echo "root now: $(now); after reboot: $(next)"
+    findmnt -no SOURCE,OPTIONS /srv/videofx 2>/dev/null | sed 's/^/data: /' || echo "data: not mounted"
+    ;;
+  on | off)
+    [ "$(id -u)" -eq 0 ] || { echo "run with sudo" >&2; exit 1; }
+    remount_ro=no
+    if findmnt -no OPTIONS "$(dirname "$cmdline")" | grep -q '^ro'; then
+      mount -o remount,rw "$(dirname "$cmdline")"
+      remount_ro=yes
+    fi
+    sed -i -E 's/(^| )overlayroot=tmpfs(:[^ ]*)?//g; s/^ +//' "$cmdline"
+    if [ "$1" = off ]; then
+      command -v overlayroot-chroot >/dev/null || dpkg -s overlayroot >/dev/null 2>&1 || { echo "overlayroot is not installed" >&2; exit 1; }
+      sed -i "1 s/^/$flag /" "$cmdline"
+    fi
+    sync
+    [ "$remount_ro" = yes ] && mount -o remount,ro "$(dirname "$cmdline")"
+    [ "${2:-}" = --no-reboot-hint ] || echo "Maintenance mode $1. Reboot to apply: sudo reboot"
+    ;;
+  *)
+    echo "usage: videofx-maint on|off|status" >&2
+    exit 2
+    ;;
+esac

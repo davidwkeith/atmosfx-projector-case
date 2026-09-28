@@ -20,7 +20,7 @@ apt-get update
 # mpv (DRM/KMS video, ALSA audio), gpiod (gpiomon/gpioset: PIR, relay),
 # v4l-utils (cec-ctl, ir-ctl), avahi for videofx-xxxx.local and the Bonjour entry.
 apt-get install -y --no-install-recommends \
-  mpv gpiod v4l-utils alsa-utils avahi-daemon ca-certificates curl gpg
+  mpv gpiod v4l-utils alsa-utils avahi-daemon iw overlayroot ca-certificates curl gpg
 
 echo "== node.js"
 node_ok() {
@@ -46,7 +46,7 @@ cp -r "$src/src" "$src/public" "$src/package.json" "$src/package-lock.json" "$ap
 (cd "$app" && npm ci --omit=dev --no-audit --no-fund)
 
 echo "== systemd units"
-sed "s/^User=.*/User=$user/" "$src/system/videofx-player.service" >/etc/systemd/system/videofx-player.service
+sed -e "s/^User=.*/User=$user/" -e "s#MEDIA_DIR#$home/media#" "$src/system/videofx-player.service" >/etc/systemd/system/videofx-player.service
 install -m 644 "$src/system/videofx-hostname.service" /etc/systemd/system/videofx-hostname.service
 install -m 755 "$src/system/videofx-hostname" /usr/local/sbin/videofx-hostname
 # Settings may hold the web password: root-only. Keep an existing file.
@@ -54,7 +54,18 @@ install -m 755 "$src/system/videofx-hostname" /usr/local/sbin/videofx-hostname
 # Groups the service uses; Raspberry Pi OS normally has them already.
 for g in video render audio tty gpio; do getent group "$g" >/dev/null || groupadd --system "$g"; done
 install -m 644 "$src/system/99-videofx.rules" /etc/udev/rules.d/99-videofx.rules
+install -m 644 "$src/system/videofx-storage.service" /etc/systemd/system/videofx-storage.service
+install -m 755 "$src/system/videofx-storage" /usr/local/sbin/videofx-storage
+install -m 755 "$src/system/videofx-maint" /usr/local/sbin/videofx-maint
 systemctl enable videofx-hostname.service videofx-player.service avahi-daemon.service
+
+echo "== reliability: watchdog, Wi-Fi power save off, Ethernet first, NTP"
+install -d /etc/systemd/system.conf.d /etc/systemd/timesyncd.conf.d /etc/NetworkManager/conf.d /etc/NetworkManager/dispatcher.d
+install -m 644 "$src/system/50-videofx-watchdog.conf" /etc/systemd/system.conf.d/50-videofx-watchdog.conf
+install -m 644 "$src/system/50-videofx-timesyncd.conf" /etc/systemd/timesyncd.conf.d/50-videofx.conf
+install -m 644 "$src/system/90-videofx-network.conf" /etc/NetworkManager/conf.d/90-videofx-network.conf
+install -m 755 "$src/system/60-videofx-ntp" /etc/NetworkManager/dispatcher.d/60-videofx-ntp
+systemctl enable systemd-timesyncd.service 2>/dev/null || true
 
 echo "== Bonjour: web UI as _http._tcp"
 install -m 644 "$src/system/videofx.avahi.service" /etc/avahi/services/videofx.service
