@@ -148,6 +148,7 @@ export function createWebServer(o) {
       try {
         state = await o.setVolume({ level, muted });
       } catch (err) {
+        if (err instanceof HttpError) throw err;
         throw new HttpError(/number|true or false/.test(err.message) ? 400 : 502, err.message);
       }
       return send(res, 200, state);

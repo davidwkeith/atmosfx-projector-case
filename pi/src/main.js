@@ -2,22 +2,30 @@
 // full screen with mpv, switches the projector with it, and serves a LAN web UI.
 //
 // Matter endpoints: 1 "projector" (main on/off), 2 "scare" (on = fire a scare,
-// goes back off when it ends), 3 "motion" (PIR occupancy sensor).
+// goes back off when it ends), 3 "motion" (PIR occupancy sensor),
+// 4 "temperature" (projector zone).
+//
+// Who controls the main power: Matter, the web page, the schedule and restore go
+// through the PowerArbiter; while DMX (sACN) is live only DMX may; thermal
+// protection can always switch off and blocks switching on while tripped.
 
 import { execFile, spawn } from "node:child_process";
+import dgram from "node:dgram";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { writeFile } from "node:fs/promises";
+import { access, readFile, readdir, writeFile } from "node:fs/promises";
 import { hostname } from "node:os";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { DeviceTypeId, Environment, ServerNode, VendorId } from "@matter/main";
 import { OccupancySensingServer } from "@matter/main/behaviors";
-import { OccupancySensorDevice, OnOffPlugInUnitDevice } from "@matter/main/devices";
+import { OccupancySensorDevice, OnOffPlugInUnitDevice, TemperatureSensorDevice } from "@matter/main/devices";
 import { QrCode } from "@matter/main/types";
 import { defaultContext, resolveSettings } from "./config.js";
+import { DmxControl, PowerArbiter, SACN_PORT, SacnReceiver, fixtureValues, interpret, multicastGroup } from "./dmx.js";
 import { GpioOut, gpiosetArgs } from "./gpio.js";
 import { Ir, lircFeatures } from "./ir.js";
-import { createMediaStore } from "./media.js";
+import { HttpError, createMediaStore } from "./media.js";
+import { parsePlaylist } from "./playlist-core.js";
 import { MpvSupervisor, mpvArgs } from "./mpv.js";
 import { Pir, gpiomonMajor, pirArgs } from "./pir.js";
 import { Player } from "./player.js";
@@ -26,6 +34,7 @@ import { qrTextToSvg } from "./qr.js";
 import { Scheduler } from "./schedule.js";
 import { createScreen } from "./screen.js";
 import { Settings } from "./settings.js";
+import { OverTempGuard, SysfsPwm, Tach, ThermalControl, parseDs18b20, parseMilli, tachArgs } from "./thermal.js";
 import { Volume, amixerArgs } from "./volume.js";
 import { createWebServer } from "./web.js";
 
@@ -103,6 +112,10 @@ const motion = await server.add(OccupancySensorDevice.with(OccupancySensingServe
   id: "motion",
   occupancySensing: { occupancy: { occupied: false } },
 });
+const temperature = await server.add(TemperatureSensorDevice, {
+  id: "temperature",
+  temperatureMeasurement: { measuredValue: null, minMeasuredValue: -2000, maxMeasuredValue: 12000 }, // 0.01 °C
+});
 
 function pairingCodes() {
   if (server.lifecycle.isCommissioned) return undefined;
@@ -127,13 +140,14 @@ const mpv = new MpvSupervisor({
 });
 
 const playerState = join(stateDir, "player.json");
+let dmxOverride = {}; // runtime values DMX sets while in control (not saved)
 const clipPath = (name) => (name ? join(get("mediaDir"), name) : "");
 const scareNames = () => get("scareClips").filter((n) => existsSync(clipPath(n)));
 
 const player = new Player({
   mpv,
   content: () => ({
-    mode: get("mode"),
+    mode: dmxOverride.mode ?? get("mode"),
     playlist: get("playlist"),
     buffer: clipPath(get("scareBuffer")),
     scares: scareNames().map(clipPath),
@@ -153,7 +167,7 @@ const player = new Player({
     },
     save: (on) => writeFileSync(playerState, JSON.stringify({ on }) + "\n"),
   },
-  preflight: () => media.problem({ mode: get("mode"), buffer: get("scareBuffer"), scares: get("scareClips") }),
+  preflight: () => media.problem({ mode: dmxOverride.mode ?? get("mode"), buffer: get("scareBuffer"), scares: get("scareClips") }),
 });
 
 // --- projector power (CEC / relay / IR / HDMI signal)
@@ -190,11 +204,9 @@ const projector = new Projector({
 });
 await projector.init(); // relay open (projector off) until the restored state is applied
 
-// --- power: one path for Matter, the web UI, the schedule and restore
+// --- power
 
-const setPower = (on) => plug.set({ onOff: { onOff: on } });
 let powerSeq = 0;
-
 async function powerChanged(on) {
   const seq = ++powerSeq;
   if (on) {
@@ -207,13 +219,44 @@ async function powerChanged(on) {
   }
 }
 
+// Our own writes to the Matter attribute vs. writes from a controller.
+let internalWrites = 0;
+async function writePower(on) {
+  if (plug.state.onOff.onOff === on) return powerChanged(on);
+  internalWrites++;
+  await plug.set({ onOff: { onOff: on } });
+}
+
 plug.events.onOff.onOff$Changed.on((on) => {
-  powerChanged(on).catch((err) => console.error(`Power: ${err.message}`));
+  if (internalWrites > 0) {
+    internalWrites--;
+    powerChanged(on).catch((err) => console.error(`Power: ${err.message}`));
+    return;
+  }
+  const r = arbiter.request("matter", on);
+  // Refused (DMX in control / over temperature): put Matter's attribute back to the truth.
+  if (!r.ok) setImmediate(() => writePower(r.actual).catch((e) => console.error(e)));
 });
+
+// Matter already changed its attribute; everyone else writes it.
+const arbiter = new PowerArbiter({
+  dmx: { get inControl() { return dmx.inControl; } },
+  actual: () => player.isOn,
+  blocked: () => guard.blocked,
+  apply: (on, source) => {
+    const job = source === "matter" ? powerChanged(on) : writePower(on);
+    job.catch((err) => console.error(`Power (${source}): ${err.message}`));
+  },
+});
+const requestPower = (source, on) => {
+  const r = arbiter.request(source, on);
+  if (!r.ok) console.info(`Power ${on ? "on" : "off"} from ${source} refused: ${r.reason}`);
+  return r;
+};
 
 // The player gave up (no playlist, repeated crashes): report "off" so the
 // controller shows the truth. Deferred so we never write inside the change event.
-player.on("failed", () => setImmediate(() => setPower(false).catch((e) => console.error(e))));
+player.on("failed", () => setImmediate(() => writePower(false).catch((e) => console.error(e))));
 
 // --- scares: Matter "scare" switch, PIR, web button
 
@@ -244,8 +287,153 @@ startPir();
 const scheduler = new Scheduler({
   getSchedule: () => get("schedule"),
   getGeo: () => (get("latitude") !== null && get("longitude") !== null ? { lat: get("latitude"), lon: get("longitude") } : null),
-  setPower,
+  setPower: (on) => requestPower("schedule", on),
 });
+
+// --- DMX (sACN receive): overrides while a source is live
+
+let beforeDmx = null;
+const dmx = new DmxControl({
+  holdMs: get("dmxHoldSec") * 1000,
+  act: {
+    takeover: () => {
+      beforeDmx = { on: player.isOn };
+      console.info("DMX in control");
+    },
+    release: () => {
+      dmxOverride = {};
+      player.setClip(null);
+      player.setDimmer(255);
+      volume.applyCurrent().catch(() => {});
+      player.reload();
+      // Back to the schedule's current wish if it has one, else how it was before DMX.
+      const want = scheduler.desiredNow() ?? beforeDmx?.on ?? false;
+      console.info(`DMX released control; power ${want ? "on" : "off"}`);
+      requestPower("handover", want);
+    },
+    setPower: (on) => requestPower("dmx", on),
+    setMode: (mode) => {
+      dmxOverride.mode = mode;
+      player.reload();
+    },
+    setClip: (n) => {
+      if (!n) return player.setClip(null);
+      media
+        .readPlaylist()
+        .then((entries) => {
+          const entry = entries.filter((e) => e.enabled)[n - 1];
+          player.setClip(entry ? join(get("mediaDir"), entry.file) : null);
+        })
+        .catch((err) => console.error(`DMX clip: ${err.message}`));
+    },
+    trigger: () => player.trigger("DMX"),
+    setVolume: (v) => run("amixer", amixerArgs(get("audioCard"), get("mixerControl"), v)).catch(() => {}),
+    setDimmer: (v) => player.setDimmer(v),
+  },
+});
+const receiver = new SacnReceiver({ universe: get("dmxUniverse") });
+receiver.on("live", (live) => dmx.live(live));
+receiver.on("frame", (levels) => dmx.frame(fixtureValues(levels, get("dmxAddress"))));
+setInterval(() => receiver.tick(), 250).unref();
+
+let dmxSocket = null;
+function startDmx() {
+  dmxSocket?.close();
+  dmxSocket = null;
+  receiver.setUniverse(get("dmxUniverse"));
+  dmx.setHold(get("dmxHoldSec") * 1000);
+  if (!get("dmxEnabled")) return;
+  const sock = dgram.createSocket({ type: "udp4", reuseAddr: true });
+  sock.on("message", (msg, rinfo) => receiver.handle(msg, rinfo.address));
+  sock.on("error", (err) => console.error(`DMX: ${err.message}`));
+  sock.bind(SACN_PORT, () => {
+    if (!get("dmxMulticast")) return;
+    try {
+      sock.addMembership(multicastGroup(get("dmxUniverse")));
+    } catch (err) {
+      console.error(`DMX multicast: ${err.message} (unicast still works)`);
+    }
+  });
+  dmxSocket = sock;
+}
+startDmx();
+
+// --- heat: fans, sensors, protection
+
+const guard = new OverTempGuard({
+  isOn: () => player.isOn,
+  powerOff: () => requestPower("thermal", false),
+  // Resume: under DMX, whatever DMX asks for; otherwise back on.
+  powerOn: () => requestPower("thermal", dmx.inControl ? interpret(dmx.values ?? [0]).power : true),
+});
+const thermal = new ThermalControl({
+  cfg: () => ({
+    curves: [get("fan1Curve"), get("fan2Curve")],
+    minDuty: get("fanMinDuty"),
+    cooldownSec: get("fanCooldownSec"),
+    warnC: get("tempWarnC"),
+    critC: get("tempCritC"),
+    hysteresisC: get("tempHysteresisC"),
+    failRpm: 200,
+    failAfterSec: 5,
+  }),
+});
+thermal.on("critical", ({ temp }) => guard.critical(temp, get("tempCritC")));
+thermal.on("cleared", ({ temp }) => guard.cleared(temp));
+const sysfs = { access, readFile, writeFile };
+const fans = [new SysfsPwm({ channel: 0, fs: sysfs }), new SysfsPwm({ channel: 1, fs: sysfs })];
+let tach = null;
+let sensorsSeen = [];
+let lastRpm = [null, null];
+let thermalTimer = null;
+
+async function readSensor(id) {
+  if (!id) return null;
+  const dir = `/sys/bus/w1/devices/${id}`;
+  for (const f of ["temperature", "w1_slave"]) {
+    try {
+      return parseDs18b20(await readFile(`${dir}/${f}`, "utf8"));
+    } catch {
+      // try the next file
+    }
+  }
+  return null;
+}
+
+async function thermalTick() {
+  try {
+    sensorsSeen = (await readdir("/sys/bus/w1/devices").catch(() => [])).filter((d) => d.startsWith("28-"));
+    const [projectorC, piC, socC] = await Promise.all([
+      readSensor(get("sensorProjector")),
+      readSensor(get("sensorPi")),
+      readFile("/sys/class/thermal/thermal_zone0/temp", "utf8").then(parseMilli, () => null),
+    ]);
+    lastRpm = tach?.rpm() ?? [null, null];
+    const state = thermal.update({ projectorC, piC, socC, rpm: lastRpm, on: player.isOn });
+    await Promise.all(fans.map((f, i) => f.set(state.duty[i]).catch((err) => console.warn(`Fan ${i + 1}: ${err.message}`))));
+    const value = projectorC === null ? null : Math.round(projectorC * 100);
+    if (temperature.state.temperatureMeasurement.measuredValue !== value) {
+      await temperature.set({ temperatureMeasurement: { measuredValue: value } });
+    }
+  } catch (err) {
+    console.error(`Thermal: ${err.message}`);
+  }
+}
+
+function startThermal() {
+  if (thermalTimer) clearInterval(thermalTimer);
+  thermalTimer = null;
+  tach?.stop();
+  tach = null;
+  if (!get("thermalEnabled")) return;
+  if (gpiodMajor !== null) {
+    tach = new Tach({ spawn, args: tachArgs(gpiodMajor, [get("fan1TachPin"), get("fan2TachPin")]), lines: gpiodMajor >= 2 ? [`GPIO${get("fan1TachPin")}`, `GPIO${get("fan2TachPin")}`] : [get("fan1TachPin"), get("fan2TachPin")] });
+    tach.start();
+  }
+  thermalTimer = setInterval(thermalTick, 2000);
+  thermalTick();
+}
+startThermal();
 
 // --- lifecycle and settings
 
@@ -291,6 +479,15 @@ async function afterSettingChange(key) {
     case "latitude":
     case "longitude":
       scheduler.start();
+      return dmx.inControl ? "Saved. The schedule is paused while DMX is in control." : undefined;
+    case "dmxEnabled":
+    case "dmxUniverse":
+    case "dmxMulticast":
+    case "dmxHoldSec":
+      startDmx();
+      return undefined;
+    case "thermalEnabled":
+      startThermal();
       return undefined;
     case "projectorPower":
     case "cecDevice":
@@ -347,6 +544,8 @@ const web = createWebServer({
       player: player.status,
       pir: { enabled: get("pirEnabled"), running: pir?.running ?? false, occupied: pir?.occupied ?? false, available: gpiodMajor !== null },
       projector: projector.state,
+      dmx: { enabled: get("dmxEnabled"), inControl: dmx.inControl, values: dmx.values, ...receiver.status() },
+      thermal: { enabled: get("thermalEnabled"), ...thermal.state, rpm: lastRpm, sensors: sensorsSeen, tripped: guard.blocked },
       schedule: { enabled: get("schedule").enabled, next: next && { at: new Date(next.at).toISOString(), on: next.on, label: next.label } },
       matter: {
         commissioned: server.lifecycle.isCommissioned,
@@ -355,8 +554,14 @@ const web = createWebServer({
       },
     };
   },
-  setPower,
-  setVolume: (v) => volume.set(v),
+  setPower: async (on) => {
+    const r = requestPower("web", on);
+    if (!r.ok) throw new HttpError(409, r.reason);
+  },
+  setVolume: (v) => {
+    if (dmx.inControl) throw new HttpError(409, "DMX is in control");
+    return volume.set(v);
+  },
   scare: () => player.trigger("web page"),
   irLearn: () => ir.learn(),
   irTest: (code) => ir.send(code ?? get("irPowerCode")),
@@ -393,9 +598,7 @@ web.listen(get("httpPort"), () => console.info(`Web UI on port ${get("httpPort")
 mpv.start();
 scheduler.start();
 const initial = player.initialState(get("restore"));
-await setPower(initial);
-// onOff$Changed fires only on change, so apply it directly too.
-await powerChanged(initial);
+await writePower(initial);
 
 // run() starts the node and resolves when it is closed; matter.js closes it on
 // SIGTERM/SIGINT. While not commissioned it logs the pairing QR code and manual
@@ -404,5 +607,7 @@ await server.run();
 web.close();
 scheduler.stop();
 pir?.stop();
+tach?.stop();
+dmxSocket?.close();
 await player.shutdown();
 relay.release();

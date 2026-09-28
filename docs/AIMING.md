@@ -32,7 +32,7 @@ Past that, the projector hits the window frame or the Pi divider. Get the case c
 5. **Aim.** Move the projector while watching the image. Keep it inside the ranges above. If it touches anything inside, stop: turn or shim the case instead.
 6. **Check the edges.** A dark or cut-off corner means the light cone is clipping the window. Bring the image back toward centre and move the case instead.
 7. **Lock the ball head** firmly while still holding the projector. Let go, wait a minute, and check the image hasn't drooped.
-8. **Focus.** Use the projector's focus control if you can reach it through the hatch. If you can't, remove the four lid screws and lift the lid.
+8. **Focus.** Use the projector's focus control if you can reach it through the hatch. If you can't, remove the four lid screws on the sides of the lid and lift it off.
 9. **Hang the cover.** Line up the wide ends of the keyholes over the four bolt heads, press it flat against the foam, and let it drop about 8 mm so it seats. It should sit flush and not pull straight out.
 10. **Final check.** The fan and louvers are clear and the power cord hangs in a drip loop below the gland.
 

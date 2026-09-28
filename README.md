@@ -10,7 +10,7 @@ Parametric [OpenSCAD](https://openscad.org) design for a ground-standing, rain-p
 - Sits on the ground on eight 6 mm ribs running front to back; the channels between them drain rain, feed intake air and carry the speaker wire.
 - Projector rides on an internal ball head (pedestal takes a 1/4-20 stud). Aim range +/-15 deg pan or tilt, +/-10 deg both at once (checked by `scripts/check_clash.sh`).
 - Tool-free aim hatch (a 45 deg diamond, so it prints without supports) on the left wall: lift the cover about 8 mm off its four keyholes, loosen the ball head, aim, lock. Lid stays on.
-- Sloped lid with a front visor, drip lip and a 45 deg scarf joint at the seam (the front half laps over the rear like a shingle); 45 deg louvers shed rain; intake through slots in the raised floor; two 40 mm PWM exhaust fans on the right wall (projector zone, and Pi/brick zone above the shelf, which has vents on its low-voltage side), speed-controlled by the Pi from temperature sensors, with over-temperature shutdown.
+- Sloped lid with no holes in the roof (it screws on through the side skirt), a front visor, drip lip and a 45 deg scarf joint at the seam (the front half laps over the rear like a shingle); 45 deg louvers shed rain; intake through slots in the raised floor; two 40 mm PWM exhaust fans on the right wall (projector zone, and Pi/brick zone above the shelf, which has vents on its low-voltage side), speed-controlled by the Pi from temperature sensors, with over-temperature shutdown.
 - Acrylic lens window in a rebate, held by a printed frame.
 - Pi compartment behind a divider. The Pi rides on a removable sled: one per generation (Pi 3B/3B+, 4B, 5, Zero 2 W), located by two floor pins and held by one M3 thumbscrew. Lid off, shelf out, sled lifts out; a 50 x 40 mm pass-through carries HDMI and projector power.
 - One AC cord in through a rear gland above the power shelf, on the AC side of the barrier. A DC brick sits inside on a shelf, walled off from the low-voltage side, and a wire splice feeds the projector's barrel plug plus a HiFiBerry Amp4 HAT, which powers the Pi.
@@ -65,7 +65,7 @@ Material: PETG or ASA, not PLA. Colour: Disney's ["Go Away Green"](https://en.wi
 - Raspberry Pi 3
 - Mini ball head rated above the projector's weight, and a 1/4-20 stud
 - 1/4-20 heat-set inserts (pedestal, tripod), 3/8-16 heat-set insert (tripod), 4x M4 heat-set inserts and 4x M4x12 button-head bolts (hatch)
-- M3 screws (lid, window frame, fan) and 4x M3 sealing washers for the lid screws (the heads sit on the roof)
+- M3 screws: 4x M3 x 12 for the lid (they go sideways through the lid skirt, so the roof has no holes), window frame, fans
 - 4x M2.5 self-tapping screws (Pi to sled), 1x M3 thumbscrew and 1x M3 heat-set insert (sled to floor)
 - 3 x 5 in (127 x 76.2 mm) clear acrylic pane, 1/8 in (3.2 mm) thick, e.g. [Acme Plastics cut-to-size](https://www.acmeplastics.com/acrylic-sheets-cut-to-size); photo-frame glazing is usually too thin. Foam tape for gaskets
 - Insect screen (aluminium or stainless, mosquito grade, about 18 x 16 mesh) for the caps and to clamp behind both fans; 8x M2 x 6 self-tapping screws; a foam plug for the speaker-wire chimney
@@ -95,7 +95,7 @@ Mains is inside a printed box in this design. Feed it from a GFCI outlet, fuse t
 
 ## Changelog
 
-- v0.8: screwed base seam, tripod mount, insect-screen caps, second fan for the Pi/brick zone, shelf vents, support-free printing (ribbed floor, diamond hatch, snap-out window ribs, gabled pass-through), IR LED holder, rear-wall PIR mount, Pi sleds for 3B/3B+/4B/5/Zero 2 W, audio (Amp4 HAT, floor chimney for speaker wire, shelf raised 5 mm), 3 x 5 in stock acrylic pane (wider window), AC gland above the shelf, taller barrier, keyholes flipped to lift off, lid scarf joint and gasket land, larger front/rear gaps so the aim range actually clears
+- v0.8: lid screws moved from the roof to the skirt sides, screwed base seam, tripod mount, insect-screen caps, second fan for the Pi/brick zone, shelf vents, support-free printing (ribbed floor, diamond hatch, snap-out window ribs, gabled pass-through), IR LED holder, rear-wall PIR mount, Pi sleds for 3B/3B+/4B/5/Zero 2 W, audio (Amp4 HAT, floor chimney for speaker wire, shelf raised 5 mm), 3 x 5 in stock acrylic pane (wider window), AC gland above the shelf, taller barrier, keyholes flipped to lift off, lid scarf joint and gasket land, larger front/rear gaps so the aim range actually clears
 - v0.7: DC brick inside on the power shelf, barrier, heat louvers
 - v0.6: low-voltage DC splice, zip-tie shelf
 - v0.5: single power cord, power shelf on ledges

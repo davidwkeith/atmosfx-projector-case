@@ -86,7 +86,7 @@ zero_hat_z = 13;    // Zero 2 W: HAT underside above the Zero's board bottom (se
 
 /* [Motion sensor (rear wall)] */
 pir = true;         // HC-SR501-style PIR looking out the rear wall, toward people approaching
-pir_x = 55;         // low-voltage side, clear of the barrier and the rear lid post
+pir_x = 55;         // low-voltage side, clear of the barrier and the rear lid screw block
 pir_dz = 45;        // dome centre above the shelf's top face
 pir_dome_d = 23.5;  // lens dome; check yours
 pir_hole_sp = 28.7; // board mounting holes (M2), check yours
@@ -164,14 +164,14 @@ hatch_zz = z_floor + hatch_zc;
 hatch_y = proj_cy;
 hood_lift = hood_d - cover_gasket + 0.5 + kh_drop + 1;   // room to lift the cover off its keyholes
 fan_z = z_pj + proj_h/2;
-post_x = inner_w/2 - 8;
-post_ys = [y0 + 8, y_back - 8];
+lid_screw_ys = [y0 + 8, y_back - 8];      // lid screw stations: side screws through the skirt, none in the roof
+lid_screw_z = base_h - 7;
 base_seam = y_div + div_t + 0.01;
 shelf_zz = z_floor + shelf_z;
 pi_fan_z = shelf_zz + 3 + pi_fan_dz;
 fans = [[proj_cy, fan_z], [pi_cy, pi_fan_z]];
 vents = [[-1, pi_cy, z_floor+24], [-1, pi_cy, shelf_zz+26], [1, pi_cy, z_floor+24]];   // passive louver banks [side, y, centre z]
-vent_open = [26, 42];                      // louver bank opening a wall cap covers (Z, Y); tabs go top/bottom, clear of the lid posts
+vent_open = [26, 42];                      // louver bank opening a wall cap covers (Z, Y); tabs go top/bottom (clear driver access)
 intake_c = [0, y0+39, z_floor];            // floor intake slots centre
 intake_open = [92, 30];   // [y, z] on the +X wall: projector exhaust, Pi-zone exhaust
 pir_zz = shelf_zz + 3 + pir_dz;
@@ -198,7 +198,6 @@ seam_t = top_t + seam_rib;                // roof thickness across the scarf
 pivot = [ped_x, ped_y, z_floor + ped_top + pivot_h];
 assert(barrier_h > brick_h, "barrier_h must exceed brick_h");
 lid_z0 = base_h + gasket - (skirt_h - top_t);
-lid_boss_z = base_h - lid_z0 + 1;
 big = 900;
 function zp(y) = skirt_h + rise*(1 - (y - yfl)/lid_d);
 
@@ -283,8 +282,8 @@ module cuts() {
   }
   // sled thumbscrew insert
   translate([sled_pts[2][0], sled_pts[2][1], z_floor+sled_pad-6]) cylinder(d=m3_insert_d, h=6.1);
-  // lid screw pilots
-  for (sx=[-1,1], y=post_ys) translate([sx*post_x, y, base_h-14]) cylinder(d=2.6, h=14.1);
+  // lid screw pilots (horizontal, through the side walls into the blocks)
+  for (sx=[-1,1], y=lid_screw_ys) translate([sx*(out_w/2+0.1), y, lid_screw_z]) rotate([0, -sx*90, 0]) cylinder(d=2.6, h=wall+8-1);
 }
 
 module base_all() {
@@ -307,7 +306,10 @@ module base_all() {
       for (x=foot_ribs) translate([x-rib_t/2, y_front, 0]) cube([rib_t, out_d, foot_h+0.1]);   // feet
       translate([-inner_w/2, y_div, z_floor-0.1]) cube([inner_w, div_t, base_h-z_floor+0.1]);   // divider
       for (sx=[-1,1], sy=[-1,1]) translate([ped_x+sx*35, ped_y+sy*25, z_floor-0.1]) cylinder(d=9, h=boss_h+0.1);
-      for (sx=[-1,1], y=post_ys) translate([sx*post_x, y, z_floor-0.1]) cylinder(d=10, h=base_h-z_floor+0.1);
+      for (sx=[-1,1], y=lid_screw_ys) hull() {   // lid screw blocks inside the wall tops, 45 deg underside
+        translate([sx > 0 ? inner_w/2-8 : -inner_w/2, y-5, base_h-14]) cube([8.1, 10, 14]);
+        translate([sx > 0 ? inner_w/2-0.1 : -inner_w/2, y-5, base_h-22]) cube([0.1, 10, 0.1]);
+      }
       for (p=sled_pts) translate([p[0], p[1], z_floor-0.1]) cylinder(d=10, h=sled_pad+0.1);   // sled pads
       for (p=[sled_pts[0], sled_pts[1]]) translate([p[0], p[1], z_floor]) cylinder(d=4, h=sled_pad+sled_t-0.4);   // locating pins
       for (f=fans, sy=[-16,16], sz=[-16,16]) translate([inner_w/2-4, f[0]+sy, f[1]+sz]) rotate([0,90,0]) cylinder(d=7, h=4.1);
@@ -351,7 +353,6 @@ module power_shelf() {
     for (x=[-30,0], y=[3, 8+brick_w+5]) translate([x-10, y-1.5, -1]) cube([20, 3, 5]);   // velcro strap slots for the brick
     for (x=[-70:20:70], sy=[-1,1]) translate([x-1.6, shelf_d/2+sy*tie_gap/2-3, -1]) cube([3.2, 6, 5]);   // zip-tie slots
     for (x=[40, 60, 80]) translate([x-2.5, shelf_d/2-13, -1]) cube([5, 26, 5]);   // vents: Pi/amp heat rises to the Pi-zone fan (low-voltage side only)
-    for (sx=[-1,1]) translate([sx*post_x, y_back-8-y_pi0-0.3, -1]) cylinder(d=11, h=5);
     translate([pir_x-6, shelf_d-7, -1]) cube([12, 8, 5]);                     // PIR / low-voltage wires down to the Pi
   }
 }
@@ -418,8 +419,8 @@ module lid() {
           plane_below(top_t);
         }
       }
-      for (sx=[-1,1], y=post_ys)   // screw bosses reaching down to the base posts
-        translate([sx*post_x, y, lid_boss_z]) cylinder(d=10, h=zp(y)-top_t-lid_boss_z+0.5);
+      for (sx=[-1,1], y=lid_screw_ys)   // spacer rings: the skirt bears on the base wall instead of flexing in
+        translate([sx*out_w/2, y, lid_screw_z-lid_z0+1]) rotate([0, sx*90, 0]) cylinder(d=8, h=lid_clr+0.1);
       intersection() {     // flat gasket land over the base rim (the roof underside slopes)
         difference() {
           translate([-(out_w+2*lid_clr)/2, -(out_d+2*lid_clr)/2, skirt_h-top_t]) cube([out_w+2*lid_clr, out_d+2*lid_clr, big]);
@@ -433,10 +434,8 @@ module lid() {
         difference() { plane_below(0); plane_below(seam_t); }
       }
     }
-    for (sx=[-1,1], y=post_ys) {
-      translate([sx*post_x, y, lid_boss_z-1]) cylinder(d=3.4, h=zp(y)-lid_boss_z+3);
-      translate([sx*post_x, y, zp(y)-1.5]) cylinder(d=6.6, h=4);
-    }
+    for (sx=[-1,1], y=lid_screw_ys)   // side screw slots: press the lid onto the gasket, then tighten
+      hull() for (dz=[-0.5, 1.5]) translate([sx*(out_w/2-1), y, lid_screw_z-lid_z0+dz]) rotate([0, sx*90, 0]) cylinder(d=3.4, h=wall+lid_clr+3);
   }
 }
 
