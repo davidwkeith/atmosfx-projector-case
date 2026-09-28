@@ -71,6 +71,10 @@ Right of the barrier, and down to the Pi sled.
 
 Use lever-nut connectors (e.g. Wago 221) for the splice so it can be undone. Pass low-voltage wires from the shelf to the Pi through the wire slot at the back of the shelf, never across the barrier's AC side.
 
+## Cords outdoors
+
+Trick-or-treaters walk through the yard in the dark. Run the power cord and speaker wires along edges, not across paths. Where they must cross a path, use a rubber cord cover (cable ramp), or bury or stake them flat. Keep every plug joint in a weatherproof connection box, off the ground.
+
 ## Fuse sizing
 
 Fill this in from **your** labels. The example column assumes a 12 V 5 A brick, a projector drawing 3 A and a 60 W-class brick input.

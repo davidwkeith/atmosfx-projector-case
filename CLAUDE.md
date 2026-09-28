@@ -20,7 +20,11 @@ scripts/publish.sh            # create a PRIVATE GitHub repo with gh and push
 
 Single part by hand: `openscad -o out.stl -D "part=\"base\"" -D "tile=\"front\"" projector_pi_case.scad`
 
-`part` = assembly | base | lid | window_frame | pedestal | hatch_cover | power_shelf | sled. `sled` = pi3 | pi4 | pi5 | zero2w (assembly shows it; `make parts` builds all four). `tile` = all | front | rear (base and lid only). STLs are not committed: CI attaches them to a GitHub Release for each `v*` tag; `stl/` is regenerated output.
+`part` = assembly | base | lid | window_frame | pedestal | hatch_cover | power_shelf | sled | ir_holder | vent_cap | intake_cap | fit_coupon. `sled` = pi3 | pi4 | pi5 | zero2w (assembly shows it; `make parts` builds all four). `tile` = all | front | rear (base and lid only). STLs are not committed: CI attaches them to a GitHub Release for each `v*` tag; `stl/` is regenerated output.
+
+Versioning: one version for the whole repo. `pi/package.json` version = the git tag without the `v` (e.g. 0.8.1 / `v0.8.1`); `videofx-update` compares them. Bump both together.
+
+Docs: `docs/PRINTING.md` (sliced times, order), `docs/BOM.md` (quantities, ordering, cost), `docs/ASSEMBLY.md`, `docs/WIRING.md`, `docs/AIMING.md`, `docs/BRINGUP.md` (hardware test checklist), `docs/DESIGN_LOG.md`. Keep them in step with model changes; re-slice for PRINTING.md with the PrusaSlicer CLI (`--printer-profile "Original Prusa i3 MK3S & MK3S+" --print-profile "0.20mm SPEED @MK3" --material-profile "Prusament PETG"`, datadir seeded with the bundled PrusaResearch.ini).
 
 Toolchain on the owner Mac: OpenSCAD snapshot (`brew install --cask openscad@snapshot`; the stable cask is an old Intel build; it aborts with "Incompatible processor" inside Claude Code's sandbox, so run it unsandboxed), PrusaSlicer, two Prusa i3 MK3S (bed 250 x 210 x 210).
 
@@ -49,6 +53,7 @@ Print orientation is baked into the `part` dispatch at the bottom (lid flipped r
 ## Design decisions (short; details in docs/DESIGN_LOG.md)
 
 - Rain-proof, not sealed: a sealed box overheats the projector. Airflow: intake slots through the raised floor and 45 deg louvers; two 40 mm PWM fans on the right wall (`fans`: projector zone, and the Pi/brick zone above the shelf, fed through vents on the shelf's low-voltage side). The Pi runs fan curves from DS18B20 sensors and shuts the projector off on over-temperature. `fan_body()` is in the aim sweep and the `fans` clash check.
+- Visitor safety: cords routed off paths or under cord covers, plug joints in weatherproof boxes, optional hatch lock screw (`hatch_lock`), flame-retardant V-0 PETG recommended for the power shelf.
 - Ground-standing on 6 mm feet so the case drains underneath; drains exit into the gap under the floor. Also tripod-mountable: 3/8-16 (`tripod_y`, near the estimated centre of mass) and 1/4-20 (`tripod_y2`) inserts in a pad flush with the ribs. Move `tripod_y` once the real centre of mass is known.
 - Projector on a commercial mini ball head (1/4-20). The body clears +/-15 deg on one axis and +/-10 deg on both (`aim_max`, `aim_combo`); the light cone (`light_cone`, `throw_ratio` 1.4, `lens_offset`) clears the window, frame and visor at +/-12 deg tilt (`cone_tilt`), which is the real limit. Plugs on the projector's rear (`projector_ports`, `port_depth` 15 for right-angle plugs) size `rear_gap`. The window is a 4 x 5 in pane set as high as the base allows (`pane_top_clear`), with the lid's front skirt notched over it and a short visor/lip, because upward tilt is the main use. The low pivot swings the top corners about 20 mm, which sizes `front_gap` and `rear_gap`. Both at 15 deg would push `base_front` past 250 mm. Printed ball joints were rejected (creep under load). Mini heads are rated about 1.5 kg; the projector is about 0.72 kg.
 - Lid: 4x M3 screws go sideways through the skirt (`lid_screw_ys`, `lid_screw_z`) into 45 deg-underside blocks in the base wall tops. The roof has no penetrations; the lid prints roof-down, so nothing can stand proud of the roof. Slots let the lid be pressed onto the gasket before tightening.
@@ -76,10 +81,12 @@ Print orientation is baked into the `part` dispatch at the bottom (lid flipped r
 
 ## Next steps
 
-1. Owner measures the projector and brick; update parameters; rerun `make parts` and `scripts/check_clash.sh`.
-2. Print pedestal, window frame, hatch cover; check ball head seat, pane fit, keyholes.
-3. Print tiles, dry-fit, then wire (see safety).
-4. Design proper seam joints; tune fan/louver positions against the real vents; Pi playback setup.
+Work through `docs/BRINGUP.md` in order:
+1. Print `fit_coupon`; tune insert/pilot/keyhole/pane tolerances.
+2. Owner measures the projector (size, lens, throw ratio, offset, ports), brick and ball head; update parameters; rerun `scripts/check_clash.sh` (body, plugs and light cone) and `make parts`; re-slice for PRINTING.md.
+3. Bench-test the Pi image (CEC, seam time, Amp4 power, PIR, sensors, Matter, DMX, update/rollback, power cut).
+4. Print the rest, assemble per `docs/ASSEMBLY.md`, wire per `docs/WIRING.md`, then heat, rain and night tests.
+5. Later: multi-projector sync (deferred), tune fan/louver positions against the real projector vents.
 
 ## Safety
 

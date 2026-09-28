@@ -6,6 +6,7 @@ Two Prusa i3 MK3S (bed 250 x 210 x 210 mm), Prusament PETG (or ASA, which fades 
 
 - Print profile **0.20mm SPEED @MK3** for everything. The window's snap-out ribs leave a gap of one layer (`layer_h` = 0.2 in the model). If you print the base at another layer height, set `layer_h` to match and re-export.
 - **No supports** anywhere: every part is designed support-free.
+- Print `power_shelf` in flame-retardant PETG (UL 94 V-0, e.g. Prusament PETG V0, which has a stock profile), and `base_rear` too if you can live with its colour: mains and the brick live on the shelf in the rear compartment.
 - Rotate `base_front` and `lid_front` 90 deg so the long side runs along the 250 mm axis. `base_front` is 243 x 201 mm, so turn off the skirt or keep it tight to the part.
 - The STLs are already in print orientation (lid roof-down, hatch cover ribs-up, window frame flat, caps plate-down).
 

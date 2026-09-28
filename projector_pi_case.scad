@@ -70,6 +70,7 @@ kh_drop = 8;         // keyhole slide distance: cover lifts this much to come of
 m4_insert_d = 5.6;   // M4 heat-set insert hole; check your insert
 hood_d = 10;         // rain hood depth over the hatch (must stay below the lid skirt)
 cover_gasket = 1.5;  // foam tape thickness
+hatch_lock = true;   // optional M3 (security) screw through the cover's bottom edge: stops it lifting off its keyholes
 
 /* [Power] */
 shelf_z = 60;       // power shelf height above floor: clears the tallest sled stack (asserted)
@@ -115,8 +116,9 @@ stake_x = 78;        // inside the channel between the +/-68 and +/-88 ribs
 
 /* [Tripod mount] */
 tripod = true;
-tripod_y = 12;       // 3/8-16 insert near the estimated centre of mass (brick and Pi sit rearward)
-tripod_y2 = -18;     // 1/4-20 insert for smaller heads / quick-release plates
+tripod_y = 5;        // 3/8-16 insert at the estimated centre of mass: part centroids x slicer weights, plus projector 0.72 kg,
+                     // ball head 0.1, brick 0.4, Pi + amp 0.12 (about 2.6 kg in all). Re-measure once built.
+tripod_y2 = -25;     // 1/4-20 insert for smaller heads / quick-release plates
 insert38_d = 12.1;   // 3/8-16 heat-set insert hole; check your insert's datasheet
 insert38_len = 12.7;
 
@@ -291,6 +293,8 @@ module cuts() {
     translate([sx*(inner_w/2-collar_t/2), y_pi0-0.1, z_floor+z]) rotate([-90,0,0]) cylinder(d=2.6, h=collar_d-1);
   }
   if (stakes) for (p=stake_pts) translate([p[0], p[1], -1]) cylinder(d=stake_d, h=z_floor+stake_collar+2);
+  // hatch lock pilot: into the solid wall/floor corner below the hatch
+  if (hatch_lock) translate([-out_w/2-0.1, hatch_y, hatch_zz-cover_s/2+5]) rotate([0,90,0]) cylinder(d=2.6, h=10);
   // tripod inserts, from below
   if (tripod) {
     translate([0, tripod_y, -1]) cylinder(d=insert38_d, h=insert38_len+1);
@@ -393,6 +397,7 @@ module hatch_cover() {
       translate([sx*stud_off, sz*stud_off, -5]) cylinder(d=4.8, h=9);
       translate([sx*stud_off, sz*stud_off-kh_drop, -5]) cylinder(d=9, h=9);   // local +Y is up when hung
     }
+    if (hatch_lock) translate([0, -cover_s/2+5, -5]) cylinder(d=3.4, h=9);   // lock screw, through the vertical rib
   }
 }
 

@@ -28,14 +28,14 @@ Past that, the projector hits the window frame or the Pi divider. Get the case c
    - On the ground: firm, level ground with all feet down, out of puddles, because air comes in through the floor. Turn the whole case until the image lands roughly on target.
    - On a tripod: screw it on with the 3/8" or 1/4" thread under the floor, and do the coarse aim with the tripod head. Use a tripod rated for at least 3 kg, and weigh it down against wind.
    - Either way, keep it low and tilt the image up, so people walking past aren't looking into the lens (a bright "hot spot").
-2. **Take off the hatch cover.** Lift it straight up about 8 mm, until the bolt heads line up with the wide ends of the keyholes, then pull it straight out. Don't pry it.
+2. **Take off the hatch cover.** If the optional lock screw is fitted (bottom centre of the cover), remove it first. Lift it straight up about 8 mm, until the bolt heads line up with the wide ends of the keyholes, then pull it straight out. Don't pry it.
 3. **Support the projector.** Put one hand through the hatch and hold the projector before loosening anything. It weighs about 0.7 kg and will flop if the head is loose.
 4. **Loosen the ball head** lock knob just enough that the projector moves with some friction.
 5. **Aim.** Move the projector while watching the image. Keep it inside the ranges above. If it touches anything inside, stop: turn or shim the case instead.
 6. **Check the edges.** A dark or cut-off corner means the light cone is clipping the window. Bring the image back toward centre and move the case instead.
 7. **Lock the ball head** firmly while still holding the projector. Let go, wait a minute, and check the image hasn't drooped.
 8. **Focus.** Use the projector's focus control if you can reach it through the hatch. If you can't, remove the four lid screws on the sides of the lid and lift it off.
-9. **Hang the cover.** Line up the wide ends of the keyholes over the four bolt heads, press it flat against the foam, and let it drop about 8 mm so it seats. It should sit flush and not pull straight out.
+9. **Hang the cover.** Refit the lock screw if you use one. Line up the wide ends of the keyholes over the four bolt heads, press it flat against the foam, and let it drop about 8 mm so it seats. It should sit flush and not pull straight out.
 10. **Final check.** The fan and louvers are clear and the power cord hangs in a drip loop below the gland.
 
 ## Troubleshooting

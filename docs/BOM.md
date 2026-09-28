@@ -51,6 +51,7 @@ Quantities for one case. Printed parts and filament are in [PRINTING.md](PRINTIN
 | M4 heat-set insert | 4 | Hatch studs |
 | M3 heat-set insert | 1 | Sled thumbscrew |
 | M4 x 12 button-head | 4 | Hatch keyholes |
+| M3 x 12 (security screw) | 0-1 | Optional hatch lock (`hatch_lock`), for public-facing setups |
 | M3 x 12 (pan head, or pin-Torx security) | 4 | Lid, through the skirt |
 | M3 x 12 | 4 | Base seam, through the divider |
 | M3 x 10 self-tapping | 4 | Pedestal to floor |
@@ -65,9 +66,39 @@ Quantities for one case. Printed parts and filament are in [PRINTING.md](PRINTIN
 | Item | Notes |
 |---|---|
 | PETG or ASA, about 1.3 kg, "Go Away Green" | Plus a little for reprints |
+| Flame-retardant PETG (UL 94 V-0, e.g. Prusament PETG V0), about 0.1-0.3 kg | Recommended for `power_shelf` (and `base_rear`, if the colour works): mains and the brick sit there |
 | Foam tape, 2 mm (lid rim) and 1.5 mm (hatch) | |
 | Neutral-cure outdoor silicone | Base seam, pane, PIR dome |
 | Insect screen, mosquito grade (about 18 x 16 mesh) | Caps and behind the fans |
 | Matte black spray paint | Inside of the case, against light glow |
 | VHB tape, velcro strap, zip ties, foam plug for the chimney | |
 | 8 mm tent stakes | 4, optional |
+
+## Ordering plan (for Halloween)
+
+Printing takes 2 to 3 days on two printers and bring-up about a week, so order everything **by about October 5**. The slow items:
+
+| Item | Typical lead time | Order |
+|---|---|---|
+| HiFiBerry Amp4 | 1-2 weeks (often ships from Europe; check a local reseller) | First |
+| Cut-to-size acrylic | 3-10 days | First |
+| Noctua fans, DS18B20, PIR, relay/IR parts | 2-5 days | With the Amp4 |
+| 3/8-16 heat-set insert | 2-5 days (a less common size) | With the fasteners |
+| Filament (2 x 1 kg), fasteners, wire, fuses, silicone, screen | 1-3 days | Now |
+
+## Rough cost (excluding the projector)
+
+These are estimates from typical retail prices, not quotes; check current prices.
+
+| Group | Rough USD |
+|---|---|
+| Pi (one board) + microSD | 50-90 |
+| Amp4 + stacking header | 45-60 |
+| Speakers (outdoor pair) + wire | 50-120 |
+| Ball head + stud | 15-35 |
+| Fans (2x Noctua) + sensors + PIR | 40-55 |
+| Power parts (cord, gland, IEC, fuses, lever nuts, wire, connection box) | 35-60 |
+| Acrylic pane | 10-25 |
+| Inserts, screws, foam, silicone, screen, paint | 30-50 |
+| Filament, about 1.3 kg | 30-60 |
+| **Total** | **about 300-550** |
