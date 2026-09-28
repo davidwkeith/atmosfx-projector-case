@@ -1,0 +1,47 @@
+# Printing plan
+
+Two Prusa i3 MK3S (bed 250 x 210 x 210 mm), Prusament PETG (or ASA, which fades less in sun). Times and weights are PrusaSlicer's estimates from the v0.8 STLs with the stock `Original Prusa i3 MK3S & MK3S+` printer profile. Real prints run a little longer.
+
+## Settings
+
+- Print profile **0.20mm SPEED @MK3** for everything. The window's snap-out ribs leave a gap of one layer (`layer_h` = 0.2 in the model). If you print the base at another layer height, set `layer_h` to match and re-export.
+- **No supports** anywhere: every part is designed support-free.
+- Rotate `base_front` and `lid_front` 90 deg so the long side runs along the 250 mm axis. `base_front` is 243 x 201 mm, so turn off the skirt or keep it tight to the part.
+- The STLs are already in print orientation (lid roof-down, hatch cover ribs-up, window frame flat, caps plate-down).
+
+## Parts
+
+| Part | Qty | Time (0.20 SPEED) | PETG | Notes |
+|---|---|---|---|---|
+| `fit_coupon` | 1 | 1 h 28 m | 16 g | **Print first.** Test inserts, pilots, the keyhole on an M4 bolt, the acrylic in its slot |
+| `pedestal` | 1 | 1 h 42 m | 29 g | |
+| `window_frame` | 1 | 1 h 25 m | 22 g | |
+| `hatch_cover` | 1 | 2 h 59 m | 54 g | |
+| `sled_pi3` / `pi4` / `pi5` / `zero2w` | 1 | 1 h 8 m to 1 h 20 m | 18-19 g | The one for your Pi |
+| `vent_cap` | 3 | 13 m each | 2 g each | |
+| `intake_cap` | 1 | 21 m | 4 g | |
+| `ir_holder` | 0-1 | 15 m | 2 g | Only for the relay + IR fallback |
+| `power_shelf` | 1 | 3 h 15 m | 44 g | |
+| `lid_rear` | 1 | 5 h 53 m | 98 g | |
+| `lid_front` | 1 | 9 h 47 m | 169 g | |
+| `base_rear` | 1 | 16 h 28 m | 227 g | 11 h 19 m with 0.30mm DRAFT |
+| `base_front` | 1 | **37 h 22 m** | 562 g | 27 h 4 m with 0.30mm DRAFT (set `layer_h = 0.3`) |
+| **Total** | | **about 82 h** | **about 1.25 kg** | Two 1 kg spools |
+
+## Order, on two printers
+
+The small parts first, so any fit problem shows up before a 37-hour print.
+
+| Day | Printer A | Printer B |
+|---|---|---|
+| 1 | `fit_coupon`, then fix any tolerance in the SCAD and re-export | `pedestal`, `window_frame`, `hatch_cover` |
+| 1-2 | (after the coupon checks out) `base_front` | `sled`, caps, `power_shelf`, `lid_rear` |
+| 2-3 | `base_front` continues | `base_rear`, then `lid_front` |
+
+About 2 to 2.5 days of printing if nothing fails. A failed `base_front` costs the most: watch its first layers, and consider the 0.30 DRAFT profile for it.
+
+## After printing
+
+- Snap out the two thin ribs in the window opening.
+- Heat-set inserts: 3/8-16 and 1/4-20 (tripod, pedestal), M4 (hatch studs), M3 (sled thumbscrew). Use the sizes that fit the coupon.
+- Spray the inside of the case matte black (masking the window rebate and screw holes) so projector light doesn't glow through the vents at night.

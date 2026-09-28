@@ -11,7 +11,7 @@
 // Print PETG/ASA. Lid prints roof-down. Base+lid split front/rear (MK3S bed 250x210x210); rotate front pieces 90 deg.
 
 /* [Part] */
-part = "assembly"; // [assembly, base, lid, window_frame, pedestal, hatch_cover, power_shelf, sled, ir_holder, vent_cap, intake_cap]
+part = "assembly"; // [assembly, base, lid, window_frame, pedestal, hatch_cover, power_shelf, sled, ir_holder, vent_cap, intake_cap, fit_coupon]
 sled = "pi3";      // [pi3, pi4, pi5, zero2w] sled shown in the assembly / exported by part="sled"
 tile = "all";      // [all, front, rear] for base+lid
 explode = 0;       // [0:1:80]
@@ -23,8 +23,14 @@ proj_d = 172;   // depth (Y), lens faces front
 proj_h = 76;    // height (Z)
 lens_x = 0;     // lens offset from centre (+ = right)
 lens_z = 40;    // lens centre height above projector underside
-pane_w = 127;   // acrylic pane: 3 x 5 in (127 x 76.2 mm), a stock size; the window opening is the pane minus lap
-pane_h = 76.2;
+throw_ratio = 1.4;  // throw distance / image width (typical mini projector; check yours)
+aspect = 16/9;
+port_depth = 15;    // HDMI + power plugs on the projector's rear face: right-angle plugs with slack (a straight HDMI plug needs ~40)
+port_band = [15, 55];   // plug height range above the projector underside (guess: check yours)
+lens_offset = 0;    // vertical image offset: 0 = image centred on the lens axis, 1 = image bottom on the axis
+pane_w = 127;   // acrylic pane: 4 x 5 in (127 x 101.6 mm), a stock size; the window opening is the pane minus lap
+pane_h = 101.6;
+pane_top_clear = 7;  // pane top this far below the base rim: the window sits as high as it can, for upward tilt
 mount_x = 0;    // 1/4-20 socket offset from projector centre (keep within a few cm)
 mount_y = 0;    // + = toward rear
 
@@ -32,6 +38,7 @@ mount_y = 0;    // + = toward rear
 ball_head_h = 40;  // height of your ball head, base to mounting stud
 pivot_h = 25;      // ball centre above the head's base (aim pivot)
 aim_max = 15;      // pan OR tilt range the case must clear (check_clash.sh sweeps it)
+cone_tilt = 12;     // light-cone check: the image must clear the window, frame and visor at +/- this tilt
 aim_combo = 10;    // pan AND tilt together (corners); 15+15 would need a front tile past 250 mm
 ped_top = 30;      // pedestal top height above floor
 insert_d = 8.2;    // 1/4-20 heat-set insert hole; check your insert's datasheet
@@ -47,8 +54,8 @@ layer_h = 0.2;     // print layer height: gap above the window's snap-out ribs
 clearance = 0.3;
 side_air = 25;     // gap each side of projector (clears +/-15 deg pan)
 top_air  = 25;
-front_gap = 30;      // lens-down tilt swings the top front corner ~20 mm forward
-rear_gap  = 26;      // lens-up tilt swings the top rear corner back; aim-sweep in check_clash.sh sizes these
+front_gap = 26;      // lens-down tilt swings the top front corner forward; aim-sweep and light-cone checks size this
+rear_gap  = 32;      // lens-up tilt swings the rear plugs back (port_depth); aim-sweep sizes this
 pi_zone_d = 75;
 pane_t = 3.2;      // acrylic thickness (1/8 in); photo-frame glazing is often thinner
 lap = 8;           // pane overlap past the window opening
@@ -133,8 +140,8 @@ lid_clr = 0.6;
 skirt_h = 22;
 top_t = 3;
 rise = 12;         // roof slope, drains to rear
-visor_len = 40;
-lip_h = 12;
+visor_len = 30;     // longer visors and deeper lips cut into upward-tilted light (see light-cone check)
+lip_h = 4;          // drip lip at the visor tip
 gasket = 2;        // foam tape on the base rim; lid bosses stop 1 mm short so it compresses
 seam_rib = 4;      // extra roof thickness at the lid seam for the scarf joint
 
@@ -161,6 +168,7 @@ z_lens = z_pj + lens_z;
 proj_cy = y0 + front_gap + proj_d/2;
 ped_x = mount_x;
 ped_y = proj_cy + mount_y;
+win_zc = base_h - pane_top_clear - pane_h/2;   // window/pane centre height (above the lens: tilting up is the main use)
 win_w = pane_w - 2*lap;                   // clear opening for the light cone
 win_h = pane_h - 2*lap;
 frame_t = 4;
@@ -236,11 +244,11 @@ module louvers(len=60, n=4, pitch=8, dir=1) {
 
 module cuts() {
   // lens window + acrylic rebate (inside face)
-  translate([lens_x-win_w/2, y_front-1, z_lens-win_h/2]) cube([win_w, fw+2, win_h]);
-  translate([lens_x-(pane_w+2*clearance)/2, y0-pane_t-0.4, z_lens-(pane_h+2*clearance)/2])
+  translate([lens_x-win_w/2, y_front-1, win_zc-win_h/2]) cube([win_w, fw+2, win_h]);
+  translate([lens_x-(pane_w+2*clearance)/2, y0-pane_t-0.4, win_zc-(pane_h+2*clearance)/2])
     cube([pane_w+2*clearance, pane_t+0.5, pane_h+2*clearance]);
-  for (sx=[-1,1], sz=[-1,1])
-    translate([lens_x+sx*(pane_w/2+8), y0+0.1, z_lens+sz*(pane_h/2+8)])
+  for (sx=[-1,1], sz=[-1,1])   // frame screws on the sides, so the frame hugs the pane top and bottom
+    translate([lens_x+sx*(pane_w/2+8), y0+0.1, win_zc+sz*pane_h/4])
       rotate([90,0,0]) cylinder(d=2.6, h=8.1);
   // intake: slots in the raised floor (air enters from the gap underneath)
   for (i=[0:3]) translate([-45, y0+25+i*8, foot_h-0.5]) cube([90, 4, floor_t+1]);
@@ -294,7 +302,7 @@ module cuts() {
   for (sx=[-1,1], y=lid_screw_ys) translate([sx*(out_w/2+0.1), y, lid_screw_z]) rotate([0, -sx*90, 0]) cylinder(d=2.6, h=wall+8-1);
 }
 
-module base_all() {
+module base_all(ribs=true) {
   difference() {
     union() {
       difference() {
@@ -336,7 +344,7 @@ module base_all() {
     cuts();
   }
   // snap-out ribs: cut the window's top bridge into thirds; one layer gap so they break away
-  for (sx=[-1,1]) translate([lens_x+sx*win_w/6-0.4, y_front, z_lens-win_h/2-0.1])
+  if (ribs) for (sx=[-1,1]) translate([lens_x+sx*win_w/6-0.4, y_front, win_zc-win_h/2-0.1])
     cube([0.8, fw-pane_t-0.5, win_h-layer_h+0.1]);
 }
 
@@ -443,6 +451,8 @@ module lid() {
         difference() { plane_below(0); plane_below(seam_t); }
       }
     }
+    // notch the front skirt over the window so upward-tilted light clears it (the visor still shelters it)
+    translate([lens_x-(win_w+20)/2, yfl-1, -1]) cube([win_w+20, lid_d/2-out_d/2-lid_clr+1.01, skirt_h-top_t+1]);
     for (sx=[-1,1], y=lid_screw_ys)   // side screw slots: press the lid onto the gasket, then tighten
       hull() for (dz=[-0.5, 1.5]) translate([sx*(out_w/2-1), y, lid_screw_z-lid_z0+dz]) rotate([0, sx*90, 0]) cylinder(d=3.4, h=wall+lid_clr+3);
   }
@@ -450,9 +460,9 @@ module lid() {
 
 module window_frame() {
   difference() {
-    translate([-(pane_w+32)/2, 0, -(pane_h+32)/2]) cube([pane_w+32, frame_t, pane_h+32]);
+    translate([-(pane_w+32)/2, 0, -(pane_h+12)/2]) cube([pane_w+32, frame_t, pane_h+12]);
     translate([-(win_w+8)/2, -1, -(win_h+8)/2]) cube([win_w+8, frame_t+2, win_h+8]);
-    for (sx=[-1,1], sz=[-1,1]) translate([sx*(pane_w/2+8), -1, sz*(pane_h/2+8)]) rotate([-90,0,0]) cylinder(d=3.4, h=frame_t+2);
+    for (sx=[-1,1], sz=[-1,1]) translate([sx*(pane_w/2+8), -1, sz*pane_h/4]) rotate([-90,0,0]) cylinder(d=3.4, h=frame_t+2);
   }
 }
 
@@ -460,7 +470,7 @@ module assembly() {
   tile_cut(tile, base_seam) base_all();
   translate([ped_x, ped_y, z_floor+boss_h]) pedestal();
   translate([0, y_pi0+0.3, shelf_zz]) power_shelf();
-  translate([lens_x, y0, z_lens]) window_frame();
+  translate([lens_x, y0, win_zc]) window_frame();
   translate([-out_w/2-cover_gasket-3, hatch_y, hatch_zz]) rotate([90,0,90]) hatch_cover();
   translate([0, 0, lid_z0 + explode]) lid_tile(tile) lid();
   translate([0, 0, z_floor+sled_pad]) pi_sled(sled);
@@ -492,6 +502,28 @@ module vent_cap_placed(v) {   // plate faces into the case, box rim on the wall
   translate([v[0]*(inner_w/2-cap_h), v[1], v[2]]) rotate([0, v[0]*90, 0]) screen_cap(vent_open);
 }
 module intake_cap_placed() { translate([intake_c[0], intake_c[1], z_floor+cap_h]) mirror([0,0,1]) screen_cap(intake_open); }
+
+// Fit-test coupon: every critical hole, the keyhole and the pane slot in one short print.
+// Holes are made with the same parameters as the real parts, so tune them here first.
+module fit_coupon() {
+  holes = [[insert38_d, "3/8", insert38_len+2], [insert_d, "1/4", insert_len+2], [m4_insert_d, "M4i", 10],
+           [m3_insert_d, "M3i", 8], [gland_d, "PG9", 3], [3.4, "M3", 3], [2.6, "M3p", 8], [2.2, "M2.5p", 7], [1.8, "M2p", 6]];   // [d, label, boss height]
+  difference() {
+    union() {
+      cube([118, 30, 2]);                                             // strip under the holes
+      translate([0, 30, 0]) cube([30, 32, 3]);                        // keyhole tab, cover thickness
+      for (i=[0:len(holes)-1]) translate([8 + i*12.5, 15, 0]) cylinder(d=holes[i][0]+5, h=holes[i][2]);   // a boss per hole
+      translate([96, -12, 0]) cube([22, 12, 10]);                     // pane slot block
+    }
+    for (i=[0:len(holes)-1]) {
+      x = 8 + i*12.5;
+      translate([x, 15, holes[i][2] > 3 ? 1.2 : -1]) cylinder(d=holes[i][0], h=20);   // blind (1.2 mm floor) except the through-holes
+      translate([x, 25, 1.4]) linear_extrude(1) text(holes[i][1], size=2.4, halign="center");
+    }
+    translate([15, 52, -1]) hull() { cylinder(d=4.8, h=5); translate([0, -kh_drop, 0]) cylinder(d=9, h=5); }   // keyhole
+    translate([105, -13, 3]) cube([pane_t+0.5, 14, 8]);   // acrylic slot: same width as the pane rebate
+  }
+}
 
 // Fan body envelope, for clash checks and the preview
 module fan_body(f) { translate([inner_w/2-4-10, f[0]-fan/2, f[1]-fan/2]) cube([10, fan, fan]); }
@@ -533,6 +565,23 @@ module pi_sled(s) {
   }
 }
 
+// Light leaving the lens (a pyramid 400 mm long), in the same pose as projector(pan, tilt).
+// Anything it touches (window edge, frame, visor) would clip the image.
+module light_cone(pan=0, tilt=0, len=400) {
+  hw = len / (2*throw_ratio); hh = hw / aspect;
+  zc = lens_offset * hh;        // image centre above the axis
+  lens = [lens_x, y0+front_gap-0.1, z_pj+lens_z];
+  translate(pivot) rotate([0,0,pan]) rotate([-tilt,0,0]) translate(-pivot) translate(lens)
+    polyhedron(points=[[0,0,0], [-hw,-len,zc-hh], [hw,-len,zc-hh], [hw,-len,zc+hh], [-hw,-len,zc+hh]],
+               faces=[[0,2,1], [0,3,2], [0,4,3], [0,1,4], [1,2,3,4]]);
+}
+
+// Keep-out for the plugs behind the projector, in the same pose
+module projector_ports(pan=0, tilt=0) {
+  translate(pivot) rotate([0,0,pan]) rotate([-tilt,0,0]) translate(-pivot)
+    translate([-45, y0+front_gap+proj_d, z_pj+port_band[0]]) cube([90, port_depth, port_band[1]-port_band[0]]);
+}
+
 // Projector block panned (about Z) and tilted (about X, + = lens up) around the ball-head pivot
 module projector(pan=0, tilt=0) {
   translate(pivot) rotate([0,0,pan]) rotate([-tilt,0,0]) translate(-pivot)
@@ -547,6 +596,7 @@ else if (part == "pedestal") pedestal();
 else if (part == "power_shelf") power_shelf();
 else if (part == "hatch_cover") rotate([180,0,0]) hatch_cover();
 else if (part == "ir_holder") ir_holder();
+else if (part == "fit_coupon") fit_coupon();
 else if (part == "vent_cap") screen_cap(vent_open);
 else if (part == "intake_cap") screen_cap(intake_open);
 else if (part == "sled") translate([0, -pi_cy, 0]) pi_sled(sled);

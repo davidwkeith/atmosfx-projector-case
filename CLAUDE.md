@@ -12,14 +12,15 @@ A parametric OpenSCAD design (`projector_pi_case.scad`, currently v0.8) for an o
 
 ```sh
 make parts                    # all STLs -> stl/ (gitignored). OPENSCAD=/path/to/openscad if not on PATH
-scripts/check_clash.sh        # interference checks incl. cover lift-off path, lid tiles and the projector aim sweep. Must all say ok. Needs python3
+scripts/check_clash.sh        # interference checks incl. cover lift-off path, lid tiles, the projector + plug aim sweep and the light cone. Must all say ok. Needs python3
+# docs/PRINTING.md has sliced times (PrusaSlicer CLI with the stock MK3S profiles); print fit_coupon first
 scripts/render_previews.sh    # regenerate preview/*.png (needs a GL context; xvfb-run on headless Linux)
 scripts/publish.sh            # create a PRIVATE GitHub repo with gh and push
 ```
 
 Single part by hand: `openscad -o out.stl -D "part=\"base\"" -D "tile=\"front\"" projector_pi_case.scad`
 
-`part` = assembly | base | lid | window_frame | pedestal | hatch_cover | power_shelf | sled. `sled` = pi3 | pi4 | pi5 | zero2w (assembly shows it; `make parts` builds all four). `tile` = all | front | rear (base and lid only). `prebuilt/v0.8/` holds STLs built from the current SCAD (`v0.7/` is the previous design); `stl/` is regenerated output.
+`part` = assembly | base | lid | window_frame | pedestal | hatch_cover | power_shelf | sled. `sled` = pi3 | pi4 | pi5 | zero2w (assembly shows it; `make parts` builds all four). `tile` = all | front | rear (base and lid only). STLs are not committed: CI attaches them to a GitHub Release for each `v*` tag; `stl/` is regenerated output.
 
 Toolchain on the owner Mac: OpenSCAD snapshot (`brew install --cask openscad@snapshot`; the stable cask is an old Intel build; it aborts with "Incompatible processor" inside Claude Code's sandbox, so run it unsandboxed), PrusaSlicer, two Prusa i3 MK3S (bed 250 x 210 x 210).
 
@@ -49,7 +50,7 @@ Print orientation is baked into the `part` dispatch at the bottom (lid flipped r
 
 - Rain-proof, not sealed: a sealed box overheats the projector. Airflow: intake slots through the raised floor and 45 deg louvers; two 40 mm PWM fans on the right wall (`fans`: projector zone, and the Pi/brick zone above the shelf, fed through vents on the shelf's low-voltage side). The Pi runs fan curves from DS18B20 sensors and shuts the projector off on over-temperature. `fan_body()` is in the aim sweep and the `fans` clash check.
 - Ground-standing on 6 mm feet so the case drains underneath; drains exit into the gap under the floor. Also tripod-mountable: 3/8-16 (`tripod_y`, near the estimated centre of mass) and 1/4-20 (`tripod_y2`) inserts in a pad flush with the ribs. Move `tripod_y` once the real centre of mass is known.
-- Projector on a commercial mini ball head (1/4-20). Aim clears +/-15 deg on one axis, +/-10 deg on both (`aim_max`, `aim_combo`); the low pivot swings the top corners about 20 mm, which sizes `front_gap` and `rear_gap`. Both at 15 deg would push `base_front` past 250 mm. Printed ball joints were rejected (creep under load). Mini heads are rated about 1.5 kg; the projector is about 0.72 kg.
+- Projector on a commercial mini ball head (1/4-20). The body clears +/-15 deg on one axis and +/-10 deg on both (`aim_max`, `aim_combo`); the light cone (`light_cone`, `throw_ratio` 1.4, `lens_offset`) clears the window, frame and visor at +/-12 deg tilt (`cone_tilt`), which is the real limit. Plugs on the projector's rear (`projector_ports`, `port_depth` 15 for right-angle plugs) size `rear_gap`. The window is a 4 x 5 in pane set as high as the base allows (`pane_top_clear`), with the lid's front skirt notched over it and a short visor/lip, because upward tilt is the main use. The low pivot swings the top corners about 20 mm, which sizes `front_gap` and `rear_gap`. Both at 15 deg would push `base_front` past 250 mm. Printed ball joints were rejected (creep under load). Mini heads are rated about 1.5 kg; the projector is about 0.72 kg.
 - Lid: 4x M3 screws go sideways through the skirt (`lid_screw_ys`, `lid_screw_z`) into 45 deg-underside blocks in the base wall tops. The roof has no penetrations; the lid prints roof-down, so nothing can stand proud of the roof. Slots let the lid be pressed onto the gasket before tightening.
 - Theft and wind: four sealed stake tubes inside the corners (`stakes`, `stake_pts`) take tent stakes driven from inside; security screws on the lid keep them in. External tabs were ruled out because they push the front tile past the 210 mm bed axis.
 - Aiming is the main setup task, so the left wall has a tool-free hatch: cover hangs on four M4 button-head bolts through keyholes (narrow end up); lift `kh_drop`, pull off, aim, hang back. A 45 deg hood sheds rain, leaves room for the lift and must stay below the lid skirt (both checked).
@@ -68,8 +69,8 @@ Print orientation is baked into the `part` dispatch at the bottom (lid flipped r
 3. Centre of mass for the tripod insert: estimated about 12 mm behind the footprint centre from guessed weights (case 1.5 kg, projector 0.72 kg, brick 0.4 kg).
 4. DC brick: assumed 100 x 50 x 32 mm and 12 V. Owner must read the label (volts, amps, polarity) before wiring.
 5. PIR dome diameter and hole spacing (`pir_dome_d` 23.5, `pir_hole_sp` 28.7) and which GPIO the Amp4 leaves free. Stack heights per sled (`pi_stack_h` 40, `pi5_stack_h` 50 with Active Cooler, `zero_stack_h` 30, `zero_hat_z` 13 are guesses), Amp4 support and power on Pi 5 and Zero 2 W, and whether the brick can supply projector + Pi + amp together.
-6. Ball head height (`ball_head_h` = 40) and aim range (about +/-15 deg) depend on the head actually bought.
-7. Fit of hatch keyholes, acrylic rebate (sized for a 3 x 5 in, 1/8 in pane; `pane_w`/`pane_h` drive the window), heat-set insert holes (`insert_d` 8.2 for 1/4-20, `m4_insert_d` 5.6) is untested.
+6. Ball head height (`ball_head_h` = 40) and the aim range depend on the head actually bought. Throw ratio (1.4), lens offset (0), lens height, and where the projector's HDMI/power ports are (`port_band`, assumed on the rear face with right-angle plugs) are all guesses.
+7. Fit of hatch keyholes, acrylic rebate (sized for a 4 x 5 in, 1/8 in pane; `pane_w`/`pane_h` drive the window), heat-set insert holes (`insert_d` 8.2 for 1/4-20, `m4_insert_d` 5.6) is untested.
 8. Base seam collars and screws, the lid scarf joint and the gasket land are unprinted.
 9. Pi software lives in `pi/` (Matter switch, mpv player, scares, schedule, web UI, audio to the Amp4); untested on hardware. Device-facing names use `VideoFX-XXXX` (hostname `videofx-xxxx`, last 4 of the MAC; system paths and units `videofx`), not the AtmosFX trademark.
 

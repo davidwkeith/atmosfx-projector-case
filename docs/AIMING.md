@@ -15,8 +15,10 @@ The projector sits on a ball head inside the case. You reach it through the aim 
 | Movement | Inside the case |
 |---|---|
 | Pan (left/right) only | +/-15 deg |
-| Tilt (up/down) only | +/-15 deg |
+| Tilt (up/down) only | +/-12 deg (the image starts clipping on the window or visor beyond this) |
 | Pan and tilt together | +/-10 deg each |
+
+These assume a typical 1.4:1 projector with the image centred on the lens. Many mini projectors throw the image upward ("offset"); those clear about +10 to -18 deg of tilt, but their image already points about 11 deg up at 0 deg.
 
 Past that, the projector hits the window frame or the Pi divider. Get the case close first and use the ball head for fine adjustment.
 

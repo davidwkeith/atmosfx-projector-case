@@ -50,7 +50,7 @@ run lid-cover      "intersection(){ $LID; $COVER; }"
 run lid-hood       "intersection(){ $LID; hood(); }"
 run shelf-base     "intersection(){ base_all(); translate([0, y_pi0+0.3, shelf_zz]) power_shelf(); }"
 run pedestal-base  "intersection(){ base_all(); translate([ped_x, ped_y, z_floor+boss_h]) pedestal(); }"
-run frame-base     "intersection(){ base_all(); translate([lens_x, y0, z_lens]) window_frame(); }"
+run frame-base     "intersection(){ base_all(); translate([lens_x, y0, win_zc]) window_frame(); }"
 run lid-tiles      "intersection(){ lid_tile(\"front\") lid(); lid_tile(\"rear\") lid(); }"
 for s in pi3 pi4 pi5 zero2w; do
   run "sled-$s"   "intersection(){ base_all(); translate([0,0,z_floor+sled_pad]) pi_sled(\"$s\"); }"
@@ -58,7 +58,11 @@ for s in pi3 pi4 pi5 zero2w; do
 done
 run screen-caps    "intersection(){ base_all(); union(){ for (v=vents) vent_cap_placed(v); intake_cap_placed(); } }"
 run fans           "intersection(){ for (f=fans) fan_body(f); union(){ base_all(); translate([0, y_pi0+0.3, shelf_zz]) power_shelf(); } }"
-run aim-sweep      "intersection(){ union(){ base_all(); $LID; translate([lens_x, y0, z_lens]) window_frame(); for (f=fans) fan_body(f); }
+run aim-sweep      "intersection(){ union(){ base_all(); $LID; translate([lens_x, y0, win_zc]) window_frame(); for (f=fans) fan_body(f); }
                       for (a=[[1,0],[0,1],[1,1],[1,-1]], sg=[-1,1])
-                        projector(sg*a[0]*(a[1] ? aim_combo : aim_max), sg*a[1]*(a[0] ? aim_combo : aim_max)); }"
+                        { projector(sg*a[0]*(a[1] ? aim_combo : aim_max), sg*a[1]*(a[0] ? aim_combo : aim_max));
+                          projector_ports(sg*a[0]*(a[1] ? aim_combo : aim_max), sg*a[1]*(a[0] ? aim_combo : aim_max)); } }"
+run light-cone     "intersection(){ union(){ base_all(false); $LID; translate([lens_x, y0, win_zc]) window_frame(); }
+                      for (a=[[1,0],[0,1],[1,1],[1,-1]], sg=[-1,1])
+                        light_cone(sg*a[0]*(a[1] ? aim_combo : aim_max), sg*a[1]*(a[0] ? aim_combo : cone_tilt)); }"
 exit $fail

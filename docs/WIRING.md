@@ -49,7 +49,7 @@ Solid lines carry power. Dotted lines are signals. The relay is only fitted if t
 
 Everything left of the barrier on the power shelf.
 
-1. **Supply.** Plug into an outdoor GFCI outlet (US code already requires GFCI for outdoor receptacles; test it with its button). Use an outdoor-rated cord (SJTW or better, 18 AWG minimum) and an in-use weatherproof cover on the outlet.
+1. **Supply.** Keep every plug-and-socket joint off the ground and out of puddles: put any extension-cord joint in a weatherproof connection box (a clamshell "cord connection" cover) and raise it off the lawn. Plug into an outdoor GFCI outlet (US code already requires GFCI for outdoor receptacles; test it with its button). Use an outdoor-rated cord (SJTW or better, 18 AWG minimum) and an in-use weatherproof cover on the outlet.
 2. **Cord entry.** The cord enters through the PG9 cord grip in the rear wall, above the shelf. Tighten the grip on the round cord jacket. Leave a drip loop outside, below the grip, so water drips off before reaching it.
 3. **Leave the brick unmodified.** Most projector bricks take a detachable AC cord (IEC C7 "figure 8", C5 "cloverleaf" or C13). Fit a **rewireable** IEC connector of the same type to the end of your outdoor cord inside the case and plug it into the brick. If your brick has a captive cord instead, stop and get the AC side wired by someone qualified.
 4. **AC fuse.** An inline fuse holder on the **live** (hot) conductor only, between the cord grip and the IEC connector. US polarized plugs: the live is the narrow blade, usually the smooth or black conductor.
