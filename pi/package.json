@@ -1,0 +1,22 @@
+{
+  "name": "videofx-player",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Matter On/Off plug that loops a video playlist full screen with cvlc on a Raspberry Pi, with a LAN web UI",
+  "type": "module",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "node src/main.js",
+    "test": "vitest run"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "license": "CC-BY-SA-4.0",
+  "dependencies": {
+    "@matter/main": "0.17.9"
+  },
+  "devDependencies": {
+    "vitest": "5.0.2"
+  }
+}

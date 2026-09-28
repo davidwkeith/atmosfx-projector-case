@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>VideoFX</title>
+  <link rel="stylesheet" href="/app.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <header>
+    <h1 id="name">VideoFX</h1>
+    <span id="state" class="pill">…</span>
+  </header>
+
+  <main>
+    <section aria-labelledby="h-power">
+      <h2 id="h-power">Playback</h2>
+      <p id="problem" class="warn" hidden></p>
+      <button id="power" type="button" class="big" disabled>…</button>
+    </section>
+
+    <section aria-labelledby="h-volume">
+      <h2 id="h-volume">Speaker volume</h2>
+      <div class="volume">
+        <input id="volume" type="range" min="0" max="100" step="1" value="30" aria-labelledby="h-volume" disabled>
+        <output id="volume-value" for="volume">…</output>
+        <button id="mute" type="button" disabled>Mute</button>
+      </div>
+    </section>
+
+    <section aria-labelledby="h-playlist">
+      <h2 id="h-playlist">Playlist</h2>
+      <p class="hint">Plays top to bottom and loops. Unchecked items are skipped. Saving restarts playback if it is running.</p>
+      <ol id="playlist" class="rows"></ol>
+      <p id="playlist-empty" class="hint" hidden>Empty. Add videos below.</p>
+      <div class="actions">
+        <button id="save" type="button" class="primary" disabled>Save playlist</button>
+        <button id="revert" type="button" disabled>Undo changes</button>
+      </div>
+    </section>
+
+    <section aria-labelledby="h-media">
+      <h2 id="h-media">Videos</h2>
+      <ul id="media" class="rows"></ul>
+      <p id="media-empty" class="hint" hidden>No videos yet.</p>
+      <label class="upload">
+        <span>Upload videos</span>
+        <input id="upload" type="file" multiple accept="video/*,audio/*,.m3u,.m3u8">
+      </label>
+      <progress id="progress" max="1" value="0" hidden></progress>
+      <p id="space" class="hint"></p>
+    </section>
+
+    <section aria-labelledby="h-settings">
+      <h2 id="h-settings">Settings</h2>
+      <p class="hint">Changes here are saved on the Pi and override <code>/etc/default/videofx</code>. "Reset" goes back to the file value, or the built-in default.</p>
+      <div id="restart-banner" class="banner" hidden>
+        <p>Some changes need a service restart.</p>
+        <button id="restart-now" type="button" class="primary">Restart service</button>
+      </div>
+      <div id="settings"></div>
+      <details class="restart">
+        <summary>Restart service</summary>
+        <p>Stops playback for a few seconds; the service comes back by itself and restores the last state.</p>
+        <button id="restart" type="button">Restart now</button>
+      </details>
+    </section>
+
+    <section aria-labelledby="h-matter">
+      <h2 id="h-matter">Matter</h2>
+      <div id="unpaired" hidden>
+        <p>Not paired. In Apple Home: <b>+</b> &gt; <b>Add Accessory</b>, then scan this code.</p>
+        <img id="qr" alt="Matter pairing QR code" width="220" height="220">
+        <p>Or choose <b>More options</b> and enter <code id="manual"></code></p>
+      </div>
+      <div id="paired" hidden>
+        <p id="fabrics"></p>
+        <details>
+          <summary>Reset Matter pairing</summary>
+          <p>Removes this device from every Matter controller (Apple Home, Google Home, …). You will have to pair it again. Videos and the playlist are kept.</p>
+          <button id="reset" type="button" class="danger">Reset pairing</button>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <p id="toast" role="status" aria-live="polite" hidden></p>
+</body>
+</html>

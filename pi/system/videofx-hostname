@@ -1,0 +1,43 @@
+#!/bin/bash
+# Name this Pi from the last 4 hex digits of eth0's MAC (wlan0 if there is no
+# eth0): hostname videofx-abcd (lowercase), shown to people as VideoFX-ABCD.
+# Runs once; /var/lib/videofx-name records the hostname.
+set -euo pipefail
+
+mac=""
+model=$(tr -d '\0' </proc/device-tree/model 2>/dev/null || true)
+# Zero and Model A boards have no Ethernet: don't wait for an eth0 that never comes.
+case "$model" in
+  *Zero* | *"Model A"*) tries=0 ;;
+  *) tries=30 ;; # eth0 on a Pi 3 is a USB chip and can take a few seconds to appear
+esac
+for _ in $(seq "$tries"); do
+  [ -r /sys/class/net/eth0/address ] && { mac=$(cat /sys/class/net/eth0/address); break; }
+  sleep 0.5
+done
+if [ -z "$mac" ] && [ -r /sys/class/net/wlan0/address ]; then
+  mac=$(cat /sys/class/net/wlan0/address)
+fi
+[ -n "$mac" ] || { echo "no eth0 or wlan0 MAC found" >&2; exit 1; }
+
+hex=$(tr -d ':\n' <<<"$mac" | tr '[:upper:]' '[:lower:]')
+hex=${hex: -4}
+name="videofx-$hex"
+display="VideoFX-$(tr '[:lower:]' '[:upper:]' <<<"$hex")"
+
+echo "$name" > /etc/hostname
+if grep -q '^127\.0\.1\.1' /etc/hosts; then
+  sed -i "s/^127\.0\.1\.1.*/127.0.1.1\t$name/" /etc/hosts
+else
+  printf '127.0.1.1\t%s\n' "$name" >> /etc/hosts
+fi
+hostname "$name"
+
+# Bonjour shows the display name (avahi's %h would give the lowercase hostname).
+avahi=/etc/avahi/services/videofx.service
+if [ -e "$avahi" ]; then
+  sed -i "s|<name[^>]*>.*</name>|<name>$display</name>|" "$avahi"
+fi
+
+echo "$name" > /var/lib/videofx-name
+echo "hostname set to $name ($display)"

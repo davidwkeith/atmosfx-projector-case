@@ -1,0 +1,17 @@
+# First boot only: name this Pi VideoFX-XXXX from its MAC before the network, avahi
+# (mDNS) and the player start, so DHCP and Bonjour use the new name.
+[Unit]
+Description=Name this Pi VideoFX-XXXX from its MAC address
+DefaultDependencies=no
+After=local-fs.target systemd-udevd.service
+Before=network-pre.target NetworkManager.service avahi-daemon.service videofx-player.service
+Wants=network-pre.target
+ConditionPathExists=!/var/lib/videofx-name
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/videofx-hostname
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

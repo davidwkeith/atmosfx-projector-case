@@ -1,0 +1,8 @@
+# Installed by setup.sh as /etc/udev/rules.d/99-videofx.rules.
+# CEC adapters (vc4 HDMI under KMS) and lirc IR devices: the video group.
+SUBSYSTEM=="cec", KERNEL=="cec[0-9]*", GROUP="video", MODE="0660"
+SUBSYSTEM=="lirc", KERNEL=="lirc[0-9]*", GROUP="video", MODE="0660"
+# GPIO character devices: the gpio group (Raspberry Pi OS does this too).
+SUBSYSTEM=="gpio", KERNEL=="gpiochip[0-9]*", GROUP="gpio", MODE="0660"
+# fbdev blank, for projector power "hdmi-off": let the video group write it.
+SUBSYSTEM=="graphics", KERNEL=="fb0", RUN+="/bin/chgrp video /sys%p/blank", RUN+="/bin/chmod g+w /sys%p/blank"

@@ -1,0 +1,5 @@
+node_modules/
+# Image build: secrets and build output
+config
+.build/
+deploy/

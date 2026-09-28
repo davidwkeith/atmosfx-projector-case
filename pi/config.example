@@ -1,0 +1,27 @@
+# Image build settings. Copy to pi/config (gitignored) and fill in:
+#   cp pi/config.example pi/config
+# Never commit pi/config: it holds the Wi-Fi and login passwords.
+
+# --- pi-gen settings (see https://github.com/RPi-Distro/pi-gen/tree/arm64#config)
+FIRST_USER_NAME=dwk
+# Required by pi-gen when the user is kept as-is (no first-boot rename wizard).
+FIRST_USER_PASS='change-me'
+# Public key(s) allowed to SSH in as FIRST_USER_NAME. Password SSH is disabled.
+PUBKEY_SSH_FIRST_USER='ssh-ed25519 AAAA... you@laptop'
+LOCALE_DEFAULT=en_US.UTF-8
+KEYBOARD_KEYMAP=us
+KEYBOARD_LAYOUT='English (US)'
+TIMEZONE_DEFAULT=America/Los_Angeles
+# Two-letter country code; also unblocks Wi-Fi.
+WPA_COUNTRY=US
+# The hostname is not set here: each Pi names itself VideoFX-XXXX (from its MAC) on first boot.
+
+# --- Wi-Fi (leave WIFI_SSID empty for Ethernet only)
+WIFI_SSID='MyNetwork'
+WIFI_PSK='my-wifi-password'
+
+# --- /etc/default/videofx on the image
+# State after power loss: last | on | off
+VIDEOFX_RESTORE=last
+# Web UI password (basic auth). Empty: no password, LAN-only access.
+VIDEOFX_WEB_PASSWORD=''

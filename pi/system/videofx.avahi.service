@@ -1,0 +1,12 @@
+<?xml version="1.0" standalone='no'?>
+<!DOCTYPE service-group SYSTEM "avahi-service.dtd">
+<!-- Installed as /etc/avahi/services/videofx.service: advertises the web UI as
+     "VideoFX-XXXX" (%h = hostname). Change the port if you change VIDEOFX_HTTP_PORT. -->
+<service-group>
+  <name replace-wildcards="yes">%h</name>
+  <service>
+    <type>_http._tcp</type>
+    <port>80</port>
+    <txt-record>path=/</txt-record>
+  </service>
+</service-group>

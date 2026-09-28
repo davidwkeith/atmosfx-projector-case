@@ -1,0 +1,16 @@
+name: Build STLs
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+jobs:
+  stl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update && sudo apt-get install -y openscad
+      - run: make parts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: stl
+          path: stl/*.stl

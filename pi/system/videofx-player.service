@@ -1,0 +1,35 @@
+# Installed by setup.sh, which replaces User= with the login user.
+[Unit]
+Description=VideoFX player (Matter device driving mpv, projector power, web UI)
+Wants=network-online.target
+After=network-online.target sound.target videofx-hostname.service
+
+[Service]
+Type=simple
+User=pi
+# DRM/KMS output, hardware decode, CEC and IR (video), ALSA, tty1 for the
+# black/pairing screen, and GPIO (PIR, relay).
+SupplementaryGroups=video render audio tty gpio
+# Web UI on port 80 without running as root.
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+EnvironmentFile=-/etc/default/videofx
+WorkingDirectory=/opt/videofx
+ExecStart=/usr/bin/node /opt/videofx/src/main.js
+# Matter fabrics and last on/off state: /var/lib/videofx (exported as $STATE_DIRECTORY).
+StateDirectory=videofx
+StateDirectoryMode=0700
+# /run/videofx: mpv's IPC socket.
+RuntimeDirectory=videofx
+RuntimeDirectoryMode=0700
+# always: also after "Reset Matter pairing", which exits cleanly.
+Restart=always
+RestartSec=5
+# SIGTERM to node only; it stops mpv itself, then systemd cleans up the rest.
+KillMode=mixed
+TimeoutStopSec=15
+NoNewPrivileges=yes
+ProtectSystem=full
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

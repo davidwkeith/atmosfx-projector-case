@@ -1,0 +1,65 @@
+# /etc/default/videofx - settings for videofx-player.service.
+#
+# Most of these can also be changed in the web page (Settings), which saves them
+# in /var/lib/videofx/settings.json. A value set there WINS over this file; "Reset"
+# on the page goes back to the value here, or the built-in default.
+# Precedence: web page > this file > default.
+#
+# After editing this file: sudo systemctl restart videofx-player
+# Root-only (mode 600) because it can hold the web page password.
+
+# --- Also in the web page ---------------------------------------------------
+
+# State after a reboot or power cut: last | on | off
+VIDEOFX_RESTORE=last
+
+# Name shown in Matter controllers and the web page. Default: VideoFX-XXXX (from the MAC).
+#VIDEOFX_NAME=
+
+# Web page password (HTTP basic auth, any user name). Empty: no password; the page
+# still only answers requests from private/LAN addresses.
+#VIDEOFX_WEB_PASSWORD=
+
+# Largest upload in MB.
+#VIDEOFX_MAX_UPLOAD_MB=4096
+
+# Extra host names the web page accepts (space separated), e.g. a UniFi local DNS
+# record. VideoFX-XXXX, videofx-xxxx.local and IP addresses always work.
+#VIDEOFX_WEB_HOSTS=projector.home.arpa
+
+# Starting speaker volume (0-100). The web page slider saves its own value.
+#VIDEOFX_VOLUME_DEFAULT=30
+
+# Amplifier: ALSA card name and mixer control (HiFiBerry Amp4 / TAS5756M).
+#VIDEOFX_AUDIO_CARD=sndrpihifiberry
+#VIDEOFX_MIXER_CONTROL=Digital
+
+# DRM connector VLC draws on. HDMI-A-1 = the only HDMI port on a Pi 3 / Zero 2 W,
+# and HDMI0 (next to USB-C) on a Pi 4B / 5. Empty lets VLC choose.
+#VIDEOFX_VIDEO_OUTPUT=HDMI-A-1
+
+# Extra VLC arguments (whitespace separated, no quoting). Replaces the default,
+# which sends audio to the amp:
+#   --aout=alsa --alsa-audio-device=plughw:CARD=sndrpihifiberry,DEV=0
+# Network, control, streaming and scripting options (--extraintf, --intf, -I,
+# --control, --lua-*, --http-*, --telnet-*, --rc-*, --sout, URLs) are refused.
+#VIDEOFX_VLC_EXTRA_ARGS=--aout=alsa --alsa-audio-device=plughw:CARD=sndrpihifiberry,DEV=0
+
+# Console used for the black screen and pairing code. Empty disables it.
+# (Web page too, but it needs a service restart.)
+#VIDEOFX_CONSOLE=/dev/tty1
+
+# --- Only here (need root, or would let the web page point the service anywhere)
+
+# Web page port. If you change it, change <port> in /etc/avahi/services/videofx.service too.
+#VIDEOFX_HTTP_PORT=80
+
+# Matter UDP port.
+#VIDEOFX_MATTER_PORT=5540
+
+# Videos and playlist. Default: ~/media and ~/media/playlist.m3u of the service user.
+#VIDEOFX_MEDIA_DIR=/home/pi/media
+#VIDEOFX_PLAYLIST=/home/pi/media/playlist.m3u
+
+# VLC command.
+#VIDEOFX_VLC=cvlc
