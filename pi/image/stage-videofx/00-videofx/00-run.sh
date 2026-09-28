@@ -2,8 +2,9 @@
 # files/app, files/videofx.env and files/wifi.nmconnection are put here by
 # image/build.sh at build time; they are not in git.
 
-rm -rf "${ROOTFS_DIR}/tmp/videofx"
-cp -r files/app "${ROOTFS_DIR}/tmp/videofx"
+# Stage under /var/tmp: pi-gen's on_chroot mounts a fresh tmpfs over /tmp, which would hide files copied there.
+rm -rf "${ROOTFS_DIR}/var/tmp/videofx"
+cp -r files/app "${ROOTFS_DIR}/var/tmp/videofx"
 
 if [ -f files/videofx.env ]; then
 	install -m 600 files/videofx.env "${ROOTFS_DIR}/etc/default/videofx"
@@ -17,8 +18,8 @@ if [ -f files/videofx-storage.conf ]; then
 fi
 
 on_chroot <<- CHROOT
-	/tmp/videofx/system/setup.sh "${FIRST_USER_NAME}" /tmp/videofx
-	rm -rf /tmp/videofx
+	/var/tmp/videofx/system/setup.sh "${FIRST_USER_NAME}" /var/tmp/videofx
+	rm -rf /var/tmp/videofx
 	# Power-cut protection: our first-boot service makes the data partition and
 	# turns on the read-only root, so Pi OS must not grow root over the whole card.
 	systemctl disable rpi-resize.service 2>/dev/null || true

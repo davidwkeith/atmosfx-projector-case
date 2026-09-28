@@ -112,6 +112,8 @@ umask 077
 umask 022
 
 echo "== build (takes a while)"
+# A failed run leaves pi-gen's container behind, and build-docker.sh then refuses to start.
+docker rm -v pigen_work >/dev/null 2>&1 || true
 (cd "$pigen" && ./build-docker.sh)
 
 mkdir -p "$pi/deploy"
