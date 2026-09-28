@@ -325,10 +325,16 @@ export class Player extends EventEmitter {
     this.#queueTimer = null;
   }
 
-  // Send commands in order; log (don't throw) failures.
+  // Send commands strictly in order, across calls too: two quick reloads must not
+  // interleave their playlist edits. Failures are logged, not thrown.
+  #queue = Promise.resolve();
   #run(...commands) {
-    return commands
-      .reduce((p, cmd) => p.then(() => this.#mpv.command(...cmd)), Promise.resolve())
-      .catch((err) => this.#log.error(`mpv: ${err.message}`));
+    const batch = this.#queue.then(() =>
+      commands
+        .reduce((p, cmd) => p.then(() => this.#mpv.command(...cmd)), Promise.resolve())
+        .catch((err) => this.#log.error(`mpv: ${err.message}`)),
+    );
+    this.#queue = batch;
+    return batch;
   }
 }

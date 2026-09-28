@@ -16,6 +16,7 @@ let vf = [];
 let playlist = [];
 let pos = -1;
 let timer = null;
+let generation = 0; // cancels the delayed events of a file that was replaced
 const clients = new Set();
 const log = (...a) => console.log("fake-mpv:", ...a);
 
@@ -26,6 +27,7 @@ const emit = (event) => {
 
 function start(i) {
   clearTimeout(timer);
+  const gen = ++generation;
   if (i < 0 || i >= playlist.length) {
     pos = -1;
     emit({ event: "idle" });
@@ -34,8 +36,10 @@ function start(i) {
   pos = i;
   emit({ event: "start-file", playlist_entry_id: i + 1 });
   setTimeout(() => {
+    if (gen !== generation) return;
     emit({ event: "file-loaded" });
     setTimeout(() => {
+      if (gen !== generation) return;
       emit({ event: "playback-restart" });
       log(`playing ${playlist[pos]}`);
       timer = setTimeout(eof, duration);
@@ -57,6 +61,7 @@ function eof() {
 
 function end(reason) {
   clearTimeout(timer);
+  generation++;
   if (pos >= 0) emit({ event: "end-file", reason });
 }
 

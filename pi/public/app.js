@@ -1,10 +1,11 @@
-import { enabledCount, isMediaFile, moveEntry } from "/playlist-core.js";
+import { enabledCount, isMediaFile, moveEntry, suggestScarePairs } from "/playlist-core.js";
 
 const $ = (id) => document.getElementById(id);
 const WRITE = { "x-videofx": "1" }; // required on every write (CSRF guard)
 
 let status = null;
 let files = []; // [{ name, size }]
+let settingsData = null; // /api/settings
 let maxUploadBytes = Infinity;
 let saved = []; // playlist as on disk
 let entries = []; // playlist being edited
@@ -74,6 +75,7 @@ async function refreshStatus() {
 
   renderVolume(status.volume);
   $("restart-banner").hidden = !status.restartNeeded?.length;
+  renderLive(status);
 
   const m = status.matter;
   $("unpaired").hidden = m.commissioned;
@@ -115,6 +117,7 @@ async function refreshMedia() {
   files = data.files;
   saved = data.playlist;
   maxUploadBytes = data.maxUploadBytes ?? Infinity;
+  queueMicrotask(() => renderScare());
   if (!edited) entries = structuredClone(saved);
   $("space").textContent =
     `${bytes(data.freeBytes)} free` + (data.maxUploadBytes ? ` · max ${bytes(data.maxUploadBytes)} per file` : "");
@@ -235,23 +238,31 @@ const APPLY = {
 };
 const SOURCE = { web: "set here", file: "from /etc/default/videofx", default: "default" };
 const NUMBER_KEYS = new Set(["volume", "maxUploadMb", "httpPort", "matterPort"]);
-const GROUPS = ["Device", "Web page", "Audio", "Display", "Advanced", "Fixed"];
+const GROUPS = ["Device", "Playback", "Scare", "Projector", "Motion sensor", "Schedule", "DMX", "Cooling", "Web page", "Audio", "Display", "Advanced", "Fixed"];
 
 const show = (key, v) => (Array.isArray(v) ? v.join(" ") : v === "" ? "(empty)" : String(v));
 
 async function refreshSettings() {
-  const data = await api("/api/settings");
-  renderSettings(data);
+  settingsData = await api("/api/settings");
+  renderSettings(settingsData);
+  renderScare();
+  renderSchedule();
+  $("ir-code").value = setting("irPowerCode") ?? "";
 }
+
+const setting = (key) => settingsData?.settings.find((s) => s.key === key)?.value;
 
 function renderSettings({ settings, restartNeeded, device }) {
   $("restart-banner").hidden = !restartNeeded?.length;
-  const byGroup = Object.groupBy ? Object.groupBy(settings, (s) => s.group) : settings.reduce((g, s) => ((g[s.group] ??= []).push(s), g), {});
+  const shown = settings.filter((s) => !s.custom); // those have their own sections
+  const byGroup = shown.reduce((g, s) => ((g[s.group] ??= []).push(s), g), {});
   const groups = GROUPS.filter((g) => byGroup[g]).map((group) => {
     const rows = byGroup[group].map((s) => (s.key === "password" ? passwordRow(s) : s.apply === "fixed" ? fixedRow(s) : settingRow(s)));
     if (group === "Fixed") {
       rows.unshift(fixedRow({ label: "Raspberry Pi model", value: device?.model ?? "unknown (not a Pi?)", key: "model", apply: "detected" }));
+      rows.push(pinTable(settings));
     }
+    if (group === "DMX") rows.push(el("div", { id: "dmx-live" }));
     const title = group === "Fixed" ? "Fixed here (root only)" : group;
     const note =
       group === "Fixed"
@@ -369,6 +380,154 @@ async function restartService() {
   toast("Restarting… this page reconnects by itself.");
 }
 
+// --- live status: DMX, alarms, projector, scare, schedule, cooling
+
+function renderLive(st) {
+  const dmx = st.dmx ?? {};
+  $("dmx-banner").hidden = !dmx.inControl;
+  for (const id of ["power", "volume", "mute"]) if (dmx.inControl) $(id).disabled = true;
+
+  const alarms = [...(st.thermal?.enabled ? st.thermal.alarms : []), ...(st.projector?.notice ? [{ level: "warn", text: st.projector.notice }] : [])];
+  $("alarm-banner").hidden = alarms.length === 0;
+  $("alarm-banner").replaceChildren(...alarms.map((a) => el("p", {}, `${a.level === "critical" ? "⚠ " : ""}${a.text}`)));
+
+  const p = st.player ?? {};
+  $("scare-now").hidden = !(st.on && p.mode === "scare");
+  const seam = p.lastSeamMs?.toScareMs !== null && p.lastSeamMs?.toScareMs !== undefined ? ` · last seams ${p.lastSeamMs.toScareMs} / ${p.lastSeamMs.toBufferMs ?? "–"} ms` : "";
+  $("scare-state").hidden = p.mode !== "scare";
+  $("scare-state").textContent = p.scareActive ? "Scare playing…" : p.cooldownLeftMs > 0 ? `Cooling down: ${Math.ceil(p.cooldownLeftMs / 1000)} s${seam}` : `Ready${seam}`;
+
+  const pr = st.projector ?? {};
+  const cec = pr.mode === "cec" ? ` · CEC ${pr.cec === "supported" ? "supported" : pr.cec === "no-response" ? "no response (using hdmi-off)" : "not checked yet"}` : "";
+  $("projector-state").textContent = `Projector (${pr.mode ?? "?"}): ${pr.power ?? "unknown"}${cec}`;
+
+  const next = st.schedule?.next;
+  $("schedule-next").hidden = !st.schedule?.enabled;
+  $("schedule-next").textContent = next
+    ? `Next: ${next.on ? "on" : "off"} ${new Date(next.at).toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit" })} (${next.label})${dmx.inControl ? " · paused while DMX is in control" : ""}`
+    : "Schedule on, but nothing is scheduled in the next week.";
+
+  renderCooling(st.thermal);
+  renderDmx(dmx);
+}
+
+function renderCooling(t) {
+  const table = $("cooling");
+  if (!t?.enabled) {
+    table.replaceChildren(el("tr", {}, el("td", {}, "Off. Turn on in Settings > Cooling once the fans and sensors are wired.")));
+    $("sensor-pick").replaceChildren();
+    return;
+  }
+  const c = (v) => (v === null || v === undefined ? "–" : `${v.toFixed(1)} °C`);
+  const rows = [
+    ["Projector zone", `${c(t.temps?.[0])} · fan ${t.duty?.[0] ?? "–"}% · ${t.rpm?.[0] ?? "–"} rpm`],
+    ["Pi / brick zone", `${c(t.temps?.[1])} · fan ${t.duty?.[1] ?? "–"}% · ${t.rpm?.[1] ?? "–"} rpm`],
+    ["State", t.tripped ? `Stopped: ${t.tripped}` : t.cooling ? "Projector fan running on after power-off" : "OK"],
+  ];
+  table.replaceChildren(...rows.map(([k, v]) => el("tr", {}, el("th", {}, k), el("td", {}, v))));
+  // DS18B20 pickers
+  if (!settingsData || document.activeElement?.closest?.("#sensor-pick")) return;
+  const pick = (key, label) => {
+    const current = setting(key) ?? "";
+    const ids = [...new Set(["", ...(t.sensors ?? []), current])];
+    const select = el("select", { id: `pick-${key}` }, ...ids.map((id) => el("option", { value: id, selected: id === current }, id || "(none)")));
+    const save = el("button", { type: "button", className: "primary" }, "Save");
+    save.addEventListener("click", () => run(() => changeSetting("PUT", { key, label }, { value: select.value })));
+    return el("div", { className: "setting" }, el("label", { className: "title", htmlFor: select.id }, label), el("div", { className: "row" }, select, save));
+  };
+  $("sensor-pick").replaceChildren(pick("sensorProjector", "Projector-zone sensor"), pick("sensorPi", "Pi-zone sensor"));
+}
+
+function renderDmx(dmx) {
+  const box = $("dmx-live");
+  if (!box) return;
+  if (!dmx.enabled) return box.replaceChildren(el("p", { className: "hint" }, "DMX is off."));
+  const names = ["Power", "Mode", "Clip", "Trigger", "Volume", "Mute", "Dimmer", "Reserved"];
+  const values = dmx.values ? names.map((n, i) => `${n} ${dmx.values[i]}`).join(" · ") : "no data yet";
+  box.replaceChildren(
+    el("p", { className: "hint" }, dmx.inControl ? "In control." : dmx.live ? "Signal present." : "No signal."),
+    el("table", { className: "kv" }, ...(dmx.sources ?? []).map((s) => el("tr", {}, el("th", {}, s.name || "(unnamed)"), el("td", {}, `${s.ip} · priority ${s.priority} · ${s.packetsPerSecond} packets/s`)))),
+    el("p", { className: "mono" }, values),
+    el("p", { className: "hint" }, `${dmx.rejected ?? 0} packets rejected (malformed / out of sequence).`),
+  );
+}
+
+function pinTable(settings) {
+  const v = Object.fromEntries(settings.map((s) => [s.key, s.value]));
+  const rows = [
+    ["Amp4 (HiFiBerry)", "GPIO 2, 3 (I2C), 4 (mute), 18-21 (I2S) · reserved"],
+    ["PIR sensor in", `GPIO${v.pirPin}`],
+    ["Projector relay out", `GPIO${v.relayPin}${v.relayActiveLow ? " (active-low)" : ""}`],
+    ["IR LED out", `GPIO${v.irTxPin} (${v.irTxDriver})`],
+    ["IR receiver in", `GPIO${v.irRxPin}`],
+    ["Projector fan PWM", `GPIO${v.fan1PwmPin} (PWM0)`],
+    ["Pi fan PWM", `GPIO${v.fan2PwmPin} (PWM1)`],
+    ["Fan tach in", `GPIO${v.fan1TachPin}, GPIO${v.fan2TachPin}`],
+    ["1-wire (DS18B20)", `GPIO${v.w1Pin}`],
+  ];
+  return el("div", { className: "setting" }, el("span", { className: "title" }, "GPIO pins"), el("table", { className: "kv" }, ...rows.map(([k, x]) => el("tr", {}, el("th", {}, k), el("td", {}, x)))));
+}
+
+// --- scare clips
+
+let scareDraft = null; // { buffer, clips }
+
+function renderScare(force = false) {
+  if (!settingsData) return;
+  if (!scareDraft || force) scareDraft = { buffer: setting("scareBuffer") ?? "", clips: [...(setting("scareClips") ?? [])] };
+  const names = files.map((f) => f.name);
+  const select = $("scare-buffer");
+  select.replaceChildren(el("option", { value: "" }, "(choose)"), ...names.map((n) => el("option", { value: n, selected: n === scareDraft.buffer }, n)));
+  $("scare-clips").replaceChildren(
+    ...names
+      .filter((n) => n !== scareDraft.buffer)
+      .map((n) => {
+        const box = el("input", { type: "checkbox", checked: scareDraft.clips.includes(n) });
+        box.addEventListener("change", () => {
+          scareDraft.clips = box.checked ? [...scareDraft.clips, n] : scareDraft.clips.filter((c) => c !== n);
+        });
+        return el("li", {}, box, el("span", { className: "name" }, n));
+      }),
+  );
+}
+
+// --- schedule
+
+const DAY_NAMES = { mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun" };
+
+function renderSchedule() {
+  const sched = setting("schedule");
+  if (!sched || document.activeElement?.closest?.("#h-schedule + *, .sched")) return;
+  $("sched-enabled").checked = sched.enabled;
+  $("sched-offset").value = sched.sunsetOffsetMin;
+  $("sched-days").replaceChildren(
+    ...Object.keys(DAY_NAMES).map((d) => {
+      const day = sched.days[d];
+      const on = el("input", { type: "time", value: day.on === "sunset" ? "" : day.on, disabled: day.on === "sunset" });
+      const sun = el("input", { type: "checkbox", checked: day.on === "sunset", title: "On at sunset" });
+      sun.addEventListener("change", () => (on.disabled = sun.checked));
+      const off = el("input", { type: "time", value: day.off });
+      const row = el("tr", {}, el("td", {}, DAY_NAMES[d]), el("td", {}, on), el("td", {}, sun), el("td", {}, off));
+      row.dataset.day = d;
+      return row;
+    }),
+  );
+  const lat = setting("latitude");
+  const lon = setting("longitude");
+  $("sched-geo").textContent =
+    lat === null || lon === null ? "For sunset, set Latitude and Longitude in Settings > Schedule." : `Sunset for ${lat}, ${lon}. Days with no sunset (polar summer or winter) have no on time.`;
+}
+
+async function saveSchedule() {
+  const days = {};
+  for (const row of $("sched-days").children) {
+    const [on, sun, off] = row.querySelectorAll("input");
+    days[row.dataset.day] = { on: sun.checked ? "sunset" : on.value, off: off.value };
+  }
+  const value = { enabled: $("sched-enabled").checked, sunsetOffsetMin: Number($("sched-offset").value || 0), days };
+  await changeSetting("PUT", { key: "schedule", label: "Schedule" }, { value });
+}
+
 // --- wire up
 
 $("power").addEventListener("click", () =>
@@ -382,6 +541,55 @@ $("volume").addEventListener("input", (e) => ($("volume-value").textContent = `$
 $("volume").addEventListener("change", (e) => run(() => setVolume({ level: Number(e.target.value) })));
 $("mute").addEventListener("click", () => run(() => setVolume({ muted: !status.volume.muted })));
 $("restart").addEventListener("click", () => run(restartService));
+$("scare-now").addEventListener("click", () =>
+  run(async () => {
+    const r = await api("/api/scare", json("POST", {}));
+    toast(r.result === "fired" ? "Scare!" : r.result === "queued" ? "Queued after the current scare." : `Not now: ${r.reason}.`);
+    await refreshStatus();
+  }),
+);
+$("scare-buffer").addEventListener("change", (e) => {
+  scareDraft.buffer = e.target.value;
+  scareDraft.clips = scareDraft.clips.filter((c) => c !== scareDraft.buffer);
+  renderScare();
+});
+$("scare-suggest").addEventListener("click", () => {
+  const [best] = suggestScarePairs(files.map((f) => f.name));
+  if (!best) return toast('No file with "buffer" in its name. Pick the clips by hand.');
+  scareDraft = { buffer: best.buffer, clips: best.scares };
+  renderScare();
+  toast(`Suggested ${best.buffer} with ${best.scares.length} scare clip${best.scares.length === 1 ? "" : "s"}. Save to use them.`);
+});
+$("scare-save").addEventListener("click", () =>
+  run(async () => {
+    await api("/api/settings/scareBuffer", json("PUT", { value: scareDraft.buffer }));
+    await api("/api/settings/scareClips", json("PUT", { value: scareDraft.clips }));
+    toast("Scare clips saved.");
+    await refreshSettings();
+    renderScare(true);
+  }),
+);
+$("sched-save").addEventListener("click", () => run(saveSchedule));
+$("ir-learn").addEventListener("click", () =>
+  run(async () => {
+    $("ir-learn").disabled = true;
+    toast("Press the remote's power button at the receiver (15 s)…");
+    try {
+      const { code } = await api("/api/ir/learn", json("POST", {}));
+      $("ir-code").value = code;
+      toast(`Learned ${code}. Send test, then Save.`);
+    } finally {
+      $("ir-learn").disabled = false;
+    }
+  }),
+);
+$("ir-test").addEventListener("click", () =>
+  run(async () => {
+    await api("/api/ir/test", json("POST", { code: $("ir-code").value.trim() }));
+    toast("Sent.");
+  }),
+);
+$("ir-save").addEventListener("click", () => run(() => changeSetting("PUT", { key: "irPowerCode", label: "IR code" }, { value: $("ir-code").value.trim() })));
 $("restart-now").addEventListener("click", () => run(restartService));
 $("save").addEventListener("click", () => run(savePlaylist));
 $("revert").addEventListener("click", () => ((entries = structuredClone(saved)), render()));

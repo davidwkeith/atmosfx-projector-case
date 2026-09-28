@@ -349,3 +349,34 @@ describe("shutdown", () => {
     expect(mpv.shutdown).toHaveBeenCalled();
   });
 });
+
+describe("command ordering", () => {
+  it("quick successive reloads never interleave their playlist edits", async () => {
+    const { mpv, player, cmds } = setup({ mode: "scare" });
+    let release;
+    const gate = new Promise((r) => (release = r));
+    const original = mpv.command.bind(mpv);
+    let first = true;
+    mpv.command = async (...args) => {
+      if (first) {
+        first = false;
+        await gate; // the first command is slow
+      }
+      return original(...args);
+    };
+    mpv.up();
+    player.setOn(true);
+    player.reload();
+    release();
+    await flush();
+    const loads = cmds().filter((c) => c.startsWith("loadfile"));
+    expect(loads).toEqual([
+      "loadfile /m/calm.mp4 replace",
+      "loadfile /m/s1.mp4 append",
+      "loadfile /m/calm.mp4 append",
+      "loadfile /m/calm.mp4 replace",
+      "loadfile /m/s1.mp4 append",
+      "loadfile /m/calm.mp4 append",
+    ]);
+  });
+});

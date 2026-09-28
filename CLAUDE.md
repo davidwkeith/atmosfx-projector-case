@@ -81,6 +81,8 @@ Print orientation is baked into the `part` dispatch at the bottom (lid flipped r
 
 ## Safety
 
+Wiring, wire gauges, fuse sizing and the pre-power-up checklist live in `docs/WIRING.md`; keep it in step with any power change.
+
 Mains is inside a printed box in this design. Do not soften these: GFCI-fed, fused AC input, fused DC output, mains-rated cord grip with drip loop, AC and DC wiring on opposite sides of the barrier, insulated brick terminals, PETG/ASA only. Tell the owner to have someone qualified do the mains wiring if they are not comfortable. Never present the case as certified or waterproof: it is rain-shedding and ventilated.
 
 ## Working with the owner

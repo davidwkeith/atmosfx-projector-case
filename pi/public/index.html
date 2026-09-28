@@ -15,10 +15,19 @@
   </header>
 
   <main>
+    <div id="dmx-banner" class="banner dmx" role="status" hidden>
+      <p><b>DMX in control.</b> Power, mode, clip, volume and dimmer follow the lighting desk. Matter, this page and the schedule take over again a few seconds after the DMX signal stops.</p>
+    </div>
+    <div id="alarm-banner" class="banner alarm" role="alert" hidden></div>
+
     <section aria-labelledby="h-power">
       <h2 id="h-power">Playback</h2>
       <p id="problem" class="warn" hidden></p>
       <button id="power" type="button" class="big" disabled>…</button>
+      <button id="scare-now" type="button" class="big scare" hidden>Scare now</button>
+      <p id="scare-state" class="hint" hidden></p>
+      <p id="projector-state" class="hint"></p>
+      <p id="schedule-next" class="hint" hidden></p>
     </section>
 
     <section aria-labelledby="h-volume">
@@ -51,6 +60,52 @@
       </label>
       <progress id="progress" max="1" value="0" hidden></progress>
       <p id="space" class="hint"></p>
+    </section>
+
+    <section aria-labelledby="h-scare">
+      <h2 id="h-scare">Scare mode</h2>
+      <p class="hint">A calm clip loops without a gap; on a trigger (the "Scare" switch in your Home app, the motion sensor, DMX, or the button above) one scare clip plays, then it goes back to the calm clip. Turn it on with Settings &gt; Playback &gt; Mode.</p>
+      <label class="title" for="scare-buffer">Calm clip</label>
+      <select id="scare-buffer"></select>
+      <p class="title">Scare clips</p>
+      <ul id="scare-clips" class="rows"></ul>
+      <div class="actions">
+        <button id="scare-suggest" type="button">Suggest from file names</button>
+        <button id="scare-save" type="button" class="primary">Save clips</button>
+      </div>
+    </section>
+
+    <section aria-labelledby="h-schedule">
+      <h2 id="h-schedule">Schedule</h2>
+      <p class="hint">Times are local to the Pi. An off time earlier than the on time means after midnight. The schedule only acts at these times: switching on or off by hand holds until the next one.</p>
+      <label class="check"><input id="sched-enabled" type="checkbox"> Use the schedule</label>
+      <table class="sched">
+        <thead><tr><th>Day</th><th>On</th><th>At sunset</th><th>Off</th></tr></thead>
+        <tbody id="sched-days"></tbody>
+      </table>
+      <label class="title" for="sched-offset">Sunset offset (minutes, - is before)</label>
+      <input id="sched-offset" type="number" min="-180" max="240" step="5" inputmode="numeric">
+      <p id="sched-geo" class="hint"></p>
+      <div class="actions"><button id="sched-save" type="button" class="primary">Save schedule</button></div>
+    </section>
+
+    <section aria-labelledby="h-projector">
+      <h2 id="h-projector">Projector IR code</h2>
+      <p class="hint">For projector power "relay-ir". Point the remote at the IR receiver and press its power button after choosing Learn.</p>
+      <div class="row">
+        <input id="ir-code" type="text" placeholder="nec:0x40bf or raw:+9000 -4500 ..." autocomplete="off" spellcheck="false">
+      </div>
+      <div class="actions">
+        <button id="ir-learn" type="button">Learn power button</button>
+        <button id="ir-test" type="button">Send test</button>
+        <button id="ir-save" type="button" class="primary">Save code</button>
+      </div>
+    </section>
+
+    <section aria-labelledby="h-cooling">
+      <h2 id="h-cooling">Cooling</h2>
+      <table class="kv" id="cooling"></table>
+      <div id="sensor-pick"></div>
     </section>
 
     <section aria-labelledby="h-settings">

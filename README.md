@@ -73,7 +73,7 @@ Material: PETG or ASA, not PLA. Colour: Disney's ["Go Away Green"](https://en.wi
 - Projector-power fallback, only if the projector lacks HDMI-CEC: relay module (5 V coil, opto-isolated input, rated for the projector's DC current) on the + line to the projector, a 940 nm IR LED with a transistor driver, and optionally a TSOP38238 IR receiver to learn the remote's power code
 - HC-SR501 PIR motion sensor (2x M2 screws), jumper wires to the Pi GPIO; silicone to seal the dome in its hole
 - [HiFiBerry Amp4](https://www.hifiberry.com/shop/boards/hifiberry-amp4/) HAT (12-24 V in, powers the Pi; [datasheet](https://www.hifiberry.com/docs/data-sheets/datasheet-amp4/)), two 4-8 ohm outdoor speakers, 16 AWG speaker wire
-- PG9 mains-rated cord grip; DC brick (the projector's own; it must also power the Pi and the amp, check its amps); AC inline fuse holder (mains side, before the brick) and DC inline fuse holder (after the brick, before the splice); wire, terminal block, velcro, zip ties
+- PG9 mains-rated cord grip; DC brick (the projector's own; it must also power the Pi and the amp, check its amps); outdoor cord (SJTW 18 AWG or better); rewireable IEC connector matching the brick's inlet (C7, C5 or C13); 5 x 20 mm inline fuse holder and time-delay fuse for the AC live; blade (ATO/ATC) inline fuse holder and fuse for the DC side; lever-nut connectors; 18/20/24 AWG wire; velcro, zip ties (sizes in [docs/WIRING.md](docs/WIRING.md))
 
 ## Aiming
 
@@ -85,7 +85,7 @@ Full steps, aim limits and troubleshooting: [docs/AIMING.md](docs/AIMING.md).
 
 ## Power and safety
 
-Mains is inside a printed box in this design. Feed it from a GFCI outlet, fuse the AC input and the DC output, keep AC and DC wiring on separate sides of the barrier, insulate the brick's AC terminals, leave a drip loop on the cord, and use PETG or ASA. If you are not comfortable with mains wiring, have someone qualified do that part. Check the brick's voltage, current and plug polarity before wiring the splice.
+Mains is inside a printed box in this design. Feed it from a GFCI outlet, fuse the AC input and the DC output, keep AC and DC wiring on separate sides of the barrier, insulate the brick's AC terminals, leave a drip loop on the cord, and use PETG or ASA. If you are not comfortable with mains wiring, have someone qualified do that part. Wiring diagram, wire gauges, fuse sizing and a pre-power-up checklist: [docs/WIRING.md](docs/WIRING.md). Check the brick's voltage, current and plug polarity before wiring the splice.
 
 ## Roadmap
 
