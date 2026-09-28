@@ -31,7 +31,7 @@ Key derived values (in the `/* [Hidden] */` block): `z_floor` (floor top, = foot
 
 Modules: `base_all` (shell, feet, divider, posts, standoffs, ledges, hood, cuts), `cuts` (all subtractions, one place), `lid` (sloped roof draining to the rear, front visor, screw bosses, flat gasket land, seam rib), `lid_tile` (45 deg scarf split), `projector` (ghost, pan/tilt about `pivot`), `window_frame`, `pedestal` (bolt-down plate plus column with a 1/4-20 insert for the ball head), `hatch_cover` (keyhole cover), `power_shelf` (brick cradle, barrier, zip-tie slots), `hood`, `ledge`, `louvers`, `tile_cut`, `pi_sled(s)` (per-generation plate), `pi_stack(s)` (Pi + HAT envelope).
 
-Splitting: `base_seam = y_div + div_t + 0.01` (just behind the Pi divider), a butt joint. `lid_seam = yfl - visor_len + 230`, split by `lid_tile` along a 45 deg plane through the roof plus `seam_rib`, so the front tile laps over the rear and both print without supports. The lid seam sits over the projector, which is why it is not a butt joint.
+Splitting: `base_seam = y_div + div_t + 0.01` (just behind the Pi divider). The rear tile has collars inside its side walls (`collar_t`, `collar_d`); 4x M3 screws go from the projector side through the divider into them (`seam_screw_z`), plus silicone on the faces. `lid_seam = yfl - visor_len + 230`, split by `lid_tile` along a 45 deg plane through the roof plus `seam_rib`, so the front tile laps over the rear and both print without supports. The lid seam sits over the projector, which is why it is not a butt joint.
 
 Print orientation is baked into the `part` dispatch at the bottom (lid flipped roof-down and rotated by `lid_a`, hatch cover flipped ribs-up, window frame laid flat). Rotate `base_front` and `lid_front` 90 deg in the slicer so the long side runs along the 250 mm axis.
 
@@ -68,7 +68,7 @@ Print orientation is baked into the `part` dispatch at the bottom (lid flipped r
 5. PIR dome diameter and hole spacing (`pir_dome_d` 23.5, `pir_hole_sp` 28.7) and which GPIO the Amp4 leaves free. Stack heights per sled (`pi_stack_h` 40, `pi5_stack_h` 50 with Active Cooler, `zero_stack_h` 30, `zero_hat_z` 13 are guesses), Amp4 support and power on Pi 5 and Zero 2 W, and whether the brick can supply projector + Pi + amp together.
 6. Ball head height (`ball_head_h` = 40) and aim range (about +/-15 deg) depend on the head actually bought.
 7. Fit of hatch keyholes, acrylic rebate (sized for a 3 x 5 in, 1/8 in pane; `pane_w`/`pane_h` drive the window), heat-set insert holes (`insert_d` 8.2 for 1/4-20, `m4_insert_d` 5.6) is untested.
-8. Base front/rear seam is a butt joint sealed with silicone (sheltered by the lid). The lid scarf joint and gasket land are unprinted.
+8. Base seam collars and screws, the lid scarf joint and the gasket land are unprinted.
 9. Pi software lives in `pi/` (Matter switch, mpv player, scares, schedule, web UI, audio to the Amp4); untested on hardware. Device-facing names use `VideoFX-XXXX` (hostname `videofx-xxxx`, last 4 of the MAC; system paths and units `videofx`), not the AtmosFX trademark.
 
 ## Next steps

@@ -111,6 +111,15 @@ export class ThermalControl extends EventEmitter {
     this.#wasOn = r.on;
     const cooling = !r.on && now < this.#cooldownUntil;
 
+    // Critical: projector zone. Lock, and emit once.
+    const pt = r.projectorC;
+    if (!this.#locked && pt !== null && pt >= c.critC) {
+      this.#locked = true;
+      this.emit("critical", { temp: pt });
+    } else if (this.#locked && pt !== null && pt < c.critC - c.hysteresisC) {
+      this.#locked = false;
+      this.emit("cleared", { temp: pt });
+    }
     // Fan 1 follows the projector zone; fan 2 the hotter of the Pi zone and the SoC.
     const piZone = [r.piC, r.socC].filter((v) => v !== null && v !== undefined);
     const temps = [r.projectorC, piZone.length ? Math.max(...piZone) : null];
@@ -128,15 +137,6 @@ export class ThermalControl extends EventEmitter {
       else if (t >= c.warnC) alarms.push({ level: "warn", text: `${zone[i]}: ${t.toFixed(1)} °C (warning at ${c.warnC} °C)` });
     });
 
-    // Critical: projector zone. Lock, and emit once.
-    const pt = r.projectorC;
-    if (!this.#locked && pt !== null && pt >= c.critC) {
-      this.#locked = true;
-      this.emit("critical", { temp: pt });
-    } else if (this.#locked && pt !== null && pt < c.critC - c.hysteresisC) {
-      this.#locked = false;
-      this.emit("cleared", { temp: pt });
-    }
     if (this.#locked) alarms.push({ level: "critical", text: `Projector zone over ${c.critC} °C: playback stopped until it cools below ${c.critC - c.hysteresisC} °C` });
 
     // Fan failure: tach ~0 while driven above the minimum for a while.
@@ -155,6 +155,49 @@ export class ThermalControl extends EventEmitter {
 
     this.#state = { duty, temps, alarms, locked: this.#locked, cooling };
     return this.#state;
+  }
+}
+
+/**
+ * What happens on a critical temperature: remember whether we were on, switch
+ * off (stop playback, projector off through its configured path), refuse to
+ * switch on while tripped, and switch back on only after it cooled below
+ * critical minus the hysteresis, and only if it was on before.
+ */
+export class OverTempGuard {
+  #powerOff;
+  #powerOn;
+  #isOn;
+  #log;
+  #tripped = null;
+  #resume = false;
+
+  constructor({ powerOff, powerOn, isOn, log = console }) {
+    this.#powerOff = powerOff;
+    this.#powerOn = powerOn;
+    this.#isOn = isOn;
+    this.#log = log;
+  }
+
+  /** Reason text while tripped, else null (for the power arbiter). */
+  get blocked() {
+    return this.#tripped;
+  }
+
+  critical(temp, limit) {
+    if (this.#tripped) return;
+    this.#tripped = `over-temperature: ${temp.toFixed(1)} °C (limit ${limit} °C)`;
+    this.#resume = this.#isOn();
+    this.#log.error(`Thermal: ${this.#tripped}; switching off`);
+    this.#powerOff();
+  }
+
+  cleared(temp) {
+    if (!this.#tripped) return;
+    this.#log.warn(`Thermal: cooled to ${temp.toFixed(1)} °C${this.#resume ? "; switching back on" : ""}`);
+    this.#tripped = null;
+    if (this.#resume) this.#powerOn();
+    this.#resume = false;
   }
 }
 

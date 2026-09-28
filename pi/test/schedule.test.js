@@ -162,3 +162,18 @@ describe("Scheduler", () => {
     expect(calls).toEqual([["2026-10-30 18:00", true]]);
   });
 });
+
+describe("desired state now (for handing back from DMX)", () => {
+  it("is the latest past event, or null", async () => {
+    vi.useFakeTimers();
+    const schedule = week("18:00", "23:00");
+    const s = new Scheduler({ getSchedule: () => schedule, getGeo: () => null, setPower() {}, log: { info() {}, warn() {}, error() {} } });
+    vi.setSystemTime(new Date(2026, 9, 30, 19, 0));
+    expect(s.desiredNow()).toBe(true);
+    vi.setSystemTime(new Date(2026, 9, 31, 1, 0));
+    expect(s.desiredNow()).toBe(false);
+    schedule.enabled = false;
+    expect(s.desiredNow()).toBeNull();
+    vi.useRealTimers();
+  });
+});

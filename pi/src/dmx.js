@@ -317,23 +317,30 @@ export class DmxControl extends EventEmitter {
 }
 
 /**
- * Gatekeeper for the main power: while DMX is in control, only DMX may change it.
- * request() returns { ok } or { ok: false, actual } so the caller can put Matter's
- * attribute back.
+ * Gatekeeper for the main power. While DMX is in control only DMX may change it;
+ * thermal protection always may switch off, and while it has tripped nothing may
+ * switch on. request() returns { ok } or { ok: false, actual, reason } so the
+ * caller can put Matter's attribute back.
  */
 export class PowerArbiter {
   #dmx;
   #apply;
   #actual;
+  #blocked;
 
-  constructor({ dmx, apply, actual }) {
+  constructor({ dmx, apply, actual, blocked = () => null }) {
     this.#dmx = dmx;
     this.#apply = apply;
     this.#actual = actual;
+    this.#blocked = blocked;
   }
 
   request(source, on) {
-    if (this.#dmx.inControl && source !== "dmx") return { ok: false, actual: this.#actual() };
+    const blocked = on ? this.#blocked() : null;
+    if (blocked) return { ok: false, actual: this.#actual(), reason: blocked };
+    if (this.#dmx.inControl && source !== "dmx" && source !== "thermal") {
+      return { ok: false, actual: this.#actual(), reason: "DMX is in control" };
+    }
     this.#apply(on, source);
     return { ok: true };
   }

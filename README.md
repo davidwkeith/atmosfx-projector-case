@@ -45,7 +45,7 @@ Preview in OpenSCAD: open `projector_pi_case.scad`, set `part` and `tile` in the
 | File | Notes |
 |---|---|
 | `base_front` | Rotate 90 deg so the 241 mm side runs along the 250 mm bed axis |
-| `base_rear` | Pi compartment |
+| `base_rear` | Pi compartment. Joins `base_front` with 4x M3 x 12 screws through the divider into its collars; silicone the joint faces |
 | `lid_front`, `lid_rear` | Already flipped roof-down; rotate `lid_front` 90 deg. Seal the scarf joint with silicone |
 | `window_frame` | Holds the acrylic pane |
 | `pedestal` | Screws to the floor bosses; carries the ball head |
@@ -91,12 +91,11 @@ Mains is inside a printed box in this design. Feed it from a GFCI outlet, fuse t
 
 - Print and fit-check the small parts, then the tiles
 - Confirm real projector dimensions, lens position, socket position and vent locations
-- Proper seam joint between the base tiles (currently a butt joint with silicone; the lid has a scarf joint)
 - Tune fan and louver placement against the projector's actual vents
 
 ## Changelog
 
-- v0.8: tripod mount, insect-screen caps, second fan for the Pi/brick zone, shelf vents, support-free printing (ribbed floor, diamond hatch, snap-out window ribs, gabled pass-through), IR LED holder, rear-wall PIR mount, Pi sleds for 3B/3B+/4B/5/Zero 2 W, audio (Amp4 HAT, floor chimney for speaker wire, shelf raised 5 mm), 3 x 5 in stock acrylic pane (wider window), AC gland above the shelf, taller barrier, keyholes flipped to lift off, lid scarf joint and gasket land, larger front/rear gaps so the aim range actually clears
+- v0.8: screwed base seam, tripod mount, insect-screen caps, second fan for the Pi/brick zone, shelf vents, support-free printing (ribbed floor, diamond hatch, snap-out window ribs, gabled pass-through), IR LED holder, rear-wall PIR mount, Pi sleds for 3B/3B+/4B/5/Zero 2 W, audio (Amp4 HAT, floor chimney for speaker wire, shelf raised 5 mm), 3 x 5 in stock acrylic pane (wider window), AC gland above the shelf, taller barrier, keyholes flipped to lift off, lid scarf joint and gasket land, larger front/rear gaps so the aim range actually clears
 - v0.7: DC brick inside on the power shelf, barrier, heat louvers
 - v0.6: low-voltage DC splice, zip-tie shelf
 - v0.5: single power cord, power shelf on ledges

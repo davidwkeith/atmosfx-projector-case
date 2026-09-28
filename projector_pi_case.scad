@@ -95,6 +95,11 @@ pir_stand = 3;      // lens frame thickness: board sits this far off the wall
 /* [Projector power fallback] */
 ir_angle = 30;      // IR LED tilt in the stick-on holder
 
+/* [Base seam] */
+collar_t = 6;        // screw collars on the rear tile's side walls, just behind the divider
+collar_d = 10;
+seam_screw_z = [10, 42];   // M3 screws through the divider into the collars, above the floor
+
 /* [Tripod mount] */
 tripod = true;
 tripod_y = 12;       // 3/8-16 insert near the estimated centre of mass (brick and Pi sit rearward)
@@ -266,6 +271,11 @@ module cuts() {
     translate([pir_x, y_back-1, pir_zz]) rotate([-90,0,0]) cylinder(d=pir_dome_d+2*clearance, h=wall+2);
     for (sx=[-1,1]) translate([pir_x+sx*pir_hole_sp/2, y_back-pir_stand-0.1, pir_zz]) rotate([-90,0,0]) cylinder(d=1.6, h=pir_stand+2);
   }
+  // seam screws: clearance through the divider, pilots in the collars
+  for (sx=[-1,1], z=seam_screw_z) {
+    translate([sx*(inner_w/2-collar_t/2), y_div-1, z_floor+z]) rotate([-90,0,0]) cylinder(d=3.4, h=div_t+1.1);
+    translate([sx*(inner_w/2-collar_t/2), y_pi0-0.1, z_floor+z]) rotate([-90,0,0]) cylinder(d=2.6, h=collar_d-1);
+  }
   // tripod inserts, from below
   if (tripod) {
     translate([0, tripod_y, -1]) cylinder(d=insert38_d, h=insert38_len+1);
@@ -287,6 +297,9 @@ module base_all() {
       for (v=vents, sy=[-1,1])   // screen-cap bosses
         translate([v[0]*(inner_w/2+0.1), v[1], v[2]+sy*cap_tab(vent_open)]) rotate([0, -v[0]*90, 0]) cylinder(d=6, h=cap_h-cap_t+0.1);
       for (sx=[-1,1]) translate([intake_c[0]+sx*cap_tab(intake_open), intake_c[1], z_floor-0.1]) cylinder(d=6, h=cap_h-cap_t+0.1);
+      for (sx=[-1,1])   // seam collars (rear tile); stop below the shelf ledges
+        translate([sx > 0 ? inner_w/2-collar_t : -inner_w/2, y_pi0-0.01, z_floor-0.1])
+          cube([collar_t, collar_d, shelf_zz-ledge_w-3-z_floor+0.1]);
       if (tripod) {   // pad flush with the rib bottoms, plus a boss inside so the 3/8 insert has room
         hull() for (y=[tripod_y, tripod_y2]) translate([0, y, 0]) cylinder(d=30, h=foot_h+0.1);
         translate([0, tripod_y, z_floor-0.1]) cylinder(d=18, h=insert38_len+2-z_floor+0.1);   // 2 mm above the insert

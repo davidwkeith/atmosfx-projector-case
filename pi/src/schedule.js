@@ -120,6 +120,19 @@ export function nextEvent(schedule, from, geo) {
   return best;
 }
 
+/** The latest event at or before `at`, looking back up to 8 days, or null. */
+export function lastEvent(schedule, at, geo) {
+  if (!schedule?.enabled) return null;
+  const start = new Date(at);
+  let best = null;
+  for (let i = -8; i <= 0; i++) {
+    for (const e of eventsForDay(schedule, start.getFullYear(), start.getMonth(), start.getDate() + i, geo)) {
+      if (e.at <= at && (!best || e.at > best.at)) best = e;
+    }
+  }
+  return best;
+}
+
 const STALE_MS = 5 * 60_000;
 
 /**
@@ -150,6 +163,11 @@ export class Scheduler {
 
   get next() {
     return this.#next;
+  }
+
+  /** What the schedule wants right now (its latest past event), or null if it has no opinion. */
+  desiredNow() {
+    return lastEvent(this.#getSchedule(), this.#now(), this.#getGeo())?.on ?? null;
   }
 
   /** (Re)plan from now; call after the schedule or location changes. */
