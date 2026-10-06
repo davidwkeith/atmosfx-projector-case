@@ -16,7 +16,7 @@ Everything below has only been tested in software. Work through it on the bench 
 
 | # | Test | Pass | If not |
 |---|---|---|---|
-| 6 | Flash the image (or `install.sh`), first boot | One extra reboot, then `videofx-xxxx.local` answers and the name shows as VideoFX-XXXX | See `pi/README.md` troubleshooting |
+| 6 | Flash the image onto a fresh card (release image through Imager's repository JSON, or your own build; or `install.sh`), first boot | One extra reboot, then `videofx-xxxx.local` answers, the name shows as VideoFX-XXXX and your user can log in | See `pi/README.md` Install and troubleshooting |
 | 7 | Storage protection: `videofx-maint status`, then pull the power mid-upload | Overlay on, data partition mounted, settings intact after the cut | Leave protection off for Halloween; report it |
 | 8 | Amp4 powers the Pi (especially a **Pi 5**) at full volume | No undervoltage warnings (`vcgencmd get_throttled` = 0x0) | Use a Pi 4B sled, or a separate 5 V supply |
 | 9 | HDMI-CEC with your projector: power on/off from the web page | Projector wakes and sleeps; page says "CEC supported" | Use `relay-ir` (relay + IR LED), learn the remote's code |

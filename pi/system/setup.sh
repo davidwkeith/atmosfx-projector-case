@@ -70,6 +70,11 @@ install -m 755 "$src/system/videofx-update" /usr/local/sbin/videofx-update
 install -m 644 "$src/system/videofx-update-resume.service" /etc/systemd/system/videofx-update-resume.service
 systemctl enable videofx-update-resume.service
 systemctl enable videofx-hostname.service videofx-player.service avahi-daemon.service
+# cloud-init (the release image; Raspberry Pi OS trixie set up by Imager) would
+# otherwise put Imager's hostname back on every boot and grow root over the card.
+if [ -d /etc/cloud/cloud.cfg.d ]; then
+  install -m 644 "$src/system/99-videofx-cloud-init.cfg" /etc/cloud/cloud.cfg.d/99-videofx.cfg
+fi
 
 echo "== reliability: watchdog, Wi-Fi power save off, Ethernet first, NTP"
 install -d /etc/systemd/system.conf.d /etc/systemd/timesyncd.conf.d /etc/NetworkManager/conf.d /etc/NetworkManager/dispatcher.d

@@ -94,6 +94,15 @@ LABEL=videofx-data /srv/videofx ext4 defaults,noatime,commit=5,errors=remount-ro
 FSTAB
 systemctl daemon-reload
 
+if [ -d /etc/cloud ]; then
+  echo "== cloud-init: done with first boot"
+  # Its state lives in /var/lib/cloud, which the overlay forgets at every reboot,
+  # so it would redo the first boot (users, passwords, host keys) each time.
+  touch /etc/cloud/cloud-init.disabled
+  # Imager's user-data also names the Pi and rewrites /etc/hosts; put ours back.
+  [ -s /var/lib/videofx-name ] && /usr/local/sbin/videofx-hostname || true
+fi
+
 echo "== read-only root (overlay)"
 /usr/local/sbin/videofx-maint off --no-reboot-hint
 say ok

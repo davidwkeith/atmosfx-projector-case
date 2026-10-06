@@ -16,11 +16,12 @@ scripts/check_clash.sh        # interference checks incl. cover lift-off path, l
 # docs/PRINTING.md has sliced times (PrusaSlicer CLI with the stock MK3S profiles); print fit_coupon first
 scripts/render_previews.sh    # regenerate preview/*.png (needs a GL context; xvfb-run on headless Linux)
 scripts/publish.sh            # create a PRIVATE GitHub repo with gh and push
+pi/image/build.sh [--generic]  # Pi image via pi-gen in Docker (~1 h). --generic = the public, secret-free image CI attaches to releases
 ```
 
 Single part by hand: `openscad -o out.stl -D "part=\"base\"" -D "tile=\"front\"" projector_pi_case.scad`
 
-`part` = assembly | base | lid | window_frame | pedestal | hatch_cover | power_shelf | sled | ir_holder | vent_cap | intake_cap | fit_coupon. `sled` = pi3 | pi4 | pi5 | zero2w (assembly shows it; `make parts` builds all four). `tile` = all | front | rear (base and lid only). STLs are not committed: CI attaches them to a GitHub Release for each `v*` tag; `stl/` is regenerated output.
+`part` = assembly | base | lid | window_frame | pedestal | hatch_cover | power_shelf | sled | ir_holder | vent_cap | intake_cap | fit_coupon. `sled` = pi3 | pi4 | pi5 | zero2w (assembly shows it; `make parts` builds all four). `tile` = all | front | rear (base and lid only). STLs are not committed: CI attaches them to a GitHub Release for each `v*` tag, together with the Pi tarball, the public Pi image (`image` job on `ubuntu-24.04-arm`) and `videofx-imager.json` (Raspberry Pi Imager OS list, so Imager offers the image with its first-boot options); `stl/` is regenerated output.
 
 Versioning: one version for the whole repo. `pi/package.json` version = the git tag without the `v` (e.g. 0.8.1 / `v0.8.1`); `videofx-update` compares them. Bump both together.
 
@@ -78,6 +79,7 @@ Print orientation is baked into the `part` dispatch at the bottom (lid flipped r
 7. Fit of hatch keyholes, acrylic rebate (sized for a 4 x 5 in, 1/8 in pane; `pane_w`/`pane_h` drive the window), heat-set insert holes (`insert_d` 8.2 for 1/4-20, `m4_insert_d` 5.6) is untested.
 8. Base seam collars and screws, the lid scarf joint and the gasket land are unprinted.
 9. Pi software lives in `pi/` (Matter switch, mpv player, scares, schedule, web UI, audio to the Amp4); untested on hardware. Device-facing names use `VideoFX-XXXX` (hostname `videofx-xxxx`, last 4 of the MAC; system paths and units `videofx`), not the AtmosFX trademark.
+10. The public image's first boot is untested: cloud-init from Imager's user-data (user `videofx` locked at build, unlocked by cloud-init; `preserve_hostname` and `growpart off` in `pi/system/99-videofx-cloud-init.cfg`; `videofx-storage` after `cloud-final`, then `cloud-init.disabled`), the Imager repository JSON (`init_format` cloudinit-rpi, device tags) and the arm64 CI build itself.
 
 ## Next steps
 

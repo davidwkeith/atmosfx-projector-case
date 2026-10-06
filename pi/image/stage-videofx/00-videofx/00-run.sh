@@ -27,6 +27,18 @@ on_chroot <<- CHROOT
 CHROOT
 sed -i 's/ resize\b//' "${ROOTFS_DIR}/boot/firmware/cmdline.txt"
 
+if [ -f files/generic ]; then
+	# Public image (build.sh --generic): nobody knows the build-time password, so
+	# lock the account the way pi-gen locks root. cloud-init sets the real password
+	# and SSH key from user-data on first boot (Raspberry Pi Imager writes it).
+	on_chroot <<- CHROOT
+		usermod --pass='*' "${FIRST_USER_NAME}"
+	CHROOT
+	# Our templates replace pi-gen's generic cloud-init examples on the boot
+	# partition, for people who edit them by hand instead of using Imager.
+	install -m 644 files/cloud-init/user-data files/cloud-init/network-config "${ROOTFS_DIR}/boot/firmware/"
+fi
+
 # Every Pi flashed from this image names itself VideoFX-XXXX on first boot
 # (videofx-hostname.service), so make sure no name is baked in.
 rm -f "${ROOTFS_DIR}/var/lib/videofx-name"

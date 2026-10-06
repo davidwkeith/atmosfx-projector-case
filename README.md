@@ -28,14 +28,14 @@ make parts                              # writes stl/*.stl
 scripts/check_clash.sh                  # interference checks (needs python3)
 ```
 
-CI builds the STLs, runs the interference checks and runs the Pi tests on every push (Actions > Build STLs; STLs are under artifacts).
+CI builds the STLs, runs the interference checks and runs the Pi tests on every push (Actions > Build STLs; STLs are under artifacts). A `v*` tag also builds the Pi image and attaches everything to a GitHub Release.
 
 Preview in OpenSCAD: open `projector_pi_case.scad`, set `part` and `tile` in the Customizer. `part = "assembly"` shows everything with ghosted projector and ball head. On iOS, the [OpenSCAD Playground](https://github.com/openscad/openscad-playground) works in Safari.
 
 ## Repository layout
 
 - `projector_pi_case.scad` - the model (all parts via `part` / `tile`)
-- STLs: download them from the repository's Releases (CI builds and attaches them for each version tag), or run `make parts` to write them to `stl/`
+- STLs and the Pi image: download them from the repository's Releases (CI builds and attaches them for each version tag), or run `make parts` to write the STLs to `stl/`. Flashing the image: `pi/README.md`, Install.
 - `docs/` - design log, [printing plan](docs/PRINTING.md), [bill of materials](docs/BOM.md), [assembly](docs/ASSEMBLY.md), [wiring](docs/WIRING.md), [aiming](docs/AIMING.md)
 - `preview/` - renders of the assembly, interior, aim hatch and power shelf
 - `scripts/` - `check_clash.sh`, `render_previews.sh`, `publish.sh`
