@@ -8,7 +8,7 @@
 //        a wire splice feeds the projector's barrel plug and the Amp4 HAT (which powers the Pi).
 // v0.4 - quick-aim hatch on the left (-X) wall: reach the ball head with the lid on, tool-free
 // sized for a ~171x134x75 mm mini projector (0.72 kg) on an internal ball head
-// Print PETG/ASA. Lid prints roof-down. Base+lid split front/rear (MK3S bed 250x210x210); rotate front pieces 90 deg.
+// Print PETG/ASA. Lid prints roof-down. Base+lid split front/rear (MK3S bed 250x210x210); front pieces lie flat with X along the 250 mm axis.
 
 /* [Part] */
 part = "assembly"; // [assembly, base, lid, window_frame, pedestal, hatch_cover, power_shelf, sled, ir_holder, vent_cap, intake_cap, fit_coupon]
@@ -22,13 +22,13 @@ aim = [0, 0];      // [pan, tilt] deg of the ghost projector in the assembly pre
 // generic STK "S2-TEK TV" block (product 0x531A, dated 2014), HDMI input with CEC physical address 2.0.0.0,
 // native 1080p60 (VIC 16), 8-bit only, TMDS <= 150 MHz, 2-ch LPCM audio, DPMS standby/active-off flagged.
 // CEC itself is NOT proven (the address field is mandatory for any HDMI sink): see BRINGUP row 9.
-// The EDID says nothing about size, lens or ports, so everything below is still a guess until measured.
-proj_w = 135;   // width (X)  - measure yours; listing says 6.74x5.28x2.96 in
-proj_d = 172;   // depth (Y), lens faces front
-proj_h = 76;    // height (Z)
-lens_x = 0;     // lens offset from centre (+ = right)
-lens_z = 40;    // lens centre height above projector underside
-throw_ratio = 1.4;  // throw distance / image width (typical mini projector; check yours)
+// The EDID says nothing about size, lens or ports: those come from docs/measurements.xlsx (see below).
+proj_w = 165;   // width (X): Tkisko TO2 manual says 6.5 x 5 x 2.6 in, lens on the 6.5 in face; confirm with calipers
+proj_d = 130;   // depth (Y), lens faces front: measured 130.0 with calipers
+proj_h = 66;    // height (Z)
+lens_x = -20;   // lens offset from centre (+ = right): estimated from the product photo, measure it
+lens_z = 33;    // lens centre height above projector underside: estimated from the product photo, measure it
+throw_ratio = 0.95; // throw distance / image width: from the manual's image sizes (36 in at 2.5 ft, 72 in at 5 ft); measure it
 aspect = 16/9;
 port_depth = 15;    // HDMI + power plugs on the projector's rear face: right-angle plugs with slack (a straight HDMI plug needs ~40)
 port_band = [15, 55];   // plug height range above the projector underside (guess: check yours)
@@ -36,15 +36,16 @@ lens_offset = 0;    // vertical image offset: 0 = image centred on the lens axis
 pane_w = 127;   // acrylic pane: 4 x 5 in (127 x 101.6 mm), a stock size; the window opening is the pane minus lap
 pane_h = 101.6;
 pane_top_clear = 7;  // pane top this far below the base rim: the window sits as high as it can, for upward tilt
-mount_x = 0;    // 1/4-20 socket offset from projector centre (keep within a few cm)
-mount_y = 0;    // + = toward rear
+mount_x = 19;   // 1/4-20 socket offset from projector centre (+ = right): scaled off the underside photo, measure it
+mount_y = -4;   // + = toward rear: scaled off the underside photo, measure it
 
 /* [Ball head] */
 ball_head_h = 40;  // height of your ball head, base to mounting stud
 pivot_h = 25;      // ball centre above the head's base (aim pivot)
-aim_max = 15;      // pan OR tilt range the case must clear (check_clash.sh sweeps it)
+aim_max = 15;      // tilt range the case must clear (check_clash.sh sweeps it)
+pan_max = 10;      // pan range the case must clear: the light cone clips the window frame past this at throw_ratio 0.95 (turn the case for more)
 cone_tilt = 12;     // light-cone check: the image must clear the window, frame and visor at +/- this tilt
-aim_combo = 10;    // pan AND tilt together (corners); 15+15 would need a front tile past 250 mm
+aim_combo = 8;     // tilt while panned by pan_max (corners): the rear plugs reach the divider past this; more would lengthen base_front past the 210 mm bed axis
 ped_top = 30;      // pedestal top height above floor
 insert_d = 8.2;    // 1/4-20 heat-set insert hole; check your insert's datasheet
 insert_len = 9;
@@ -53,23 +54,23 @@ insert_len = 9;
 wall = 3;
 floor_t = 6;
 foot_h = 6;        // ground clearance so rain drains out underneath
-foot_ribs = [-68, -40, -15, 15, 40, 68];   // inner front-to-back ribs; two more run under the side walls. Floor bridges <= max_bridge (asserted); channels drain/vent/route wires
+foot_ribs = [-88, -68, -40, -15, 15, 40, 68, 88];   // inner front-to-back ribs; two more run under the side walls. Floor bridges <= max_bridge (asserted); channels drain/vent/route wires
 rib_t = 4;
 layer_h = 0.2;     // print layer height: gap above the window's snap-out ribs
 clearance = 0.3;
-side_air = 25;     // gap each side of projector (clears +/-15 deg pan)
+side_air = 25;     // gap each side of projector: clears +/-10 deg pan with the fan body (14 mm) in the gap
 top_air  = 25;
-front_gap = 26;      // lens-down tilt swings the top front corner forward; aim-sweep and light-cone checks size this
-rear_gap  = 32;      // lens-up tilt swings the rear plugs back (port_depth); aim-sweep sizes this
+front_gap = 30;      // lens-down tilt swings the top front corner forward (more so panned, now the body is 165 wide); aim-sweep and light-cone checks size this
+rear_gap  = 34;      // lens-up tilt swings the rear plugs back (port_depth) toward the divider; aim-sweep sizes this
 pi_zone_d = 75;
 pane_t = 3.2;      // acrylic thickness (1/8 in); photo-frame glazing is often thinner
 lap = 8;           // pane overlap past the window opening
 boss_h = 4;
 
 /* [Aim hatch (-X wall)] */
-hatch = 120;         // diamond opening, tip to tip: reach in to loosen/aim the ball head (45 deg edges print unsupported)
+hatch = 108;         // diamond opening, tip to tip: reach in to loosen/aim the ball head (45 deg edges print unsupported); its hood must clear the lid skirt
 hatch_flange = 10;   // cover overlap past the diamond's tips
-hatch_zc = 62;       // opening centre height above floor (cover must lift kh_drop under the hood)
+hatch_zc = 56;       // opening centre height above floor: lower tip just above the floor, hood under the lid skirt (cover must lift kh_drop under the hood)
 stud_off = 56;       // M4 stud spacing from opening centre
 kh_drop = 8;         // keyhole slide distance: cover lifts this much to come off
 m4_insert_d = 5.6;   // M4 heat-set insert hole; check your insert
@@ -117,7 +118,7 @@ seam_screw_z = [10, 42];   // M3 screws through the divider into the collars, ab
 stakes = true;       // sealed stake tubes inside the four corners: drive tent stakes from inside, lid on = can't pull them
 stake_d = 9;         // bore for 8 mm tent stakes / 1/4 in pins
 stake_collar = 15;   // tube rises this far above the floor so water can't reach the bore
-stake_x = 78;        // inside the channel between the +/-68 ribs and the side-wall ribs
+stake_x = 78;        // inside the channel between the +/-68 and +/-88 ribs
 
 /* [Tripod mount] */
 tripod = true;
@@ -154,6 +155,7 @@ skirt_h = 22;
 top_t = 3;
 rise = 12;         // roof slope, drains to rear
 visor_len = 30;     // longer visors and deeper lips cut into upward-tilted light (see light-cone check)
+lid_front_len = 200; // front lid tile, visor tip to seam: base_front and lid_front print end-on, depth along the bed's 210 mm axis (asserted)
 lip_h = 4;          // drip lip at the visor tip
 gasket = 2;        // foam tape on the base rim; lid bosses stop 1 mm short so it compresses
 seam_rib = 4;      // extra roof thickness at the lid seam for the scarf joint
@@ -193,7 +195,7 @@ hatch_zz = z_floor + hatch_zc;
 hatch_y = proj_cy;
 hood_lift = hood_d - cover_gasket + 0.5 + kh_drop + 1;   // room to lift the cover off its keyholes
 fan_z = z_pj + proj_h/2;
-lid_screw_ys = [y0 + 8, y_back - 8];      // lid screw stations: side screws through the skirt, none in the roof
+lid_screw_ys = [y0 + 10, y_back - 8];     // lid screw stations: side screws through the skirt, none in the roof; front block (y-5) stays behind the window frame (y0..y0+frame_t)
 lid_screw_z = base_h - 7;
 base_seam = y_div + div_t + 0.01;
 shelf_zz = z_floor + shelf_z;
@@ -224,7 +226,7 @@ lid_w = out_w + 2*(lid_clr + wall);
 lid_d = out_d + 2*(lid_clr + wall);
 lid_a = atan(rise/lid_d);
 yfl = -lid_d/2;
-lid_seam = yfl - visor_len + bed[0] - 20;
+lid_seam = yfl - visor_len + lid_front_len;
 seam_t = top_t + seam_rib;                // roof thickness across the scarf
 pivot = [ped_x, ped_y, z_floor + ped_top + pivot_h];
 assert(barrier_h > brick_h, "barrier_h must exceed brick_h");

@@ -12,17 +12,17 @@ Everything below has only been tested in software. Work through it on the bench 
 | # | Test | Pass | If not |
 |---|---|---|---|
 | 1 | `fit_coupon`: heat-set inserts (3/8, 1/4, M4, M3), screws in the M3/M2.5/M2 pilots, M4 bolt in the keyhole, acrylic in the slot | Each fits snug, with no cracking and no slop | Adjust `insert38_d`, `insert_d`, `m4_insert_d`, `m3_insert_d`, `clearance`, re-export |
-| 2 | Measure the projector: size, lens height and left/right offset, tripod socket position, vents, **where the HDMI and power ports are** | Within a few mm of `proj_w/d/h`, `lens_z`, `lens_x`, `mount_x/y`, `port_band` | Update the parameters, run `scripts/check_clash.sh` |
+| 2 | Measure the projector into `docs/measurements.xlsx`: width and height (depth is done: 130.0), lens height and left/right offset, tripod socket position, vents, **where the HDMI and power ports are** | Within a few mm of `proj_w/d/h`, `lens_z`, `lens_x`, `mount_x/y`, `port_band` | Update the flagged parameters, run `scripts/check_clash.sh` |
 | 2a | Signal-loss standby, from the Mac: with the projector showing the Mac's desktop, sleep the Mac and time how long the projector takes to blank, then wake the Mac | The projector blanks (or goes to standby) by itself within a few minutes and the picture returns when the signal does | `hdmi-off` mode won't save the lamp at night; plan on `relay` or `relay-ir` |
 | 3 | Throw ratio and offset: project onto a wall from a measured distance, and measure image width and how far the bottom edge sits above the lens | Throw ratio about 1.4, offset recorded | Set `throw_ratio`, `lens_offset`; check the `light-cone` result |
-| 4 | Brick label: volts, amps, polarity, input current, inlet type (C7/C5/C13) | 12-24 V and enough amps for projector + Amp4 + fans | Bigger brick; fill in the fuse table in WIRING.md |
+| 4 | Brick label: volts, amps, polarity, input current, inlet type (C7/C5/C13). The projector's label reads DC 21 V 3 A | 12-24 V and enough amps for projector + Amp4 + fans (the stock 3 A brick covers the projector alone) | 21 V brick of 5 A or more; fill in the fuse table in WIRING.md |
 | 5 | Ball head height and where the lock knob sits | Knob reachable through the hatch diamond | Change `ball_head_h`; move the hatch (`hatch_zc`) |
 
 ## Pi on the bench (before it goes in the case)
 
 | # | Test | Pass | If not |
 |---|---|---|---|
-| 6 | Flash the image (or `install.sh`), first boot | One extra reboot, then `videofx-xxxx.local` answers and the name shows as VideoFX-XXXX. `videofx-maint status` says protected, `lsblk` shows three partitions, and `ssh` doesn't warn about a changed host key after a second reboot | `journalctl -b -u videofx-storage`; see `pi/README.md` troubleshooting |
+| 6 | Flash the image onto a fresh card (release image through Imager's repository JSON, or your own build; or `install.sh`), first boot | One extra reboot, then `videofx-xxxx.local` answers, the name shows as VideoFX-XXXX and your user can log in. `videofx-maint status` says protected, `lsblk` shows three partitions, and `ssh` doesn't warn about a changed host key after a second reboot | `journalctl -b -u videofx-storage` (and `-u cloud-final` on the release image); see `pi/README.md` Install and troubleshooting |
 | 7 | Storage protection: `videofx-maint status`, then pull the power mid-upload | Overlay on, data partition mounted, settings intact after the cut | Leave protection off for Halloween; report it |
 | 8 | Amp4 powers the Pi (especially a **Pi 5**) at full volume | No undervoltage warnings (`vcgencmd get_throttled` = 0x0) | Use a Pi 4B sled, or a separate 5 V supply |
 | 9 | HDMI-CEC with your projector: power on/off from the web page. The EDID has a CEC physical address (see "Verified so far"), so the bus exists; this row is the only test of whether the projector listens. On the Pi, `cec-ctl -d /dev/cec0 --playback -S` should list a TV at logical address 0 | Projector wakes and sleeps; page says "CEC supported" | Use `relay-ir` (relay + IR LED), learn the remote's code |

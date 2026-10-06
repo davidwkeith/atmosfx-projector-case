@@ -1,0 +1,16 @@
+# Wi-Fi for the VideoFX image (cloud-init, netplan v2 format). Raspberry Pi Imager
+# writes this file when it knows the image; otherwise edit it on the card's boot
+# partition before the first boot. Ethernet needs nothing. YAML: spaces only.
+#
+# The country code sets the Wi-Fi regulatory domain; without one the radio may
+# stay blocked.
+network:
+  version: 2
+  wifis:
+    wlan0:
+      dhcp4: true
+      optional: true
+      regulatory-domain: US
+      access-points:
+        "MyNetwork":
+          password: "my-wifi-password"

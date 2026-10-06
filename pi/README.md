@@ -26,7 +26,7 @@ A web page on your LAN (`http://videofx-xxxx.local/`) handles videos, the playli
   4. **Temperature** (Temperature sensor): the projector zone, so Home can alert on it.
 - **Player.** One long-lived **mpv** with DRM/KMS output and no desktop, controlled over its JSON IPC socket (`/run/videofx/mpv.sock`). Changing videos is a playlist command, not a process restart, so there is no black gap. If mpv crashes it is restarted; after more than 5 crashes in a minute the service gives up and reports "off". Off means mpv stops (it idles and releases the screen) and the console is cleared to black. Until the Pi is paired, the console shows the pairing QR code.
 - **Who controls the power.** Matter, the web page, the schedule and the restore-after-power-cut all go through one path. While a DMX source is live, only DMX may change the power (see [DMX](#dmx-sacn)). Thermal protection can always switch off.
-- **Services.** `videofx-player.service` runs `/opt/videofx/src/main.js` as your login user. It has the groups video, render, audio, tty and gpio, and `CAP_NET_BIND_SERVICE` for port 80. It never runs as root. `videofx-hostname.service` runs on first boot only. Avahi publishes the name and the web page.
+- **Services.** `videofx-player.service` runs `/opt/videofx/src/main.js` as an ordinary user: `videofx` on the release image, your login user with `pi/config` or `install.sh`. It has the groups video, render, audio, tty and gpio, and `CAP_NET_BIND_SERVICE` for port 80. It never runs as root. `videofx-hostname.service` runs on first boot only. Avahi publishes the name and the web page.
 
 ## Supported boards
 
@@ -84,16 +84,29 @@ pi/
 
 ## Install
 
-**Option A: build an image.** You need Docker ([Docker Desktop](https://docs.docker.com/desktop/) on a Mac), git, rsync and uuidgen.
+**Option A: the release image.** Every [release](https://github.com/davidwkeith/atmosfx-projector-case/releases) carries `videofx-<version>-arm64.img.xz` (Raspberry Pi OS Lite 64-bit with the player baked in, built by CI from `pi/image/build.sh --generic`) and `videofx-imager.json`. The image holds no password, SSH key or Wi-Fi; [Raspberry Pi Imager](https://www.raspberrypi.com/software/) (2.0 or newer) puts yours in on first boot through cloud-init, the same way it sets up Raspberry Pi OS trixie:
+
+1. Imager > **App options** > **Content repository** > **Custom URL**: `https://github.com/davidwkeith/atmosfx-projector-case/releases/latest/download/videofx-imager.json`. Imager reloads with "VideoFX projector player" as its only OS.
+2. Pick it and the card, then fill in the usual options: user and password, Wi-Fi and country, SSH, locale. The hostname field is ignored: the Pi names itself `videofx-xxxx` anyway.
+3. Boot. One extra reboot (storage setup, below), then `videofx-xxxx.local` answers.
+
+Imager's **Use custom** button offers no first-boot options for a plain image file (Imager 2.0 removed them; the repository JSON is the supported way). Without the repository, flash the `.img.xz` with **Use custom**, then edit `user-data` and `network-config` on the card's boot partition before the first boot; both carry commented examples. A Pi booted with no user set up cannot be logged into at all: no password, and the console login is off.
+
+The service runs as the baked-in `videofx` user. Name your Imager user `videofx` to keep one account (Imager then sets its password and SSH key), or pick any other name; both get sudo.
+
+**Option B: build the image yourself.** Your user, password, SSH key and Wi-Fi are baked in, so there is no first-boot setup. Never share this image. You need Docker ([Docker Desktop](https://docs.docker.com/desktop/) on a Mac), git, rsync, uuidgen and node.
 
 ```sh
 cp pi/config.example pi/config   # user, password, SSH key, Wi-Fi, country; gitignored
-pi/image/build.sh                # pi-gen arm64 pinned to one commit; image in pi/deploy/*-videofx.img.xz
+pi/image/build.sh                # pi-gen arm64 pinned to one commit; image in pi/deploy/videofx-<version>-arm64.img.xz
+pi/image/build.sh --generic      # the public flavour CI builds (no pi/config needed)
 ```
 
-Flash it with [Raspberry Pi Imager](https://github.com/raspberrypi/rpi-imager) (**Use custom**) and skip Imager's OS customisation. Every Pi flashed from the image names itself on first boot. pi-gen and npm are pinned; Debian and NodeSource packages are whatever is current on build day.
+Flash it with Imager's **Use custom** (no options are offered, none are needed). pi-gen and npm are pinned; Debian and NodeSource packages are whatever is current on build day.
 
-**Option B: install on stock Raspberry Pi OS Lite (64-bit).**
+**Fresh card, either way.** Flash the image onto the card and let that card's first boot run: `videofx-storage` grows the root to `ROOT_SIZE_MB` and makes the data partition from the rest, and Pi OS's own grow-to-fill is disabled. Don't copy files onto an existing Pi OS card to "upgrade" it, and don't boot the freshly flashed card in another Pi first. A card whose root already fills it reports `no-space` and runs unprotected; re-flash it.
+
+**Option C: install on stock Raspberry Pi OS Lite (64-bit).**
 
 ```sh
 scp -r pi/ you@raspberrypi.local:videofx-setup
@@ -185,8 +198,8 @@ sudo videofx-update --rollback                # back to the previous version
   5. With `--os`, runs `apt full-upgrade`.
   6. Switches maintenance off and reboots.
   7. If step 4 fails (no network, say), it puts the previous version back, switches protection back on, reboots and exits with an error. It doesn't retry.
-- **Private repo:** until it's public, put a GitHub token with read access to the repo's contents (a fine-grained token, "Contents: read") in `/srv/videofx/update/github-token`, mode 600, owned by root. It lives on the data partition so it survives the read-only root. Or use `--tarball`.
-- **Making a release** (on your computer): `pi/tools/make-release.sh` builds `pi/dist/videofx-pi-<version>.tar.gz` with `version.json` (version plus git sha), then run `gh release create vX.Y.Z pi/dist/videofx-pi-X.Y.Z.tar.gz`. The page footer shows the version and sha, and "update available" when the last `--check` found a newer release.
+- **Private fork:** if your copy of the repo is private, put a GitHub token with read access to its contents (a fine-grained token, "Contents: read") in `/srv/videofx/update/github-token`, mode 600, owned by root. It lives on the data partition so it survives the read-only root. Or use `--tarball`.
+- **Making a release:** bump the version in `pi/package.json`, tag `vX.Y.Z` and push the tag. CI (`.github/workflows/build.yml`) attaches the STLs, `videofx-pi-X.Y.Z.tar.gz` (`pi/tools/make-release.sh`), the public image with its `.sha256`, and `videofx-imager.json` (`pi/tools/imager-json.sh`). The image job runs on GitHub's arm64 runner and takes about ten minutes. By hand: `pi/tools/make-release.sh && gh release create vX.Y.Z pi/dist/videofx-pi-X.Y.Z.tar.gz`. The page footer shows the version and sha, and "update available" when the last `--check` found a newer release.
 
 ### Backup and restore
 

@@ -63,9 +63,9 @@ run screen-caps   "intersection(){ base_all(); union(){ for (v=vents) vent_cap_p
 run fans           "intersection(){ for (f=fans) fan_body(f); union(){ base_all(); translate([0, y_pi0+0.3, shelf_zz]) power_shelf(); } }"
 run aim-sweep      "intersection(){ union(){ base_all(); $LID; translate([lens_x, y0, win_zc]) window_frame(); for (f=fans) fan_body(f); }
                       for (a=[[1,0],[0,1],[1,1],[1,-1]], sg=[-1,1])
-                        { projector(sg*a[0]*(a[1] ? aim_combo : aim_max), sg*a[1]*(a[0] ? aim_combo : aim_max));
-                          projector_ports(sg*a[0]*(a[1] ? aim_combo : aim_max), sg*a[1]*(a[0] ? aim_combo : aim_max)); } }"
+                        { projector(sg*a[0]*pan_max, sg*a[1]*(a[0] ? aim_combo : aim_max));
+                          projector_ports(sg*a[0]*pan_max, sg*a[1]*(a[0] ? aim_combo : aim_max)); } }"
 run light-cone     "intersection(){ union(){ base_all(false); $LID; translate([lens_x, y0, win_zc]) window_frame(); }
                       for (a=[[1,0],[0,1],[1,1],[1,-1]], sg=[-1,1])
-                        light_cone(sg*a[0]*(a[1] ? aim_combo : aim_max), sg*a[1]*(a[0] ? aim_combo : cone_tilt)); }"
+                        light_cone(sg*a[0]*pan_max, sg*a[1]*(a[0] ? aim_combo : cone_tilt)); }"
 exit $fail

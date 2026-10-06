@@ -1,0 +1,36 @@
+#cloud-config
+# First-boot setup for the VideoFX image (cloud-init). Raspberry Pi Imager writes
+# this file for you when it knows the image (App options > Content repository >
+# Custom URL, see pi/README.md). Without Imager, edit it on the card's boot
+# partition before the first boot. YAML: spaces only, no tabs.
+#
+# The player runs as the user "videofx", which has no password until you set one
+# here. A Pi booted without a user set up cannot be logged into (no console
+# login either), so fill in at least one user.
+#
+# The Pi names itself videofx-xxxx from its MAC; a "hostname:" here is ignored.
+
+# Log in as the service user (one account) ...
+users:
+  - name: videofx
+    lock_passwd: false
+    # mkpasswd -m sha-512   (or: openssl passwd -6)
+    passwd: "$6$replace-me$with-a-real-hash"
+    ssh_authorized_keys:
+      - ssh-ed25519 AAAA... you@laptop
+    sudo: ALL=(ALL) NOPASSWD:ALL
+# ... or add your own user next to it (it needs sudo to administer the Pi):
+#  - name: me
+#    groups: users,adm,dialout,audio,netdev,video,plugdev,input,gpio,render,sudo
+#    shell: /bin/bash
+#    lock_passwd: false
+#    passwd: "$6$..."
+#    sudo: ALL=(ALL) NOPASSWD:ALL
+
+# SSH with a password (keys above always work).
+ssh_pwauth: true
+
+timezone: America/Los_Angeles
+locale: en_US.UTF-8
+keyboard:
+  layout: us

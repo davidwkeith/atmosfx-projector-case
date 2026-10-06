@@ -9,7 +9,7 @@ Parametric [OpenSCAD](https://openscad.org) design for a ground-standing, rain-p
 - Stands on the ground or mounts on a tripod: a 3/8"-16 insert near the centre of mass and a 1/4"-20 insert 30 mm forward, in a pad flush with the floor ribs.
 - Anchors: sealed stake tubes inside the four corners take 8 mm tent stakes, driven from inside with the lid off. With the lid screwed on (use security screws) they can't be pulled, which deters theft and holds the case against wind.
 - Sits on the ground on eight 6 mm ribs running front to back (the outer two under the side walls); the channels between them drain rain, feed intake air and carry the speaker wire.
-- Projector rides on an internal ball head (pedestal takes a 1/4-20 stud). Usable aim +/-15 deg pan and +/-12 deg tilt, +/-10 deg both at once, with the image clearing the window (checked by `scripts/check_clash.sh` for a typical 1.4:1 projector). For more, tilt the whole case: tripod head or a shim.
+- Projector rides on an internal ball head (pedestal takes a 1/4-20 stud). Usable aim +/-10 deg pan and +/-12 deg tilt, +/-8 deg both at once, with the image clearing the window (checked by `scripts/check_clash.sh` for the Tkisko TO2's 0.95:1 throw). For more, tilt the whole case: tripod head or a shim.
 - Aim hatch on the left wall, a 45 deg diamond so it prints without supports. Tool-free, unless you fit the optional lock screw for public-facing setups: lift the cover about 8 mm off its four keyholes, loosen the ball head, aim, lock. Lid stays on.
 - Sloped lid with no holes in the roof (it screws on through the side skirt), a front visor, drip lip and a 45 deg scarf joint at the seam (the front half laps over the rear like a shingle); 45 deg louvers shed rain; intake through slots in the raised floor; two 40 mm PWM exhaust fans on the right wall (projector zone, and Pi/brick zone above the shelf, which has vents on its low-voltage side), speed-controlled by the Pi from temperature sensors, with over-temperature shutdown.
 - Acrylic lens window in a rebate, held by a printed frame.
@@ -28,14 +28,14 @@ make parts                              # writes stl/*.stl
 scripts/check_clash.sh                  # interference checks (needs python3)
 ```
 
-CI builds the STLs, runs the interference checks and runs the Pi tests on every push (Actions > Build STLs; STLs are under artifacts).
+CI builds the STLs, runs the interference checks and runs the Pi tests on every push (Actions > Build STLs; STLs are under artifacts). A `v*` tag also builds the Pi image and attaches everything to a GitHub Release.
 
 Preview in OpenSCAD: open `projector_pi_case.scad`, set `part` and `tile` in the Customizer. `part = "assembly"` shows everything with ghosted projector and ball head. On iOS, the [OpenSCAD Playground](https://github.com/openscad/openscad-playground) works in Safari.
 
 ## Repository layout
 
 - `projector_pi_case.scad` - the model (all parts via `part` / `tile`)
-- STLs: download them from the repository's Releases (CI builds and attaches them for each version tag), or run `make parts` to write them to `stl/`
+- STLs and the Pi image: download them from the repository's Releases (CI builds and attaches them for each version tag), or run `make parts` to write the STLs to `stl/`. Flashing the image: `pi/README.md`, Install.
 - `docs/` - design log, [printing plan](docs/PRINTING.md), [bill of materials](docs/BOM.md), [assembly](docs/ASSEMBLY.md), [wiring](docs/WIRING.md), [aiming](docs/AIMING.md)
 - `preview/` - renders of the assembly, interior, aim hatch and power shelf
 - `scripts/` - `check_clash.sh`, `render_previews.sh`, `publish.sh`
@@ -46,9 +46,9 @@ Preview in OpenSCAD: open `projector_pi_case.scad`, set `part` and `tile` in the
 
 | File | Notes |
 |---|---|
-| `base_front` | Rotate 90 deg so the 243 mm side runs along the 250 mm bed axis |
+| `base_front` | 231 x 207 mm: lies flat as exported, wide side along the 250 mm bed axis; no skirt |
 | `base_rear` | Pi compartment. Joins `base_front` with 4x M3 x 12 screws through the divider into its collars; silicone the joint faces |
-| `lid_front`, `lid_rear` | Already flipped roof-down; rotate `lid_front` 90 deg. Seal the scarf joint with silicone |
+| `lid_front`, `lid_rear` | Already flipped roof-down; `lid_front` (228 x 204 mm) lies flat as exported. Seal the scarf joint with silicone |
 | `window_frame` | Holds the acrylic pane |
 | `pedestal` | Screws to the floor bosses; carries the ball head |
 | `hatch_cover` | Print ribs-up |
@@ -96,4 +96,4 @@ Mains is inside a printed box in this design. Feed it from a GFCI outlet, fuse t
 
 ## License
 
-Designs and documentation: CC BY-SA 4.0 (see `LICENSE`). Software in `pi/`: MIT (see `pi/LICENSE`).
+Designs, STLs and documentation: [CERN Open Hardware Licence Version 2 - Strongly Reciprocal](LICENSE) (CERN-OHL-S-2.0). Software in `pi/`: [MIT](pi/LICENSE).

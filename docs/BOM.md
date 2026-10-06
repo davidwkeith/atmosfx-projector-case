@@ -35,7 +35,7 @@ Quantities for one case. Printed parts and filament are in [PRINTING.md](PRINTIN
 
 | Item | Qty | Notes |
 |---|---|---|
-| 40 x 40 x 10 mm 12 V 4-pin PWM fan (e.g. Noctua NF-A4x10 PWM) | 2 | Check its datasheet accepts 3.3 V PWM |
+| 40 x 40 x 10 mm 24 V 4-pin PWM fan (e.g. Noctua NF-A4x10 24V PWM) | 2 | Runs on the 21 V rail; a 12 V fan would burn. Check its datasheet accepts 3.3 V PWM |
 | DS18B20 temperature sensor + 4.7 kohm resistor | 2 + 1 | One per zone, one pull-up |
 | HC-SR501 PIR motion sensor | 1 | |
 | Relay module, 5 V coil, opto-isolated, active-low | 0-1 | Only if the projector lacks CEC |
