@@ -6,53 +6,47 @@ This case is rain-shedding and ventilated, not waterproof, and not certified for
 
 ## Overview
 
+One diagram per side of the barrier on the power shelf: [high voltage](#high-voltage-ac-side) (mains, left of the barrier: the receptacle plate with both wall-warts) and [low voltage](#low-voltage-side) (right of the barrier and down to the sled, drawn as the two DC rails and then the Pi's signals). Each comes twice: a schematic (`docs/wiring-*.svg`, drawn by `scripts/render_wiring.py` with [Schemdraw](https://schemdraw.readthedocs.io/); click one for full size) and a flowchart of the same connections. Red is live or +, grey is neutral or -, green is earth, blue is a signal. Pin numbers are the Pi header's physical pins; GPIO assignments and the reasoning behind them are in `pi/README.md` ("GPIO pins and wiring"). The fuse values on the schematics are the examples from "Fuse sizing" below; size yours from your own labels.
+
+## High voltage: AC side
+
+Everything left of the barrier on the power shelf. Nothing but the two wall-warts' DC cords crosses the barrier, through the notch at its foot.
+
+![AC side schematic: GFCI outlet, outdoor cord through the PG9 cord grip, live-only time-delay fuse, two NEMA 5-15R receptacles with insulated quick-connects, the stock 21 V wall-wart and the second 24 V one plugged in unmodified, their DC cords out through the barrier notch](wiring-hv.svg)
+
 ```mermaid
 flowchart LR
-  subgraph OUT["Outside"]
-    GFCI["GFCI outdoor outlet<br/>(in-use cover)"]
+  subgraph OUT["Outside the case"]
+    direction LR
+    GFCI["Outdoor GFCI outlet<br/>in-use cover; test its button"]
+    BOX["Weatherproof connection box<br/>(only if you join an extension cord)"]
+    LOOP["Drip loop<br/>below the gland"]
   end
-  subgraph AC["AC side of barrier (left of shelf)"]
-    GLAND["PG9 cord grip<br/>+ drip loop"]
-    FAC["AC fuse, time-delay<br/>on LIVE only"]
-    RCPT["2x NEMA 5-15R<br/>panel-mount receptacles"]
-    W1["Stock wall-wart<br/>21 V 2.28 A"]
-    W2["Second wall-wart<br/>24 V (12-24 V)"]
+  subgraph WALL["Rear wall, rear-left corner of the Pi zone"]
+    GLAND["PG9 cord grip<br/>level with the lower receptacle's tabs"]
   end
-  subgraph LV["Low-voltage side (right of barrier)"]
-    F1["21 V fuse<br/>blade, fast"]
-    F2["24 V fuse<br/>blade, fast"]
-    TB["Lever-nut splice<br/>24 V rail, both minuses"]
-    RELAY["Relay (fallback only)<br/>switches + line"]
-    PROJ["Projector barrel plug"]
-    AMP["Raspberry Pi DigiAMP+<br/>12-24 V in, powers Pi"]
-    FANS["2x 24 V PWM fans"]
+  subgraph ACS["Power shelf, AC side (left of the barrier): the receptacle plate"]
+    FAC["5 x 20 mm inline holder<br/>time-delay fuse<br/>LIVE ONLY"]
+    R1["Lower NEMA 5-15R<br/>brass / silver / green tabs<br/>fully insulated quick-connects"]
+    R2["Upper NEMA 5-15R<br/>jumpered from the lower<br/>(piggyback quick-connects)"]
+    W1["Stock wall-wart, unmodified<br/>21 V 2.28 A, 2-pin"]
+    W2["Second wall-wart, unmodified<br/>24 V, 2.5-3 A, 2-pin"]
   end
-  subgraph PI["Pi sled (below shelf)"]
-    RPI["Raspberry Pi"]
-    SPK["Speaker terminals"]
-  end
-  GFCI -- "outdoor cord SJTW 18 AWG" --> GLAND --> FAC --> RCPT
-  RCPT --> W1
-  RCPT --> W2
-  W1 -- "21 V +" --> F1 --> RELAY --> PROJ
-  W1 -- "21 V -" --> TB
-  W2 -- "24 V +" --> F2 --> TB
-  W2 -- "24 V -" --> TB
-  TB -- "+ / -" --> AMP
-  TB -- "+ / -" --> FANS
-  AMP --- RPI
-  AMP --> SPK
-  SPK -- "16 AWG zip cord<br/>via floor chimney" --> SPEAKERS["Speakers behind<br/>the projection"]
-  RPI -. "HDMI + CEC" .-> PROJ
-  RPI -. "PWM / tach" .-> FANS
-  RPI -. "GPIO" .-> RELAY
+  NOTCH["Notch at the barrier foot<br/>DC cords only cross here"]
+  GFCI -- "SJTW 18 AWG, 3-wire" --> BOX --> LOOP --> GLAND
+  GLAND -- "L: black / smooth (narrow blade)" --> FAC
+  FAC -- "L to the brass (narrow-slot) tab" --> R1
+  GLAND -- "N: white / ribbed (wide blade), to the silver tab" --> R1
+  GLAND -. "E: green, to the green tab (nothing uses it)" .-> R1
+  R1 -- "L / N / E jumper" --> R2
+  R1 --> W1
+  R2 --> W2
+  W1 -- "21 V DC cord" --> NOTCH
+  W2 -- "24 V DC cord" --> NOTCH
+  linkStyle 3,4 stroke:#c62828,stroke-width:2px
+  linkStyle 5 stroke:#9e9e9e,stroke-width:2px
+  linkStyle 6 stroke:#2e7d32,stroke-width:2px
 ```
-
-Solid lines carry power. Dotted lines are signals. The relay is only needed if the projector lacks HDMI-CEC (see `pi/README.md`, "Projector power"). It is also the only way the Pi can cut the projector's power on over-temperature: with CEC alone it can only ask for standby, so consider fitting it anyway (see `pi/README.md`, "Cooling"). The relay opens whenever the Pi's service stops. GPIO pin assignments are in `pi/README.md` (PIR 17, relay 27, IR LED 22, IR receiver 23, fan PWM 12/13, fan tach 24/25, 1-wire 26; the DigiAMP+ uses 2, 3, 4 and 18-21). The DigiAMP+ covers the header, so fit a stacking header or solder leads under the Pi.
-
-## AC side
-
-Everything left of the barrier on the power shelf.
 
 1. **Supply.** Keep every plug-and-socket joint off the ground and out of puddles: put any extension-cord joint in a weatherproof connection box (a clamshell "cord connection" cover) and raise it off the lawn. Plug into an outdoor GFCI outlet (US code already requires GFCI for outdoor receptacles; test it with its button). Use an outdoor-rated cord (SJTW or better, 18 AWG minimum) and an in-use weatherproof cover on the outlet.
 2. **Cord entry.** The cord enters through the PG9 cord grip in the rear wall, above the shelf. Tighten the grip on the round cord jacket. Leave a drip loop outside, below the grip, so water drips off before reaching it.
@@ -66,6 +60,50 @@ Everything left of the barrier on the power shelf.
 
 Right of the barrier, and down to the Pi sled.
 
+### DC rails
+
+![DC rails schematic: the stock wall-wart's 21 V cord fused and switched by the relay contact into the projector's barrel plug, the second wall-wart's 24 V cord fused into a Wago + rail feeding the DigiAMP+ (which powers the Pi and the speakers) and both fans, and one Wago - rail joining both minuses](wiring-lv-power.svg)
+
+```mermaid
+flowchart TB
+  W1["Stock wall-wart DC cord, 21 V<br/>cut a hand's width from the barrel plug; confirm centre + with a meter"]
+  W2["Second wall-wart DC cord, 24 V<br/>same treatment"]
+  F1["21 V fuse<br/>blade, 3 A"]
+  F2["24 V fuse<br/>blade, 2.5 A"]
+  WN(["Wago 221, - rail<br/>both minuses joined"])
+  WP(["Wago 221, 24 V + rail"])
+  subgraph PJ["Projector (21 V)"]
+    RELAY["Relay module, fallback only<br/>COM / NO in the + line"]
+    PROJ["Projector barrel plug<br/>its own cable, spliced back"]
+  end
+  subgraph PIZ["Pi sled, below the shelf (24 V)"]
+    AMP["Raspberry Pi DigiAMP+<br/>12-24 V in"]
+    PI["Raspberry Pi<br/>5 V from the DigiAMP+ via the header<br/>no USB power"]
+    SPK["Speakers behind the projection<br/>16 AWG zip cord, stripe to +<br/>out through the floor chimney"]
+  end
+  subgraph FANS["Right wall fans, 40 mm 24 V 4-pin PWM"]
+    FAN1["Fan 1: projector zone"]
+    FAN2["Fan 2: Pi / power zone"]
+  end
+  W1 -- "+ 18 AWG" --> F1 --> RELAY -- "+" --> PROJ
+  W1 -- "- 18 AWG" --> WN
+  WN -- "- never switched" --> PROJ
+  W2 -- "+ 18 AWG" --> F2 --> WP
+  W2 -- "- 18 AWG" --> WN
+  WP -- "20 AWG" --> AMP
+  WN -- "20 AWG" --> AMP
+  AMP --> PI
+  AMP --> SPK
+  WP -- "24 AWG" --> FAN1
+  WP -- "24 AWG" --> FAN2
+  WN -- "24 AWG" --> FAN1
+  WN -- "24 AWG" --> FAN2
+  linkStyle 0,1,2,5,6,8,12,13 stroke:#c62828,stroke-width:2px
+  linkStyle 3,4,7,9,14,15 stroke:#424242,stroke-width:2px
+```
+
+Both rails share one - rail: the projector's HDMI shield ties its ground to the Pi's anyway, and without the joint that shield would be the only return path between the rails. The relay is only needed if the projector lacks HDMI-CEC (see `pi/README.md`, "Projector power"). It is also the only way the Pi can cut the projector's power on over-temperature: with CEC alone it can only ask for standby, so consider fitting it anyway (see `pi/README.md`, "Cooling"). The relay opens whenever the Pi's service stops. Use an **active-low** module: the Pi holds GPIO 27 high (relay open, projector off) from boot.
+
 | Circuit | Wire | Notes |
 |---|---|---|
 | Stock wall-wart DC lead to the 21 V fuse and the projector | 18 AWG (0.75 mm²) | Cut the lead a hand's width from its barrel plug, fuse the **+** conductor (the label's symbol says centre +; confirm with a meter before cutting) and splice it back with lever nuts, so the projector keeps its own plug. The relay, if fitted, goes in this + line |
@@ -77,6 +115,44 @@ Right of the barrier, and down to the Pi sled.
 | DigiAMP+ to speakers | 16 AWG zip cord | Out through the floor chimney; red/striped to + on both ends |
 
 Use lever-nut connectors (e.g. Wago 221) for the splice so it can be undone. Pass low-voltage wires from the shelf to the Pi through the wire slot at the back of the shelf, never across the barrier's AC side.
+
+### Pi header signals
+
+![Pi header schematic: the 40-pin header with the PIR, relay coil, IR LED driver, 1-wire bus and the two fans' PWM and tach lines on their GPIO pins, with pull-ups and the transistor](wiring-lv-signals.svg)
+
+```mermaid
+flowchart LR
+  subgraph IN["Inputs"]
+    PIR["HC-SR501 PIR, rear wall<br/>VCC 5 V pin 2, GND pin 9"]
+    T1["DS18B20, projector zone<br/>VDD 3.3 V, GND"]
+    T2["DS18B20, Pi / brick zone<br/>VDD 3.3 V, GND"]
+    TACH1["Fan 1 tach (green)<br/>10 kΩ pull-up to 3.3 V"]
+    TACH2["Fan 2 tach (green)<br/>10 kΩ pull-up to 3.3 V"]
+    IRRX["TSOP38238 IR receiver, optional<br/>VS 3.3 V pin 17, GND"]
+  end
+  PI["Raspberry Pi header<br/>(the DigiAMP+'s pass-through header;<br/>GPIO 2-4, 18-21 and 22 belong to the DigiAMP+)"]
+  subgraph OUTS["Outputs"]
+    PWM1["Fan 1 PWM (blue)"]
+    PWM2["Fan 2 PWM (blue)"]
+    RELAY["Relay module IN, active-low<br/>VCC 5 V pin 4, GND pin 14"]
+    Q1["BC337 NPN<br/>emitter to GND"]
+    IRLED["940 nm IR LED in ir_holder<br/>5 V, LED, 47 Ω, collector"]
+    PROJ["Projector HDMI input"]
+  end
+  PIR -- "OUT to GPIO17, pin 11" --> PI
+  T1 -- "DQ" --> T2
+  T2 -- "DQ, one bus, to GPIO26, pin 37<br/>one 4.7 kΩ to 3.3 V" --> PI
+  TACH1 -- "GPIO24, pin 18" --> PI
+  TACH2 -- "GPIO25, pin 22" --> PI
+  IRRX -- "OUT to GPIO23, pin 16" --> PI
+  PI -- "GPIO12, pin 32, via 1 kΩ (PWM0)" --> PWM1
+  PI -- "GPIO13, pin 33, via 1 kΩ (PWM1)" --> PWM2
+  PI -- "GPIO27, pin 13" --> RELAY
+  PI -- "GPIO16, pin 36, via 1 kΩ to the base" --> Q1 --> IRLED
+  PI -. "HDMI (CEC power control)" .-> PROJ
+```
+
+The DigiAMP+ re-exposes the header on top, so the leads plug into its pass-through header (a Zero 2 W needs its own 40-pin header soldered first). GPIO 22 is the DigiAMP+ mute line, which is why the IR LED sits on GPIO 16. Every tach and 1-wire pull-up goes to **3.3 V**, never to a DC rail or 5 V. The fans and the Pi must share a ground. The IR LED needs the transistor: a GPIO pin can only source 16 mA.
 
 ## Cords outdoors
 

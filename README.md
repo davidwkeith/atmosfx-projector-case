@@ -75,7 +75,7 @@ Full steps, aim limits and troubleshooting: [docs/AIMING.md](docs/AIMING.md).
 
 ## Power and safety
 
-Mains is inside a printed box in this design. Feed it from a GFCI outlet, fuse the AC input and the DC output, keep AC and DC wiring on separate sides of the barrier, use fully insulated quick-connects on the receptacle tabs, leave a drip loop on the cord, and use PETG or ASA. If you are not comfortable with mains wiring, have someone qualified do that part. Wiring diagram, wire gauges, fuse sizing and a pre-power-up checklist: [docs/WIRING.md](docs/WIRING.md). Check each wall-wart's voltage and plug polarity before cutting its lead.
+Mains is inside a printed box in this design. Feed it from a GFCI outlet, fuse the AC input and the DC output, keep AC and DC wiring on separate sides of the barrier, use fully insulated quick-connects on the receptacle tabs, leave a drip loop on the cord, and use PETG or ASA. If you are not comfortable with mains wiring, have someone qualified do that part. Wiring diagrams, wire gauges, fuse sizing and a pre-power-up checklist: [docs/WIRING.md](docs/WIRING.md). Check each wall-wart's voltage and plug polarity before cutting its lead.
 
 ## Roadmap
 

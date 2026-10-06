@@ -316,10 +316,10 @@ If you ever need more I/O, an I2C expander (MCP23017) or an I2C fan controller (
 - **Relay module (5 V coil, opto input):** VCC 5 V (pin 4), GND (pin 14), IN to GPIO27 (pin 13). The contacts (COM/NO) go in series with the projector's DC **+** only.
 - **IR LED (940 nm):** don't drive it straight from the pin (16 mA max). Use GPIO16 (pin 36; GPIO22 is the DigiAMP+ mute line), then 1 kΩ, then an NPN transistor base (BC337/2N2222). LED plus series resistor (about 47 Ω) from 5 V to the collector; emitter to GND.
 - **IR receiver (TSOP38238):** VS to 3.3 V (pin 17), GND, OUT to GPIO23 (pin 16). Powering it at 3.3 V keeps its output at 3.3 V.
-- **Fans (12 V 4-pin PWM, for example Noctua NF-A4x10 PWM):**
-  - 12 V and GND from the DC splice, with a **common ground with the Pi**.
+- **Fans (24 V 4-pin PWM, for example Noctua NF-A4x10 24V PWM):**
+  - + and GND from the DC splice (the second wall-wart's 24 V rail; a 12 V fan would burn), with a **common ground with the Pi**.
   - PWM (blue): GPIO12 (pin 32) or GPIO13 (pin 33) through 1 kΩ. Noctua's PWM white paper (via its search summary; the PDF was rate-limited) gives 25 kHz (21-28 kHz), 3.3 V logic accepted, input pulled up inside the fan, so it's driven directly with no transistor.
-  - Tach (green, open collector, 2 pulses per revolution): GPIO24 (pin 18) or GPIO25 (pin 22), with 10 kΩ to **3.3 V** (never 12 V).
+  - Tach (green, open collector, 2 pulses per revolution): GPIO24 (pin 18) or GPIO25 (pin 22), with 10 kΩ to **3.3 V** (never the fan rail).
 - **DS18B20 (one per zone, same bus):** VDD 3.3 V, GND, DQ to GPIO26 (pin 37) with 4.7 kΩ to 3.3 V. Put the projector-zone sensor near the projector exhaust. Choose which ROM ID is which zone under **Cooling** on the page.
 
 ## Audio
