@@ -98,7 +98,7 @@ Both rails share one - rail: the projector's HDMI shield ties its ground to the 
 
 | Circuit | Wire | Notes |
 |---|---|---|
-| Stock wall-wart DC lead to the 21 V fuse and the projector | 18 AWG (0.75 mm²) | Cut the lead a hand's width from its barrel plug, fuse the **+** conductor (the label's symbol says centre +; confirm with a meter before cutting) and splice it back with lever nuts, so the projector keeps its own plug. The relay, if fitted, goes in this + line |
+| Stock wall-wart DC lead to the 21 V fuse and the projector | 18 AWG (0.75 mm²) | Cut the lead a hand's width from its barrel plug, fuse the **+** conductor (the label's symbol says centre +; confirm with a meter before cutting) and splice it back with lever nuts, so the projector keeps its own plug (if the stock plug is straight, fit the BOM's right-angle plug on the cut tail instead). The relay, if fitted, goes in this + line |
 | Second wall-wart DC lead to the second fuse and splice | 18 AWG | Same treatment: fuse the +, lever-nut splice. 12-24 V (the DigiAMP+'s range; higher gives it more power) |
 | Both rails' **minus** conductors | 18 AWG | Join them at the splice. The projector's HDMI shield ties its ground to the Pi's; without this joint that shield would be the only return path between the rails |
 | Splice to DigiAMP+ power input | 20 AWG (0.5 mm²) | DigiAMP+ accepts 12-24 V on its P5 hard-wire header (or its 5.5 x 2.5 mm centre-positive barrel jack); it powers the Pi, so never also power the Pi by USB |

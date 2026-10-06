@@ -281,7 +281,7 @@ Setting: **Projector power** = `cec` (default) | `relay-ir` | `relay` | `hdmi-of
   - Use a relay module rated for the projector's DC current, with an opto-isolated input and a flyback diode (most modules have one).
   - Switch the **+ line (high side) only**. Never switch the projector's ground: the HDMI shield would carry its return current.
   - At boot the firmware drives the relay line to "open" before Linux runs (`gpio=27=op,dh` for active-low modules; use `dl` for active-high). The service keeps it open until it decides.
-  - When the service stops, for any reason, the relay opens: the service does it on a clean stop, and `videofx-relay-open` (the unit's `ExecStopPost`) does it after a crash, a kill or the watchdog. A projector is never left powered with nothing watching its temperature.
+  - When the service stops, for any reason, the relay opens: the service does it on a clean stop, and `videofx-relay-open` (the unit's `ExecStopPost`) does it after a crash, a kill or the watchdog. The relay never stays closed once the service is gone (the service only watches the Pi's own SoC; the projector has its own thermal cut-off).
   - The relay and IR pins are also in `config.txt`, written once with the defaults. If you change them in `/etc/default/videofx`, change `config.txt` by hand too.
   - Cutting power suits LED mini projectors; don't do it to a lamp projector that needs a cool-down.
 - **IR** uses the `gpio-ir-tx` overlay for the LED and `gpio-ir` for a TSOP38238-style receiver, driven with `ir-ctl`.
@@ -331,6 +331,8 @@ A **Raspberry Pi DigiAMP+** (TAS5756M, 2 channels) drives 4-8 Ω speakers behind
 The case has no fans or temperature sensors: the projector's own fan moves the air through the case's louver banks, and the projector has its own thermal cut-off. The Pi only watches **its own SoC temperature** (`/sys/class/thermal/thermal_zone0`, read every 5 s) and switches the projector off if the Pi itself overheats.
 
 Settings > Cooling:
+
+_Upgrade note: `tempWarnC` / `tempCritC` now refer to the Pi's SoC. A saved `tempCritC` of 55 (the old projector-zone default) would trip during normal operation, so delete the old saved values or set them to 70 / 80._
 
 - **Pi over-temperature protection** (on by default). When off, nothing is checked and nothing is protected.
 - **Warning** (default 70 °C, 40-90): banner on the page.

@@ -1,4 +1,6 @@
 // Ground-standing projector + Raspberry Pi 3 case: rain-proof (not sealed), ventilated
+// v0.10 - passive airflow: the projector's own fan, exhaust and inlet louver banks on the right wall, a lip baffle between them;
+//         no case fans or sensors; photo-derived side-port keep-outs
 // v0.9 - the stock supply is a wall-wart, so the shelf grew a receptacle plate: two panel-mount NEMA 5-15R stacked,
 //        the stock 21 V wall-wart below and a second (Pi, DigiAMP+) above, hanging on their prongs; the AC gland
 //        moved beside the plate, next to the left wall; Pi zone 85 deep; the fit coupon has the receptacle cutout
@@ -139,15 +141,14 @@ cap_t = 2;          // cap ring and plate thickness
 /* [Airflow (projector's own fan; photo-measured, confirm with calipers)] */
 exh_y = [0, 42];        // exhaust grille span behind the projector's front face, right side (slots measured 10-42; the owner says the first 40)
 in_size = 40;           // rear intake patch, square
-in_right = 15;          // intake patch inset from the projector's right edge
 in_top = 15;            // intake patch inset from the projector's top
 dc_jack = [15, 13];     // DC barrel centre: inset from the right edge, below the top
 side_port_h = 18;       // I/O strip height on the right face, from the top
 hdmi_y = 56;            // HDMI centre behind the front face (right face)
 side_port_depth = 15;   // right-angle HDMI plug standing out of the right face
 side_cable_d = 8;       // the cable run behind the plug, standing out of the right face
-air_margin = 8;         // opening grows past the patch this much each way along Y (pan sweep)
-air_margin_z = 4;       // and along Z (tilt sweep)
+air_margin = 8;         // opening grows past the patch this much each way along Y (partial pan margin: at the extremes some exhaust leaves into the side gap, which is the plenum)
+air_margin_z = 4;       // and along Z (partial tilt margin, same caveat)
 lv_pitch = 8;           // louver slat pitch
 baffle_d = 10;          // lip baffle depth from the right wall (aim sweep checks it)
 baffle_t = 4;
@@ -228,9 +229,11 @@ exh_open = [proj_h + 2*air_margin_z, exh_y[1] - exh_y[0] + 2*air_margin];   // e
 exh_c = [y_pf + (exh_y[0] + exh_y[1])/2, z_pj + proj_h/2];
 in_open = [in_size + 2*air_margin_z, rear_gap + 2];                         // inlet wall opening [Z, Y]
 in_c = [y_div - in_open[1]/2 - 1 - cap_t, z_pj + proj_h - in_top - in_size/2];
-function air_n(h, pitch) = ceil((h - 7)/pitch) + 1;   // slats needed to span an opening of height h
+function air_n(h, pitch) = floor((h - 7)/pitch) + 1;   // slats that fit an opening of height h (floor: the outer slots must not reach past the opening, or past the screen cap's rim)
 assert(exh_open[1] >= exh_y[1] - exh_y[0] + 2*air_margin - 0.01 && exh_open[0] >= proj_h + 2*air_margin_z - 0.01, "exhaust opening does not cover the exhaust grille plus its sweep margin");
 assert(in_open[0] >= in_size + 2*air_margin_z - 0.01 && in_c[1] + in_open[0]/2 <= z_pj + proj_h + air_margin_z + 0.01, "inlet opening does not span the intake patch, or rises past the projector's top");
+assert((air_n(exh_open[0], lv_pitch)-1)*lv_pitch/2 + wall/2 + 1.2*sqrt(2) <= exh_open[0]/2, "exhaust louver slots reach past the opening (and the screen cap's rim)");
+assert((air_n(in_open[0], lv_pitch)-1)*lv_pitch/2 + wall/2 + 1.2*sqrt(2) <= in_open[0]/2, "inlet louver slots reach past the opening (and the screen cap's rim)");
 assert(in_c[0] + in_open[1]/2 <= y_div, "inlet opening runs into the divider");
 assert(in_c[0] - in_open[1]/2 >= y_pf + proj_d - 6, "inlet opening starts too far in front of the projector's rear face");
 pir_zz = shelf_zz + 3 + pir_dz;
@@ -459,10 +462,11 @@ module warts() {
 }
 
 // Lip baffle on the right wall between the exhaust and the rear inlet: exhaust that stays in the case does not creep back to the
-// intake along the side gap. Stops baffle_gap below the projector's top so the HDMI plug passes over it. A lip, not a seal.
+// intake along the side gap. Runs from the floor (so the upright print has no cantilever) up to baffle_gap below the projector's
+// top so the HDMI plug passes over it. A lip, not a seal.
 module baffle() {
   by = exh_c[0] + exh_open[1]/2 + cap_t + 1;   // clear of the exhaust cap rim
-  translate([inner_w/2 - baffle_d, by, z_pj - air_margin_z]) cube([baffle_d + 0.1, baffle_t, proj_h + air_margin_z - baffle_gap]);
+  translate([inner_w/2 - baffle_d, by, z_floor - 0.1]) cube([baffle_d + 0.1, baffle_t, z_pj + proj_h - baffle_gap - z_floor + 0.1]);
 }
 
 // 45-degree rain hood over the aim hatch (prints without supports)

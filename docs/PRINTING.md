@@ -21,7 +21,7 @@ Two Prusa i3 MK3S (bed 250 x 210 x 210 mm), Prusament PETG (or ASA, which fades 
 | `sled_pi3` / `pi4` / `pi5` / `zero2w` | 1 | 1 h 8 m to 1 h 20 m | 18-19 g | The one for your Pi |
 | `vent_cap` | 1 | 13 m | 2 g | Pi-zone louver (not re-sliced after the airflow change) |
 | `intake_cap` | 1 | 21 m | 4 g | Rear inlet bank, wall-mounted now (not re-sliced after the airflow change) |
-| `exhaust_cap` | 1 | not sliced | not sliced | Front exhaust bank; expect about the size of `intake_cap` |
+| `exhaust_cap` | 1 | not sliced | not sliced | Front exhaust bank; the opening is about 74 x 58 mm, roughly 1.5x the old intake cap and 2.5x the new `intake_cap` |
 | `ir_holder` | 0-1 | 15 m | 2 g | Only for the relay + IR fallback |
 | `power_shelf` | 1 | 4 h 53 m | 66 g | Prints flat with the 90 mm receptacle plate standing up |
 | `lid_rear` | 1 | 6 h 42 m | 113 g | |
