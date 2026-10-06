@@ -2,7 +2,7 @@
 
 Quantities for one case. Printed parts and filament are in [PRINTING.md](PRINTING.md); wire gauges and fuse sizing are in [WIRING.md](WIRING.md). Sizes marked "check" depend on parts you haven't bought yet.
 
-**Buy links:** Micro Center (Santa Clara store) where they stock it, otherwise Amazon. Every link was opened on 2026-10-05; stock and prices move, so treat them as a starting point. Micro Center links carry `storeid=195` so the page shows Santa Clara stock.
+**Buy links:** Micro Center (Santa Clara store) where they stock it, otherwise Amazon; acrylic from TAP Plastics. Every link was opened on 2026-10-05; stock and prices move, so treat them as a starting point. Micro Center links carry `storeid=195` so the page shows Santa Clara stock.
 
 ## Core
 
@@ -16,7 +16,7 @@ Quantities for one case. Printed parts and filament are in [PRINTING.md](PRINTIN
 | Stacking 2x20 GPIO header (or wires soldered under the Pi) | 1 | GPIO access under the Amp4 | [Micro Center: 52Pi 2x20 stacking header kit](https://www.microcenter.com/product/669727/52pi-2x20-40-pin-stacking-female-header-kit?storeid=195) |
 | microSD card, 32 GB, high-endurance | 1 | | [Micro Center: SanDisk Max Endurance 32 GB](https://www.microcenter.com/product/651045/sandisk-32-gb-max-endurance-microsdhc-class-10-uhs-3-flash-memory-card-with-adapter?storeid=195) |
 | Outdoor speakers, 4-8 ohm | 2 | Placed behind the projection | [Amazon: Dual LU43PB pair](https://www.amazon.com/dp/B00081NX5U) (Micro Center only has Bluetooth speakers) |
-| 4 x 5 in (127 x 101.6 mm) clear acrylic, 1/8 in (3.2 mm) | 1 | Cut-to-size, e.g. Acme Plastics | [Acme Plastics: cut-to-size clear cast acrylic](https://www.acmeplastics.com/cut-to-size-clear-acrylic-sheet-cast), or [Amazon: 5 x 7 in, 1/8 in, 10-pack](https://www.amazon.com/dp/B0987MC6HK) and trim |
+| 4 x 5 in (127 x 101.6 mm) clear acrylic, 1/8 in (3.2 mm) | 1 | Cut-to-size at TAP Plastics (local; cut in-store while you wait) | [TAP Plastics: cut-to-size clear extruded acrylic](https://www.tapplastics.com/product/plastics/cut_to_size_plastic/acrylic_sheets_clear/508) (or [cast](https://www.tapplastics.com/product/plastics/cut_to_size_plastic/acrylic_sheets_cast_clear/510)), or [Amazon: 5 x 7 in, 1/8 in, 10-pack](https://www.amazon.com/dp/B0987MC6HK) and trim |
 | HDMI cable, about 0.5 m, thin and flexible, + right-angle adapter | 1 | Full-size (Pi 3), micro (Pi 4/5) or mini (Zero 2 W) at the Pi end, with a straight plug no bigger than 22 x 13 mm and 45 mm long (`hdmi_plug`); right-angle at the projector. Zero 2 W: a slim plug (under 12 mm wide), because a HAT post stands beside its port | Full-size: [Micro Center: QVS thin 1.5 ft](https://www.microcenter.com/product/458970/qvs-hdmi-male-to-hdmi-male-ultrahd-4k-thin-high-speed-cable-w-ethernet-15-ft-black?storeid=195) + [QVS angle adapter 5-pack](https://www.microcenter.com/product/466128/qvs-high-speed-hdmi-ultrahd-4k-angle-adapter-%285-pack%29?storeid=195), or [Amazon: Cmple ultra-thin 1.5 ft](https://www.amazon.com/dp/B003ZVTX04) + [VCE 90/270 deg adapters](https://www.amazon.com/dp/B00Y7UT6EK). Micro: [Amazon: FEELWORLD 2.5 mm micro-HDMI 1.5 ft](https://www.amazon.com/dp/B0CGHPN53B). Mini: [Amazon: FEELWORLD 2.5 mm mini-HDMI 1.5 ft](https://www.amazon.com/dp/B0CGHRRT55) |
 
 ## Power (see WIRING.md; mains inside the box)
@@ -83,7 +83,7 @@ Printing takes 2 to 3 days on two printers and bring-up about a week, so order e
 | Item | Typical lead time | Order |
 |---|---|---|
 | HiFiBerry Amp4 | 1-2 weeks (often ships from Europe; check a local reseller) | First |
-| Cut-to-size acrylic | 3-10 days | First |
+| Cut-to-size acrylic | Same day at TAP Plastics (3-10 days if mail-ordered) | Any time |
 | Noctua fans, DS18B20, PIR, relay/IR parts | 2-5 days | With the Amp4 |
 | 3/8-16 heat-set insert | 2-5 days (a less common size) | With the fasteners |
 | Filament (2 x 1 kg), fasteners, wire, fuses, silicone, screen | 1-3 days | Now |
