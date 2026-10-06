@@ -10,7 +10,7 @@ It also:
 - switches the projector over HDMI-CEC, a relay (plus IR) or the HDMI signal;
 - follows a weekly schedule with "on at sunset";
 - takes DMX over sACN from show software;
-- runs the case fans from temperature sensors and shuts down if it overheats.
+- watches the Pi's own temperature and switches the projector off if it overheats (the projector's fan does the case cooling).
 
 A web page on your LAN (`http://videofx-xxxx.local/`) handles videos, the playlist, scare clips, the schedule and every setting.
 

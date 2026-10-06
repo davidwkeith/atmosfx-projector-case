@@ -447,28 +447,15 @@ function renderSystem(st) {
 function renderCooling(t) {
   const table = $("cooling");
   if (!t?.enabled) {
-    table.replaceChildren(el("tr", {}, el("td", {}, "Off. Turn on in Settings > Cooling once the fans and sensors are wired.")));
-    $("sensor-pick").replaceChildren();
+    table.replaceChildren(el("tr", {}, el("td", {}, "Off. Turn on in Settings > Cooling to stop playback if the Pi overheats.")));
     return;
   }
-  const c = (v) => (v === null || v === undefined ? "–" : `${v.toFixed(1)} °C`);
+  const temp = t.temp === null || t.temp === undefined ? "–" : `${t.temp.toFixed(1)} °C`;
   const rows = [
-    ["Projector zone", `${c(t.temps?.[0])} · fan ${t.duty?.[0] ?? "–"}% · ${t.rpm?.[0] ?? "–"} rpm`],
-    ["Pi / brick zone", `${c(t.temps?.[1])} · fan ${t.duty?.[1] ?? "–"}% · ${t.rpm?.[1] ?? "–"} rpm`],
-    ["State", t.tripped ? `Stopped: ${t.tripped}` : t.cooling ? "Projector fan running on after power-off" : "OK"],
+    ["Pi (SoC)", temp],
+    ["State", t.tripped ? `Stopped: ${t.tripped}` : "OK"],
   ];
   table.replaceChildren(...rows.map(([k, v]) => el("tr", {}, el("th", {}, k), el("td", {}, v))));
-  // DS18B20 pickers
-  if (!settingsData || document.activeElement?.closest?.("#sensor-pick")) return;
-  const pick = (key, label) => {
-    const current = setting(key) ?? "";
-    const ids = [...new Set(["", ...(t.sensors ?? []), current])];
-    const select = el("select", { id: `pick-${key}` }, ...ids.map((id) => el("option", { value: id, selected: id === current }, id || "(none)")));
-    const save = el("button", { type: "button", className: "primary" }, "Save");
-    save.addEventListener("click", () => run(() => changeSetting("PUT", { key, label }, { value: select.value })));
-    return el("div", { className: "setting" }, el("label", { className: "title", htmlFor: select.id }, label), el("div", { className: "row" }, select, save));
-  };
-  $("sensor-pick").replaceChildren(pick("sensorProjector", "Projector-zone sensor"), pick("sensorPi", "Pi-zone sensor"));
 }
 
 function renderDmx(dmx) {
@@ -493,10 +480,6 @@ function pinTable(settings) {
     ["Projector relay out", `GPIO${v.relayPin}${v.relayActiveLow ? " (active-low)" : ""}`],
     ["IR LED out", `GPIO${v.irTxPin} (${v.irTxDriver})`],
     ["IR receiver in", `GPIO${v.irRxPin}`],
-    ["Projector fan PWM", `GPIO${v.fan1PwmPin} (PWM0)`],
-    ["Pi fan PWM", `GPIO${v.fan2PwmPin} (PWM1)`],
-    ["Fan tach in", `GPIO${v.fan1TachPin}, GPIO${v.fan2TachPin}`],
-    ["1-wire (DS18B20)", `GPIO${v.w1Pin}`],
   ];
   return el("div", { className: "setting" }, el("span", { className: "title" }, "GPIO pins"), el("table", { className: "kv" }, ...rows.map(([k, x]) => el("tr", {}, el("th", {}, k), el("td", {}, x)))));
 }
