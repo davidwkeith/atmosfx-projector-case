@@ -2,7 +2,7 @@
 
 In order. Parts are in [BOM.md](BOM.md); wiring is in [WIRING.md](WIRING.md) and must be followed exactly. Nothing here has been built yet, so expect to adjust.
 
-1. **Fit coupon.** Print `fit_coupon` first. Press in each heat-set insert, drive each screw into its pilot, hang the keyhole on an M4 bolt, and slide the acrylic into its slot. Adjust `insert_d`, `m4_insert_d`, `m3_insert_d`, `insert38_d`, `clearance` and so on in the SCAD until everything fits, then export the rest.
+1. **Fit coupon.** Print `fit_coupon` first. Press in each heat-set insert, drive each screw into its pilot, hang the keyhole on an M4 bolt, snap a receptacle into the 5-15R cutout, and slide the acrylic into its slot. Adjust `insert_d`, `m4_insert_d`, `m3_insert_d`, `insert38_d`, `clearance` and so on in the SCAD until everything fits, then export the rest.
 2. **Clean up the prints.** Snap out the two thin ribs in the window opening. Mask the window rebate, insert holes and screw holes, then spray the inside of both base halves and the lid matte black.
 3. **Heat-set inserts.**
    - `base_front`: 4x M4 in the hatch studs (from outside), 3/8-16 and 1/4-20 tripod inserts (from below).
@@ -14,7 +14,7 @@ In order. Parts are in [BOM.md](BOM.md); wiring is in [WIRING.md](WIRING.md) and
 7. **Fans.** Put a square of screen between each fan and its bosses, and screw the fans on, blowing out.
 8. **PIR.** Push the dome through the rear-wall hole from inside, screw the board on (2x M2), and seal round the dome outside with silicone.
 9. **Projector mount.** Screw the `pedestal` to the floor (4x M3 x 10), add the stud and the ball head, and mount the projector. Fit the right-angle HDMI adapter (and a right-angle power plug if its port is on the back).
-10. **Power shelf** (lid off, projector aside if needed). Wire the AC side, brick, fuses and DC splice on the shelf exactly as in WIRING.md, with the fans and (if used) the relay. Run the cord in through the gland with a drip loop outside. Seat the shelf on its ledges.
+10. **Power shelf** (lid off, projector aside if needed). Snap the two receptacles into the plate from the front (the plugging side) and wire their tabs, the AC fuse and the cord exactly as in WIRING.md. Seat the shelf on its ledges, run the cord in through the gland with a drip loop outside, then plug the stock wall-wart into the lower receptacle (standing on the shelf, cord end toward the barrier) and the second one into the upper, and strap both through the shelf slots. Fuse and splice their DC leads on the low-voltage side with the fans and (if used) the relay.
 11. **Pi sled.** Mount the Pi on its sled (4x M2.5), fit the stacking header and the Amp4, and wire the GPIO leads (PIR, fans, sensors, IR/relay) per `pi/README.md`. Set the sled on its pins and fit the thumbscrew. Plug the HDMI cable into the Pi straight through the low part of the divider pass-through (there is no room for the plug behind the divider), loop it under the projector and up to its port. Connect DC to the Amp4, and speaker wire down the chimney. Plug the chimney round the wires with foam.
 12. **First power-up.** Follow the checklist at the end of WIRING.md before closing anything.
 13. **Lid.** Stick 2 mm foam round the base rim, set the lid on, press it down onto the foam and drive the 4 side screws.

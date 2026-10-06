@@ -61,6 +61,7 @@ for s in pi3 pi4 pi5; do   # a straight HDMI plug in the Pi, through the divider
 done
 run screen-caps   "intersection(){ base_all(); union(){ for (v=vents) vent_cap_placed(v); intake_cap_placed(); } }"
 run fans           "intersection(){ for (f=fans) fan_body(f); union(){ base_all(); translate([0, y_pi0+0.3, shelf_zz]) power_shelf(); } }"
+run warts          "intersection(){ translate([0, y_pi0+0.3, shelf_zz]) warts(); union(){ base_all(); $LID; translate([0, y_pi0+0.3, shelf_zz]) power_shelf(); for (f=fans) fan_body(f); } }"   # both wall-warts on the receptacle plate vs case, lid roof, shelf and fans
 run aim-sweep      "intersection(){ union(){ base_all(); $LID; translate([lens_x, y0, win_zc]) window_frame(); for (f=fans) fan_body(f); }
                       for (a=[[1,0],[0,1],[1,1],[1,-1]], sg=[-1,1])
                         { projector(sg*a[0]*pan_max, sg*a[1]*(a[0] ? aim_combo : aim_max));

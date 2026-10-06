@@ -6,10 +6,10 @@ Everything below has only been tested in software. Work through it on the bench 
 
 | # | Test | Pass | If not |
 |---|---|---|---|
-| 1 | `fit_coupon`: heat-set inserts (3/8, 1/4, M4, M3), screws in the M3/M2.5/M2 pilots, M4 bolt in the keyhole, acrylic in the slot | Each fits snug, with no cracking and no slop | Adjust `insert38_d`, `insert_d`, `m4_insert_d`, `m3_insert_d`, `clearance`, re-export |
+| 1 | `fit_coupon`: heat-set inserts (3/8, 1/4, M4, M3), screws in the M3/M2.5/M2 pilots, M4 bolt in the keyhole, acrylic in the slot, receptacle in the 5-15R cutout | Each fits snug, with no cracking and no slop; the receptacle snaps in and stays | Adjust `insert38_d`, `insert_d`, `m4_insert_d`, `m3_insert_d`, `clearance`, `rcpt_cut`, `rcpt_t`, re-export |
 | 2 | Measure the projector into `docs/measurements.xlsx`: width and height (depth is done: 130.0), lens height and left/right offset, tripod socket position, vents, **where the HDMI and power ports are** | Within a few mm of `proj_w/d/h`, `lens_z`, `lens_x`, `mount_x/y`, `port_band` | Update the flagged parameters, run `scripts/check_clash.sh` |
 | 3 | Throw ratio and offset: project onto a wall from a measured distance, and measure image width and how far the bottom edge sits above the lens | Throw ratio about 1.4, offset recorded | Set `throw_ratio`, `lens_offset`; check the `light-cone` result |
-| 4 | Brick label: volts, amps, polarity, input current, inlet type (C7/C5/C13). The projector's label reads DC 21 V 3 A | 12-24 V and enough amps for projector + Amp4 + fans (the stock 3 A brick covers the projector alone) | 21 V brick of 5 A or more; fill in the fuse table in WIRING.md |
+| 4 | Wall-warts. Stock (done 2026-10-05): MX48CC-210228US, in 100-240 V 1.0 A, out 21 V 2.28 A (48 W), centre +, no AC inlet, 85.6 long; still to measure: its width (standing height) and thickness, and the prong offset from the end. Second wall-wart (24 V, 2.5-3 A): label and size | `wart_w` within 1 mm (the stack has 3 mm under the lid roof); both bodies hang clear of the divider; polarity confirmed with a meter | Set `wart_w`, `wart_t`, `wart_prong`, `wart2`; if the stack hits the roof, raise `top_air`; fill in the fuse table in WIRING.md |
 | 5 | Ball head height and where the lock knob sits | Knob reachable through the hatch diamond | Change `ball_head_h`; move the hatch (`hatch_zc`) |
 
 ## Pi on the bench (before it goes in the case)
