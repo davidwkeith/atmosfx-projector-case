@@ -104,10 +104,10 @@ wart_w = 47;        // width = standing height (Z): scaled off the photo against
 wart_t = 35;        // thickness, prong face to back (Y): not measured yet
 wart_prong = 15;    // prong centre from the wart's wall end (X), centred across the width: from the photo
 wart2 = [86, 47, 35];   // second wall-wart [length, width, thickness], same orientation: measure the one you buy
-rcpt_cut = [26, 22];    // NEMA 5-15R snap-in panel cutout [X, Z]: Qualtek 738W-X2/01 is 26 x 22 in a 0.8-2 mm panel; check yours on the fit coupon
-rcpt_t = 2;             // plate thickness at the cutout, inside the snap-in's panel range
+rcpt_cut = [24, 24];    // NEMA 5-15R snap-in panel cutout [X, Z]: SS-6B drawing says 24 x 24 (flange 27 x 27); check yours on the fit coupon
+rcpt_t = 1.5;           // plate thickness at the cutout: the SS-6B drawing marks 1.5 between flange and clips (range not stated)
 rcpt_hole_sp = 0;       // flanged receptacles: M3 pilot spacing across the cutout (0 = none)
-rcpt_back = 30;         // plate stand-off from the rear wall: receptacle body, 4.8 mm spades and the cord
+rcpt_back = 40;         // plate stand-off from the rear wall: SS-6B body 20.6 + terminals to 30.6 behind the panel, plus the spades and cord; 40 is the most the shelf depth allows (asserted)
 barrier_h = 50;         // AC/low-voltage barrier above the shelf; must exceed the lower wall-wart's height
 
 /* [Audio] */

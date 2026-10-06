@@ -14,7 +14,7 @@ Two Prusa i3 MK3S (bed 250 x 210 x 210 mm), Prusament PETG (or ASA, which fades 
 
 | Part | Qty | Time (0.20 SPEED) | PETG | Notes |
 |---|---|---|---|---|
-| `fit_coupon` | 1 | 1 h 44 m | 21 g | **Print first.** Test inserts, pilots, the keyhole on an M4 bolt, the frame glazing in its slot, the receptacle in its cutout, the ball head's hot-shoe adapter in its T-slot |
+| `fit_coupon` | 1 | 1 h 42 m | 20 g | **Print first.** Test inserts, pilots, the keyhole on an M4 bolt, the frame glazing in its slot, the receptacle in its cutout, the ball head's hot-shoe adapter in its T-slot |
 | `pedestal` | 1 | 1 h 42 m | 29 g | |
 | `window_frame` | 1 | 1 h 19 m | 20 g | |
 | `hatch_cover` | 1 | 2 h 33 m | 46 g | |
@@ -23,7 +23,7 @@ Two Prusa i3 MK3S (bed 250 x 210 x 210 mm), Prusament PETG (or ASA, which fades 
 | `intake_cap` | 1 | 15 m | 3 g | Rear inlet bank, wall-mounted |
 | `exhaust_cap` | 1 | 22 m | 4 g | Front exhaust bank; the opening is about 74 x 58 mm, the biggest of the three caps |
 | `ir_holder` | 0-1 | 11 m | 1 g | Only for the relay + IR fallback |
-| `power_shelf` | 1 | 4 h 51 m | 67 g | Prints flat with the 90 mm receptacle plate standing up |
+| `power_shelf` | 1 | 4 h 55 m | 67 g | Prints flat with the 90 mm receptacle plate standing up |
 | `lid_rear` | 1 | 6 h 41 m | 112 g | |
 | `lid_front` | 1 | 9 h 45 m | 169 g | |
 | `base_rear` | 1 | 18 h 43 m | 272 g | 13 h 25 m with 0.30mm DRAFT (305 g) |
