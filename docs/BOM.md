@@ -8,8 +8,8 @@ Quantities for one case. Printed parts and filament are in [PRINTING.md](PRINTIN
 
 | Item | Qty | Notes | Buy |
 |---|---|---|---|
-| Mini projector, 1/4-20 tripod socket, HDMI-CEC if possible | 1 | About 171 x 134 x 75 mm assumed; measure yours | Owned (Tkisko TO2). The [Amazon listing](https://www.amazon.com/dp/B0CKNBWDP1) was unavailable on 2026-10-05 |
-| Mini ball head, rated above the projector's weight | 1 | Chosen: UTEBIT 20 mm (male 1/4-20 on top into the projector, female 1/4-20 underneath; 58 mm overall, 32 mm base, rated 2.5 kg; the hot-shoe adapter in the box is not used) | [Amazon: UTEBIT 20 mm mini ball head](https://www.amazon.com/dp/B06XKW7V14) |
+| Mini projector, 1/4-20 tripod socket, HDMI-CEC if possible | 1 | 165 x 130 x 66 mm (depth measured, width and height from the manual) | Owned (Tkisko TO2). The [Amazon listing](https://www.amazon.com/dp/B0CKNBWDP1) was unavailable on 2026-10-05 |
+| Mini ball head, rated above the projector's weight | 1 | Chosen: UTEBIT 20 mm (male 1/4-20 on top into the projector, female 1/4-20 underneath; 58 mm overall, 32 mm base, Amazon rates it 2.5 lb / 1.1 kg (other listings say 2.5 kg), against the projector's 0.72 kg, so confirm it holds the aim; the hot-shoe adapter in the box is not used) | [Amazon: UTEBIT 20 mm mini ball head](https://www.amazon.com/dp/B06XKW7V14) |
 | 1/4-20 double-ended stud | 1 | Pedestal insert to the head's bottom hole (both female) | [Amazon: SmallRig 828, 2-pack](https://www.amazon.com/dp/B007LTH1X2) |
 | Raspberry Pi 3B/3B+, 4B, 5 or Zero 2 W | 1 | Print the matching sled | Micro Center: [Pi 5](https://www.microcenter.com/product/673712/raspberry-pi-5?storeid=195), [Pi 4B](https://www.microcenter.com/product/637834/raspberry-pi-4-model-b?storeid=195), [Pi 3B+](https://www.microcenter.com/product/601561/raspberry-pi-3-model-b?storeid=195). Zero 2 W is in-store only there, so [Amazon: Pi Zero 2 W](https://www.amazon.com/dp/B09LH5SBPS) |
 | Raspberry Pi DigiAMP+ (SC2076) | 1 | 2 x 35 W class D, 12-24 V in (5.5 x 2.5 mm barrel or P5 hard-wire), powers the Pi at 5.1 V / 2.5 A; 40-pin pass-through header; 0-50 °C ([product brief](<https://pip-assets.raspberrypi.com/categories/765-raspberry-pi-digiamp/documents/RP-008138-DS-1-digiamp-plus-hat-product-brief.pdf>)) | [Micro Center: Raspberry Pi DigiAMP+](https://www.microcenter.com/product/631851/raspberry-pi-digiamp?storeid=195) (chosen over the HiFiBerry Amp4: same TAS5756M, half the price, in stock locally) |
@@ -78,7 +78,7 @@ Quantities for one case. Printed parts and filament are in [PRINTING.md](PRINTIN
 
 ## Ordering plan (for Halloween)
 
-Printing takes 2 to 3 days on two printers and bring-up about a week, so order everything **by about October 5**. The slow items:
+Printing takes 2 to 3 days on two printers and bring-up about a week, so order everything **now**: as of 2026-10-06 that leaves about three weeks to Halloween. The slow items:
 
 | Item | Typical lead time | Order |
 |---|---|---|
