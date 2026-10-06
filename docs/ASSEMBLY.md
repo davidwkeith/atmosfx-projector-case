@@ -2,10 +2,10 @@
 
 In order. Parts are in [BOM.md](BOM.md); wiring is in [WIRING.md](WIRING.md) and must be followed exactly. Nothing here has been built yet, so expect to adjust.
 
-1. **Fit coupon.** Print `fit_coupon` first. Press in each heat-set insert, drive each screw into its pilot, hang the keyhole on an M4 bolt, snap a receptacle into the 5-15R cutout, and slide the acrylic into its slot. Adjust `insert_d`, `m4_insert_d`, `m3_insert_d`, `insert38_d`, `clearance` and so on in the SCAD until everything fits, then export the rest.
+1. **Fit coupon.** Print `fit_coupon` first. Press in each heat-set insert, drive each screw into its pilot, hang the keyhole on an M4 bolt, snap a receptacle into the 5-15R cutout, and slide the acrylic into its slot. Adjust `insert_d`, `m4_insert_d`, `m3_insert_d`, `clearance` and so on in the SCAD until everything fits, then export the rest.
 2. **Clean up the prints.** Snap out the two thin ribs in the window opening. Mask the window rebate, insert holes and screw holes, then spray the inside of both base halves and the lid matte black.
 3. **Heat-set inserts.**
-   - `base_front`: 4x M4 in the hatch studs (from outside), 3/8-16 and 1/4-20 tripod inserts (from below).
+   - `base_front`: 4x M4 in the hatch studs (from outside).
    - `base_rear`: 1x M3 for the sled thumbscrew.
    - `pedestal`: 1/4-20 in the top.
 4. **Screens.** Glue insect screen inside the three `vent_cap`s and the `intake_cap`. Screw them over the louver banks and the floor intake (2x M2 each).
@@ -19,4 +19,4 @@ In order. Parts are in [BOM.md](BOM.md); wiring is in [WIRING.md](WIRING.md) and
 12. **First power-up.** Follow the checklist at the end of WIRING.md before closing anything.
 13. **Lid.** Stick 2 mm foam round the base rim, set the lid on, press it down onto the foam and drive the 4 side screws.
 14. **Hatch.** Stick 1.5 mm foam round the hatch opening on the cover, and hang the cover on its keyholes.
-15. **Software and aiming.** Flash and pair the Pi (`pi/README.md`), then place, stake or tripod-mount, and aim ([AIMING.md](AIMING.md)).
+15. **Software and aiming.** Flash and pair the Pi (`pi/README.md`), then place, stake, and aim ([AIMING.md](AIMING.md)).

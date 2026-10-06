@@ -49,8 +49,7 @@ Quantities for one case. Printed parts and filament are in [PRINTING.md](PRINTIN
 
 | Item | Qty | Where |
 |---|---|---|
-| 3/8-16 heat-set insert | 1 | Tripod |
-| 1/4-20 heat-set insert | 2 | Pedestal, tripod |
+| 1/4-20 heat-set insert | 1 | Pedestal |
 | M4 heat-set insert | 4 | Hatch studs |
 | M3 heat-set insert | 1 | Sled thumbscrew |
 | M4 x 12 button-head | 4 | Hatch keyholes |
@@ -86,7 +85,6 @@ Printing takes 2 to 3 days on two printers and bring-up about a week, so order e
 | HiFiBerry Amp4 | 1-2 weeks (often ships from Europe; check a local reseller) | First |
 | Cut-to-size acrylic | 3-10 days | First |
 | Noctua fans, DS18B20, PIR, relay/IR parts | 2-5 days | With the Amp4 |
-| 3/8-16 heat-set insert | 2-5 days (a less common size) | With the fasteners |
 | Filament (2 x 1 kg), fasteners, wire, fuses, silicone, screen | 1-3 days | Now |
 
 ## Rough cost (excluding the projector)

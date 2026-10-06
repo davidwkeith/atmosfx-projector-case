@@ -133,14 +133,6 @@ stake_d = 9;         // bore for 8 mm tent stakes / 1/4 in pins
 stake_collar = 15;   // tube rises this far above the floor so water can't reach the bore
 stake_x = 78;        // inside the channel between the +/-68 and +/-88 ribs
 
-/* [Tripod mount] */
-tripod = true;
-tripod_y = 5;        // 3/8-16 insert at the estimated centre of mass: part centroids x slicer weights, plus projector 0.72 kg,
-                     // ball head 0.1, two wall-warts 0.4, Pi + amp 0.12 (about 2.6 kg in all). Re-measure once built.
-tripod_y2 = -25;     // 1/4-20 insert for smaller heads / quick-release plates
-insert38_d = 12.1;   // 3/8-16 heat-set insert hole; check your insert's datasheet
-insert38_len = 12.7;
-
 /* [Insect screen] */
 cap_h = 3;          // screen caps stand this far off the wall/floor; screen glues inside the plate
 cap_t = 2;          // cap ring and plate thickness
@@ -354,11 +346,6 @@ module cuts() {
   if (stakes) for (p=stake_pts) translate([p[0], p[1], -1]) cylinder(d=stake_d, h=z_floor+stake_collar+2);
   // hatch lock pilot: into the solid wall/floor corner below the hatch
   if (hatch_lock) translate([-out_w/2-0.1, hatch_y, hatch_zz-cover_s/2+5]) rotate([0,90,0]) cylinder(d=2.6, h=10);
-  // tripod inserts, from below
-  if (tripod) {
-    translate([0, tripod_y, -1]) cylinder(d=insert38_d, h=insert38_len+1);
-    translate([0, tripod_y2, -1]) cylinder(d=insert_d, h=insert_len+1);
-  }
   // sled thumbscrew insert
   translate([sled_pts[2][0], sled_pts[2][1], z_floor+sled_pad-6]) cylinder(d=m3_insert_d, h=6.1);
   // lid screw pilots (horizontal, through the side walls into the blocks)
@@ -379,10 +366,6 @@ module base_all(ribs=true) {
         translate([sx > 0 ? inner_w/2-collar_t : -inner_w/2, y_pi0-0.01, z_floor-0.1])
           cube([collar_t, collar_d, shelf_zz-ledge_w-3-z_floor+0.1]);
       if (stakes) for (p=stake_pts) translate([p[0], p[1], z_floor-0.1]) cylinder(d=stake_d+5, h=stake_collar+0.1);
-      if (tripod) {   // pad flush with the rib bottoms, plus a boss inside so the 3/8 insert has room
-        hull() for (y=[tripod_y, tripod_y2]) translate([0, y, 0]) cylinder(d=30, h=foot_h+0.1);
-        translate([0, tripod_y, z_floor-0.1]) cylinder(d=18, h=insert38_len+2-z_floor+0.1);   // 2 mm above the insert
-      }
       for (x=ribs_x) translate([x-rib_t/2, y_front, 0]) cube([rib_t, out_d, foot_h+0.1]);   // feet
       translate([-inner_w/2, y_div, z_floor-0.1]) cube([inner_w, div_t, base_h-z_floor+0.1]);   // divider
       for (sx=[-1,1], sy=[-1,1]) translate([ped_x+sx*35, ped_y+sy*25, z_floor-0.1]) cylinder(d=9, h=boss_h+0.1);
@@ -590,11 +573,10 @@ module intake_cap_placed() { translate([intake_c[0], intake_c[1], z_floor+cap_h]
 // Fit-test coupon: every critical hole, the keyhole and the pane slot in one short print.
 // Holes are made with the same parameters as the real parts, so tune them here first.
 module fit_coupon() {
-  holes = [[insert38_d, "3/8", insert38_len+2], [insert_d, "1/4", insert_len+2], [m4_insert_d, "M4i", 10],
-           [m3_insert_d, "M3i", 8], [gland_d, "PG9", 3], [3.4, "M3", 3], [2.6, "M3p", 8], [2.2, "M2.5p", 7], [1.8, "M2p", 6]];   // [d, label, boss height]
+  holes = [[insert_d, "1/4", insert_len+2], [m4_insert_d, "M4i", 10], [m3_insert_d, "M3i", 8], [gland_d, "PG9", 3], [3.4, "M3", 3], [2.6, "M3p", 8], [2.2, "M2.5p", 7], [1.8, "M2p", 6]];   // [d, label, boss height]
   difference() {
     union() {
-      cube([118, 30, 2]);                                             // strip under the holes
+      cube([118, 30, 2]);                                             // strip under the holes; 118 is the shrink gauge in measurements.xlsx
       translate([0, 30, 0]) cube([30, 32, 3]);                        // keyhole tab, cover thickness
       for (i=[0:len(holes)-1]) translate([8 + i*12.5, 15, 0]) cylinder(d=holes[i][0]+5, h=holes[i][2]);   // a boss per hole
       translate([96, -12, 0]) cube([22, 12, 10]);                     // pane slot block
