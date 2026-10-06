@@ -141,7 +141,7 @@ max_bridge = 30;         // longest unsupported bridge under the floor
 
 /* [Hardware] */
 gland_d = 15.5;    // PG9 mains-rated cord grip for the single AC cord
-fan = 40;           // 40 x 40 x 10 mm 12 V 4-pin PWM fans (Pi-controlled)
+fan = 40;           // 40 x 40 x 10 mm 24 V 4-pin PWM fans on the 21 V rail (Pi-controlled; 12 V parts would burn)
 pi_fan_dz = 28;     // Pi-zone exhaust fan centre above the shelf's top face
 
 /* [Lid] */
