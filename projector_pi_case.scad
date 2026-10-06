@@ -18,6 +18,11 @@ explode = 0;       // [0:1:80]
 aim = [0, 0];      // [pan, tilt] deg of the ghost projector in the assembly preview
 
 /* [Projector (mm)] */
+// Verified 2026-10-05 from the projector's EDID (read on a Mac, docs/BRINGUP.md "Verified so far"):
+// generic STK "S2-TEK TV" block (product 0x531A, dated 2014), HDMI input with CEC physical address 2.0.0.0,
+// native 1080p60 (VIC 16), 8-bit only, TMDS <= 150 MHz, 2-ch LPCM audio, DPMS standby/active-off flagged.
+// CEC itself is NOT proven (the address field is mandatory for any HDMI sink): see BRINGUP row 9.
+// The EDID says nothing about size, lens or ports, so everything below is still a guess until measured.
 proj_w = 135;   // width (X)  - measure yours; listing says 6.74x5.28x2.96 in
 proj_d = 172;   // depth (Y), lens faces front
 proj_h = 76;    // height (Z)

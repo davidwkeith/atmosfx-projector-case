@@ -72,7 +72,7 @@ Print orientation is baked into the `part` dispatch at the bottom (lid flipped r
 ## Unverified / assumptions (fix these first)
 
 1. Projector size: defaults 135 x 172 x 76 mm come from typical listings of this projector class, not the owner unit. Lens height and left/right offset, 1/4-20 socket position and vent locations are guesses (`lens_x`, `lens_z`, `mount_x`, `mount_y`, louver/fan positions).
-2. Projector power control is HDMI-CEC from the Pi (fallback: HDMI output off). Whether the owner's projector supports CEC is unknown.
+2. Projector power control is HDMI-CEC from the Pi (fallback: HDMI output off). The projector's EDID has been read on a Mac (2026-10-05, see `docs/BRINGUP.md` "Verified so far"): generic STK "S2-TEK TV" block, 1080p60 native, 8-bit, 150 MHz TMDS, DPMS standby flagged, HDMI vendor block with CEC physical address 2.0.0.0. That proves a real HDMI input, not CEC; whether the projector answers CEC is still unknown until bring-up row 9 on the Pi.
 3. Centre of mass for the tripod insert: estimated about 12 mm behind the footprint centre from guessed weights (case 1.5 kg, projector 0.72 kg, brick 0.4 kg).
 4. DC brick: assumed 100 x 50 x 32 mm and 12 V. Owner must read the label (volts, amps, polarity) before wiring.
 5. PIR dome diameter and hole spacing (`pir_dome_d` 23.5, `pir_hole_sp` 28.7) and which GPIO the Amp4 leaves free. Stack heights per sled (`pi_stack_h` 40, `pi5_stack_h` 50 with Active Cooler, `zero_stack_h` 30, `zero_hat_z` 13 are guesses), Amp4 support and power on Pi 5 and Zero 2 W, and whether the brick can supply projector + Pi + amp together.

@@ -2,12 +2,18 @@
 
 Everything below has only been tested in software. Work through it on the bench before the case goes outside, and record results in the design log. Each line has a pass criterion. If one fails, the "if not" column says what changes.
 
+## Verified so far
+
+- **Projector EDID (2026-10-05, read on a MacBook with `ioreg -l | grep EDID`, decoded by hand).** The projector presents a generic STK "S2-TEK TV" EDID (product 0x531A, block dated 2014, serial SN-000000001), so the identity is the HDMI SoC's, not the projector maker's. Native mode 1080p60 (VIC 16); also 1080p24/30/50, 1080i50/60, 720p50/60 and the SD modes. 8-bit RGB and YCbCr only, max TMDS clock 150 MHz: no 4K, no HDR, no deep colour. Audio: 2-channel LPCM at 32/44.1/48 kHz (unused; audio goes to the Amp4). The feature byte claims DPMS standby, suspend and active-off, which is what the `hdmi-off` power mode relies on. The HDMI vendor block carries CEC physical address 2.0.0.0 with Supports_AI set, so the input is real HDMI rather than DVI-over-HDMI. **That does not prove CEC works**: the address field is mandatory for every HDMI sink and 2014-era STK projectors often omit CEC, so row 9 still decides. Hot-plug detect was reported active, so the Pi's HDMI wait (row 9a) should see it. Set the Pi to 1080p60 and nothing higher. The EDID carries no geometry (its 93 x 53 cm screen size is a placeholder), so rows 2 and 3 are unchanged.
+- macOS cannot test CEC at all (no Mac has ever supported it); the remaining HDMI question needs the Pi, or a Pulse-Eight USB-CEC adapter plus libcec on the Mac.
+
 ## Before the big prints
 
 | # | Test | Pass | If not |
 |---|---|---|---|
 | 1 | `fit_coupon`: heat-set inserts (3/8, 1/4, M4, M3), screws in the M3/M2.5/M2 pilots, M4 bolt in the keyhole, acrylic in the slot | Each fits snug, with no cracking and no slop | Adjust `insert38_d`, `insert_d`, `m4_insert_d`, `m3_insert_d`, `clearance`, re-export |
 | 2 | Measure the projector: size, lens height and left/right offset, tripod socket position, vents, **where the HDMI and power ports are** | Within a few mm of `proj_w/d/h`, `lens_z`, `lens_x`, `mount_x/y`, `port_band` | Update the parameters, run `scripts/check_clash.sh` |
+| 2a | Signal-loss standby, from the Mac: with the projector showing the Mac's desktop, sleep the Mac and time how long the projector takes to blank, then wake the Mac | The projector blanks (or goes to standby) by itself within a few minutes and the picture returns when the signal does | `hdmi-off` mode won't save the lamp at night; plan on `relay` or `relay-ir` |
 | 3 | Throw ratio and offset: project onto a wall from a measured distance, and measure image width and how far the bottom edge sits above the lens | Throw ratio about 1.4, offset recorded | Set `throw_ratio`, `lens_offset`; check the `light-cone` result |
 | 4 | Brick label: volts, amps, polarity, input current, inlet type (C7/C5/C13) | 12-24 V and enough amps for projector + Amp4 + fans | Bigger brick; fill in the fuse table in WIRING.md |
 | 5 | Ball head height and where the lock knob sits | Knob reachable through the hatch diamond | Change `ball_head_h`; move the hatch (`hatch_zc`) |
@@ -19,8 +25,8 @@ Everything below has only been tested in software. Work through it on the bench 
 | 6 | Flash the image (or `install.sh`), first boot | One extra reboot, then `videofx-xxxx.local` answers and the name shows as VideoFX-XXXX. `videofx-maint status` says protected, `lsblk` shows three partitions, and `ssh` doesn't warn about a changed host key after a second reboot | `journalctl -b -u videofx-storage`; see `pi/README.md` troubleshooting |
 | 7 | Storage protection: `videofx-maint status`, then pull the power mid-upload | Overlay on, data partition mounted, settings intact after the cut | Leave protection off for Halloween; report it |
 | 8 | Amp4 powers the Pi (especially a **Pi 5**) at full volume | No undervoltage warnings (`vcgencmd get_throttled` = 0x0) | Use a Pi 4B sled, or a separate 5 V supply |
-| 9 | HDMI-CEC with your projector: power on/off from the web page | Projector wakes and sleeps; page says "CEC supported" | Use `relay-ir` (relay + IR LED), learn the remote's code |
-| 9a | Projector powered after the Pi: with playback on, pull the projector's power for 10 s and restore it (or use relay mode and switch off and on) | The picture comes back by itself; the journal says "HDMI display connected" | Add the `video=` line from the README's troubleshooting |
+| 9 | HDMI-CEC with your projector: power on/off from the web page. The EDID has a CEC physical address (see "Verified so far"), so the bus exists; this row is the only test of whether the projector listens. On the Pi, `cec-ctl -d /dev/cec0 --playback -S` should list a TV at logical address 0 | Projector wakes and sleeps; page says "CEC supported" | Use `relay-ir` (relay + IR LED), learn the remote's code |
+| 9a | Projector powered after the Pi: with playback on, pull the projector's power for 10 s and restore it (or use relay mode and switch off and on) | The picture comes back by itself; the journal says "HDMI display connected" | Add the `video=` line from the README's troubleshooting (for this projector `video=HDMI-A-1:1920x1080@60D`, its native mode) |
 | 9b | Relay mode only: `sudo systemctl stop videofx-player`, then `sudo systemctl kill -s KILL videofx-player` while playing | The relay opens (projector off) both times | Check `videofx-relay-open` and that `pinctrl` is installed |
 | 10 | Scare seam: calm clip to scare and back, then `journalctl -u videofx-player \| grep seam` | No visible black frame (log shows under about 100 ms) | Re-encode per the README; try `--hwdec=v4l2m2m-copy` on Pi 3 / Zero 2 W |
 | 11 | Video decode: your AtmosFX files at their native resolution | Smooth, CPU under about 70% | Transcode with the README's ffmpeg commands |
