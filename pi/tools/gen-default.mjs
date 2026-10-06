@@ -34,8 +34,8 @@ for (const s of SETTINGS) {
     out.push("", group === "Fixed" ? "# --- File only (needs root, or would let the page point the service anywhere)" : `# --- ${group}`);
     if (group === "Fixed") {
       out.push(
-        "# The relay, IR and 1-wire pins are also in /boot/firmware/config.txt (the relay's",
-        "# boot level, the IR and w1-gpio overlays), written once by setup.sh with the",
+        "# The relay and IR pins are also in /boot/firmware/config.txt (the relay's",
+        "# boot level, and the IR overlays), written once by setup.sh with the",
         "# defaults. Change them there too, or the new pins won't work.",
       );
     }

@@ -1,6 +1,8 @@
 // Ground-standing projector + Raspberry Pi 3 case: rain-proof (not sealed), ventilated
+// v0.10 - passive airflow: the projector's own fan, exhaust and inlet louver banks on the right wall, a lip baffle between them;
+//         no case fans or sensors; photo-derived side-port keep-outs
 // v0.9 - the stock supply is a wall-wart, so the shelf grew a receptacle plate: two panel-mount NEMA 5-15R stacked,
-//        the stock 21 V wall-wart below and a second (Pi, DigiAMP+, fans) above, hanging on their prongs; the AC gland
+//        the stock 21 V wall-wart below and a second (Pi, DigiAMP+) above, hanging on their prongs; the AC gland
 //        moved beside the plate, next to the left wall; Pi zone 85 deep; the fit coupon has the receptacle cutout
 // v0.8 - AC gland moved above the shelf (AC side of the barrier); barrier clears the brick; keyholes lift off;
 //        45 deg scarf joint at the lid seam; flat gasket land under the sloped roof;
@@ -14,7 +16,7 @@
 // Print PETG/ASA. Lid prints roof-down. Base+lid split front/rear (MK3S bed 250x210x210); front pieces lie flat with X along the 250 mm axis.
 
 /* [Part] */
-part = "assembly"; // [assembly, base, lid, window_frame, pedestal, hatch_cover, power_shelf, sled, ir_holder, vent_cap, intake_cap, fit_coupon]
+part = "assembly"; // [assembly, base, lid, window_frame, pedestal, hatch_cover, power_shelf, sled, ir_holder, vent_cap, exhaust_cap, intake_cap, fit_coupon]
 sled = "pi3";      // [pi3, pi4, pi5, zero2w] sled shown in the assembly / exported by part="sled"
 tile = "all";      // [all, front, rear] for base+lid
 explode = 0;       // [0:1:80]
@@ -34,7 +36,6 @@ lens_z = 33;    // lens centre height above projector underside: estimated from 
 throw_ratio = 0.95; // throw distance / image width: from the manual's image sizes (36 in at 2.5 ft, 72 in at 5 ft); measure it
 aspect = 16/9;
 port_depth = 15;    // HDMI + power plugs on the projector's rear face: right-angle plugs with slack (a straight HDMI plug needs ~40)
-port_band = [15, 55];   // plug height range above the projector underside (guess: check yours)
 lens_offset = 0;    // vertical image offset: 0 = image centred on the lens axis, 1 = image bottom on the axis
 pane_w = 127;   // pane: 3.5 x 5 in (127 x 88.9 mm) picture-frame glazing, the smallest stock size the light cone clears; the window opening is the pane minus lap
 pane_h = 88.9;
@@ -61,7 +62,7 @@ foot_ribs = [-88, -68, -40, -15, 15, 40, 68, 88];   // inner front-to-back ribs;
 rib_t = 4;
 layer_h = 0.2;     // print layer height: gap above the window's snap-out ribs
 clearance = 0.3;
-side_air = 25;     // gap each side of projector: clears +/-10 deg pan with the fan body (14 mm) in the gap
+side_air = 25;     // gap each side of projector: clears the +/-10 deg pan sweep of the right face, the HDMI plug and the baffle; could shrink to about 19 mm (separate change)
 top_air  = 25;
 front_gap = 30;      // lens-down tilt swings the top front corner forward (more so panned, now the body is 165 wide); aim-sweep and light-cone checks size this
 rear_gap  = 34;      // lens-up tilt swings the rear plugs back (port_depth) toward the divider; aim-sweep sizes this
@@ -90,7 +91,7 @@ cord_dz = 20;       // gland centre above the shelf's top face: level with the l
 // Stock supply (label, 2026-10-05): wall-wart MX48CC-210228US, in AC 100-240 V 1.0 A, out 21 V 2.28 A (48 W), centre +,
 // fixed 2-pin NEMA 1-15 prongs and a captive DC cord: no AC inlet. It plugs into a panel-mount NEMA 5-15R on the shelf's
 // receptacle plate and hangs on its prongs, standing on its long edge: length along X (cord end toward the barrier),
-// width = height above the shelf, thickness along Y. A second wall-wart (12-24 V rail for the Pi, DigiAMP+ and fans) plugs in above it.
+// width = height above the shelf, thickness along Y. A second wall-wart (12-24 V rail for the Pi and DigiAMP+) plugs in above it.
 wart_l = 86;        // stock wall-wart length (X): measured 85.6
 wart_w = 47;        // width = standing height (Z): scaled off the photo against the caliper reading; confirm (the stack is asserted against the lid roof)
 wart_t = 35;        // thickness, prong face to back (Y): not measured yet
@@ -137,6 +138,25 @@ stake_x = 78;        // inside the channel between the +/-68 and +/-88 ribs
 cap_h = 3;          // screen caps stand this far off the wall/floor; screen glues inside the plate
 cap_t = 2;          // cap ring and plate thickness
 
+/* [Airflow (projector's own fan; photo-measured, confirm with calipers)] */
+exh_y = [0, 42];        // exhaust grille span behind the projector's front face, right side (slots measured 10-42; the owner says the first 40)
+in_size = 40;           // rear intake patch, square
+in_top = 15;            // intake patch inset from the projector's top
+dc_jack = [15, 13];     // DC barrel centre: inset from the right edge, below the top
+side_port_h = 18;       // I/O strip height on the right face, from the top
+hdmi_y = 56;            // HDMI centre behind the front face (right face)
+side_port_depth = 15;   // right-angle HDMI plug standing out of the right face
+side_cable_d = 8;       // the cable run behind the plug, standing out of the right face
+air_margin = 8;         // opening grows past the patch this much each way along Y (partial pan margin: at the extremes some exhaust leaves into the side gap, which is the plenum)
+air_margin_z = 4;       // and along Z (partial tilt margin, same caveat)
+lv_pitch = 8;           // louver slat pitch
+baffle_d = 10;          // lip baffle depth from the right wall (aim sweep checks it)
+baffle_t = 4;
+baffle_gap = side_port_h + 4;   // baffle top stops this far below the projector's top, under the HDMI plug
+ir_x = 35;              // IR receiver on the projector's front face, right of centre (above the logo)
+ir_z = 50;              // and its height above the projector underside
+ir_holder_h = 7;        // ir_holder body height off the front face
+
 /* [Pi sled] */
 sled_pad = 2;       // floor pads lift the sled so floor water drains underneath
 sled_t = 3;         // sled plate
@@ -151,8 +171,6 @@ max_bridge = 30;         // longest unsupported bridge under the floor
 
 /* [Hardware] */
 gland_d = 15.5;    // PG9 mains-rated cord grip for the single AC cord
-fan = 40;           // 40 x 40 x 10 mm 24 V 4-pin PWM fans on the second wall-wart's 24 V rail (Pi-controlled; 12 V parts would burn)
-pi_fan_dz = 28;     // Pi-zone exhaust fan centre above the shelf's top face
 
 /* [Lid] */
 lid_clr = 0.6;
@@ -199,18 +217,25 @@ cover_s = hatch + 2*hatch_flange;
 hatch_zz = z_floor + hatch_zc;
 hatch_y = proj_cy;
 hood_lift = hood_d - cover_gasket + 0.5 + kh_drop + 1;   // room to lift the cover off its keyholes
-fan_z = z_pj + proj_h/2;
 lid_screw_ys = [y0 + 10, y_back - 8];     // lid screw stations: side screws through the skirt, none in the roof; front block (y-5) stays behind the window frame (y0..y0+frame_t)
 lid_screw_z = base_h - 7;
 base_seam = y_div + div_t + 0.01;
 shelf_zz = z_floor + shelf_z;
-pi_fan_z = shelf_zz + 3 + pi_fan_dz;
-fans = [[proj_cy, fan_z], [pi_cy, pi_fan_z]];
 stake_pts = [for (sx=[-1,1], y=[y0+12, y_back-12]) [sx*stake_x, y]];
-vents = [[-1, pi_cy, z_floor+24], [-1, pi_cy, shelf_zz+26], [1, pi_cy, z_floor+24]];   // passive louver banks [side, y, centre z]
+vents = [[1, pi_cy, shelf_zz+26]];         // the one passive Pi-zone louver bank [side, y, centre z] (right wall, over the low-voltage side)
 vent_open = [26, 42];                      // louver bank opening a wall cap covers (Z, Y); tabs go top/bottom (clear driver access)
-intake_c = [0, y0+39, z_floor];            // floor intake slots centre
-intake_open = [92, 30];   // [y, z] on the +X wall: projector exhaust, Pi-zone exhaust
+y_pf = y0 + front_gap;                     // projector front face
+exh_open = [proj_h + 2*air_margin_z, exh_y[1] - exh_y[0] + 2*air_margin];   // exhaust wall opening [Z, Y]
+exh_c = [y_pf + (exh_y[0] + exh_y[1])/2, z_pj + proj_h/2];
+in_open = [in_size + 2*air_margin_z, rear_gap + 2];                         // inlet wall opening [Z, Y]
+in_c = [y_div - in_open[1]/2 - 1 - cap_t, z_pj + proj_h - in_top - in_size/2];
+function air_n(h, pitch) = floor((h - 7)/pitch) + 1;   // slats that fit an opening of height h (floor: the outer slots must not reach past the opening, or past the screen cap's rim)
+assert(exh_open[1] >= exh_y[1] - exh_y[0] + 2*air_margin - 0.01 && exh_open[0] >= proj_h + 2*air_margin_z - 0.01, "exhaust opening does not cover the exhaust grille plus its sweep margin");
+assert(in_open[0] >= in_size + 2*air_margin_z - 0.01 && in_c[1] + in_open[0]/2 <= z_pj + proj_h + air_margin_z + 0.01, "inlet opening does not span the intake patch, or rises past the projector's top");
+assert((air_n(exh_open[0], lv_pitch)-1)*lv_pitch/2 + wall/2 + 1.2*sqrt(2) <= exh_open[0]/2, "exhaust louver slots reach past the opening (and the screen cap's rim)");
+assert((air_n(in_open[0], lv_pitch)-1)*lv_pitch/2 + wall/2 + 1.2*sqrt(2) <= in_open[0]/2, "inlet louver slots reach past the opening (and the screen cap's rim)");
+assert(in_c[0] + in_open[1]/2 <= y_div, "inlet opening runs into the divider");
+assert(in_c[0] - in_open[1]/2 >= y_pf + proj_d - 6, "inlet opening starts too far in front of the projector's rear face");
 pir_zz = shelf_zz + 3 + pir_dz;
 y_gpio = pi_cy + 28;                       // GPIO edge of every Pi (HAT position)
 z_board = z_floor + sled_pad + sled_t + sled_post;
@@ -301,23 +326,21 @@ module cuts() {
   for (sx=[-1,1], sz=[-1,1])   // frame screws on the sides, so the frame hugs the pane top and bottom
     translate([lens_x+sx*(pane_w/2+8), y0+0.1, win_zc+sz*pane_h/4])
       rotate([90,0,0]) cylinder(d=2.6, h=8.1);
-  // intake: slots in the raised floor (air enters from the gap underneath)
-  for (i=[0:3]) translate([-45, y0+25+i*8, foot_h-0.5]) cube([90, 4, floor_t+1]);
   // aim hatch opening + M4 stud inserts (from outside)
   translate([-out_w/2-1, hatch_y, hatch_zz]) rotate([0,90,0]) linear_extrude(wall+2) rotate(45) square(hatch/sqrt(2), center=true);
   for (sy=[-1,1], sz=[-1,1])
     translate([-out_w/2-0.1, hatch_y+sy*stud_off, hatch_zz+sz*stud_off]) rotate([0,90,0]) cylinder(d=m4_insert_d, h=8.1);
-  // fan exhaust louvers (+X)
-  for (f=fans) translate([out_w/2-wall/2, f[0], f[1]-10.5]) louvers(28, 4, 7, 1);
-  // passive Pi-side louvers
-  // (the upper -X bank is intake across the wall-warts to the Pi-zone fan)
+  // exhaust bank (+X wall, front): the projector's own fan blows out through here
+  translate([out_w/2-wall/2, exh_c[0], exh_c[1]-(air_n(exh_open[0], lv_pitch)-1)*lv_pitch/2]) louvers(exh_open[1], air_n(exh_open[0], lv_pitch), lv_pitch, 1);
+  // inlet bank (+X wall, rear gap): air reaches the projector's rear intake
+  translate([out_w/2-wall/2, in_c[0], in_c[1]-(air_n(in_open[0], lv_pitch)-1)*lv_pitch/2]) louvers(in_open[1], air_n(in_open[0], lv_pitch), lv_pitch, 1);
+  // passive Pi-side louver
   for (v=vents) translate([v[0]*(out_w/2-wall/2), v[1], v[2]-8]) louvers(40, 3, 8, v[0]);
   // screen-cap screw pilots (M2 self-tap)
   for (v=vents, sy=[-1,1]) translate([v[0]*(inner_w/2+2), v[1], v[2]+sy*cap_tab(vent_open)]) rotate([0, -v[0]*90, 0]) cylinder(d=1.8, h=cap_h+2);
-  for (sx=[-1,1]) translate([intake_c[0]+sx*cap_tab(intake_open), intake_c[1], z_floor-2]) cylinder(d=1.8, h=cap_h+2.1);
-  // fan screw pilots
-  for (f=fans, sy=[-16,16], sz=[-16,16])
-    translate([inner_w/2-4.1, f[0]+sy, f[1]+sz]) rotate([0,90,0]) cylinder(d=2.6, h=6);
+  // screen-cap pilots for the two projector banks (M2 self-tap)
+  for (c=[[exh_c[0], exh_c[1], exh_open], [in_c[0], in_c[1], in_open]], sy=[-1,1])
+    translate([inner_w/2+2, c[0], c[1]+sy*cap_tab(c[2])]) rotate([0, -90, 0]) cylinder(d=1.8, h=cap_h+2);
   // single power-cord gland (rear wall, above the shelf, AC side of the barrier)
   translate([cord_x, y_back-1, shelf_zz+3+cord_dz]) rotate([-90,0,0]) cylinder(d=gland_d, h=wall+2);
   // divider pass-through (HDMI + projector power). Open down to the sled: the Pi's HDMI edge sits about 10 mm
@@ -361,7 +384,9 @@ module base_all(ribs=true) {
       }
       for (v=vents, sy=[-1,1])   // screen-cap bosses
         translate([v[0]*(inner_w/2+0.1), v[1], v[2]+sy*cap_tab(vent_open)]) rotate([0, -v[0]*90, 0]) cylinder(d=6, h=cap_h-cap_t+0.1);
-      for (sx=[-1,1]) translate([intake_c[0]+sx*cap_tab(intake_open), intake_c[1], z_floor-0.1]) cylinder(d=6, h=cap_h-cap_t+0.1);
+      for (c=[[exh_c[0], exh_c[1], exh_open], [in_c[0], in_c[1], in_open]], sy=[-1,1])   // screen-cap bosses, projector banks
+        translate([inner_w/2+0.1, c[0], c[1]+sy*cap_tab(c[2])]) rotate([0, -90, 0]) cylinder(d=6, h=cap_h-cap_t+0.1);
+      baffle();
       for (sx=[-1,1])   // seam collars (rear tile); stop below the shelf ledges
         translate([sx > 0 ? inner_w/2-collar_t : -inner_w/2, y_pi0-0.01, z_floor-0.1])
           cube([collar_t, collar_d, shelf_zz-ledge_w-3-z_floor+0.1]);
@@ -375,7 +400,6 @@ module base_all(ribs=true) {
       }
       for (p=sled_pts) translate([p[0], p[1], z_floor-0.1]) cylinder(d=10, h=sled_pad+0.1);   // sled pads
       for (p=[sled_pts[0], sled_pts[1]]) translate([p[0], p[1], z_floor]) cylinder(d=4, h=sled_pad+sled_t-0.4);   // locating pins
-      for (f=fans, sy=[-16,16], sz=[-16,16]) translate([inner_w/2-4, f[0]+sy, f[1]+sz]) rotate([0,90,0]) cylinder(d=7, h=4.1);
       for (sy=[-1,1], sz=[-1,1])   // inner bosses behind the hatch studs
         translate([-inner_w/2-0.1, hatch_y+sy*stud_off, hatch_zz+sz*stud_off]) rotate([0,90,0]) cylinder(d=10, h=6.1);
       hood();
@@ -427,7 +451,6 @@ module power_shelf() {
     for (x=[wart_x0+55, wart_x0+75], y=[py0-max(wart_t, wart2[2])-4, py0+1])  // velcro strap slots round the warts, past the plate's end
       translate([x-10, y, -1]) cube([20, 3, 5]);
     for (x=[-70:20:70], sy=[-1,1]) if (x > bar+6) translate([x-1.6, shelf_d/2+sy*tie_gap/2-3, -1]) cube([3.2, 6, 5]);   // zip-tie slots (low-voltage side)
-    for (x=[40, 60, 80]) translate([x-2.5, shelf_d/2-13, -1]) cube([5, 26, 5]);   // vents: Pi/amp heat rises to the Pi-zone fan (low-voltage side only)
     translate([pir_x-6, shelf_d-7, -1]) cube([12, 8, 5]);                     // PIR / low-voltage wires down to the Pi
   }
 }
@@ -436,6 +459,14 @@ module power_shelf() {
 module warts() {
   translate([wart_x0, plate_y0-wart_t, 3]) cube([wart_l, wart_t, wart_w]);
   translate([wart_x0, plate_y0-wart2[2], rcpt_zc[1]-wart2[1]/2]) cube([wart2[0], wart2[2], wart2[1]]);
+}
+
+// Lip baffle on the right wall between the exhaust and the rear inlet: exhaust that stays in the case does not creep back to the
+// intake along the side gap. Runs from the floor (so the upright print has no cantilever) up to baffle_gap below the projector's
+// top so the HDMI plug passes over it. A lip, not a seal.
+module baffle() {
+  by = exh_c[0] + exh_open[1]/2 + cap_t + 1;   // clear of the exhaust cap rim
+  translate([inner_w/2 - baffle_d, by, z_floor - 0.1]) cube([baffle_d + 0.1, baffle_t, z_pj + proj_h - baffle_gap - z_floor + 0.1]);
 }
 
 // 45-degree rain hood over the aim hatch (prints without supports)
@@ -541,13 +572,14 @@ module assembly() {
   translate([0, 0, lid_z0 + explode]) lid_tile(tile) lid();
   translate([0, 0, z_floor+sled_pad]) pi_sled(sled);
   for (v=vents) vent_cap_placed(v);
+  exhaust_cap_placed();
   intake_cap_placed();
   %pi_stack(sled);
   %pi_hdmi_plug(sled);
-  %for (f=fans) fan_body(f);
   // ghosts (preview only): ball head + projector
   %translate([ped_x, ped_y, z_floor+ped_top]) cylinder(d=35, h=ball_head_h);
   %projector(aim[0], aim[1]);
+  %ir_holder_placed(aim[0], aim[1]);
 }
 
 // Insect-screen cap: a shallow box that seats on the wall/floor all round, screen glued inside the
@@ -568,7 +600,8 @@ module screen_cap(o) {
 module vent_cap_placed(v) {   // plate faces into the case, box rim on the wall
   translate([v[0]*(inner_w/2-cap_h), v[1], v[2]]) rotate([0, v[0]*90, 0]) screen_cap(vent_open);
 }
-module intake_cap_placed() { translate([intake_c[0], intake_c[1], z_floor+cap_h]) mirror([0,0,1]) screen_cap(intake_open); }
+module exhaust_cap_placed() { translate([inner_w/2-cap_h, exh_c[0], exh_c[1]]) rotate([0, 90, 0]) screen_cap(exh_open); }
+module intake_cap_placed()  { translate([inner_w/2-cap_h, in_c[0], in_c[1]]) rotate([0, 90, 0]) screen_cap(in_open); }
 
 // Fit-test coupon: every critical hole, the keyhole and the pane slot in one short print.
 // Holes are made with the same parameters as the real parts, so tune them here first.
@@ -594,14 +627,11 @@ module fit_coupon() {
   }
 }
 
-// Fan body envelope, for clash checks and the preview
-module fan_body(f) { translate([inner_w/2-4-10, f[0]-fan/2, f[1]-fan/2]) cube([10, fan, fan]); }
-
 // IR LED holder for the projector-power fallback: sticks on with VHB tape near the projector's
 // IR receiver, 5 mm LED aimed ir_angle off the pad's normal. Prints pad-down.
 module ir_holder() {
   difference() {
-    translate([-8, -8, 0]) cube([16, 16, 10]);
+    translate([-8, -8, 0]) cube([16, 16, ir_holder_h]);
     translate([0, 0, 2]) rotate([ir_angle, 0, 0]) cylinder(d=5.2, h=30);
     translate([-1.5, -9, 1]) cube([3, 9, 3]);   // lead channel out the side, clear of the taped face
   }
@@ -651,10 +681,22 @@ module light_cone(pan=0, tilt=0, len=400) {
                faces=[[0,2,1], [0,3,2], [0,4,3], [0,1,4], [1,2,3,4]]);
 }
 
-// Keep-out for the plugs behind the projector, in the same pose
+// Keep-out for the DC barrel plug in the rear face's top-right corner (a right-angle plug pointing back), in the same pose
 module projector_ports(pan=0, tilt=0) {
   translate(pivot) rotate([0,0,pan]) rotate([-tilt,0,0]) translate(-pivot)
-    translate([-45, y0+front_gap+proj_d, z_pj+port_band[0]]) cube([90, port_depth, port_band[1]-port_band[0]]);
+    translate([proj_w/2 - dc_jack[0] - 7, y_pf + proj_d, z_pj + proj_h - dc_jack[1] - 7]) cube([14, port_depth, 14]);
+}
+// Keep-out for the right-angle HDMI plug on the right face's I/O strip and its cable run back to the projector's rear plane
+module projector_side_ports(pan=0, tilt=0) {
+  translate(pivot) rotate([0,0,pan]) rotate([-tilt,0,0]) translate(-pivot) {
+    translate([proj_w/2, y_pf + hdmi_y - 8, z_pj + proj_h - side_port_h]) cube([side_port_depth, 16, side_port_h]);
+    translate([proj_w/2, y_pf + hdmi_y + 8, z_pj + proj_h - side_port_h]) cube([side_cable_d, proj_d - hdmi_y - 8, side_port_h]);
+  }
+}
+// IR LED holder stuck to the projector's front face above the logo, in the same pose (pad on the face, body toward the window)
+module ir_holder_placed(pan=0, tilt=0) {
+  translate(pivot) rotate([0,0,pan]) rotate([-tilt,0,0]) translate(-pivot)
+    translate([ir_x, y_pf, z_pj + ir_z]) rotate([90,0,0]) ir_holder();
 }
 
 // Projector block panned (about Z) and tilted (about X, + = lens up) around the ball-head pivot
@@ -673,5 +715,6 @@ else if (part == "hatch_cover") rotate([180,0,0]) hatch_cover();
 else if (part == "ir_holder") ir_holder();
 else if (part == "fit_coupon") fit_coupon();
 else if (part == "vent_cap") screen_cap(vent_open);
-else if (part == "intake_cap") screen_cap(intake_open);
+else if (part == "exhaust_cap") screen_cap(exh_open);
+else if (part == "intake_cap") screen_cap(in_open);
 else if (part == "sled") translate([0, -pi_cy, 0]) pi_sled(sled);

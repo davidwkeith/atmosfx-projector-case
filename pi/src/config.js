@@ -12,7 +12,6 @@ import { PROJECTOR_MODES } from "./projector.js";
 import { isMediaFile } from "./playlist-core.js";
 import { DEFAULT_QUIET, parseQuiet } from "./quiet.js";
 import { DEFAULT_SCHEDULE, parseSchedule } from "./schedule.js";
-import { parseCurve } from "./thermal.js";
 import { clampLevel } from "./volume.js";
 
 const RESTORE_POLICIES = ["last", "on", "off"];
@@ -83,14 +82,9 @@ const PIN_ROLES = {
   relayPin: "relay",
   irTxPin: "IR LED",
   irRxPin: "IR receiver",
-  fan1PwmPin: "projector fan PWM",
-  fan2PwmPin: "Pi fan PWM",
-  fan1TachPin: "projector fan tach",
-  fan2TachPin: "Pi fan tach",
-  w1Pin: "1-wire sensors",
 };
 
-/** Cross-setting check: one role per pin, and pwm-ir-tx only on GPIO12. Returns an error message or undefined. */
+/** Cross-setting check: one role per pin, and warn below critical. Returns an error message or undefined. */
 export function checkPins(values) {
   const seen = new Map();
   for (const [key, role] of Object.entries(PIN_ROLES)) {
@@ -100,16 +94,9 @@ export function checkPins(values) {
     if (seen.has(pin)) return `GPIO${pin} is set for both the ${seen.get(pin)} and the ${role}`;
     seen.set(pin, role);
   }
-  if (values.irTxDriver === "pwm-ir-tx") return "pwm-ir-tx needs hardware PWM0 (GPIO12), which the projector fan uses: use gpio-ir-tx";
   if (values.tempWarnC !== undefined && values.tempCritC !== undefined && values.tempWarnC >= values.tempCritC) return "the warning temperature must be below the critical one";
   return undefined;
 }
-
-const romId = (v) => {
-  if (v === "" || v === null) return "";
-  if (typeof v !== "string" || !/^28-[0-9a-f]{12}$/.test(v)) throw new Error("must be a DS18B20 ROM ID like 28-0123456789ab, or empty");
-  return v;
-};
 
 const absPath = (v) => {
   if (typeof v !== "string" || !isAbsolute(v)) throw new Error("must be an absolute path");
@@ -466,68 +453,30 @@ export const SETTINGS = [
     key: "thermalEnabled",
     env: "VIDEOFX_THERMAL",
     group: "Cooling",
-    label: "Fans and temperature protection",
-    help: "Turn on once the fans and DS18B20 sensors are wired, and choose the projector-zone sensor: with no reading from it for 60 s while playing, playback stops. Off: the fans run flat out and nothing is protected.",
+    label: "Pi over-temperature protection",
+    help: "The case has no fans: the projector's own fan moves the air. If the Pi's SoC reaches the critical temperature, playback stops and the projector switches off until it cools.",
     apply: "live",
-    default: () => false,
+    default: () => true,
     parse: bool,
-  },
-  {
-    key: "fan1Curve",
-    env: "VIDEOFX_FAN1_CURVE",
-    group: "Cooling",
-    label: "Projector fan curve (°C:duty%)",
-    help: "Linear between points, e.g. 30:25 40:50 50:100.",
-    apply: "live",
-    default: () => "30:25 40:50 50:100",
-    parse: parseCurve,
-  },
-  {
-    key: "fan2Curve",
-    env: "VIDEOFX_FAN2_CURVE",
-    group: "Cooling",
-    label: "Pi/brick fan curve (°C:duty%)",
-    help: "Follows the hotter of the Pi-zone sensor and the SoC.",
-    apply: "live",
-    default: () => "45:25 60:60 70:100",
-    parse: parseCurve,
-  },
-  {
-    key: "fanMinDuty",
-    env: "VIDEOFX_FAN_MIN_DUTY",
-    group: "Cooling",
-    label: "Minimum fan duty while the projector is on (%)",
-    apply: "live",
-    default: () => 30,
-    parse: int(0, 100),
-  },
-  {
-    key: "fanCooldownSec",
-    env: "VIDEOFX_FAN_COOLDOWN_SEC",
-    group: "Cooling",
-    label: "Projector fan run-on after power-off (s)",
-    apply: "live",
-    default: () => 120,
-    parse: int(0, 3600),
   },
   {
     key: "tempWarnC",
     env: "VIDEOFX_TEMP_WARN_C",
     group: "Cooling",
-    label: "Warning temperature (°C)",
+    label: "Pi warning temperature (°C)",
     apply: "live",
-    default: () => 45,
-    parse: int(20, 90),
+    default: () => 70,
+    parse: int(40, 90),
   },
   {
     key: "tempCritC",
     env: "VIDEOFX_TEMP_CRIT_C",
     group: "Cooling",
-    label: "Critical projector-zone temperature (°C)",
+    label: "Pi critical temperature (°C)",
     help: "Stops playback and switches the projector off until it cools by the hysteresis.",
     apply: "live",
-    default: () => 55,
-    parse: int(30, 95),
+    default: () => 80,
+    parse: int(50, 95),
   },
   {
     key: "tempHysteresisC",
@@ -537,28 +486,6 @@ export const SETTINGS = [
     apply: "live",
     default: () => 5,
     parse: int(1, 20),
-  },
-  {
-    key: "sensorProjector",
-    env: "VIDEOFX_SENSOR_PROJECTOR",
-    group: "Cooling",
-    label: "Projector-zone sensor (DS18B20 ROM ID)",
-    apply: "live",
-    custom: true,
-    allowEmpty: true,
-    default: () => "",
-    parse: romId,
-  },
-  {
-    key: "sensorPi",
-    env: "VIDEOFX_SENSOR_PI",
-    group: "Cooling",
-    label: "Pi-zone sensor (DS18B20 ROM ID)",
-    apply: "live",
-    custom: true,
-    allowEmpty: true,
-    default: () => "",
-    parse: romId,
   },
   {
     key: "dmxEnabled",
@@ -654,11 +581,6 @@ export const SETTINGS = [
   { key: "irTxPin", env: "VIDEOFX_IR_TX_GPIO", group: "Fixed", label: "IR LED GPIO (BCM)", apply: "fixed", default: () => 16, parse: gpioPin },
   { key: "irTxDriver", env: "VIDEOFX_IR_TX_DRIVER", group: "Fixed", label: "IR LED driver", apply: "fixed", options: ["gpio-ir-tx", "pwm-ir-tx"], default: () => "gpio-ir-tx", parse: oneOf(["gpio-ir-tx", "pwm-ir-tx"]) },
   { key: "irRxPin", env: "VIDEOFX_IR_RX_GPIO", group: "Fixed", label: "IR receiver GPIO (BCM)", apply: "fixed", default: () => 23, parse: gpioPin },
-  { key: "fan1PwmPin", env: "VIDEOFX_FAN1_PWM_GPIO", group: "Fixed", label: "Projector fan PWM GPIO (hardware PWM0)", apply: "fixed", default: () => 12, parse: oneOf([12]) },
-  { key: "fan2PwmPin", env: "VIDEOFX_FAN2_PWM_GPIO", group: "Fixed", label: "Pi/brick fan PWM GPIO (hardware PWM1)", apply: "fixed", default: () => 13, parse: oneOf([13]) },
-  { key: "fan1TachPin", env: "VIDEOFX_FAN1_TACH_GPIO", group: "Fixed", label: "Projector fan tach GPIO", apply: "fixed", default: () => 24, parse: gpioPin },
-  { key: "fan2TachPin", env: "VIDEOFX_FAN2_TACH_GPIO", group: "Fixed", label: "Pi/brick fan tach GPIO", apply: "fixed", default: () => 25, parse: gpioPin },
-  { key: "w1Pin", env: "VIDEOFX_W1_GPIO", group: "Fixed", label: "1-wire (DS18B20) GPIO", apply: "fixed", default: () => 26, parse: gpioPin },
   { key: "httpPort", env: "VIDEOFX_HTTP_PORT", group: "Fixed", label: "Web page port", apply: "fixed", default: () => 80, parse: int(1, 65535) },
   { key: "matterPort", env: "VIDEOFX_MATTER_PORT", group: "Fixed", label: "Matter port", apply: "fixed", default: () => 5540, parse: int(1, 65535) },
   { key: "mediaDir", env: "VIDEOFX_MEDIA_DIR", group: "Fixed", label: "Media folder", apply: "fixed", default: (_, ctx) => join(ctx.home, "media"), parse: absPath },
