@@ -66,12 +66,14 @@ cp -r "$pi/src" "$pi/public" "$pi/system" "$pi/package.json" "$pi/package-lock.j
 printf '{"version":"%s","sha":"%s"}\n' "$version" "$(git -C "$pi" rev-parse --short HEAD 2>/dev/null || echo unknown)" >"$files/app/version.json"
 
 # /etc/default/videofx: defaults plus the owner's settings. systemd reads it as an
-# EnvironmentFile (not a shell), so values are written unquoted.
+# EnvironmentFile: quotes inside an unquoted value are stripped and a trailing
+# backslash or # can change it, so the password goes in double quotes with
+# \ " $ and ` escaped (systemd's own rule for double-quoted values).
 umask 077
 {
   grep -v '^VIDEOFX_RESTORE=' "$pi/system/videofx.default"
   echo "VIDEOFX_RESTORE=${VIDEOFX_RESTORE:-last}"
-  [ -z "${VIDEOFX_WEB_PASSWORD:-}" ] || echo "VIDEOFX_WEB_PASSWORD=$VIDEOFX_WEB_PASSWORD"
+  [ -z "${VIDEOFX_WEB_PASSWORD:-}" ] || printf 'VIDEOFX_WEB_PASSWORD="%s"\n' "$(printf '%s' "$VIDEOFX_WEB_PASSWORD" | sed 's/[\\"$`]/\\&/g')"
 } > "$files/videofx.env"
 umask 022
 

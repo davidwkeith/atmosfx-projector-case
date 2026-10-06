@@ -8,14 +8,33 @@ import { createConnection } from "node:net";
 
 const words = (s) => (s ?? "").split(/\s+/).filter(Boolean);
 
-// Extra-args deny-list: nothing that adds a control channel, runs scripts, loads
-// config or code, reads/writes arbitrary files, or reaches the network.
-const MPV_DENY = [
-  /^--(no-)?(input|idle|terminal|config|include|script|scripts|load|ytdl|http|tls|cookies|user-agent|referrer|rtsp|watch-later|log-file|dump|stream-dump|stream-record|record-file|screenshot|o|of|ofopts|ovc|ovcopts|oac|oacopts|lavfi-complex|external-file|audio-file|sub-file|cover-art-file|glsl-shader|use-filedir-conf|reset-on-next-file|player-operation-mode|save-position-on-quit|resume-playback|playlist)(s?)(\b|-|=|$)/,
-  /^--(demuxer|stream)-lavf-o/, // raw FFmpeg options (protocol whitelists)
-  /(^|[[:,;=])a?movie=/, // lavfi movie sources open files/URLs
-  /:\/\//, // URLs
-];
+// Extra-args allow-list: tuning options for decoding, DRM output, scaling, sync,
+// cache and audio timing, and nothing else. mpv has too many options that add a
+// control channel, run scripts, or read and write files to deny one by one
+// (--ao=pcm --ao-pcm-file=FILE and --vo=image --vo-image-outdir=DIR got past a
+// deny-list), and the web page can set this with no password by default.
+const PLAIN = /^[A-Za-z0-9_.,:+@%-]*$/; // no "/", "=", quotes or brackets: not a path, URL or sub-option list
+const VF_NAMES = ["crop", "hflip", "vflip", "transpose", "rotate", "scale", "pad", "format", "fps", "eq", "yadif", "bwdif"];
+const MPV_ALLOW = new Map([
+  ...[
+    // decoding
+    ..."hwdec hwdec-codecs hwdec-extra-frames hwdec-image-format vd-lavc-threads vd-lavc-dr vd-lavc-fast vd-lavc-skiploopfilter vd-lavc-skipframe vd-lavc-framedrop vd-lavc-software-fallback".split(" "),
+    // output and sync
+    ..."gpu-context gpu-api gpu-dumb-mode gpu-hwdec-interop opengl-es opengl-swapinterval opengl-early-flush swapchain-depth drm-mode drm-connector drm-format drm-draw-plane drm-drmprime-video-plane drm-draw-surface-size drm-vrr-enabled video-sync interpolation tscale framedrop video-latency-hacks display-fps-override".split(" "),
+    // scaling and picture
+    ..."scale cscale dscale linear-downscaling correct-downscaling sigmoid-upscaling deband dither-depth fbo-format video-aspect-override keepaspect panscan video-zoom video-pan-x video-pan-y video-align-x video-align-y video-rotate video-unscaled video-scale-x video-scale-y video-crop brightness contrast gamma saturation hue deinterlace video-output-levels target-prim target-trc target-peak tone-mapping hdr-compute-peak osd-level".split(" "),
+    // cache and seeking
+    ..."cache cache-secs cache-pause demuxer-max-bytes demuxer-max-back-bytes demuxer-readahead-secs prefetch-playlist hr-seek hr-seek-framedrop".split(" "),
+    // audio (the device comes from the "ALSA card name" setting)
+    ..."audio-buffer audio-channels audio-samplerate audio-format audio-delay audio-pitch-correction audio-exclusive audio-stream-silence audio-wait-open gapless-audio volume volume-max mute aid vid alsa-resample alsa-buffer-time alsa-periods alsa-non-interleaved alsa-ignore-chmap".split(" "),
+  ].map((name) => [name, PLAIN]),
+  ["vo", /^(gpu|gpu-next|drm)$/], // not image, null or the encoders
+  ["profile", /^(fast|sw-fast|high-quality|low-latency)$/],
+  ["drm-device", /^\/dev\/dri\/card[0-9]$/],
+  ["msg-level", /^[a-z0-9_/-]+=[a-z]+(,[a-z0-9_/-]+=[a-z]+)*$/], // to the journal only
+  // Simple filters by name; lavfi graphs and movie= sources can open files.
+  ["vf", (v) => v !== "" && v.split(",").every((f) => VF_NAMES.includes(f.split("=")[0]) && /^[a-z]+(=[A-Za-z0-9_.:=*+-]+)?$/.test(f))],
+]);
 
 export function checkMpvArgs(input) {
   if (typeof input !== "string") throw new Error("must be text");
@@ -24,10 +43,14 @@ export function checkMpvArgs(input) {
   const tokens = words(input);
   if (tokens.length > 40) throw new Error("has too many arguments (40 max)");
   for (const t of tokens) {
-    // Options must be --name or --name=value; anything else would be a file to play.
-    if (!/^--[a-z0-9]/.test(t)) throw new Error(`"${t}" is not an --option (only --name or --name=value)`);
-    if (MPV_DENY.some((re) => re.test(t))) {
-      throw new Error(`"${t}" is not allowed (IPC, scripting, config, file and network options are blocked)`);
+    // Options must be --name, --no-name or --name=value; anything else would be a file to play.
+    const m = /^--(no-)?([a-z0-9][a-z0-9-]*)(?:=(.*))?$/.exec(t);
+    if (!m) throw new Error(`"${t}" is not an --option (only --name or --name=value)`);
+    const [, no, name, value = ""] = m;
+    const rule = MPV_ALLOW.get(name);
+    const ok = rule && (no ? m[3] === undefined : typeof rule === "function" ? rule(value) : rule.test(value));
+    if (!ok) {
+      throw new Error(`"${t}" is not allowed (only decoding, DRM output, scaling, sync, cache and audio-timing options: see the README)`);
     }
   }
   return tokens.join(" ");

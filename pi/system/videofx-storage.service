@@ -1,10 +1,13 @@
 # First boot only: data partition + read-only root, then one reboot.
-# After cloud-final: on the release image cloud-init applies Imager's user, Wi-Fi
-# and locale on this boot; they must be on disk before the root goes read-only.
-# (No cloud-init on an image built from pi/config: the ordering is then a no-op.)
+# After Pi OS's own first-boot jobs: this unit reboots when it is done, and
+# anything it cuts short would run again on every boot under the read-only root
+# (new SSH host keys each time, for one). cloud-final: on the release image
+# cloud-init applies Imager's user, Wi-Fi and locale on this boot; they must be
+# on disk before the root goes read-only. Units that don't exist (no cloud-init
+# on an image built from pi/config) make the ordering a no-op.
 [Unit]
 Description=VideoFX power-cut protection (data partition, read-only root)
-After=local-fs.target videofx-hostname.service cloud-final.service
+After=local-fs.target videofx-hostname.service regenerate_ssh_host_keys.service ssh.service userconfig.service cloud-final.service
 Before=videofx-player.service
 ConditionPathExists=!/var/lib/videofx-storage.state
 

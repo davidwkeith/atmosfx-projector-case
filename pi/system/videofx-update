@@ -3,7 +3,8 @@
 #
 #   sudo videofx-update                        latest GitHub release of pi/
 #   sudo videofx-update --tag v0.3.0           a given release
-#   sudo videofx-update --tarball FILE         offline: a videofx-pi-X.Y.Z.tar.gz copied over SSH
+#   sudo videofx-update --tarball FILE         a videofx-pi-X.Y.Z.tar.gz copied over SSH (no GitHub access
+#                                              needed; packages still come from apt and npm)
 #   sudo videofx-update --os                   also apt full-upgrade
 #   sudo videofx-update --rollback             back to the previous version (/opt/videofx.prev)
 #   sudo videofx-update --check                only check GitHub; the web page then shows "update available"
@@ -11,6 +12,8 @@
 # If the root is protected (overlay), it records what to do on the data
 # partition, switches to maintenance mode and reboots; videofx-update-resume.service
 # carries on after the reboot, then switches protection back on and reboots again.
+# If installing the new version fails (no network for apt or npm, say), the
+# previous version is put back and protection is still switched back on.
 # The repo is private for now: put a GitHub token (read access to the repo's
 # contents) in /srv/videofx/update/github-token, mode 600.
 set -euo pipefail
@@ -31,7 +34,7 @@ protected() { [ "$(findmnt -no FSTYPE /)" = overlay ]; }
 service_user() { stat -c %U /var/lib/videofx 2>/dev/null || getent passwd 1000 | cut -d: -f1; }
 current_version() { node -e 'console.log(require(process.argv[1]).version)' "$APP/package.json" 2>/dev/null || echo 0.0.0; }
 
-MODE=update TAG="" TARBALL="" OS=0
+MODE=update TAG="" TARBALL="" OS=0 FAILED=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --tag) TAG=$2; shift ;;
@@ -40,7 +43,7 @@ while [ $# -gt 0 ]; do
     --rollback) MODE=rollback ;;
     --check) MODE=check ;;
     --resume) MODE=resume ;;
-    -h | --help) sed -n '2,17p' "$0"; exit 0 ;;
+    -h | --help) sed -n '2,18p' "$0"; exit 0 ;;
     *) die "unknown option $1" ;;
   esac
   shift
@@ -67,16 +70,29 @@ park_and_reboot() {
 }
 
 finish() {
+  local what=Done
+  [ "$FAILED" = 0 ] || what="The update FAILED and the previous version was put back"
   rm -f "$PENDING"
   sync
   if [ "${RESTORE_PROTECTION:-0}" = 1 ]; then
     /usr/local/sbin/videofx-maint off
-    echo "Done; rebooting with protection back on."
+    echo "$what; rebooting with protection back on."
     systemctl reboot
   else
     systemctl restart videofx-player.service
-    echo "Done."
+    echo "$what."
   fi
+  [ "$FAILED" = 0 ] || exit 1
+}
+
+# The unit file that belongs to the version now in $APP.
+install_unit() {
+  [ -f "$APP/system/videofx-player.service" ] || return 0
+  local user home
+  user=$(service_user)
+  home=$(getent passwd "$user" | cut -d: -f6)
+  sed -e "s/^User=.*/User=$user/" -e "s#MEDIA_DIR#$home/media#" "$APP/system/videofx-player.service" >/etc/systemd/system/videofx-player.service
+  systemctl daemon-reload
 }
 
 do_update() {
@@ -99,8 +115,16 @@ do_update() {
   systemctl stop videofx-player.service || true
   rm -rf "$PREV"
   cp -a "$APP" "$PREV" # with node_modules, so a rollback works offline
-  "$src/system/setup.sh" "$(service_user)" "$src" # app, npm ci --omit=dev, units, config
-  if [ "$OS" = 1 ]; then
+  # app, npm ci --omit=dev, units, config. It replaces $APP as it goes (npm ci
+  # empties node_modules first), so a failure half-way leaves nothing that runs:
+  # put the previous version back.
+  if ! "$src/system/setup.sh" "$(service_user)" "$src"; then
+    echo "videofx-update: installing the new version failed; putting $(node -e 'console.log(require(process.argv[1]).version)' "$PREV/package.json" 2>/dev/null || echo "the previous version") back" >&2
+    rm -rf "$APP"
+    cp -a "$PREV" "$APP"
+    install_unit
+    FAILED=1
+  elif [ "$OS" = 1 ]; then
     echo "== OS: apt full-upgrade"
     apt-get update
     DEBIAN_FRONTEND=noninteractive apt-get -y full-upgrade
@@ -114,12 +138,7 @@ do_rollback() {
   mv "$APP" "$APP.bad"
   mv "$PREV" "$APP"
   mv "$APP.bad" "$PREV"
-  # The unit file of the restored version.
-  if [ -f "$APP/system/videofx-player.service" ]; then
-    home=$(getent passwd "$(service_user)" | cut -d: -f6)
-    sed -e "s/^User=.*/User=$(service_user)/" -e "s#MEDIA_DIR#$home/media#" "$APP/system/videofx-player.service" >/etc/systemd/system/videofx-player.service
-    systemctl daemon-reload
-  fi
+  install_unit
   echo "== rolled back to $(current_version) (the other version is now in $PREV)"
 }
 

@@ -10,10 +10,28 @@ import { createWebServer, isAllowedHost, isLanAddress } from "../src/web.js";
 describe("LAN-only guard", () => {
   it.each(["127.0.0.1", "10.1.2.3", "172.16.0.1", "172.31.255.255", "192.168.1.20", "169.254.3.4", "::1", "fe80::1%eth0", "fd12::1", "::ffff:192.168.1.5"])(
     "allows %s",
-    (ip) => expect(isLanAddress(ip)).toBe(true),
+    (ip) => expect(isLanAddress(ip, {})).toBe(true),
   );
   it.each(["8.8.8.8", "172.32.0.1", "100.64.0.1", "2001:db8::1", "::ffff:8.8.8.8", "", undefined])("blocks %s", (ip) =>
-    expect(isLanAddress(ip)).toBe(false),
+    expect(isLanAddress(ip, {})).toBe(false),
+  );
+
+  // A LAN with a routed IPv6 prefix: phones reach videofx-xxxx.local over their global addresses.
+  const ifaces = {
+    lo: [{ address: "::1", family: "IPv6", internal: true, cidr: "::1/128" }],
+    wlan0: [
+      { address: "192.168.1.20", family: "IPv4", internal: false, cidr: "192.168.1.20/24" },
+      { address: "2001:db8:1:2:ba27:ebff:fe12:3456", family: "IPv6", internal: false, cidr: "2001:db8:1:2:ba27:ebff:fe12:3456/64" },
+      { address: "fe80::ba27:ebff:fe12:3456", family: "IPv6", internal: false, cidr: "fe80::ba27:ebff:fe12:3456/64", scopeid: 3 },
+    ],
+    eth0: [{ address: "100.64.3.7", family: "IPv4", internal: false, cidr: "100.64.3.7/24" }],
+    wg0: [{ address: "2001:db8:ffff::1", family: "IPv6", internal: false, cidr: "2001:db8:ffff::1/0" }],
+  };
+  it.each(["2001:db8:1:2::99", "2001:db8:1:2:1c3a:55ff:fe00:1", "100.64.3.200", "::ffff:100.64.3.200"])("allows %s on one of our own subnets", (ip) =>
+    expect(isLanAddress(ip, ifaces)).toBe(true),
+  );
+  it.each(["2001:db8:1:3::99", "2607:f8b0::1", "100.64.4.1", "8.8.8.8"])("still blocks %s (not on-link; a /0 is not a LAN)", (ip) =>
+    expect(isLanAddress(ip, ifaces)).toBe(false),
   );
 });
 
@@ -160,6 +178,55 @@ describe("web server", () => {
     expect(on.json.error).toMatch(/playlist/);
     expect((await call("POST", "/api/power", { body: '{"on":false}' })).status).toBe(200);
     expect(power).toHaveBeenCalledWith(false);
+  });
+
+  it("power-on checks the current mode's content when told how (scare mode needs no playlist)", async () => {
+    let problem;
+    const setPower = vi.fn(async () => {});
+    const scare = createWebServer({
+      media: createMediaStore({ dir, playlist: join(dir, "playlist.m3u") }), // no playlist on disk
+      auth: { passwordSet: false, verifyPassword: () => true },
+      hostNames: () => [],
+      status: () => ({}),
+      problem: () => problem,
+      setPower,
+      log: { error: () => {} },
+    });
+    await new Promise((resolve) => scare.listen(0, "127.0.0.1", resolve));
+    const mine = port;
+    port = scare.address().port;
+    try {
+      expect((await call("POST", "/api/power", { body: '{"on":true}' })).status).toBe(200);
+      expect(setPower).toHaveBeenCalledWith(true);
+      problem = "the calm clip calm.mp4 is missing";
+      const res = await call("POST", "/api/power", { body: '{"on":true}' });
+      expect([res.status, res.json.error]).toEqual([409, "the calm clip calm.mp4 is missing"]);
+    } finally {
+      port = mine;
+      scare.close();
+    }
+  });
+
+  it("rejects an upload that would not leave the free-space reserve", async () => {
+    const full = createWebServer({
+      media: createMediaStore({ dir, playlist: join(dir, "playlist.m3u"), maxUploadBytes: 1000, reserveBytes: 100, statfs: async () => ({ bavail: 1, bsize: 150 }) }),
+      auth: { passwordSet: false, verifyPassword: () => true },
+      hostNames: () => [],
+      status: () => ({}),
+      log: { error: () => {} },
+    });
+    await new Promise((resolve) => full.listen(0, "127.0.0.1", resolve));
+    const mine = port;
+    port = full.address().port;
+    try {
+      expect((await call("PUT", "/api/media/small.mp4", { body: "x".repeat(50) })).status).toBe(201);
+      const res = await call("PUT", "/api/media/big.mp4", { body: "x".repeat(51) });
+      expect(res.status).toBe(507);
+      expect(res.json.error).toMatch(/free space/);
+    } finally {
+      port = mine;
+      full.close();
+    }
   });
 
   it("rejects unknown Host headers", async () => {

@@ -192,6 +192,21 @@ describe("password rules", () => {
     expect(make().verifyPassword("pumpkin-42")).toBe(true); // after a restart
   });
 
+  it("slows guessing: a burst of new guesses, then one a second; repeats cost nothing", () => {
+    let now = 1_000_000;
+    const s = new Settings({ dir, env: {}, ctx, log, now: () => now });
+    s.set("password", "pumpkin-42");
+    expect(s.verifyPassword("pumpkin-42")).toBe(true); // 1 token, then remembered
+    for (let i = 0; i < 20; i++) expect(s.verifyPassword("pumpkin-42")).toBe(true);
+    for (let i = 0; i < 4; i++) expect(s.verifyPassword(`guess-${i}`)).toBe(false); // the rest of the burst
+    for (let i = 0; i < 20; i++) expect(s.verifyPassword("guess-0")).toBe(false); // a tab still polling with an old password: free
+    s.set("password", "ghost-1234", { currentPassword: "pumpkin-42" });
+    expect(s.verifyPassword("ghost-1234")).toBe(false); // out of tokens: even the right one waits
+    now += 1000;
+    expect(s.verifyPassword("ghost-1234")).toBe(true);
+    expect(s.verifyPassword("pumpkin-42")).toBe(false); // the old one, against the new hash
+  });
+
   it("changing it needs the current password", () => {
     const s = make();
     s.set("password", "pumpkin-42");
