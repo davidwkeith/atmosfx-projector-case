@@ -75,7 +75,7 @@ Full steps, aim limits and troubleshooting: [docs/AIMING.md](docs/AIMING.md).
 
 ## Power and safety
 
-Mains is inside a printed box in this design. Feed it from a GFCI outlet, fuse the AC input and the DC output, keep AC and DC wiring on separate sides of the barrier, insulate the brick's AC terminals, leave a drip loop on the cord, and use PETG or ASA. If you are not comfortable with mains wiring, have someone qualified do that part. Wiring diagram, wire gauges, fuse sizing and a pre-power-up checklist: [docs/WIRING.md](docs/WIRING.md). Check the brick's voltage, current and plug polarity before wiring the splice.
+Mains is inside a printed box in this design. Feed it from a GFCI outlet, fuse the AC input and the DC output, keep AC and DC wiring on separate sides of the barrier, insulate the brick's AC terminals, leave a drip loop on the cord, and use PETG or ASA. If you are not comfortable with mains wiring, have someone qualified do that part. Wiring diagrams, wire gauges, fuse sizing and a pre-power-up checklist: [docs/WIRING.md](docs/WIRING.md). Check the brick's voltage, current and plug polarity before wiring the splice.
 
 ## Roadmap
 

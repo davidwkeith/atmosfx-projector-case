@@ -6,48 +6,40 @@ This case is rain-shedding and ventilated, not waterproof, and not certified for
 
 ## Overview
 
+One diagram per side of the barrier on the power shelf: [high voltage](#high-voltage-ac-side) (mains, left of the barrier) and [low voltage](#low-voltage-side) (right of the barrier and down to the sled, drawn as the 21 V rail and then the Pi's signals). Red edges are live or +, grey are neutral or -, green is earth, dotted are signals. Pin numbers are the Pi header's physical pins; GPIO assignments and the reasoning behind them are in `pi/README.md` ("GPIO pins and wiring").
+
+## High voltage: AC side
+
+Everything left of the barrier on the power shelf. Nothing but the brick's DC cord crosses the barrier, through the notch at its foot.
+
 ```mermaid
 flowchart LR
-  subgraph OUT["Outside"]
-    GFCI["GFCI outdoor outlet<br/>(in-use cover)"]
+  subgraph OUT["Outside the case"]
+    direction LR
+    GFCI["Outdoor GFCI outlet<br/>in-use cover; test its button"]
+    BOX["Weatherproof connection box<br/>(only if you join an extension cord)"]
+    LOOP["Drip loop<br/>below the gland"]
   end
-  subgraph AC["AC side of barrier (left of shelf)"]
-    GLAND["PG9 cord grip<br/>+ drip loop"]
-    FAC["AC fuse, time-delay<br/>on LIVE only"]
-    IEC["Rewireable IEC connector<br/>(matches brick inlet)"]
-    BRICK["DC brick<br/>(projector's own)"]
+  subgraph WALL["Rear wall, above the shelf"]
+    GLAND["PG9 cord grip<br/>tightened on the cord jacket"]
   end
-  subgraph LV["Low-voltage side (right of barrier)"]
-    FDC["Main DC fuse<br/>blade, fast"]
-    TB["Lever-nut splice<br/>+ and -"]
-    RELAY["Relay (fallback only)<br/>switches + line"]
-    PROJ["Projector barrel plug"]
-    AMP["HiFiBerry Amp4<br/>12-24 V in, powers Pi"]
-    FANS["2x 24 V PWM fans"]
+  subgraph ACS["Power shelf, AC side (left of the barrier)"]
+    FAC["5 x 20 mm inline holder<br/>time-delay fuse<br/>LIVE ONLY"]
+    IEC["Rewireable IEC connector<br/>C7 / C5 / C13 to match the brick"]
+    BRICK["DC brick, unmodified<br/>(AC terminals inside the connector shell)"]
   end
-  subgraph PI["Pi sled (below shelf)"]
-    RPI["Raspberry Pi"]
-    SPK["Speaker terminals"]
-  end
-  GFCI -- "outdoor cord SJTW 18 AWG" --> GLAND --> FAC --> IEC --> BRICK
-  BRICK -- "DC +" --> FDC --> TB
-  BRICK -- "DC -" --> TB
-  TB -- "+ / -" --> RELAY --> PROJ
-  TB -- "+ / -" --> AMP
-  TB -- "+ / -" --> FANS
-  AMP --- RPI
-  AMP --> SPK
-  SPK -- "16 AWG zip cord<br/>via floor chimney" --> SPEAKERS["Speakers behind<br/>the projection"]
-  RPI -. "HDMI + CEC" .-> PROJ
-  RPI -. "PWM / tach" .-> FANS
-  RPI -. "GPIO" .-> RELAY
+  NOTCH["Notch at the barrier foot<br/>DC cord only crosses here"]
+  GFCI -- "SJTW 18 AWG, 2- or 3-wire" --> BOX --> LOOP --> GLAND
+  GLAND -- "L: black / smooth (narrow blade)" --> FAC
+  FAC -- "L" --> IEC
+  GLAND -- "N: white / ribbed (wide blade)" --> IEC
+  GLAND -. "E: green, C5 / C13 bricks only" .-> IEC
+  IEC --> BRICK
+  BRICK -- "21 V DC out" --> NOTCH
+  linkStyle 3,4 stroke:#c62828,stroke-width:2px
+  linkStyle 5 stroke:#9e9e9e,stroke-width:2px
+  linkStyle 6 stroke:#2e7d32,stroke-width:2px
 ```
-
-Solid lines carry power. Dotted lines are signals. The relay is only needed if the projector lacks HDMI-CEC (see `pi/README.md`, "Projector power"). It is also the only way the Pi can cut the projector's power on over-temperature: with CEC alone it can only ask for standby, so consider fitting it anyway (see `pi/README.md`, "Cooling"). The relay opens whenever the Pi's service stops. GPIO pin assignments are in `pi/README.md` (PIR 17, relay 27, IR LED 22, IR receiver 23, fan PWM 12/13, fan tach 24/25, 1-wire 26; the Amp4 uses 2, 3, 4 and 18-21). The Amp4 covers the header, so fit a stacking header or solder leads under the Pi.
-
-## AC side
-
-Everything left of the barrier on the power shelf.
 
 1. **Supply.** Keep every plug-and-socket joint off the ground and out of puddles: put any extension-cord joint in a weatherproof connection box (a clamshell "cord connection" cover) and raise it off the lawn. Plug into an outdoor GFCI outlet (US code already requires GFCI for outdoor receptacles; test it with its button). Use an outdoor-rated cord (SJTW or better, 18 AWG minimum) and an in-use weatherproof cover on the outlet.
 2. **Cord entry.** The cord enters through the PG9 cord grip in the rear wall, above the shelf. Tighten the grip on the round cord jacket. Leave a drip loop outside, below the grip, so water drips off before reaching it.
@@ -60,6 +52,47 @@ Everything left of the barrier on the power shelf.
 
 Right of the barrier, and down to the Pi sled.
 
+### 21 V rail
+
+```mermaid
+flowchart TB
+  BRICK["DC brick output (crosses the barrier at its foot notch)<br/>21 V; check the voltage and plug polarity with a meter"]
+  FDC["Main DC fuse<br/>blade, 5 A"]
+  WP(["Wago 221, + rail"])
+  WN(["Wago 221, - rail"])
+  subgraph PJ["Projector"]
+    FPJ["Projector branch fuse<br/>blade 4 A (optional)"]
+    RELAY["Relay module, fallback only<br/>COM / NO in the + line"]
+    PROJ["Projector barrel plug<br/>spliced into its own cable"]
+  end
+  subgraph PIZ["Pi sled, below the shelf"]
+    FAMP["Amp4 branch fuse<br/>blade 3 A (optional)"]
+    AMP["HiFiBerry Amp4<br/>12-24 V in"]
+    PI["Raspberry Pi<br/>5 V from the Amp4 via the header<br/>no USB power"]
+    SPK["Speakers behind the projection<br/>16 AWG zip cord, stripe to +<br/>out through the floor chimney"]
+  end
+  subgraph FANS["Right wall fans, 40 mm 24 V 4-pin PWM"]
+    FAN1["Fan 1: projector zone"]
+    FAN2["Fan 2: Pi / brick zone"]
+  end
+  BRICK -- "+ 18 AWG" --> FDC --> WP
+  BRICK -- "- 18 AWG" --> WN
+  WP -- "18 AWG" --> FPJ --> RELAY -- "+" --> PROJ
+  WN -- "- never switched" --> PROJ
+  WP -- "20 AWG" --> FAMP --> AMP
+  WN -- "20 AWG" --> AMP
+  AMP --> PI
+  AMP --> SPK
+  WP -- "24 AWG" --> FAN1
+  WP -- "24 AWG" --> FAN2
+  WN -- "24 AWG" --> FAN1
+  WN -- "24 AWG" --> FAN2
+  linkStyle 0,1,3,4,5,7,8,12,13 stroke:#c62828,stroke-width:2px
+  linkStyle 2,6,9,14,15 stroke:#424242,stroke-width:2px
+```
+
+The relay is only needed if the projector lacks HDMI-CEC (see `pi/README.md`, "Projector power"). It is also the only way the Pi can cut the projector's power on over-temperature: with CEC alone it can only ask for standby, so consider fitting it anyway (see `pi/README.md`, "Cooling"). The relay opens whenever the Pi's service stops. Use an **active-low** module: the Pi holds GPIO 27 high (relay open, projector off) from boot.
+
 | Circuit | Wire | Notes |
 |---|---|---|
 | Brick DC out to main fuse and splice | 18 AWG (0.75 mm²) | Check the brick's plug polarity (centre + is common, not universal) before cutting |
@@ -70,6 +103,42 @@ Right of the barrier, and down to the Pi sled.
 | Amp4 to speakers | 16 AWG zip cord | Out through the floor chimney; red/striped to + on both ends |
 
 Use lever-nut connectors (e.g. Wago 221) for the splice so it can be undone. Pass low-voltage wires from the shelf to the Pi through the wire slot at the back of the shelf, never across the barrier's AC side.
+
+### Pi header signals
+
+```mermaid
+flowchart LR
+  subgraph IN["Inputs"]
+    PIR["HC-SR501 PIR, rear wall<br/>VCC 5 V pin 2, GND pin 9"]
+    T1["DS18B20, projector zone<br/>VDD 3.3 V, GND"]
+    T2["DS18B20, Pi / brick zone<br/>VDD 3.3 V, GND"]
+    TACH1["Fan 1 tach (green)<br/>10 kΩ pull-up to 3.3 V"]
+    TACH2["Fan 2 tach (green)<br/>10 kΩ pull-up to 3.3 V"]
+    IRRX["TSOP38238 IR receiver, optional<br/>VS 3.3 V pin 17, GND"]
+  end
+  PI["Raspberry Pi header<br/>(stacking header under the Amp4;<br/>GPIO 2-4 and 18-21 belong to the Amp4)"]
+  subgraph OUTS["Outputs"]
+    PWM1["Fan 1 PWM (blue)"]
+    PWM2["Fan 2 PWM (blue)"]
+    RELAY["Relay module IN, active-low<br/>VCC 5 V pin 4, GND pin 14"]
+    Q1["BC337 NPN<br/>emitter to GND"]
+    IRLED["940 nm IR LED in ir_holder<br/>5 V, LED, 47 Ω, collector"]
+    PROJ["Projector HDMI input"]
+  end
+  PIR -- "OUT to GPIO17, pin 11" --> PI
+  T1 -- "DQ" --> T2
+  T2 -- "DQ, one bus, to GPIO26, pin 37<br/>one 4.7 kΩ to 3.3 V" --> PI
+  TACH1 -- "GPIO24, pin 18" --> PI
+  TACH2 -- "GPIO25, pin 22" --> PI
+  IRRX -- "OUT to GPIO23, pin 16" --> PI
+  PI -- "GPIO12, pin 32, via 1 kΩ (PWM0)" --> PWM1
+  PI -- "GPIO13, pin 33, via 1 kΩ (PWM1)" --> PWM2
+  PI -- "GPIO27, pin 13" --> RELAY
+  PI -- "GPIO22, pin 15, via 1 kΩ to the base" --> Q1 --> IRLED
+  PI -. "HDMI (CEC power control)" .-> PROJ
+```
+
+The Amp4 covers the header, so fit a stacking header or solder leads under the Pi. Every tach and 1-wire pull-up goes to **3.3 V**, never to the 21 V rail or 5 V. The fans and the Pi must share a ground. The IR LED needs the transistor: a GPIO pin can only source 16 mA.
 
 ## Cords outdoors
 
