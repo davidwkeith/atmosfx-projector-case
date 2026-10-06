@@ -9,12 +9,12 @@
 
 Three drawings, matching the sections of docs/WIRING.md:
 
-    wiring-hv.svg          mains: outlet, cord, gland, live-only fuse, IEC connector, brick
-    wiring-lv-power.svg    the 21 V rail: fuses, Wago splice, relay contact, projector, Amp4, fans
+    wiring-hv.svg          mains: outlet, cord, gland, live-only fuse, two NEMA 5-15R receptacles, both wall-warts
+    wiring-lv-power.svg    the two DC rails: a fuse each, Wago rails, relay contact, projector, Amp4, fans
     wiring-lv-signals.svg  the Pi header: every GPIO used, pull-ups, the IR LED driver
 
-Ratings are the examples from WIRING.md "Fuse sizing" (21 V 5 A brick, 3 A
-projector); size yours from your own labels. Keep this file in step with
+Ratings are the examples from WIRING.md "Fuse sizing" (stock 21 V 2.28 A wall-wart,
+24 V 2.5 A second one); size yours from your own labels. Keep this file in step with
 WIRING.md, pi/README.md ("GPIO pins and wiring") and BOM.md.
 """
 from pathlib import Path
@@ -94,119 +94,149 @@ def draw_hv(path):
     d.add(elm.Line().at((x_cord, yE)).to((x_wall, yE)).color(EARTH).linestyle('--'))
     note(d, (x_cord + 0.15, yL + 0.2), 'L  black / smooth / narrow blade', halign='left', color=LIVE)
     note(d, (x_cord + 0.15, yN + 0.2), 'N  white / ribbed / wide blade', halign='left', color=NEUTRAL)
-    note(d, (x_cord + 0.15, yE + 0.2), 'E  green; C5 / C13 bricks only', halign='left', color=EARTH)
+    note(d, (x_cord + 0.15, yE + 0.2), 'E  green; land it anyway', halign='left', color=EARTH)
     note(d, ((x_cord + x_wall) / 2 - 0.4, 2.6),
-         'Outdoor cord, SJTW 18 AWG or better.\nAny extension-cord joint in a weatherproof box, off the ground.\n'
+         'Outdoor cord, SJTW 18 AWG or better, 3-wire.\nAny extension-cord joint in a weatherproof box, off the ground.\n'
          'Drip loop outside, below the gland.')
 
     # rear wall with the cord grip
-    d.add(elm.Line().at((x_wall, 3.6)).to((x_wall, -3.2)).linestyle(':').color(NOTE))
+    d.add(elm.Line().at((x_wall, 3.6)).to((x_wall, -8.6)).linestyle(':').color(NOTE))
     box(d, x_wall - 0.3, -1.9, x_wall + 0.3, 1.9)
-    note(d, (x_wall, -2.3), 'PG9 cord grip\n(rear wall)')
+    note(d, (x_wall, -2.3), 'PG9 cord grip\n(rear-left corner,\nbeside the plate)')
     note(d, (x_wall - 0.4, 3.7), 'OUTSIDE', halign='right')
-    note(d, (x_wall + 0.4, 3.7), 'INSIDE: power shelf, AC side of the barrier', halign='left')
+    note(d, (x_wall + 0.4, 3.7), 'INSIDE: power shelf, AC side of the barrier (the receptacle plate)', halign='left')
 
     # live-only fuse; neutral and earth straight through
-    x_iec = 13.0
-    d.add(elm.Line().at((x_wall + 0.3, yL)).to((x_wall + 2.2, yL)).color(LIVE))
+    x_rc = 13.4
+    d.add(elm.Line().at((x_wall + 0.3, yL)).to((x_wall + 3.0, yL)).color(LIVE))
     d.add(elm.Fuse().right().color(LIVE)
           .label('F1  5 x 20 mm, time-delay (T), 250 V, LIVE ONLY\n'
-                 'about 1.5x the brick input current; example 2 A T', loc='bottom', fontsize=FSS, ofst=0.15))
-    d.add(elm.Line().to((x_iec, yL)).color(LIVE))
-    d.add(elm.Line().at((x_wall + 0.3, yN)).to((x_iec, yN)).color(NEUTRAL))
-    d.add(elm.Line().at((x_wall + 0.3, yE)).to((x_iec, yE)).color(EARTH).linestyle('--'))
+                 'about 1.5x both wall-warts\' input currents; example 3 A T', loc='bottom', fontsize=FSS, ofst=0.15))
+    d.add(elm.Line().to((x_rc, yL)).color(LIVE))
+    d.add(elm.Line().at((x_wall + 0.3, yN)).to((x_rc, yN)).color(NEUTRAL))
+    d.add(elm.Line().at((x_wall + 0.3, yE)).to((x_rc, yE)).color(EARTH).linestyle('--'))
 
-    # rewireable IEC connector plugged into the brick's inlet
+    # the two receptacles: the lower one takes the cord, the upper is jumpered from its piggyback tabs
     H = 4.0
-    iec = d.add(ic([pin('L', 'L', pos=0.5 + (yL - yN) / (H - 1)), pin('N', 'L', pos=0.5),
-                    pin('E', 'L', pos=0.5 + (yE - yN) / (H - 1))],
-                   size=(3.0, H)).at((x_iec, yN)).anchor('N')
-                .label('Rewireable\nIEC connector\nC7 / C5 / C13', fontsize=FSS, ofst=(0.3, 0)))
-    brick = d.add(ic([pin('AC', 'L', 'inlet', pos=0.5),
-                      pin('+', 'R', 'pos', pos=0.66), pin('-', 'R', 'neg', pos=0.34)],
-                     size=(3.4, H)).at((iec.center[0] + 1.5 + 1.0, yN)).anchor('inlet')
-                  .label('DC brick\nunmodified\nlabel: DC 21 V 3 A', fontsize=FSS))
-    note(d, (brick.center[0], brick.center[1] - 2.5),
-         'The stock brick feeds the projector alone;\n5 A or more to run the Pi, amp and fans too.')
+    def rcpt(x, name):
+        return d.add(ic([pin('brass', 'L', 'L', pos=0.5 + (yL - yN) / (H - 1)), pin('silver', 'L', 'N', pos=0.5),
+                         pin('green', 'L', 'E', pos=0.5 + (yE - yN) / (H - 1)),
+                         pin('', 'R', 'Lo', pos=0.5 + (yL - yN) / (H - 1)), pin('', 'R', 'No', pos=0.5),
+                         pin('', 'R', 'Eo', pos=0.5 + (yE - yN) / (H - 1)),
+                         pin('prongs', 'B', 'face', pos=0.5)],
+                        size=(3.0, H)).at((x, yN)).anchor('N').label(name, fontsize=FSS))
+    r1 = rcpt(x_rc, 'NEMA 5-15R\nlower')
+    note(d, (r1.center[0] - 0.2, r1.center[1] + 2.6), 'brass = narrow slot = L\nsilver = wide slot = N\n4.8 mm tabs, fully insulated quick-connects')
+    x_r2 = r1.Lo[0] + 2.0
+    r2 = rcpt(x_r2, 'NEMA 5-15R\nupper')
+    for a, b, col, ls in ((r1.Lo, r2.L, LIVE, '-'), (r1.No, r2.N, NEUTRAL, '-'), (r1.Eo, r2.E, EARTH, '--')):
+        d.add(elm.Line().at(a).to(b).color(col).linestyle(ls))
+    note(d, ((r1.Lo[0] + r2.L[0]) / 2, yL + 0.25), 'jumper: piggyback\nquick-connects', fontsize=FSS - 1)
+    note(d, ((r1.Lo[0] + r2.L[0]) / 2, yE - 0.3), 'stacked on the plate,\nfacing the divider', fontsize=FSS - 1)
 
-    # the barrier and its notch
-    x_bar = brick.pos[0] + 1.4
-    d.add(elm.Line().at((x_bar, 3.6)).to((x_bar, -0.1)).color(NOTE).linewidth(3))
-    d.add(elm.Line().at((x_bar, -1.1)).to((x_bar, -3.2)).color(NOTE).linewidth(3))
+    # the wall-warts hang on their prongs; the stock one stands on the shelf, the second rests on it
+    def wart(rc, y, name, note_text=None):
+        w = d.add(ic([pin('AC', 'T', 'ac', pos=0.5), pin('+', 'R', 'pos', pos=0.66), pin('-', 'R', 'neg', pos=0.34)],
+                     size=(3.0, 2.6)).at((rc.face[0], y)).anchor('ac').label(name, fontsize=FSS))
+        d.add(elm.Line().at(rc.face).to(w.ac).color(NOTE))
+        if note_text:
+            note(d, (w.center[0], w.center[1] - 1.7), note_text)
+        return w
+    w1 = wart(r1, yE - 2.0, 'Stock wall-wart\nunmodified\n21 V 2.28 A out', 'MX48CC-210228US\ncentre +, 2-pin,\ncaptive DC cord')
+    w2 = wart(r2, yE - 2.0, 'Second wall-wart\nunmodified\n24 V, 2.5-3 A out\nfor the Pi, Amp4, fans')
+
+    # the barrier and its notch; both DC cords cross through it
+    x_bar = w2.pos[0] + 1.6
+    d.add(elm.Line().at((x_bar, 3.6)).to((x_bar, w1.pos[1] + 0.7)).color(NOTE).linewidth(3))
+    d.add(elm.Line().at((x_bar, w2.center[1] - 2.7)).to((x_bar, -8.6)).color(NOTE).linewidth(3))
     note(d, (x_bar, 3.7), 'barrier')
-    note(d, (x_bar + 0.15, -1.5), 'notch at the\nbarrier foot', halign='left')
-    d.add(elm.Line().at(brick.pos).to((x_bar + 1.2, brick.pos[1])).color(POS))
-    d.add(elm.Line().at(brick.neg).to((x_bar - 0.5, brick.neg[1])).color(NEG))
-    d.add(elm.Line().to((x_bar - 0.5, -0.6)).color(NEG))
-    d.add(elm.Line().to((x_bar + 1.2, -0.6)).color(NEG))
-    note(d, (x_bar + 1.3, brick.pos[1]), '+ 21 V', halign='left', color=POS, fontsize=FS)
-    note(d, (x_bar + 1.3, -0.6), '-', halign='left', color=NEG, fontsize=FS)
-    note(d, (x_bar + 1.3, -2.5), 'to the low-voltage side\n(wiring-lv-power.svg)', halign='left')
+    y_w2bot = w2.center[1] - 1.3
+    note(d, (x_bar + 0.15, y_w2bot - 1.6), 'notch at the\nbarrier foot', halign='left')
+    # second wall-wart's cord: 24 V, straight out
+    y24p, y24n = w2.pos[1], w2.neg[1]
+    d.add(elm.Line().at(w2.pos).to((x_bar + 1.2, y24p)).color(POS))
+    d.add(elm.Line().at(w2.neg).to((x_bar + 1.2, y24n)).color(NEG))
+    # stock wall-wart's cord: 21 V, routed under the second wall-wart
+    y21p, y21n = y_w2bot - 0.5, y_w2bot - 1.0
+    d.add(elm.Line().at(w1.pos).to((w1.pos[0] + 0.5, w1.pos[1])).color(POS))
+    d.add(elm.Line().to((w1.pos[0] + 0.5, y21p)).color(POS))
+    d.add(elm.Line().to((x_bar + 1.2, y21p)).color(POS))
+    d.add(elm.Line().at(w1.neg).to((w1.neg[0] + 0.9, w1.neg[1])).color(NEG))
+    d.add(elm.Line().to((w1.neg[0] + 0.9, y21n)).color(NEG))
+    d.add(elm.Line().to((x_bar + 1.2, y21n)).color(NEG))
+    note(d, (x_bar + 1.3, y24p), '24 V +', halign='left', color=POS, fontsize=FS)
+    note(d, (x_bar + 1.3, y24n), '24 V -', halign='left', color=NEG, fontsize=FS)
+    note(d, (x_bar + 1.3, y21p), '21 V +', halign='left', color=POS, fontsize=FS)
+    note(d, (x_bar + 1.3, y21n), '21 V -', halign='left', color=NEG, fontsize=FS)
+    note(d, (x_bar + 1.3, y21n - 1.9), 'captive DC cords, cut and fused\non the low-voltage side\n(wiring-lv-power.svg)', halign='left')
 
-    note(d, (x_wall + 0.4, -3.4),
-         'Every AC joint inside a connector shell or heat-shrink; no bare metal. Flame-retardant (V-0) PETG for the shelf.',
-         halign='left')
+    note(d, (x_wall + 0.4, -8.9),
+         'Every AC joint inside a connector shell or heat-shrink; no bare metal. The tabs sit behind the plate, in the corner with the gland. '
+         'Flame-retardant (V-0) PETG for the shelf.', halign='left')
     d.save(str(path))
 
 
 # ----------------------------------------------------------------------------
-# Low voltage: the 21 V rail
+# Low voltage: the two DC rails
 # ----------------------------------------------------------------------------
 def draw_lv_power(path):
     d = drawing()
 
-    brick = d.add(ic([pin('+', 'R', 'pos', pos=0.72), pin('-', 'R', 'neg', pos=0.28)],
-                     size=(3.0, 2.4)).at((0, 0)).anchor('pos')
-                  .label('DC brick\n21 V out', fontsize=FSS))
-    note(d, (brick.center[0], brick.center[1] - 1.7),
-         'from wiring-hv.svg, through the barrier notch;\ncheck voltage and polarity at the plug before cutting')
-
-    # main fuse in the + line, then the two Wago rails drawn as vertical buses
-    d.add(elm.Line().at(brick.pos).right(0.6).color(POS))
-    f2 = d.add(elm.Fuse().right().color(POS)
-               .label('F2  main DC, blade (ATO)\n<= brick output, >= 1.25x load\nexample: 5 A', loc='top', fontsize=FSS, ofst=0.15))
-    x_bp = f2.end[0] + 1.0   # + bus
-    x_bn = x_bp + 1.6        # - bus
-    y_top, y_bot = 2.2, -10.8
-    d.add(elm.Line().at(f2.end).to((x_bp, f2.end[1])).color(POS))
-    d.add(elm.Dot().at((x_bp, f2.end[1])).color(POS))
-    d.add(elm.Line().at((x_bp, y_top)).to((x_bp, y_bot)).color(POS).linewidth(3))
-    d.add(elm.Line().at(brick.neg).to((x_bn, brick.neg[1])).color(NEG))
-    d.add(elm.Dot().at((x_bn, brick.neg[1])).color(NEG))
-    d.add(elm.Line().at((x_bn, y_top)).to((x_bn, y_bot)).color(NEG).linewidth(3))
-    note(d, (x_bp, y_top + 0.3), 'Wago 221\n+ rail', color=POS)
-    note(d, (x_bn, y_top + 0.3), 'Wago 221\n- rail', color=NEG)
-    note(d, ((x_bp + x_bn) / 2 + 1.5, y_bot - 0.4), '18 AWG from the brick; each branch in its own gauge')
-
+    # stock wall-wart: 21 V, the projector alone
+    w1 = d.add(ic([pin('+', 'R', 'pos', pos=0.72), pin('-', 'R', 'neg', pos=0.28)],
+                  size=(3.0, 2.4)).at((0, 0.6)).anchor('pos')
+               .label('Stock wall-wart\n21 V 2.28 A', fontsize=FSS))
+    note(d, (w1.center[0], w1.center[1] - 1.6), 'DC cord cut a hand\'s width from its plug;\nlabel says centre +: confirm with a meter')
+    d.add(elm.Line().at(w1.pos).right(0.6).color(POS))
+    f1 = d.add(elm.Fuse().right().color(POS)
+               .label('F1  21 V rail, blade (ATO)\nnext size above the 2.28 A output\nexample: 3 A', loc='top', fontsize=FSS, ofst=0.15))
+    x_bp = f1.end[0] + 2.4   # 24 V + rail
+    x_bn = x_bp + 1.6        # shared - rail
     x_load = x_bn + 8.0
-
-    # --- projector branch: optional fuse, relay contact in the + line only
-    yp = 0.6
-    d.add(elm.Dot().at((x_bp, yp)).color(POS))
-    d.add(elm.Line().at((x_bp, yp)).right(2.8).color(POS))
-    note(d, (x_bn + 0.9, yp - 0.3), '18 AWG', fontsize=FSS - 2)
-    d.add(elm.Fuse().right().color(POS)
-          .label('F3  optional, blade\n1.25x projector input\nexample: 4 A', loc='top', fontsize=FSS, ofst=0.15))
-    d.add(elm.Line().right(1.4).color(POS))
+    yp = f1.end[1]
+    d.add(elm.Line().at(f1.end).right(2.4).color(POS))
     d.add(elm.Switch().right().color(POS)
           .label('K1  relay contact\nCOM / NO, fallback only\nnever in the - line', loc='top', fontsize=FSS, ofst=0.15))
     d.add(elm.Line().to((x_load, yp)).color(POS))
+    note(d, (f1.end[0] + 1.2, yp - 0.3), '18 AWG', fontsize=FSS - 2)
     proj = d.add(ic([pin('+', 'L', 'pos', pos=0.75), pin('-', 'L', 'neg', pos=0.25)], size=(3.2, 2.6))
                  .at((x_load, yp)).anchor('pos')
                  .label('Projector\nbarrel plug', fontsize=FSS))
-    note(d, (proj.center[0], proj.center[1] - 1.8), 'its own cable, spliced')
+    note(d, (proj.center[0], proj.center[1] - 1.8), 'its own cable, spliced back')
+
+    # the shared - rail: both wall-warts' minuses, every load's return
+    y_top = w1.neg[1] + 0.3
+    y_bot = -13.4
+    d.add(elm.Line().at(w1.neg).to((x_bn, w1.neg[1])).color(NEG))
+    d.add(elm.Dot().at((x_bn, w1.neg[1])).color(NEG))
+    d.add(elm.Line().at((x_bn, y_top)).to((x_bn, y_bot)).color(NEG).linewidth(3))
+    note(d, (x_bn + 0.3, w1.neg[1] - 0.3), '18 AWG', halign='left', fontsize=FSS - 2)
     d.add(elm.Dot().at((x_bn, proj.neg[1])).color(NEG))
     d.add(elm.Line().at((x_bn, proj.neg[1])).to(proj.neg).color(NEG))
     note(d, (proj.neg[0] - 0.3, proj.neg[1] - 0.3), '- straight through, 18 AWG', halign='right', fontsize=FSS - 2)
+    note(d, (x_bn + 0.3, w1.neg[1] - 1.1), 'Wago 221, - rail\nboth minuses joined: the HDMI shield\nties the grounds anyway', halign='left', color=NEG)
 
-    # --- Amp4 branch: optional fuse; the Amp4 powers the Pi over the header; speakers out
-    ya = -3.6
+    # second wall-wart: 24 V for the Pi, Amp4 and fans
+    w2 = d.add(ic([pin('-', 'R', 'neg', pos=0.72), pin('+', 'R', 'pos', pos=0.28)],
+                  size=(3.0, 2.4)).at((0, -3.6)).anchor('neg')
+               .label('Second wall-wart\n24 V, 2.5-3 A', fontsize=FSS))
+    note(d, (w2.center[0], w2.center[1] - 1.6), 'same treatment; fans must\nmatch this rail\'s voltage')
+    d.add(elm.Line().at(w2.neg).to((x_bn, w2.neg[1])).color(NEG))
+    d.add(elm.Dot().at((x_bn, w2.neg[1])).color(NEG))
+    d.add(elm.Line().at(w2.pos).right(0.6).color(POS))
+    f2 = d.add(elm.Fuse().right().color(POS)
+               .label('F2  24 V rail, blade (ATO)\n<= wall-wart output, >= 1.25x load\nexample: 2.5 A', loc='bottom', fontsize=FSS, ofst=0.15))
+    d.add(elm.Line().at(f2.end).to((x_bp, f2.end[1])).color(POS))
+    d.add(elm.Dot().at((x_bp, f2.end[1])).color(POS))
+    d.add(elm.Line().at((x_bp, f2.end[1])).to((x_bp, y_bot)).color(POS).linewidth(3))
+    note(d, (x_bp - 0.3, f2.end[1] + 0.4), 'Wago 221\n24 V + rail', halign='right', color=POS)
+    note(d, ((x_bp + x_bn) / 2 + 1.5, y_bot - 0.4), '18 AWG from the wall-warts; each branch in its own gauge')
+
+    # --- Amp4 branch; the Amp4 powers the Pi over the header; speakers out
+    ya = -7.0
     d.add(elm.Dot().at((x_bp, ya)).color(POS))
-    d.add(elm.Line().at((x_bp, ya)).right(1.4).color(POS))
-    f4 = d.add(elm.Fuse().right().color(POS)
-               .label('F4  optional, blade\namp at full volume + Pi\nexample: 3 A', loc='top', fontsize=FSS, ofst=0.15))
-    d.add(elm.Line().to((x_load, ya)).color(POS))
-    note(d, (f4.end[0] + 0.3, ya + 0.25), '20 AWG', halign='left', fontsize=FSS - 2)
+    d.add(elm.Line().at((x_bp, ya)).to((x_load, ya)).color(POS))
+    note(d, (x_bn + 0.3, ya + 0.25), '20 AWG', halign='left', fontsize=FSS - 2)
     amp = d.add(ic([pin('+', 'L', 'pos', pos=0.82), pin('-', 'L', 'neg', pos=0.62),
                     pin('5 V', 'R', 'v5', pos=0.86), pin('GND', 'R', 'gnd', pos=0.68),
                     pin('SPK+', 'R', 'spkp', pos=0.28), pin('SPK-', 'R', 'spkn', pos=0.12)],
@@ -215,7 +245,6 @@ def draw_lv_power(path):
     d.add(elm.Dot().at((x_bn, amp.neg[1])).color(NEG))
     d.add(elm.Line().at((x_bn, amp.neg[1])).to(amp.neg).color(NEG))
     note(d, (x_bn + 0.3, amp.neg[1] - 0.3), '20 AWG', halign='left', fontsize=FSS - 2)
-    # the Pi hangs off the Amp4's header
     pi = d.add(ic([pin('5 V', 'L', 'v5', pos=0.72), pin('GND', 'L', 'gnd', pos=0.28)], size=(3.4, 1.6))
                .at((amp.v5[0] + 1.8, amp.v5[1])).anchor('v5')
                .label('Raspberry Pi', fontsize=FSS))
@@ -223,7 +252,6 @@ def draw_lv_power(path):
     d.add(elm.Line().at(amp.gnd).to(pi.gnd).color(NEG))
     note(d, (pi.center[0] + 1.9, pi.center[1]),
          'over the 40-pin header; no USB power.\nSignals: wiring-lv-signals.svg', halign='left')
-    # speakers
     ymid = (amp.spkp[1] + amp.spkn[1]) / 2
     spk = d.add(elm.Speaker().right().at((amp.spkp[0] + 2.4, ymid + 0.25)).anchor('in1')
                 .label('Speakers behind\nthe projection', loc='right', fontsize=FSS, ofst=0.3))
@@ -232,8 +260,8 @@ def draw_lv_power(path):
     note(d, (amp.spkp[0] + 1.2, amp.spkn[1] - 0.8),
          '16 AWG zip cord, stripe to +,\nout through the floor chimney', halign='left')
 
-    # --- fans: 24 V parts on the 21 V rail
-    for i, (yf, name) in enumerate(((-7.4, 'Fan 1\nprojector zone'), (-10.2, 'Fan 2\nPi / brick zone'))):
+    # --- fans: 24 V parts on the 24 V rail
+    for i, (yf, name) in enumerate(((-10.6, 'Fan 1\nprojector zone'), (-13.0, 'Fan 2\nPi / power zone'))):
         d.add(elm.Dot().at((x_bp, yf)).color(POS))
         d.add(elm.Line().at((x_bp, yf)).to((x_load, yf)).color(POS))
         fan = d.add(ic([pin('+', 'L', 'pos', pos=0.85), pin('GND', 'L', 'gnd', pos=0.62),
@@ -247,7 +275,7 @@ def draw_lv_power(path):
         note(d, (fan.pwm[0] - 0.9, (fan.pwm[1] + fan.tach[1]) / 2), 'to the Pi\n(signals diagram)', halign='right', color=SIG, fontsize=FSS - 2)
         note(d, (fan.center[0] + 2.2, fan.center[1]), '40 x 40 x 10 mm\n24 V 4-pin PWM\n(right wall)', halign='left')
         if i == 0:
-            note(d, (x_bn + 0.3, yf + 0.45), '24 AWG. 24 V fans on the 21 V rail: a 12 V fan would burn.\nCommon ground with the Pi.', halign='left')
+            note(d, (x_bn + 0.3, yf + 0.45), '24 AWG. 24 V fans on the 24 V rail: a 12 V fan would burn.\nCommon ground with the Pi.', halign='left')
     d.save(str(path))
 
 
@@ -292,7 +320,7 @@ def draw_lv_signals(path):
     # relay coil side, straight off GPIO27, in the far column so the wire passes under the PIR
     relay = d.add(ic([pin('IN', 'R', 'inp'),
                       pin('VCC', 'L', 'vcc', pos=0.88, pin='5 V, pin 4'), pin('GND', 'L', 'gnd', pos=0.63, pin='GND, pin 14'),
-                      pin('COM', 'L', 'com', pos=0.37, pin='+ from F3'), pin('NO', 'L', 'no', pos=0.12, pin='+ to projector')],
+                      pin('COM', 'L', 'com', pos=0.37, pin='21 V + from F1'), pin('NO', 'L', 'no', pos=0.12, pin='+ to projector')],
                      size=(3.0, 3.2)).at((XL2, y(13))).anchor('inp')
                   .label('Relay module\n5 V coil, opto in\nACTIVE-LOW', fontsize=FSS - 2))
     wire([(XLW, y(13)), relay.inp])
@@ -322,7 +350,7 @@ def draw_lv_signals(path):
     d.add(elm.Resistor().at((-3.8, yw)).up().length(1.1).color(SIG).label('R3 4.7 k\none per bus', loc='left', fontsize=FSS - 2))
     d.add(elm.Vdd().label('3.3 V', fontsize=FSS - 1))
     note(d, (XLW - 0.1, yw + 0.22), 'DQ, one bus', halign='right', fontsize=FSS - 2, color=SIG)
-    for x, name in ((-4.6, 'DS18B20\nprojector zone\n(near the exhaust)'), (-9.0, 'DS18B20\nPi / brick zone')):
+    for x, name in ((-4.6, 'DS18B20\nprojector zone\n(near the exhaust)'), (-9.0, 'DS18B20\nPi / power zone')):
         d.add(elm.Dot().at((x, yw)).color(SIG))
         sens = d.add(ic([pin('DQ', 'T', 'dq'), pin('VDD', 'R', 'vdd', pos=0.5, pin='3.3 V'), pin('GND', 'L', 'gnd', pos=0.5, pin='GND')],
                         size=(1.8, 1.2)).at((x, yw)).anchor('dq').label(name, loc='bottom', fontsize=FSS - 2, ofst=0.25))
@@ -336,7 +364,7 @@ def draw_lv_signals(path):
 
     def fan(y_tach, name):
         f = d.add(ic([pin('TACH', 'L', 'tach', pos=0.75), pin('PWM', 'L', 'pwm', pos=0.25),
-                      pin('+', 'R', 'pos', pos=0.75, pin='21 V rail'), pin('GND', 'R', 'gnd', pos=0.25, pin='GND rail')],
+                      pin('+', 'R', 'pos', pos=0.75, pin='24 V rail'), pin('GND', 'R', 'gnd', pos=0.25, pin='GND rail')],
                      size=(3.4, 2.4)).at((XR2, y_tach)).anchor('tach').label(name, fontsize=FSS - 1))
         xr = XR2 - 1.4
         d.add(elm.Dot().at((xr, y_tach)).color(SIG))
@@ -352,7 +380,7 @@ def draw_lv_signals(path):
     wire([(3.8, y(18) - 3.8 + 0.18), (3.8, pwm1[1]), pwm1])
     note(d, (3.9, (y(32) + pwm1[1]) / 2), 'PWM0', halign='left', fontsize=FSS - 2, color=SIG)
 
-    f2, tach2, pwm2 = fan(y(18) - 3.8, 'Fan 2\nPi / brick zone')
+    f2, tach2, pwm2 = fan(y(18) - 3.8, 'Fan 2\nPi / power zone')
     wire([(XRW, y(22)), (3.5, y(22)), (3.5, tach2[1]), tach2])
     # the PWM0 riser crosses fan 2's tach line: hop over it
     d.add(elm.Arc2(k=0.6).at((3.8, tach2[1] - 0.18)).to((3.8, tach2[1] + 0.18)).color(SIG))
@@ -361,7 +389,7 @@ def draw_lv_signals(path):
     wire([(XLW, y(33)), (x_hop, y(33)), (x_hop, y_under), (5.4, y_under), (5.4, pwm2[1]), pwm2])
     note(d, (5.5, (y_under + pwm2[1]) / 2), 'PWM1', halign='left', fontsize=FSS - 2, color=SIG)
     note(d, (f2.center[0], f2.center[1] - 1.9),
-         'PWM 25 kHz, 3.3 V logic (the fan pulls it up).\nTach: open collector, 2 pulses per rev.\nPull-ups to 3.3 V only, never the rail.')
+         'PWM 25 kHz, 3.3 V logic (the fan pulls it up).\nTach: open collector, 2 pulses per rev.\nPull-ups to 3.3 V only, never a rail.')
 
     note(d, (0.6, y_under - 2.2),
          'Pin numbers are the header\'s physical pins; GPIO numbers are BCM. HDMI from the Pi to the projector carries CEC, the default power control.\n'
