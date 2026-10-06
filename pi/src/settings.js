@@ -25,6 +25,8 @@ function matchesHash(password, stored) {
   return got.length === hash.length && timingSafeEqual(got, hash);
 }
 
+const GUESS_BURST = 5;
+
 const isHash = (v) => typeof v === "object" && v !== null && typeof v.scrypt === "string" && v.scrypt.includes(":");
 
 /** Durable atomic JSON write (temp file, fsync, rename, fsync of the folder). */
@@ -42,9 +44,14 @@ export class Settings extends EventEmitter {
   #sources;
   #atBoot; // values when the service started, to tell when a restart is due
   #verified = null; // sha256 of the last password that matched, and what it matched
+  #rejected = []; // sha256 of the last few wrong passwords: refused again without the work
+  #guesses = GUESS_BURST; // token bucket for passwords not seen before
+  #guessAt = 0;
+  #now;
 
-  constructor({ dir, env = process.env, ctx = defaultContext(), log = console }) {
+  constructor({ dir, env = process.env, ctx = defaultContext(), log = console, now = Date.now }) {
     super();
+    this.#now = now;
     this.#file = join(dir, "settings.json");
     this.#env = env;
     this.#ctx = ctx;
@@ -77,17 +84,30 @@ export class Settings extends EventEmitter {
     return isHash(p) || (typeof p === "string" && p !== "");
   }
 
-  /** Check a password against the current one. True when no password is set. */
+  /**
+   * Check a password against the current one. True when no password is set.
+   * Guessing is slowed down: a password not seen before costs a token (a burst of
+   * GUESS_BURST, then one per second), and a wrong one is remembered so that a
+   * page still polling with an old password neither spends tokens nor runs
+   * scrypt (~100 ms on a Pi 3, on the event loop) every time.
+   */
   verifyPassword(password) {
     const current = this.#values.password;
     if (!this.passwordSet) return true;
     if (typeof password !== "string") return false;
-    if (typeof current === "string") return timingSafeEqual(sha(password), sha(current));
-    // scrypt costs ~100 ms on a Pi 3; the page polls every 3 s, so remember the last match.
     const digest = sha(password);
-    if (this.#verified?.hash === current.scrypt && timingSafeEqual(this.#verified.digest, digest)) return true;
-    const ok = matchesHash(password, current);
-    if (ok) this.#verified = { hash: current.scrypt, digest };
+    const key = typeof current === "string" ? "plain" : current.scrypt;
+    // The page polls every 3 s, so remember the last match.
+    if (this.#verified?.hash === key && timingSafeEqual(this.#verified.digest, digest)) return true;
+    if (this.#rejected.some((r) => r.hash === key && timingSafeEqual(r.digest, digest))) return false;
+    const now = this.#now();
+    this.#guesses = Math.min(GUESS_BURST, this.#guesses + Math.max(0, now - this.#guessAt) / 1000);
+    this.#guessAt = now;
+    if (this.#guesses < 1) return false; // too many new guesses: refuse unchecked, even the right one, for a moment
+    this.#guesses -= 1;
+    const ok = typeof current === "string" ? timingSafeEqual(digest, sha(current)) : matchesHash(password, current);
+    if (ok) this.#verified = { hash: key, digest };
+    else this.#rejected = [{ hash: key, digest }, ...this.#rejected].slice(0, 8);
     return ok;
   }
 

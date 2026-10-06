@@ -54,7 +54,12 @@ fi
 
 echo "== root: grow partition 2 to $((new_root_end / 2048)) MiB from the start of the card"
 if [ "$new_root_end" -gt "$root_end" ]; then
-  parted -s "$disk" unit s resizepart 2 $((new_root_end - 1))
+  # sfdisk, not "parted -s resizepart": for a mounted partition parted asks
+  # "Partition ... is being used. Are you sure you want to continue?", and in
+  # script mode that question is a failure, which stopped everything here.
+  # The disk holds /, so sfdisk must not try to re-read the table (--no-reread,
+  # --no-tell-kernel); partx tells the kernel about the new size instead.
+  echo ", $((new_root_end - root_start))" | sfdisk --no-reread --no-tell-kernel -N 2 "$disk"
   partx -u "$disk" || true
   resize2fs "$root_dev"
 fi
@@ -85,12 +90,15 @@ mkdir -p /var/lib/videofx "$home/media" /var/lib/systemd/timesync
 # (GB-sized videos, SD wear) for no extra safety with that pattern.
 # commit=5: at most 5 s of un-fsynced changes lost. errors=remount-ro: stop
 # writing on corruption. Pass 2: fsck at boot (fsck.repair=yes on cmdline.txt).
+# nofail: a data partition that won't mount must not drop a headless Pi into
+# emergency mode with no SSH. The player then does not start (RequiresMountsFor),
+# rather than run with its settings on the throw-away overlay.
 sed -i '/videofx-data\|\/srv\/videofx/d' /etc/fstab
 cat >>/etc/fstab <<FSTAB
-LABEL=videofx-data /srv/videofx ext4 defaults,noatime,commit=5,errors=remount-ro,x-systemd.device-timeout=30s 0 2
-/srv/videofx/state /var/lib/videofx none bind,x-systemd.requires-mounts-for=/srv/videofx 0 0
-/srv/videofx/media $home/media none bind,x-systemd.requires-mounts-for=/srv/videofx 0 0
-/srv/videofx/timesync /var/lib/systemd/timesync none bind,x-systemd.requires-mounts-for=/srv/videofx 0 0
+LABEL=videofx-data /srv/videofx ext4 defaults,nofail,noatime,commit=5,errors=remount-ro,x-systemd.device-timeout=30s 0 2
+/srv/videofx/state /var/lib/videofx none bind,nofail,x-systemd.requires-mounts-for=/srv/videofx 0 0
+/srv/videofx/media $home/media none bind,nofail,x-systemd.requires-mounts-for=/srv/videofx 0 0
+/srv/videofx/timesync /var/lib/systemd/timesync none bind,nofail,x-systemd.requires-mounts-for=/srv/videofx 0 0
 FSTAB
 systemctl daemon-reload
 

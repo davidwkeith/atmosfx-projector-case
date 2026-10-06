@@ -2,7 +2,7 @@
 process.env.TZ = "America/Los_Angeles";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { DEFAULT_SCHEDULE, Scheduler, eventsForDay, nextEvent, parseSchedule, sunset } from "../src/schedule.js";
+import { DEFAULT_SCHEDULE, Scheduler, eventsForDay, missedEvent, nextEvent, parseSchedule, sunset } from "../src/schedule.js";
 
 const week = (on, off) => ({
   enabled: true,
@@ -219,5 +219,38 @@ describe("clock gating (no RTC)", () => {
     synced = false;
     await vi.advanceTimersByTimeAsync(2 * 3600_000);
     expect(calls).toEqual([]);
+  });
+});
+
+describe("boot catch-up: an event that passed while the power was out", () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+  const at = (h, m = 0) => new Date(2026, 9, 31, h, m).getTime();
+  const make = (clockOk = () => true) =>
+    new Scheduler({ getSchedule: () => week("18:00", "23:00"), getGeo: () => null, setPower: () => {}, clockOk, log: { info() {}, warn() {}, error() {} } });
+
+  it("power cut across 18:00 (last change: off at 23:00 the night before): turn on", () => {
+    vi.setSystemTime(at(19, 30));
+    const last = make().lastEvent();
+    expect(local(new Date(last.at))).toBe("2026-10-31 18:00");
+    expect(missedEvent(last, new Date(2026, 9, 30, 23, 0, 1).getTime(), false)).toMatchObject({ on: true, label: "sat 18:00" });
+  });
+
+  it("a manual change after the last event still holds across a reboot", () => {
+    vi.setSystemTime(at(19, 30));
+    // switched off by hand at 19:00, power blip at 19:20
+    expect(missedEvent(make().lastEvent(), at(19, 0), false)).toBeNull();
+  });
+
+  it("nothing to do when the state already matches, with no schedule, or before the clock is known", () => {
+    vi.setSystemTime(at(19, 30));
+    expect(missedEvent(make().lastEvent(), 0, true)).toBeNull();
+    expect(missedEvent(null, 0, false)).toBeNull();
+    expect(make(() => false).lastEvent()).toBeNull();
+  });
+
+  it("a missed off: a cut across 23:00 does not leave it on all night", () => {
+    vi.setSystemTime(new Date(2026, 10, 1, 0, 30));
+    expect(missedEvent(make().lastEvent(), at(18, 0, 1), true)).toMatchObject({ on: false });
   });
 });

@@ -106,6 +106,7 @@ const commands = {
   },
   get_property(name) {
     if (name === "vf") return vf;
+    if (name === "idle-active") return pos < 0;
     return props[name];
   },
   vf(op, value) {

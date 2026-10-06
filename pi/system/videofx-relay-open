@@ -1,0 +1,12 @@
+#!/bin/sh
+# Run by videofx-player.service (ExecStopPost) after it stops for any reason:
+# crash, kill, watchdog, update. Drives the relay line to "open", so a
+# relay-switched projector is never left powered with nothing watching its
+# temperature. The service does the same itself on a clean stop, and config.txt
+# does it at boot (gpio=27=op,dh). With no relay fitted this changes nothing: the
+# pin is set aside for the relay either way.
+pin=${VIDEOFX_RELAY_GPIO:-27}
+case "$pin" in '' | *[!0-9]*) exit 0 ;; esac
+case "${VIDEOFX_RELAY_ACTIVE_LOW:-true}" in false | 0) level=dl ;; *) level=dh ;; esac
+command -v pinctrl >/dev/null 2>&1 || exit 0
+pinctrl set "$pin" op "$level" || true

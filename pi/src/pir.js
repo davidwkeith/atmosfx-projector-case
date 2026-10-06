@@ -19,12 +19,14 @@ export function gpiomonMajor(versionText) {
  * ("GPIO17"), which works on every Pi including the 5, and debounces in the kernel.
  * libgpiod 1.x (bookworm) needs chip + offset; on the 3, 4 and Zero 2 W the
  * header is gpiochip0 with BCM numbering. Debounce is also done in software.
+ * -b: 1.x only line-buffers its output when asked; without it, events sit in a
+ * 4 KiB pipe buffer and never arrive.
  */
 export function pirArgs(major, pin, debounceMs) {
   if (major >= 2) {
     return ["--consumer=videofx-pir", "--edges=both", "--bias=pull-down", `--debounce-period=${debounceMs}ms`, "--format=%e", `GPIO${pin}`];
   }
-  return ["-B", "pull-down", "-r", "-f", "-F", "%e", "gpiochip0", String(pin)];
+  return ["-b", "-B", "pull-down", "-r", "-f", "-F", "%e", "gpiochip0", String(pin)];
 }
 
 /** Emits "change" (occupied: boolean) on debounced edges, and "motion" on rising ones. */

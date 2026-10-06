@@ -74,7 +74,7 @@ export class Player extends EventEmitter {
     this.#mpv.on("failed", (why) => {
       if (!this.#on) return;
       this.#on = false;
-      this.#store.save(false);
+      this.#save(false);
       this.#blank();
       this.emit("failed", why);
     });
@@ -119,25 +119,54 @@ export class Player extends EventEmitter {
       const problem = this.#preflight(this.#content());
       if (problem) {
         this.#log.error(`Cannot play: ${problem}`);
-        this.#store.save(false);
+        this.#save(false);
         this.emit("failed", problem);
         return false;
       }
       this.#on = true;
-      this.#store.save(true);
+      this.#save(true);
       if (this.#argsPending) {
         // Audio device / connector / extra args changed: new mpv, then #onReady plays.
         this.#argsPending = false;
         this.#mpv.restart();
       } else if (this.#mpv.ready) {
         this.#play();
+      } else {
+        // Not running (it gave up after repeated crashes): try again; #onReady plays.
+        this.#mpv.start?.();
       }
       return true;
     }
     this.#on = false;
-    this.#store.save(false);
+    this.#save(false);
     this.#stop();
     return false;
+  }
+
+  // Remember the state for the next boot. A failed write (full or read-only disk)
+  // must never stop a power change, least of all switching off.
+  #save(on) {
+    try {
+      this.#store.save(on);
+    } catch (err) {
+      this.#log.error(`Could not save the power state: ${err.message}`);
+    }
+  }
+
+  /**
+   * Resolves once everything sent to mpv so far has been handled and, after a
+   * stop, mpv is idle and has let go of the screen (bounded: never hangs a
+   * power-off on a stuck mpv).
+   */
+  async stopped({ timeoutMs = 2000, pollMs = 100 } = {}) {
+    const sleep = (ms) => new Promise((r) => this.#setTimer(r, ms));
+    const deadline = this.#now() + timeoutMs;
+    await Promise.race([this.#queue, sleep(timeoutMs)]);
+    while (this.#mpv.ready && !this.#on && this.#now() < deadline) {
+      const idle = await this.#mpv.command("get_property", "idle-active").catch(() => true);
+      if (idle) break;
+      await sleep(pollMs);
+    }
   }
 
   /** Content changed (playlist saved, mode or clips changed): apply it now if playing. */
