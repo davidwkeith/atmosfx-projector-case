@@ -37,8 +37,8 @@ throw_ratio = 0.95; // throw distance / image width: from the manual's image siz
 aspect = 16/9;
 port_depth = 15;    // HDMI + power plugs on the projector's rear face: right-angle plugs with slack (a straight HDMI plug needs ~40)
 lens_offset = 0;    // vertical image offset: 0 = image centred on the lens axis, 1 = image bottom on the axis
-pane_w = 127;   // acrylic pane: 4 x 5 in (127 x 101.6 mm), a stock size; the window opening is the pane minus lap
-pane_h = 101.6;
+pane_w = 127;   // pane: 3.5 x 5 in (127 x 88.9 mm) picture-frame glazing, the smallest stock size the light cone clears; the window opening is the pane minus lap
+pane_h = 88.9;
 pane_top_clear = 7;  // pane top this far below the base rim: the window sits as high as it can, for upward tilt
 mount_x = 19;   // 1/4-20 socket offset from projector centre (+ = right): scaled off the underside photo, measure it
 mount_y = -4;   // + = toward rear: scaled off the underside photo, measure it
@@ -48,7 +48,7 @@ ball_head_h = 40;  // height of your ball head, base to mounting stud
 pivot_h = 25;      // ball centre above the head's base (aim pivot)
 aim_max = 15;      // tilt range the case must clear (check_clash.sh sweeps it)
 pan_max = 10;      // pan range the case must clear: the light cone clips the window frame past this at throw_ratio 0.95 (turn the case for more)
-cone_tilt = 12;     // light-cone check: the image must clear the window, frame and visor at +/- this tilt
+cone_tilt = 11;     // light-cone check: the image must clear the window, frame and visor at +/- this tilt
 aim_combo = 8;     // tilt while panned by pan_max (corners): the rear plugs reach the divider past this; more would lengthen base_front past the 210 mm bed axis
 ped_top = 30;      // pedestal top height above floor
 insert_d = 8.2;    // 1/4-20 heat-set insert hole; check your insert's datasheet
@@ -67,7 +67,7 @@ top_air  = 25;
 front_gap = 30;      // lens-down tilt swings the top front corner forward (more so panned, now the body is 165 wide); aim-sweep and light-cone checks size this
 rear_gap  = 34;      // lens-up tilt swings the rear plugs back (port_depth) toward the divider; aim-sweep sizes this
 pi_zone_d = 85;    // Pi compartment depth: the wall-warts hang 68 off the rear wall (rcpt_back + plate + wart_t, asserted) and the shelf's low-voltage side needs wiring room
-pane_t = 3.2;      // acrylic thickness (1/8 in); photo-frame glazing is often thinner
+pane_t = 2;        // pane thickness: 2 mm (typical frame glazing; measure yours, 1/8 in = 3.2 also fits)
 lap = 8;           // pane overlap past the window opening
 boss_h = 4;
 
