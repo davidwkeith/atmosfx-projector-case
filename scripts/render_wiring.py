@@ -10,11 +10,11 @@
 Three drawings, matching the sections of docs/WIRING.md:
 
     wiring-hv.svg          mains: outlet, cord, gland, live-only fuse, two NEMA 5-15R receptacles, both wall-warts
-    wiring-lv-power.svg    the two DC rails: a fuse each, Wago rails, relay contact, projector, DigiAMP+, fans
-    wiring-lv-signals.svg  the Pi header: every GPIO used, pull-ups, the IR LED driver
+    wiring-lv-power.svg    the two DC rails: a fuse each, Wago rails, relay contact, projector, DigiAMP+
+    wiring-lv-signals.svg  the Pi header: every GPIO used, the IR LED driver
 
 Ratings are the examples from WIRING.md "Fuse sizing" (stock 21 V 2.28 A wall-wart,
-24 V 2.5 A second one); size yours from your own labels. Keep this file in step with
+12-24 V 2.5 A second one); size yours from your own labels. Keep this file in step with
 WIRING.md, pi/README.md ("GPIO pins and wiring") and BOM.md.
 """
 from pathlib import Path
@@ -143,7 +143,7 @@ def draw_hv(path):
             note(d, (w.center[0], w.center[1] - 1.7), note_text)
         return w
     w1 = wart(r1, yE - 2.0, 'Stock wall-wart\nunmodified\n21 V 2.28 A out', 'MX48CC-210228US\ncentre +, 2-pin,\ncaptive DC cord')
-    w2 = wart(r2, yE - 2.0, 'Second wall-wart\nunmodified\n24 V, 2.5-3 A out\nfor the Pi, DigiAMP+, fans')
+    w2 = wart(r2, yE - 2.0, 'Second wall-wart\nunmodified\n12-24 V, 2.5-3 A out\nfor the Pi + DigiAMP+')
 
     # the barrier and its notch; both DC cords cross through it
     x_bar = w2.pos[0] + 1.6
@@ -152,7 +152,7 @@ def draw_hv(path):
     note(d, (x_bar, 3.7), 'barrier')
     y_w2bot = w2.center[1] - 1.3
     note(d, (x_bar + 0.15, y_w2bot - 1.6), 'notch at the\nbarrier foot', halign='left')
-    # second wall-wart's cord: 24 V, straight out
+    # second wall-wart's cord: 12-24 V, straight out
     y24p, y24n = w2.pos[1], w2.neg[1]
     d.add(elm.Line().at(w2.pos).to((x_bar + 1.2, y24p)).color(POS))
     d.add(elm.Line().at(w2.neg).to((x_bar + 1.2, y24n)).color(NEG))
@@ -164,8 +164,8 @@ def draw_hv(path):
     d.add(elm.Line().at(w1.neg).to((w1.neg[0] + 0.9, w1.neg[1])).color(NEG))
     d.add(elm.Line().to((w1.neg[0] + 0.9, y21n)).color(NEG))
     d.add(elm.Line().to((x_bar + 1.2, y21n)).color(NEG))
-    note(d, (x_bar + 1.3, y24p), '24 V +', halign='left', color=POS, fontsize=FS)
-    note(d, (x_bar + 1.3, y24n), '24 V -', halign='left', color=NEG, fontsize=FS)
+    note(d, (x_bar + 1.3, y24p), '12-24 V +', halign='left', color=POS, fontsize=FS)
+    note(d, (x_bar + 1.3, y24n), '12-24 V -', halign='left', color=NEG, fontsize=FS)
     note(d, (x_bar + 1.3, y21p), '21 V +', halign='left', color=POS, fontsize=FS)
     note(d, (x_bar + 1.3, y21n), '21 V -', halign='left', color=NEG, fontsize=FS)
     note(d, (x_bar + 1.3, y21n - 1.9), 'captive DC cords, cut and fused\non the low-voltage side\n(wiring-lv-power.svg)', halign='left')
@@ -190,7 +190,7 @@ def draw_lv_power(path):
     d.add(elm.Line().at(w1.pos).right(0.6).color(POS))
     f1 = d.add(elm.Fuse().right().color(POS)
                .label('F1  21 V rail, blade (ATO)\nnext size above the 2.28 A output\nexample: 3 A', loc='top', fontsize=FSS, ofst=0.15))
-    x_bp = f1.end[0] + 2.4   # 24 V + rail
+    x_bp = f1.end[0] + 2.4   # second + rail
     x_bn = x_bp + 1.6        # shared - rail
     x_load = x_bn + 8.0
     yp = f1.end[1]
@@ -206,7 +206,7 @@ def draw_lv_power(path):
 
     # the shared - rail: both wall-warts' minuses, every load's return
     y_top = w1.neg[1] + 0.3
-    y_bot = -13.4
+    y_bot = -10.6
     d.add(elm.Line().at(w1.neg).to((x_bn, w1.neg[1])).color(NEG))
     d.add(elm.Dot().at((x_bn, w1.neg[1])).color(NEG))
     d.add(elm.Line().at((x_bn, y_top)).to((x_bn, y_bot)).color(NEG).linewidth(3))
@@ -216,20 +216,20 @@ def draw_lv_power(path):
     note(d, (proj.neg[0] - 0.3, proj.neg[1] - 0.3), '- straight through, 18 AWG', halign='right', fontsize=FSS - 2)
     note(d, (x_bn + 0.3, w1.neg[1] - 1.1), 'Wago 221, - rail\nboth minuses joined: the HDMI shield\nties the grounds anyway', halign='left', color=NEG)
 
-    # second wall-wart: 24 V for the Pi, DigiAMP+ and fans
+    # second wall-wart: 12-24 V for the Pi and DigiAMP+
     w2 = d.add(ic([pin('-', 'R', 'neg', pos=0.72), pin('+', 'R', 'pos', pos=0.28)],
                   size=(3.0, 2.4)).at((0, -3.6)).anchor('neg')
-               .label('Second wall-wart\n24 V, 2.5-3 A', fontsize=FSS))
-    note(d, (w2.center[0], w2.center[1] - 1.6), 'same treatment; fans must\nmatch this rail\'s voltage')
+               .label('Second wall-wart\n12-24 V, 2.5-3 A', fontsize=FSS))
+    note(d, (w2.center[0], w2.center[1] - 1.6), 'same treatment')
     d.add(elm.Line().at(w2.neg).to((x_bn, w2.neg[1])).color(NEG))
     d.add(elm.Dot().at((x_bn, w2.neg[1])).color(NEG))
     d.add(elm.Line().at(w2.pos).right(0.6).color(POS))
     f2 = d.add(elm.Fuse().right().color(POS)
-               .label('F2  24 V rail, blade (ATO)\n<= wall-wart output, >= 1.25x load\nexample: 2.5 A', loc='bottom', fontsize=FSS, ofst=0.15))
+               .label('F2  12-24 V rail, blade (ATO)\n<= wall-wart output, >= 1.25x load\nexample: 2.5 A', loc='bottom', fontsize=FSS, ofst=0.15))
     d.add(elm.Line().at(f2.end).to((x_bp, f2.end[1])).color(POS))
     d.add(elm.Dot().at((x_bp, f2.end[1])).color(POS))
     d.add(elm.Line().at((x_bp, f2.end[1])).to((x_bp, y_bot)).color(POS).linewidth(3))
-    note(d, (x_bp - 0.3, f2.end[1] + 0.4), 'Wago 221\n24 V + rail', halign='right', color=POS)
+    note(d, (x_bp - 0.3, f2.end[1] + 0.4), 'Wago 221\n12-24 V + rail', halign='right', color=POS)
     note(d, ((x_bp + x_bn) / 2 + 1.5, y_bot - 0.4), '18 AWG from the wall-warts; each branch in its own gauge')
 
     # --- DigiAMP+ branch; the DigiAMP+ powers the Pi over the header; speakers out
@@ -259,23 +259,6 @@ def draw_lv_power(path):
     d.add(elm.Line().at(amp.spkn).to(spk.in2).color(NEG))
     note(d, (amp.spkp[0] + 1.2, amp.spkn[1] - 0.8),
          '16 AWG zip cord, stripe to +,\nout through the floor chimney', halign='left')
-
-    # --- fans: 24 V parts on the 24 V rail
-    for i, (yf, name) in enumerate(((-10.6, 'Fan 1\nprojector zone'), (-13.0, 'Fan 2\nPi / power zone'))):
-        d.add(elm.Dot().at((x_bp, yf)).color(POS))
-        d.add(elm.Line().at((x_bp, yf)).to((x_load, yf)).color(POS))
-        fan = d.add(ic([pin('+', 'L', 'pos', pos=0.85), pin('GND', 'L', 'gnd', pos=0.62),
-                        pin('PWM', 'L', 'pwm', pos=0.38), pin('TACH', 'L', 'tach', pos=0.15)],
-                       size=(4.0, 2.4)).at((x_load, yf)).anchor('pos')
-                    .label(name, fontsize=FSS))
-        d.add(elm.Dot().at((x_bn, fan.gnd[1])).color(NEG))
-        d.add(elm.Line().at((x_bn, fan.gnd[1])).to(fan.gnd).color(NEG))
-        d.add(elm.Line().at(fan.pwm).left(0.8).color(SIG))
-        d.add(elm.Line().at(fan.tach).left(0.8).color(SIG))
-        note(d, (fan.pwm[0] - 0.9, (fan.pwm[1] + fan.tach[1]) / 2), 'to the Pi\n(signals diagram)', halign='right', color=SIG, fontsize=FSS - 2)
-        note(d, (fan.center[0] + 2.2, fan.center[1]), '40 x 40 x 10 mm\n24 V 4-pin PWM\n(right wall)', halign='left')
-        if i == 0:
-            note(d, (x_bn + 0.3, yf + 0.45), '24 AWG. 24 V fans on the 24 V rail: a 12 V fan would burn.\nCommon ground with the Pi.', halign='left')
     d.save(str(path))
 
 
@@ -328,13 +311,11 @@ def draw_lv_signals(path):
 
     # IR LED driver: GPIO16 (pin 36, right column; GPIO22 is the DigiAMP+ mute line) -> R1 -> Q1 base;
     # 5 V -> D1 -> R2 -> collector; emitter -> GND. The wire comes round under the header to the
-    # driver on the left, hopping the GPIO13 (PWM1) run on the way up.
+    # driver on the left.
     yb = y(11) - 5.6
-    y_ir = y(39) - 1.5               # below the PWM1 run under the header
-    x_ir = -3.0                      # left of the pin labels and the GPIO13 riser at -2.6
-    wire([(XRW, y(36)), (6.3, y(36)), (6.3, y_ir), (x_ir, y_ir), (x_ir, y(37) - 0.18)])
-    d.add(elm.Arc2(k=0.6).at((x_ir, y(37) - 0.18)).to((x_ir, y(37) + 0.18)).color(SIG))   # hop the 1-wire bus
-    wire([(x_ir, y(37) + 0.18), (x_ir, yb), (-4.6, yb)])
+    y_ir = y(39) - 1.0               # under the header
+    x_ir = -3.0                      # left of the pin labels
+    wire([(XRW, y(36)), (6.3, y(36)), (6.3, y_ir), (x_ir, y_ir), (x_ir, yb), (-4.6, yb)])
     note(d, (XRW + 0.1, y(36) + 0.2), 'to the IR LED driver (left)', halign='left', fontsize=FSS - 2, color=SIG)
     d.add(elm.Resistor().at((-4.6, yb)).left().length(1.2).color(SIG).label('R1 1 k', fontsize=FSS - 1))
     q1 = d.add(elm.BjtNpn(circle=True).right().reverse().at((-5.8, yb)).anchor('base')
@@ -347,21 +328,6 @@ def draw_lv_signals(path):
     d.add(elm.Vdd().label('5 V', fontsize=FSS - 1))
     note(d, (q1.collector[0] - 0.8, yb + 2.2), 'the LED runs on Q1:\na GPIO pin sources\n16 mA at most', halign='right')
 
-    # 1-wire bus off GPIO26 with one 4.7 k pull-up and a DS18B20 per zone
-    yw = y(37)
-    x_hop = -2.6                        # the GPIO13 wire crosses here on its way under the header
-    wire([(XLW, yw), (x_hop + 0.18, yw)])
-    d.add(elm.Arc2(k=0.6).at((x_hop + 0.18, yw)).to((x_hop - 0.18, yw)).color(SIG))
-    wire([(x_hop - 0.18, yw), (-9.0, yw)])
-    d.add(elm.Dot().at((-3.8, yw)).color(SIG))
-    d.add(elm.Resistor().at((-3.8, yw)).up().length(1.1).color(SIG).label('R3 4.7 k\none per bus', loc='left', fontsize=FSS - 2))
-    d.add(elm.Vdd().label('3.3 V', fontsize=FSS - 1))
-    note(d, (XLW - 0.1, yw + 0.22), 'DQ, one bus', halign='right', fontsize=FSS - 2, color=SIG)
-    for x, name in ((-4.6, 'DS18B20\nprojector zone\n(near the exhaust)'), (-9.0, 'DS18B20\nPi / power zone')):
-        d.add(elm.Dot().at((x, yw)).color(SIG))
-        sens = d.add(ic([pin('DQ', 'T', 'dq'), pin('VDD', 'R', 'vdd', pos=0.5, pin='3.3 V'), pin('GND', 'L', 'gnd', pos=0.5, pin='GND')],
-                        size=(1.8, 1.2)).at((x, yw)).anchor('dq').label(name, loc='bottom', fontsize=FSS - 2, ofst=0.25))
-
     # ---------------- right side (even pins)
     rx = d.add(ic([pin('OUT', 'L', 'out'), pin('VS', 'R', 'vs', pos=0.75, pin='3.3 V, pin 17'),
                    pin('GND', 'R', 'gnd', pos=0.25, pin='GND')], size=(3.6, 1.4))
@@ -369,38 +335,9 @@ def draw_lv_signals(path):
     note(d, (rx.center[0], rx.center[1] - 1.05), 'optional: learns the remote\'s power code')
     wire([(XRW, y(16)), rx.out])
 
-    def fan(y_tach, name):
-        f = d.add(ic([pin('TACH', 'L', 'tach', pos=0.75), pin('PWM', 'L', 'pwm', pos=0.25),
-                      pin('+', 'R', 'pos', pos=0.75, pin='24 V rail'), pin('GND', 'R', 'gnd', pos=0.25, pin='GND rail')],
-                     size=(3.4, 2.4)).at((XR2, y_tach)).anchor('tach').label(name, fontsize=FSS - 1))
-        xr = XR2 - 1.4
-        d.add(elm.Dot().at((xr, y_tach)).color(SIG))
-        wire([(xr, y_tach), f.tach])
-        d.add(elm.Resistor().at((xr, y_tach)).up().length(1.0).color(SIG).label('10 k', loc='right', fontsize=FSS - 2))
-        d.add(elm.Vdd().label('3.3 V', fontsize=FSS - 1))
-        d.add(elm.Resistor().at((XR2 - 1.6, f.pwm[1])).right().length(1.6).color(SIG).label('1 k', fontsize=FSS - 2))
-        return f, (xr, y_tach), (XR2 - 1.6, f.pwm[1])
-
-    f1, tach1, pwm1 = fan(y(18), 'Fan 1\nprojector zone')
-    wire([(XRW, y(18)), tach1])
-    wire([(XRW, y(32)), (3.8, y(32)), (3.8, y(18) - 3.8 - 0.18)])
-    wire([(3.8, y(18) - 3.8 + 0.18), (3.8, pwm1[1]), pwm1])
-    note(d, (3.9, (y(32) + pwm1[1]) / 2), 'PWM0', halign='left', fontsize=FSS - 2, color=SIG)
-
-    f2, tach2, pwm2 = fan(y(18) - 3.8, 'Fan 2\nPi / power zone')
-    wire([(XRW, y(22)), (3.5, y(22)), (3.5, tach2[1]), tach2])
-    # the PWM0 riser crosses fan 2's tach line: hop over it
-    d.add(elm.Arc2(k=0.6).at((3.8, tach2[1] - 0.18)).to((3.8, tach2[1] + 0.18)).color(SIG))
-    # GPIO13 is on the odd (left) column: its wire goes under the header to the right side
-    y_under = y(39) - 1.0
-    wire([(XLW, y(33)), (x_hop, y(33)), (x_hop, y_under), (5.4, y_under), (5.4, pwm2[1]), pwm2])
-    note(d, (5.5, (y_under + pwm2[1]) / 2), 'PWM1', halign='left', fontsize=FSS - 2, color=SIG)
-    note(d, (f2.center[0], f2.center[1] - 1.9),
-         'PWM 25 kHz, 3.3 V logic (the fan pulls it up).\nTach: open collector, 2 pulses per rev.\nPull-ups to 3.3 V only, never a rail.')
-
-    note(d, (0.6, y_under - 2.2),
+    note(d, (0.6, y_ir - 1.4),
          'Pin numbers are the header\'s physical pins; GPIO numbers are BCM. HDMI from the Pi to the projector carries CEC, the default power control.\n'
-         'Service pins: PIR 17, relay 27, IR LED 16, IR receiver 23, fan PWM 12 / 13, fan tach 24 / 25, 1-wire 26. GPIO 22 is the DigiAMP+ mute line.')
+         'Service pins: PIR 17, relay 27, IR LED 16, IR receiver 23. GPIO 22 is the DigiAMP+ mute line.')
     d.save(str(path))
 
 
