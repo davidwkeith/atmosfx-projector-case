@@ -15,7 +15,7 @@ make parts                    # all STLs -> stl/ (gitignored). OPENSCAD=/path/to
 scripts/check_clash.sh        # interference checks incl. cover lift-off path, lid tiles, the projector + plug aim sweep and the light cone. Must all say ok. Needs python3
 # docs/PRINTING.md has sliced times (PrusaSlicer CLI with the stock MK3S profiles); print fit_coupon first
 scripts/render_previews.sh    # regenerate preview/*.png (needs a GL context; xvfb-run on headless Linux)
-scripts/publish.sh            # create a PRIVATE GitHub repo with gh and push
+scripts/publish.sh            # create the GitHub repo with gh and push (one-time bootstrap)
 pi/image/build.sh [--generic]  # Pi image via pi-gen in Docker (~1 h). --generic = the public, secret-free image CI attaches to releases
 ```
 

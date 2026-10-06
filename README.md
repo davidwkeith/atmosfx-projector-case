@@ -96,4 +96,4 @@ Mains is inside a printed box in this design. Feed it from a GFCI outlet, fuse t
 
 ## License
 
-Designs and documentation: CC BY-SA 4.0 (see `LICENSE`). Software in `pi/`: MIT (see `pi/LICENSE`).
+Designs, STLs and documentation: [CERN Open Hardware Licence Version 2 - Strongly Reciprocal](LICENSE) (CERN-OHL-S-2.0). Software in `pi/`: [MIT](pi/LICENSE).

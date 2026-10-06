@@ -93,8 +93,6 @@ Imager's **Use custom** button offers no first-boot options for a plain image fi
 
 The service runs as the baked-in `videofx` user. Name your Imager user `videofx` to keep one account (Imager then sets its password and SSH key), or pick any other name; both get sudo.
 
-While the repository is private, GitHub serves the assets only when logged in, so Imager cannot fetch them: download the image from the release page and use the **Use custom** route above.
-
 **Option B: build the image yourself.** Your user, password, SSH key and Wi-Fi are baked in, so there is no first-boot setup. Never share this image. You need Docker ([Docker Desktop](https://docs.docker.com/desktop/) on a Mac), git, rsync, uuidgen and node.
 
 ```sh
@@ -199,7 +197,7 @@ sudo videofx-update --rollback                # back to the previous version
   5. With `--os`, runs `apt full-upgrade`.
   6. Switches maintenance off and reboots.
   7. A failed update leaves maintenance mode on and doesn't retry; fix it or `--rollback`.
-- **Private repo:** until it's public, put a GitHub token with read access to the repo's contents (a fine-grained token, "Contents: read") in `/srv/videofx/update/github-token`, mode 600, owned by root. It lives on the data partition so it survives the read-only root. Or use `--tarball`.
+- **Private fork:** if your copy of the repo is private, put a GitHub token with read access to its contents (a fine-grained token, "Contents: read") in `/srv/videofx/update/github-token`, mode 600, owned by root. It lives on the data partition so it survives the read-only root. Or use `--tarball`.
 - **Making a release:** bump the version in `pi/package.json`, tag `vX.Y.Z` and push the tag. CI (`.github/workflows/build.yml`) attaches the STLs, `videofx-pi-X.Y.Z.tar.gz` (`pi/tools/make-release.sh`), the public image with its `.sha256`, and `videofx-imager.json` (`pi/tools/imager-json.sh`). The image job runs on GitHub's arm64 runner and takes about an hour. By hand: `pi/tools/make-release.sh && gh release create vX.Y.Z pi/dist/videofx-pi-X.Y.Z.tar.gz`. The page footer shows the version and sha, and "update available" when the last `--check` found a newer release.
 
 ### Backup and restore
