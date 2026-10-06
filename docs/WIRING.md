@@ -6,11 +6,13 @@ This case is rain-shedding and ventilated, not waterproof, and not certified for
 
 ## Overview
 
-One diagram per side of the barrier on the power shelf: [high voltage](#high-voltage-ac-side) (mains, left of the barrier) and [low voltage](#low-voltage-side) (right of the barrier and down to the sled, drawn as the 21 V rail and then the Pi's signals). Red edges are live or +, grey are neutral or -, green is earth, dotted are signals. Pin numbers are the Pi header's physical pins; GPIO assignments and the reasoning behind them are in `pi/README.md` ("GPIO pins and wiring").
+One diagram per side of the barrier on the power shelf: [high voltage](#high-voltage-ac-side) (mains, left of the barrier) and [low voltage](#low-voltage-side) (right of the barrier and down to the sled, drawn as the 21 V rail and then the Pi's signals). Each comes twice: a schematic (`docs/wiring-*.svg`, drawn by `scripts/render_wiring.py` with [Schemdraw](https://schemdraw.readthedocs.io/); click one for full size) and a flowchart of the same connections. Red is live or +, grey is neutral or -, green is earth, blue is a signal. Pin numbers are the Pi header's physical pins; GPIO assignments and the reasoning behind them are in `pi/README.md` ("GPIO pins and wiring"). The fuse values on the schematics are the examples from "Fuse sizing" below; size yours from your own labels.
 
 ## High voltage: AC side
 
 Everything left of the barrier on the power shelf. Nothing but the brick's DC cord crosses the barrier, through the notch at its foot.
+
+![AC side schematic: GFCI outlet, outdoor cord through the PG9 cord grip, live-only time-delay fuse, rewireable IEC connector into the unmodified brick, DC out through the barrier notch](wiring-hv.svg)
 
 ```mermaid
 flowchart LR
@@ -53,6 +55,8 @@ flowchart LR
 Right of the barrier, and down to the Pi sled.
 
 ### 21 V rail
+
+![21 V rail schematic: brick, main blade fuse, Wago + and - rails, optional branch fuses, relay contact in the projector's + line, Amp4 feeding the Pi and speakers, two 24 V fans](wiring-lv-power.svg)
 
 ```mermaid
 flowchart TB
@@ -105,6 +109,8 @@ The relay is only needed if the projector lacks HDMI-CEC (see `pi/README.md`, "P
 Use lever-nut connectors (e.g. Wago 221) for the splice so it can be undone. Pass low-voltage wires from the shelf to the Pi through the wire slot at the back of the shelf, never across the barrier's AC side.
 
 ### Pi header signals
+
+![Pi header schematic: the 40-pin header with the PIR, relay coil, IR LED driver, 1-wire bus and the two fans' PWM and tach lines on their GPIO pins, with pull-ups and the transistor](wiring-lv-signals.svg)
 
 ```mermaid
 flowchart LR
