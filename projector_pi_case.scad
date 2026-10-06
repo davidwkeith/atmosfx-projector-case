@@ -1,11 +1,11 @@
 // Ground-standing projector + Raspberry Pi 3 case: rain-proof (not sealed), ventilated
 // v0.8 - AC gland moved above the shelf (AC side of the barrier); barrier clears the brick; keyholes lift off;
 //        45 deg scarf joint at the lid seam; flat gasket land under the sloped roof;
-//        audio: HiFiBerry Amp4 HAT on the Pi (also powers it), speaker wire out through a floor chimney;
+//        audio: Raspberry Pi DigiAMP+ HAT on the Pi (also powers it), speaker wire out through a floor chimney;
 //        Pi rides on a removable sled (Pi 3B/3B+, 4B, 5, Zero 2 W), shelf raised to clear the Pi 5 stack;
 //        PIR motion sensor in the rear wall under a rain hood, for startle scares
 // v0.7 - ONE AC cord in (rear gland) -> DC brick INSIDE on the power shelf, walled off from the low-voltage side;
-//        a wire splice feeds the projector's barrel plug and the Amp4 HAT (which powers the Pi).
+//        a wire splice feeds the projector's barrel plug and the DigiAMP+ HAT (which powers the Pi).
 // v0.4 - quick-aim hatch on the left (-X) wall: reach the ball head with the lid on, tool-free
 // sized for a ~171x134x75 mm mini projector (0.72 kg) on an internal ball head
 // Print PETG/ASA. Lid prints roof-down. Base+lid split front/rear (MK3S bed 250x210x210); front pieces lie flat with X along the 250 mm axis.
@@ -93,9 +93,9 @@ barrier_h = 40;     // AC/low-voltage barrier above the shelf; must exceed brick
 spk_x = 58;         // speaker-wire chimney: beside the Pi's USB end, clear of the drains
 spk_d = 12;         // bore: two runs of 16 AWG zip cord
 spk_collar = 15;    // chimney height above the floor, so floor water can't reach the bore
-pi_stack_h = 40;    // Pi 3/4: board bottom to top of the Amp4 HAT (assumption: check yours)
+pi_stack_h = 40;    // Pi 3/4: board bottom to top of the DigiAMP+ HAT (assumption: check yours)
 pi5_stack_h = 50;   // Pi 5 with Active Cooler under the HAT (taller header)
-zero_stack_h = 30;  // Zero 2 W + Amp4
+zero_stack_h = 30;  // Zero 2 W + DigiAMP+
 zero_hat_z = 13;    // Zero 2 W: HAT underside above the Zero's board bottom (sets the HAT support posts)
 
 /* [Motion sensor (rear wall)] */
@@ -392,7 +392,7 @@ module ledge(sx) {
 }
 
 // Power shelf above the Pi. AC side (left of the barrier): brick in its cradle, mains cord from the gland.
-// Low-voltage side (right): wire splice and DC fuse holder zip-tie to it; DC feed runs down to the Amp4.
+// Low-voltage side (right): wire splice and DC fuse holder zip-tie to it; DC feed runs down to the DigiAMP+.
 module power_shelf() {
   bx0 = -shelf_w/2 + 3;
   bx1 = bx0 + 2.4 + brick_l + 1;     // right cradle wall
@@ -577,7 +577,7 @@ module ir_holder() {
   }
 }
 
-// Pi + Amp4 envelope. Every generation sits with its GPIO edge at y_gpio, so the HAT lands in the
+// Pi + DigiAMP+ envelope. Every generation sits with its GPIO edge at y_gpio, so the HAT lands in the
 // same place; full-size boards' ports overhang the +X end by about 3 mm.
 module pi_stack(s) {
   translate([-42.5, y_gpio-56, z_board]) cube([s == "zero2w" ? 65 : 88, 56, sled_stack(s)]);
@@ -598,7 +598,7 @@ module pi_sled(s) {
     union() {
       translate([sled_x[0], y_gpio-59, 0]) cube([sled_x[1]-sled_x[0], 62, sled_t]);
       for (h=sled_holes(s)) translate([x0+h[0], y0b+h[1], 0]) cylinder(d=6, h=sled_t+sled_post);
-      if (s == "zero2w")   // hold up the part of the Amp4 that overhangs the Zero
+      if (s == "zero2w")   // hold up the part of the DigiAMP+ that overhangs the Zero
         for (hx=[3.5, 61.5]) translate([x0+hx, y_gpio-52.5, 0]) cylinder(d=6, h=sled_t+sled_post+zero_hat_z);
     }
     for (p=[sled_pts[0], sled_pts[1]]) translate([p[0], p[1], -1]) cylinder(d=4.4, h=sled_t+2);

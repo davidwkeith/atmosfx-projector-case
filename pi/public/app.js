@@ -488,7 +488,7 @@ function renderDmx(dmx) {
 function pinTable(settings) {
   const v = Object.fromEntries(settings.map((s) => [s.key, s.value]));
   const rows = [
-    ["Amp4 (HiFiBerry)", "GPIO 2, 3 (I2C), 4 (mute), 18-21 (I2S) · reserved"],
+    ["DigiAMP+ (Raspberry Pi)", "GPIO 2, 3 (I2C), 4, 18-21 (I2S), 22 (mute) · reserved"],
     ["PIR sensor in", `GPIO${v.pirPin}`],
     ["Projector relay out", `GPIO${v.relayPin}${v.relayActiveLow ? " (active-low)" : ""}`],
     ["IR LED out", `GPIO${v.irTxPin} (${v.irTxDriver})`],

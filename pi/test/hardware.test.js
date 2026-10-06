@@ -392,7 +392,7 @@ describe("PIR", () => {
     expect(pirArgs(2, 17, 50)).toEqual(["--consumer=videofx-pir", "--edges=both", "--bias=pull-down", "--debounce-period=50ms", "--format=%e", "GPIO17"]);
     // -b: libgpiod 1.x block-buffers its output into a pipe unless told to line-buffer
     expect(pirArgs(1, 17, 50)).toEqual(["-b", "-B", "pull-down", "-r", "-f", "-F", "%e", "gpiochip0", "17"]);
-    expect(RESERVED_GPIOS).toEqual([0, 1, 2, 3, 4, 18, 19, 20, 21]);
+    expect(RESERVED_GPIOS).toEqual([0, 1, 2, 3, 4, 18, 19, 20, 21, 22]);
   });
 
   it("reports occupancy and motion, debounced, and restarts gpiomon if it dies", async () => {

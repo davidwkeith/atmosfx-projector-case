@@ -31,9 +31,9 @@
 # --- Audio
 # Volume (%). The slider above sets this too. The file value is only the starting level.
 #VIDEOFX_VOLUME_DEFAULT=30
-# ALSA card name (applies on the next play). Card by name, never by number. HiFiBerry Amp4: sndrpihifiberry.
-#VIDEOFX_AUDIO_CARD=sndrpihifiberry
-# Mixer control (applies on the next play). Hardware volume control on the card. Amp4: Digital.
+# ALSA card name (applies on the next play). Card by name, never by number. Raspberry Pi DigiAMP+: RPiDigiAMP (aplay -l shows it as "RPi DigiAMP+").
+#VIDEOFX_AUDIO_CARD=RPiDigiAMP
+# Mixer control (applies on the next play). Hardware volume control on the card. DigiAMP+: Digital.
 #VIDEOFX_MIXER_CONTROL=Digital
 
 # --- Display
@@ -79,7 +79,7 @@
 # --- Motion sensor
 # PIR motion sensor. Scares only fire when playback is on and the mode is scare. Also shown in Matter as an occupancy sensor.
 #VIDEOFX_PIR=false
-# PIR GPIO (BCM number). GPIO17 is physical pin 11. The Amp4 uses GPIO 2, 3, 4 and 18-21.
+# PIR GPIO (BCM number). GPIO17 is physical pin 11. The DigiAMP+ uses GPIO 2, 3, 4, 18-21 and 22.
 #VIDEOFX_PIR_GPIO=17
 # PIR debounce (ms)
 #VIDEOFX_PIR_DEBOUNCE_MS=50
@@ -147,7 +147,7 @@
 # Relay input is active-low
 #VIDEOFX_RELAY_ACTIVE_LOW=true
 # IR LED GPIO (BCM)
-#VIDEOFX_IR_TX_GPIO=22
+#VIDEOFX_IR_TX_GPIO=16
 # IR LED driver
 #VIDEOFX_IR_TX_DRIVER=gpio-ir-tx
 # IR receiver GPIO (BCM)

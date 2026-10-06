@@ -1,5 +1,5 @@
-// Speaker volume on the amplifier's hardware mixer (HiFiBerry Amp4: ALSA card
-// "sndrpihifiberry", simple control "Digital"). Persisted in settings.json so it
+// Speaker volume on the amplifier's hardware mixer (Raspberry Pi DigiAMP+: ALSA card
+// "RPiDigiAMP", simple control "Digital"). Persisted in settings.json so it
 // survives reboots; first boot starts low because outdoor speakers can be loud.
 
 export const DEFAULT_VOLUME = { level: 30, muted: false };

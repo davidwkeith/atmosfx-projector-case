@@ -12,8 +12,8 @@ Quantities for one case. Printed parts and filament are in [PRINTING.md](PRINTIN
 | Mini ball head, rated above the projector's weight | 1 | 1/4-20 both ends; about 40 mm tall assumed | [Micro Center: Dot Line medium ball head](https://www.microcenter.com/product/504683/dot-line-medium-metal-ball-head?storeid=195) (1/4-20 both ends) or [Amazon: UTEBIT 20 mm mini ball head](https://www.amazon.com/dp/B06XKW7V14) (rated 2.5 lb) |
 | 1/4-20 double-ended stud | 1 | Pedestal to ball head | [Amazon: SmallRig 828, 2-pack](https://www.amazon.com/dp/B007LTH1X2) |
 | Raspberry Pi 3B/3B+, 4B, 5 or Zero 2 W | 1 | Print the matching sled | Micro Center: [Pi 5](https://www.microcenter.com/product/673712/raspberry-pi-5?storeid=195), [Pi 4B](https://www.microcenter.com/product/637834/raspberry-pi-4-model-b?storeid=195), [Pi 3B+](https://www.microcenter.com/product/601561/raspberry-pi-3-model-b?storeid=195). Zero 2 W is in-store only there, so [Amazon: Pi Zero 2 W](https://www.amazon.com/dp/B09LH5SBPS) |
-| HiFiBerry Amp4 | 1 | Powers the Pi too | [HiFiBerry shop](https://www.hifiberry.com/shop/boards/hifiberry-amp4/). Not at Micro Center; the [Amazon listing](https://www.amazon.com/dp/B0CKRZZKGJ) was unavailable on 2026-10-05 |
-| Stacking 2x20 GPIO header (or wires soldered under the Pi) | 1 | GPIO access under the Amp4 | [Micro Center: 52Pi 2x20 stacking header kit](https://www.microcenter.com/product/669727/52pi-2x20-40-pin-stacking-female-header-kit?storeid=195) |
+| Raspberry Pi DigiAMP+ (SC2076) | 1 | 2 x 35 W class D, 12-24 V in, powers the Pi at 5.1 V / 2.5 A; 40-pin pass-through header on top | [Micro Center: Raspberry Pi DigiAMP+](https://www.microcenter.com/product/631851/raspberry-pi-digiamp?storeid=195) (chosen over the HiFiBerry Amp4: same TAS5756M, half the price, in stock locally) |
+| 2x20 GPIO header | 0-1 | Zero 2 W only (it ships without one); the DigiAMP+ passes the other pins through | [Micro Center: 52Pi 2x20 stacking header kit](https://www.microcenter.com/product/669727/52pi-2x20-40-pin-stacking-female-header-kit?storeid=195) |
 | microSD card, 32 GB, high-endurance | 1 | | [Micro Center: SanDisk Max Endurance 32 GB](https://www.microcenter.com/product/651045/sandisk-32-gb-max-endurance-microsdhc-class-10-uhs-3-flash-memory-card-with-adapter?storeid=195) |
 | Outdoor speakers, 4-8 ohm | 2 | Placed behind the projection | [Amazon: Dual LU43PB pair](https://www.amazon.com/dp/B00081NX5U) (Micro Center only has Bluetooth speakers) |
 | 4 x 5 in (127 x 101.6 mm) clear acrylic, 1/8 in (3.2 mm) | 1 | Cut-to-size at TAP Plastics (local; cut in-store while you wait) | [TAP Plastics: cut-to-size clear extruded acrylic](https://www.tapplastics.com/product/plastics/cut_to_size_plastic/acrylic_sheets_clear/508) (or [cast](https://www.tapplastics.com/product/plastics/cut_to_size_plastic/acrylic_sheets_cast_clear/510)), or [Amazon: 5 x 7 in, 1/8 in, 10-pack](https://www.amazon.com/dp/B0987MC6HK) and trim |
@@ -27,7 +27,7 @@ Quantities for one case. Printed parts and filament are in [PRINTING.md](PRINTIN
 | PG9 cord grip (mains-rated) | 1 | | [Amazon: uxcell PG9 IP68 nylon, 10-pack](https://www.amazon.com/dp/B01MQWU2NM) |
 | Rewireable IEC connector (C7, C5 or C13 to match the brick) | 1 | Leaves the brick unmodified | [Amazon: Toptekits rewirable C13](https://www.amazon.com/dp/B002T0JMTY); search the same way for C7 or C5 once you know the brick's inlet |
 | 5 x 20 mm inline fuse holder + time-delay fuse | 1 | AC live | [Amazon: uxcell inline 5 x 20 holder, 18 AWG, 5-pack](https://www.amazon.com/dp/B07SM5KYZ7) + [BOJACK 5 x 20 time-delay fuses](https://www.amazon.com/dp/B07WPW2QBF) (pick the rating from WIRING.md; Micro Center only stocks fast-blow) |
-| Blade (ATO/ATC) inline fuse holder + fuse | 1-3 | Main DC, optional projector and Amp4 branches | [Amazon: SIM&NAT 16 AWG inline ATO holder, 2-pack](https://www.amazon.com/dp/B0D8XWW5HC) (comes with 10 A and 15 A fuses; buy the WIRING.md rating separately) |
+| Blade (ATO/ATC) inline fuse holder + fuse | 1-3 | Main DC, optional projector and DigiAMP+ branches | [Amazon: SIM&NAT 16 AWG inline ATO holder, 2-pack](https://www.amazon.com/dp/B0D8XWW5HC) (comes with 10 A and 15 A fuses; buy the WIRING.md rating separately) |
 | Lever-nut connectors (Wago 221, 5-way) | 2 | DC splice | [Amazon: WAGO 221-415, 10-pack](https://www.amazon.com/dp/B07W7W9J95) |
 | Wire: 18, 20 and 24 AWG | a few metres | | Micro Center: [18 AWG hook-up, 25 ft](https://www.microcenter.com/product/689131/leo-sales-ltd-hook-up-wire-300vhu-18-gauge-ul1007-copper-25ft?storeid=195), [22 AWG stranded, 25 ft](https://www.microcenter.com/product/689133/leo-sales-ltd-wire-stranded-22-gauge-300v-orange-25-ft?storeid=195). Amazon: [20 AWG silicone kit](https://www.amazon.com/dp/B073RDG2J6), [24 AWG silicone kit](https://www.amazon.com/dp/B073RD76QD) |
 | 16 AWG speaker wire | to suit | | [Amazon: Amazon Basics 16 AWG, 50 ft](https://www.amazon.com/dp/B006LW0WDQ) (Micro Center sells 16 AWG only by the 500 ft spool) |
@@ -82,13 +82,12 @@ Printing takes 2 to 3 days on two printers and bring-up about a week, so order e
 
 | Item | Typical lead time | Order |
 |---|---|---|
-| HiFiBerry Amp4 | 1-2 weeks (often ships from Europe; check a local reseller) | First |
 | Cut-to-size acrylic | Same day at TAP Plastics (3-10 days if mail-ordered) | Any time |
-| Noctua fans, DS18B20, PIR, relay/IR parts | 2-5 days | With the Amp4 |
+| Noctua fans, DS18B20, Zero 2 W (if used) | 2-5 days | Now |
 | 3/8-16 heat-set insert | 2-5 days (a less common size) | With the fasteners |
 | Filament (2 x 1 kg), fasteners, wire, fuses, silicone, screen | 1-3 days | Now |
 
-Micro Center Santa Clara had the Pi boards, stacking header, microSD, filament, PIR, relay, IR board, insert kit, hook-up wire, thin HDMI cable and cable ties in stock on 2026-10-05, so one trip covers those.
+Micro Center Santa Clara had the Pi boards, DigiAMP+, microSD, filament, PIR, relay, IR board, insert kit, hook-up wire, thin HDMI cable and cable ties in stock on 2026-10-05, so one trip covers those.
 
 ## Rough cost (excluding the projector)
 
@@ -97,7 +96,7 @@ These are estimates from typical retail prices, not quotes; check current prices
 | Group | Rough USD |
 |---|---|
 | Pi (one board) + microSD | 50-90 |
-| Amp4 + stacking header | 45-60 |
+| DigiAMP+ | 30 |
 | Speakers (outdoor pair) + wire | 50-120 |
 | Ball head + stud | 15-35 |
 | Fans (2x Noctua) + sensors + PIR | 40-55 |
@@ -105,4 +104,4 @@ These are estimates from typical retail prices, not quotes; check current prices
 | Acrylic pane | 10-25 |
 | Inserts, screws, foam, silicone, screen, paint | 30-50 |
 | Filament, about 1.3 kg | 30-60 |
-| **Total** | **about 300-550** |
+| **Total** | **about 285-520** |

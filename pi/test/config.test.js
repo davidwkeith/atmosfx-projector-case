@@ -5,7 +5,7 @@ import { mpvArgs } from "../src/mpv.js";
 const ctx = { home: "/home/pi", deviceName: "VideoFX-BEEF", hostName: "videofx-beef" };
 
 describe("config", () => {
-  it("defaults: ~/media/playlist.m3u, restore=last, loop mode, HiFiBerry audio by card name, port 80", () => {
+  it("defaults: ~/media/playlist.m3u, restore=last, loop mode, DigiAMP+ audio by card name, port 80", () => {
     const c = loadConfig({}, ctx);
     expect(c.playlist).toBe("/home/pi/media/playlist.m3u");
     expect(c.restore).toBe("last");
@@ -13,21 +13,21 @@ describe("config", () => {
     expect(c.httpPort).toBe(80);
     expect(c.password).toBe("");
     expect(c.name).toBe("VideoFX-BEEF");
-    expect([c.audioCard, c.mixerControl, c.volume]).toEqual(["sndrpihifiberry", "Digital", 30]);
+    expect([c.audioCard, c.mixerControl, c.volume]).toEqual(["RPiDigiAMP", "Digital", 30]);
     expect([c.scareCooldown, c.scareDuringScare, c.scareOrder]).toEqual([20, "ignore", "sequential"]);
-    expect([c.pirEnabled, c.pirPin, c.relayPin, c.irTxPin, c.irRxPin]).toEqual([false, 17, 27, 22, 23]);
+    expect([c.pirEnabled, c.pirPin, c.relayPin, c.irTxPin, c.irRxPin]).toEqual([false, 17, 27, 16, 23]);
     expect(c.projectorPower).toBe("cec");
     expect(c.mpv).toBe("mpv");
     expect([c.fan1PwmPin, c.fan2PwmPin, c.fan1TachPin, c.fan2TachPin, c.w1Pin]).toEqual([12, 13, 24, 25, 26]);
     expect([c.thermalEnabled, c.tempCritC, c.tempHysteresisC, c.fanMinDuty]).toEqual([false, 55, 5, 30]);
   });
 
-  it("builds mpv arguments: DRM connector, Amp4 by card name, IPC socket, idle", () => {
+  it("builds mpv arguments: DRM connector, DigiAMP+ by card name, IPC socket, idle", () => {
     const args = mpvArgs(loadConfig({}, ctx), "/run/videofx/mpv.sock");
     expect(args).toContain("--input-ipc-server=/run/videofx/mpv.sock");
     expect(args).toContain("--idle=yes");
     expect(args).toContain("--drm-connector=HDMI-A-1");
-    expect(args).toContain("--audio-device=alsa/plughw:CARD=sndrpihifiberry,DEV=0");
+    expect(args).toContain("--audio-device=alsa/plughw:CARD=RPiDigiAMP,DEV=0");
     expect(args).toContain("--gpu-context=drm");
     expect(args).toContain("--osd-level=0");
     expect(args).toContain("--no-config");
@@ -89,16 +89,16 @@ describe("config", () => {
 });
 
 describe("GPIO pins", () => {
-  const base = { pirPin: 17, relayPin: 27, irTxPin: 22, irRxPin: 23, irTxDriver: "gpio-ir-tx" };
+  const base = { pirPin: 17, relayPin: 27, irTxPin: 16, irRxPin: 23, irTxDriver: "gpio-ir-tx" };
   it("accepts the default layout", () => expect(checkPins(base)).toBeUndefined());
   it("refuses two roles on one pin", () => {
     expect(checkPins({ ...base, relayPin: 17 })).toMatch(/GPIO17 is set for both the PIR and the relay/);
-    expect(checkPins({ ...base, irRxPin: 22 })).toMatch(/GPIO22/);
+    expect(checkPins({ ...base, irRxPin: 16 })).toMatch(/GPIO16/);
   });
-  it.each([2, 3, 4, 18, 19, 20, 21])("refuses Amp4 pin GPIO%i for any role", (pin) => {
-    expect(checkPins({ ...base, pirPin: pin })).toMatch(/Amp4/);
-    expect(() => loadConfig({ VIDEOFX_PIR_GPIO: String(pin) }, ctx)).toThrow(/Amp4/);
-    expect(() => loadConfig({ VIDEOFX_RELAY_GPIO: String(pin) }, ctx)).toThrow(/Amp4/);
+  it.each([2, 3, 4, 18, 19, 20, 21, 22])("refuses DigiAMP+ pin GPIO%i for any role", (pin) => {
+    expect(checkPins({ ...base, pirPin: pin })).toMatch(/DigiAMP+/);
+    expect(() => loadConfig({ VIDEOFX_PIR_GPIO: String(pin) }, ctx)).toThrow(/DigiAMP+/);
+    expect(() => loadConfig({ VIDEOFX_RELAY_GPIO: String(pin) }, ctx)).toThrow(/DigiAMP+/);
   });
   it("pwm-ir-tx is refused: its PWM0 channel drives the projector fan", () => {
     expect(checkPins({ ...base, irTxDriver: "pwm-ir-tx", irTxPin: 12 })).toMatch(/fan/);

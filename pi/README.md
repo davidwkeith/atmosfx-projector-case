@@ -1,6 +1,6 @@
 # VideoFX: the Pi side of the projector case
 
-Raspberry Pi software for the projector case. The sled can be a Pi 3B/3B+, 4B, 5 or Zero 2 W, each with a HiFiBerry Amp4. The Pi shows up in Apple Home (or any Matter controller) as **VideoFX-XXXX**:
+Raspberry Pi software for the projector case. The sled can be a Pi 3B/3B+, 4B, 5 or Zero 2 W, each with a Raspberry Pi DigiAMP+ amplifier HAT. The Pi shows up in Apple Home (or any Matter controller) as **VideoFX-XXXX**:
 
 - **Loop mode** plays a playlist full screen, over and over, for example the AtmosFX videos you bought.
 - **Scare mode** loops a calm clip, and on a trigger plays a scare clip, then goes back to the calm clip. A trigger can be a Home automation, the PIR motion sensor, DMX or the web page.
@@ -32,18 +32,18 @@ A web page on your LAN (`http://videofx-xxxx.local/`) handles videos, the playli
 
 One arm64 image and one `install.sh` cover all four sleds. pi-gen installs both kernels (`linux-image-rpi-v8` and `linux-image-rpi-2712`), and the firmware picks the right one.
 
-| Board | Projector on | DRM connector | Decoding | Amp4 powering the Pi |
+| Board | Projector on | DRM connector | Decoding | DigiAMP+ powering the Pi |
 |---|---|---|---|---|
-| Pi 3B / 3B+ | the only HDMI port | `HDMI-A-1` | H.264 in hardware up to 1080p30 (V4L2 M2M) | HiFiBerry: "any Pi up to the Pi4B". Not tested here |
-| Pi 4B | **HDMI0**, next to USB-C | `HDMI-A-1` | H.264 and HEVC in hardware | HiFiBerry: "up to the Pi4B". Not tested here |
-| Pi 5 | **HDMI0**, next to USB-C | `HDMI-A-1` | **no H.264 hardware decoder**: software (about 10-20% CPU for 1080p24 per Raspberry Pi); HEVC in hardware | HiFiBerry: powers "the Pi5 alone", but no 5 V current figure. Not tested; see below |
-| Zero 2 W | mini-HDMI | `HDMI-A-1` | as the Pi 3; only 512 MB RAM, so use 720p | covered by "up to the Pi4B"; draws far less. Not tested. Solder a 40-pin header |
+| Pi 3B / 3B+ | the only HDMI port | `HDMI-A-1` | H.264 in hardware up to 1080p30 (V4L2 M2M) | Raspberry Pi: "designed to work with Raspberry Pi 3 and earlier"; 5.1 V at 2.5 A over the header. Not tested here |
+| Pi 4B | **HDMI0**, next to USB-C | `HDMI-A-1` | H.264 and HEVC in hardware | Raspberry Pi: on a Pi 4 "or later", use a powered USB hub so the ports add no load. Not tested here |
+| Pi 5 | **HDMI0**, next to USB-C | `HDMI-A-1` | **no H.264 hardware decoder**: software (about 10-20% CPU for 1080p24 per Raspberry Pi); HEVC in hardware | 2.5 A is well under the Pi 5's 5 A budget; Raspberry Pi only promises the Pi 3. Not tested; see below |
+| Zero 2 W | mini-HDMI | `HDMI-A-1` | as the Pi 3; only 512 MB RAM, so use 720p | any 40-pin board per Raspberry Pi; draws far less. Not tested. Solder a 40-pin header |
 
-Sources: Raspberry Pi's [video playback page](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/os/playing-audio-and-video.adoc) (connector names), its [BCM2712 page](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/processors/bcm2712.adoc) (Pi 5 decoding) and [power supply page](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/raspberry-pi/power-supplies.adoc); HiFiBerry's [Amp4 datasheet](https://www.hifiberry.com/docs/data-sheets/datasheet-amp4/) and [Pi 5 post](https://www.hifiberry.com/blog/pi5-compatibility-with-hifiberry-products/).
+Sources: Raspberry Pi's [video playback page](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/os/playing-audio-and-video.adoc) (connector names), its [BCM2712 page](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/processors/bcm2712.adoc) (Pi 5 decoding) and [power supply page](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/raspberry-pi/power-supplies.adoc); Raspberry Pi's [DigiAMP+ product page](https://www.raspberrypi.com/products/digiamp-plus/) and [audio HAT docs](https://www.raspberrypi.com/documentation/accessories/audio.html) (power, Pi model notes, mute GPIO, overlay parameters).
 
 - mpv is pinned to `--drm-connector=HDMI-A-1` (the **Video output** setting), so on a Pi 4B or 5 use **HDMI0**. The option name was checked against the mpv 0.40 manual.
 - mpv runs with `--vo=gpu --gpu-context=drm --hwdec=auto-safe`. mpv's docs don't list the Pi's V4L2 decoder in `auto`'s whitelist. If a Pi 3 or Zero 2 W struggles, add `--hwdec=v4l2m2m-copy` under Settings > Advanced (not verified).
-- **Pi 5 power is a hardware decision for you.** A Pi 5 wants 5 V/5 A over USB-C PD. The GPIO header can't negotiate PD, and HiFiBerry gives no current figure. If `vcgencmd get_throttled` isn't `0x0` or it reboots under load, use a Pi 4B sled, or check with HiFiBerry before adding a separate supply. The software doesn't work around it.
+- **Pi 5 power is a hardware decision for you.** A Pi 5 wants 5 V/5 A over USB-C PD. The GPIO header can't negotiate PD, and the DigiAMP+ supplies 5.1 V at 2.5 A. If `vcgencmd get_throttled` isn't `0x0` or it reboots under load, use a Pi 4B sled; don't add a second 5 V supply, Raspberry Pi says not to power the Pi's own input while the DigiAMP+ is fitted. The software doesn't work around it.
 - **config.txt:** the audio, IR and relay lines are the same on every board and go in `[all]`. The 1-wire overlay differs on the Pi 5 (`w1-gpio-pi5`), so that block uses `[pi3]`, `[pi4]`, `[pi02]` and `[pi5]` sections (names from Raspberry Pi's [conditional filters](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/config_txt/conditional.adoc)). `pwm-2chan` for the fans isn't verified on the Pi 5.
 
 ## Files
@@ -291,14 +291,14 @@ Setting: **Projector power** = `cec` (default) | `relay-ir` | `relay` | `hdmi-of
 
 ## GPIO pins and wiring
 
-**The Amp4 uses GPIO 2 and 3 (I2C), 4 (mute) and 18-21 (I2S)**, per HiFiBerry's [GPIO usage page](https://www.hifiberry.com/docs/hardware/gpio-usage-of-hifiberry-boards/), updated 29 September 2025. GPIO 0/1 are always reserved for the ID EEPROM. That leaves 19 free GPIOs; VideoFX uses 9, so **no expander is needed**. The service refuses two roles on one pin and any Amp4 pin.
+**The DigiAMP+ uses GPIO 2 and 3 (I2C), 18-21 (I2S) and 22 (amp mute, driven by the `rpi-digiampplus` overlay)**, per Raspberry Pi's [audio HAT docs](https://www.raspberrypi.com/documentation/accessories/audio.html); [pinout.xyz](https://pinout.xyz/pinout/digiamp_plus) also lists GPIO 4 (GPCLK0), so it stays reserved. The board brings GPIO 17, 23, 24, 25 and 27 to its optional rotary-encoder and IR headers; VideoFX uses those pins, so **leave those headers empty**. GPIO 0/1 are always reserved for the ID EEPROM. That leaves 18 free GPIOs; VideoFX uses 9, so **no expander is needed**. The service refuses two roles on one pin and any DigiAMP+ pin.
 
 | Role | GPIO | Pin | Notes |
 |---|---|---|---|
-| Amp4 | 2, 3, 4, 18, 19, 20, 21 | 3, 5, 7, 12, 35, 38, 40 | reserved |
+| DigiAMP+ | 2, 3, 4, 18, 19, 20, 21, 22 | 3, 5, 7, 12, 35, 38, 40, 15 | reserved (22 = mute) |
 | PIR in | 17 | 11 | setting (live) |
 | Relay out | 27 | 13 | file only (boot level in config.txt) |
-| IR LED out | 22 | 15 | file only (overlay) |
+| IR LED out | 16 | 36 | file only (overlay) |
 | IR receiver in | 23 | 16 | file only (overlay) |
 | Projector fan PWM | 12 | 32 | hardware PWM0 |
 | Pi/brick fan PWM | 13 | 33 | hardware PWM1 |
@@ -306,19 +306,15 @@ Setting: **Projector power** = `cec` (default) | `relay-ir` | `relay` | `hdmi-of
 | 1-wire (DS18B20) | 26 | 37 | overlay |
 | 5 V / 3.3 V / GND | | 2, 4 / 1, 17 / 6, 9, 14, 20, 25, 30, 34, 39 | |
 
-**Reaching the pins.** The Amp4 covers the header, and HiFiBerry's pages show no pass-through header. Check your board. Options:
+**Reaching the pins.** The DigiAMP+ has a 40-pin pass-through header on top (Raspberry Pi's product page), so the leads above plug straight into it; no stacking header is needed. On the Zero 2 W, which needs a header soldered anyway, leave the pins long.
 
-- a 2×20 stacking (extra-tall) header between the Pi and the Amp4;
-- short wires soldered to the underside of the Pi's header joints for the pins above. Soldering on the HiFiBerry board voids its warranty; on the Pi's joints it doesn't touch the Amp4;
-- on the Zero 2 W, which needs a header soldered anyway, leave the pins long.
-
-If you ever need more I/O, an I2C expander (MCP23017) or an I2C fan controller (EMC2301) can share GPIO 2/3; HiFiBerry allows extra I2C devices for experienced users.
+If you ever need more I/O, an I2C expander (MCP23017) or an I2C fan controller (EMC2301) can share GPIO 2/3 with the DigiAMP+'s codec.
 
 **Wiring:**
 
 - **PIR (HC-SR501):** VCC to 5 V (pin 2), GND (pin 9), OUT (3.3 V logic) to GPIO17 (pin 11). Use the retrigger jumper (H), a short hold time, and allow about a minute of warm-up after power-on.
 - **Relay module (5 V coil, opto input):** VCC 5 V (pin 4), GND (pin 14), IN to GPIO27 (pin 13). The contacts (COM/NO) go in series with the projector's DC **+** only.
-- **IR LED (940 nm):** don't drive it straight from the pin (16 mA max). Use GPIO22 (pin 15), then 1 kΩ, then an NPN transistor base (BC337/2N2222). LED plus series resistor (about 47 Ω) from 5 V to the collector; emitter to GND.
+- **IR LED (940 nm):** don't drive it straight from the pin (16 mA max). Use GPIO16 (pin 36; GPIO22 is the DigiAMP+ mute line), then 1 kΩ, then an NPN transistor base (BC337/2N2222). LED plus series resistor (about 47 Ω) from 5 V to the collector; emitter to GND.
 - **IR receiver (TSOP38238):** VS to 3.3 V (pin 17), GND, OUT to GPIO23 (pin 16). Powering it at 3.3 V keeps its output at 3.3 V.
 - **Fans (12 V 4-pin PWM, for example Noctua NF-A4x10 PWM):**
   - 12 V and GND from the DC splice, with a **common ground with the Pi**.
@@ -328,15 +324,15 @@ If you ever need more I/O, an I2C expander (MCP23017) or an I2C fan controller (
 
 ## Audio
 
-A **HiFiBerry Amp4** (TAS5756M, 2 channels) drives 4-8 Ω speakers behind the projection. It runs from the DC splice (12-20 V recommended, 24 V max) and **powers the Pi through the header**. About 14 W per channel into 4 Ω at 12 V ([datasheet](https://www.hifiberry.com/docs/data-sheets/datasheet-amp4/)).
+A **Raspberry Pi DigiAMP+** (TAS5756M, 2 channels) drives 4-8 Ω speakers behind the projection. It runs from the DC splice (12-24 V, through its P5 hard-wire header or the 5.5 x 2.5 mm centre-positive barrel jack) and **powers the Pi through the header** at 5.1 V / 2.5 A. Up to 35 W per channel ([product page](https://www.raspberrypi.com/products/digiamp-plus/)).
 
-- **Speakers:** speaker wire from the Amp4's terminals, same polarity on both speakers; the outputs can't be bridged.
+- **Speakers:** speaker wire from the DigiAMP+'s terminals, same polarity on both speakers; the outputs can't be bridged.
 - **Power budget:** the brick must supply the projector, the Pi, the amp and the fans at once. Check its label.
 - **Software:**
-  - `dtoverlay=hifiberry-dacplus-std` (HiFiBerry's [current](https://www.hifiberry.com/docs/software/configuring-linux-3-18-x/) overlay for kernel ≥ 6.1.77);
+  - `dtoverlay=rpi-digiampplus,unmute_amp` (Raspberry Pi's overlay; the HAT EEPROM identifies the board, but the amp starts **muted** until `unmute_amp` or `auto_mute_amp` is set. `iqaudio-digiampplus` is the same overlay for the older black IQaudIO board);
   - `dtparam=audio=off` and `vc4-kms-v3d,noaudio`;
   - ALSA default pinned by card name in `/etc/asound.conf`;
-  - mpv uses `--audio-device=alsa/plughw:CARD=sndrpihifiberry,DEV=0`.
+  - mpv uses `--audio-device=alsa/plughw:CARD=RPiDigiAMP,DEV=0` (the card id ALSA derives from the overlay's "RPi DigiAMP+" name; check with `aplay -l`).
 - **Volume:** hardware mixer `Digital` via `amixer -M`, saved in settings.json. The first boot starts at 30%.
 
 ## Cooling
@@ -444,9 +440,9 @@ cat /var/lib/videofx-name
 kmsprint | grep Connector              # HDMI connectors (Pi 5: first card only)
 cec-ctl -d /dev/cec0 --playback -S     # is there CEC?
 ir-ctl -f -d /dev/lirc0                # IR devices (TX and RX may swap numbers)
-aplay -l; amixer -c sndrpihifiberry sget Digital
+aplay -l; amixer -c RPiDigiAMP sget Digital
 ls /sys/bus/w1/devices/                # DS18B20 ROM IDs (28-...)
-vcgencmd get_throttled                 # under-voltage (Pi 5 on the Amp4)
+vcgencmd get_throttled                 # under-voltage (Pi 5 on the DigiAMP+)
 ```
 
 - **No picture on a 4B or 5:** use HDMI0. **No picture when the projector is powered after the Pi:** playback waits up to 20 s for the HDMI connection and starts again when it appears (`journalctl -u videofx-player | grep HDMI`). If your projector never reports itself connected, add `video=HDMI-A-1:1280x720@60D` to `cmdline.txt`.
@@ -485,7 +481,7 @@ Node 20.19+ to run, 22.12+ for the tests. On macOS keep `RUNTIME_DIRECTORY` shor
   - settings, the web API and all earlier features.
 - **matter.js API** checked against the installed 0.17.9 package: `OccupancySensorDevice` + `OccupancySensingServer.with("PassiveInfrared","OccupancyEvent")`, `TemperatureSensorDevice`, a second On/Off endpoint, runtime `server.set({basicInformation:{nodeLabel}})`.
 - **mpv** options and IPC commands checked against the v0.40.0 manual source (`--drm-connector`, `--input-ipc-server`, `--prefetch-playlist`, `--audio-device=alsa/...`, `loadfile`/`loadlist`/`playlist-next`/`playlist-clear`/`stop`, `vf add/remove @label`, the `hwdec` values).
-- **cec-ctl, ir-ctl and gpiomon/gpioset** options checked against the v4l-utils and libgpiod 2.2 sources. Overlay parameters and the Amp4 GPIO usage checked against Raspberry Pi's overlay README and HiFiBerry's GPIO page.
+- **cec-ctl, ir-ctl and gpiomon/gpioset** options checked against the v4l-utils and libgpiod 2.2 sources. Overlay parameters and the DigiAMP+ GPIO usage checked against Raspberry Pi's overlay README (`rpi-digiampplus`: card name "RPi DigiAMP+", `unmute_amp` / `auto_mute_amp`), its audio HAT docs (mute on GPIO22) and pinout.xyz.
 - **Full-service smoke run** against the fake mpv, with real UDP sACN:
   - loop and scare mode;
   - trigger, ignore during a scare, cooldown;
@@ -507,6 +503,6 @@ Node 20.19+ to run, 22.12+ for the tests. On macOS keep `RUNTIME_DIRECTORY` shor
 - CEC with a real projector (including the `pwr-state:` output format), relay switching, IR send and learn, gpiomon, gpioset and gpio-ir on hardware, and the Pi 5 GPIO/PWM overlays.
 - `videofx-update` end to end (GitHub download with a token, maintenance reboot and resume, rollback), `make-release.sh` from a clean checkout.
 - The first-boot repartitioning (`videofx-storage`) on a real SD card and as a whole (only its partition steps ran, on a loop disk), overlayroot with `recurse=0` on a real card, maintenance mode, fsck after a real power cut, timesyncd with DHCP NTP, Wi-Fi power save and route metrics, the hardware watchdog and `systemd-notify` pings under systemd.
-- The Amp4 on each board and powering a Pi 5; fans, tach and DS18B20 on real hardware; the fbdev blank turning HDMI off.
+- The DigiAMP+ on each board and powering a Pi 5; that its unpopulated encoder/IR headers really leave GPIO 17, 23-25 and 27 floating; fans, tach and DS18B20 on real hardware; the fbdev blank turning HDMI off.
 - From the review round: `ProtectHome=read-only` with the media bind mount, the `ExecStopPost` relay hook (`pinctrl`), the HDMI status files and how long your projector takes to report connected, CEC Active Source as a broadcast, `gpiomon -b` on libgpiod 1.x, the first-boot ordering after SSH key generation, and the `nofail` mounts. Fan PWM on a Pi 5 is not expected to work yet (`pwmchip0` is assumed and `pwm-2chan` has no Pi 5 mapping).
 - Apple Home pairing, the Scare switch in Home automations, the Occupancy and Temperature endpoints in Home, avahi and matter.js together, UniFi behaviour, and sACN from QLC+, xLights or FPP over Wi-Fi.
