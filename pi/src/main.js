@@ -3,7 +3,7 @@
 //
 // Matter endpoints: 1 "projector" (main on/off), 2 "scare" (on = fire a scare,
 // goes back off when it ends), 3 "motion" (PIR occupancy sensor),
-// 4 "temperature" (projector zone).
+// 4 "temperature" (the Pi's SoC).
 //
 // Who controls the main power: Matter, the web page, the schedule and restore go
 // through the PowerArbiter; while DMX (sACN) is live only DMX may; thermal
@@ -12,7 +12,7 @@
 import { execFile, spawn } from "node:child_process";
 import dgram from "node:dgram";
 import { existsSync, mkdirSync, readFileSync, statSync } from "node:fs";
-import { access, readFile, readdir, writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { hostname } from "node:os";
 import { fileURLToPath } from "node:url";
 import { monitorEventLoopDelay } from "node:perf_hooks";
@@ -43,7 +43,7 @@ import { TIMESYNC_FLAG, parseIwLink, parseNmcliDevices, signalVerdict, storageSt
 import { Watchdog } from "./watchdog.js";
 import { capVolume, quietNow, scareBlocked } from "./quiet.js";
 import { readVersion, updateStatus } from "./update.js";
-import { OverTempGuard, SysfsPwm, Tach, ThermalControl, parseDs18b20, parseMilli, tachArgs } from "./thermal.js";
+import { OverTempGuard, SocWatch, parseMilli } from "./thermal.js";
 import { Volume, amixerArgs } from "./volume.js";
 import { createWebServer } from "./web.js";
 
@@ -444,7 +444,7 @@ function startDmx() {
 }
 startDmx();
 
-// --- heat: fans, sensors, protection
+// --- heat: the Pi's own SoC temperature (the case has no fans)
 
 const guard = new OverTempGuard({
   isOn: () => player.isOn,
@@ -452,82 +452,20 @@ const guard = new OverTempGuard({
   // Resume: under DMX, whatever DMX asks for; otherwise back on.
   powerOn: () => requestPower("thermal", dmx.inControl ? interpret(dmx.values ?? [0]).power : true),
 });
-const thermal = new ThermalControl({
-  cfg: () => ({
-    curves: [get("fan1Curve"), get("fan2Curve")],
-    minDuty: get("fanMinDuty"),
-    cooldownSec: get("fanCooldownSec"),
-    warnC: get("tempWarnC"),
-    critC: get("tempCritC"),
-    hysteresisC: get("tempHysteresisC"),
-    failRpm: 200,
-    failAfterSec: 5,
-    sensorLossSec: 60,
-  }),
+const thermal = new SocWatch({
+  cfg: () => ({ warnC: get("tempWarnC"), critC: get("tempCritC"), hysteresisC: get("tempHysteresisC") }),
+  guard,
 });
-thermal.on("critical", ({ temp, reason }) => guard.critical(temp, get("tempCritC"), reason));
-thermal.on("cleared", ({ temp }) => guard.cleared(temp));
-const sysfs = { access, readFile, writeFile };
-const fans = [new SysfsPwm({ channel: 0, fs: sysfs }), new SysfsPwm({ channel: 1, fs: sysfs })];
-let tach = null;
-let sensorsSeen = [];
-let lastRpm = [null, null];
-const fanErrors = [null, null];
+let thermalState = { temp: null, alarms: [], locked: false };
 let thermalTimer = null;
 let stopping = false;
 
-// Not under thermal control (Cooling off, or shutting down): run the fans flat
-// out. Left alone, the PWM pins idle low, which a 4-pin fan reads as "stop".
-async function fansFull() {
-  await Promise.all(
-    fans.map((f, i) =>
-      f.set(100).then(
-        () => (fanErrors[i] = null),
-        (err) => {
-          if (fanErrors[i] !== err.message) console.info(`Fan ${i + 1}: not driven (${err.message})`); // once per new error
-          fanErrors[i] = err.message;
-        },
-      ),
-    ),
-  );
-}
-
-async function readSensor(id) {
-  if (!id) return null;
-  const dir = `/sys/bus/w1/devices/${id}`;
-  for (const f of ["temperature", "w1_slave"]) {
-    try {
-      return parseDs18b20(await readFile(`${dir}/${f}`, "utf8"));
-    } catch {
-      // try the next file
-    }
-  }
-  return null;
-}
-
 async function thermalTick() {
   try {
-    sensorsSeen = (await readdir("/sys/bus/w1/devices").catch(() => [])).filter((d) => d.startsWith("28-"));
-    const [projectorC, piC, socC] = await Promise.all([
-      readSensor(get("sensorProjector")),
-      readSensor(get("sensorPi")),
-      readFile("/sys/class/thermal/thermal_zone0/temp", "utf8").then(parseMilli, () => null),
-    ]);
-    lastRpm = tach?.rpm() ?? [null, null];
+    const socC = await readFile("/sys/class/thermal/thermal_zone0/temp", "utf8").then(parseMilli, () => null);
     if (stopping || !get("thermalEnabled")) return; // switched off while reading
-    const state = thermal.update({ projectorC, piC, socC, rpm: lastRpm, on: player.isOn });
-    await Promise.all(
-      fans.map((f, i) =>
-        f.set(state.duty[i]).then(
-          () => (fanErrors[i] = null),
-          (err) => {
-            if (fanErrors[i] !== err.message) console.warn(`Fan ${i + 1}: ${err.message}`); // once per new error
-            fanErrors[i] = err.message;
-          },
-        ),
-      ),
-    );
-    const value = projectorC === null ? null : Math.round(projectorC * 100);
+    thermalState = thermal.update(socC);
+    const value = socC === null ? null : Math.round(socC * 100);
     if (temperature.state.temperatureMeasurement.measuredValue !== value) {
       await temperature.set({ temperatureMeasurement: { measuredValue: value } });
     }
@@ -539,21 +477,14 @@ async function thermalTick() {
 function startThermal() {
   if (thermalTimer) clearInterval(thermalTimer);
   thermalTimer = null;
-  tach?.stop();
-  tach = null;
   if (!get("thermalEnabled")) {
     // No protection: forget any trip (or it would block power-on for good).
     thermal.reset();
     guard.reset();
-    lastRpm = [null, null];
-    fansFull();
+    thermalState = { temp: null, alarms: [], locked: false };
     return;
   }
-  if (gpiodMajor !== null) {
-    tach = new Tach({ spawn, args: tachArgs(gpiodMajor, [get("fan1TachPin"), get("fan2TachPin")]), lines: gpiodMajor >= 2 ? [`GPIO${get("fan1TachPin")}`, `GPIO${get("fan2TachPin")}`] : [get("fan1TachPin"), get("fan2TachPin")] });
-    tach.start();
-  }
-  thermalTimer = setInterval(thermalTick, 2000);
+  thermalTimer = setInterval(thermalTick, 5000);
   thermalTick();
 }
 startThermal();
@@ -661,9 +592,6 @@ async function afterSettingChange(key) {
       return undefined;
     case "thermalEnabled":
       startThermal();
-      if (get("thermalEnabled") && !get("sensorProjector")) {
-        return "Choose the projector-zone sensor: with no reading, playback stops after 60 s.";
-      }
       return undefined;
     case "projectorPower":
     case "cecDevice":
@@ -721,7 +649,7 @@ const web = createWebServer({
       pir: { enabled: get("pirEnabled"), running: pir?.running ?? false, occupied: pir?.occupied ?? false, available: gpiodMajor !== null },
       projector: projector.state,
       dmx: { enabled: get("dmxEnabled"), inControl: dmx.inControl, values: dmx.values, ...receiver.status() },
-      thermal: { enabled: get("thermalEnabled"), ...thermal.state, rpm: lastRpm, sensors: sensorsSeen, tripped: guard.blocked },
+      thermal: { enabled: get("thermalEnabled"), ...thermalState, tripped: guard.blocked },
       schedule: { enabled: get("schedule").enabled, waitingForClock: scheduler.waitingForClock, next: next && { at: new Date(next.at).toISOString(), on: next.on, label: next.label } },
       clock: { synced: clockSynced(), now: new Date().toISOString() },
       quiet: { active: quietNow(get("quietHours"), new Date(), { clockOk: clockSynced() }), cap: get("quietHours").volumeCap, noScares: get("quietHours").disableScares },
@@ -827,12 +755,9 @@ web.close();
 scheduler.stop();
 display.stop();
 pir?.stop();
-tach?.stop();
 if (thermalTimer) clearInterval(thermalTimer);
 dmxSocket?.close();
 await player.shutdown();
-// Nothing watches the temperature from here on: fans flat out, and a
-// relay-switched projector off (videofx-relay-open covers a crash or kill).
-await fansFull();
+// A relay-switched projector goes off (videofx-relay-open covers a crash or kill).
 await projector.shutdown();
 relay.release();

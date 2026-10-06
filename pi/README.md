@@ -10,11 +10,11 @@ It also:
 - switches the projector over HDMI-CEC, a relay (plus IR) or the HDMI signal;
 - follows a weekly schedule with "on at sunset";
 - takes DMX over sACN from show software;
-- runs the case fans from temperature sensors and shuts down if it overheats.
+- watches the Pi's own temperature and switches the projector off if it overheats (the projector's fan does the case cooling).
 
 A web page on your LAN (`http://videofx-xxxx.local/`) handles videos, the playlist, scare clips, the schedule and every setting.
 
-**Status: untested on hardware.** The logic is unit tested (480 tests). The whole service was run on a Mac against a fake mpv, with real UDP sACN. Nothing has run on a Pi, the image has not been built, and nothing has been paired with Apple Home. See [What is verified](#what-is-verified).
+**Status: untested on hardware.** The logic is unit tested (464 tests). The whole service was run on a Mac against a fake mpv, with real UDP sACN. Nothing has run on a Pi, the image has not been built, and nothing has been paired with Apple Home. See [What is verified](#what-is-verified).
 
 ## How it works
 
@@ -23,7 +23,7 @@ A web page on your LAN (`http://videofx-xxxx.local/`) handles videos, the playli
   1. **Projector** (On/Off plug): the main power.
   2. **Scare** (On/Off plug): turning it on fires a scare. It stays on while the scare plays, then turns itself off. If the scare can't fire (off, not in scare mode, cooling down) it goes straight back off.
   3. **Motion** (Occupancy sensor, PIR): so Home automations can use the PIR.
-  4. **Temperature** (Temperature sensor): the projector zone, so Home can alert on it.
+  4. **Temperature** (Temperature sensor): the Pi's SoC temperature, so Home can alert on it.
 - **Player.** One long-lived **mpv** with DRM/KMS output and no desktop, controlled over its JSON IPC socket (`/run/videofx/mpv.sock`). Changing videos is a playlist command, not a process restart, so there is no black gap. If mpv crashes it is restarted; after more than 5 crashes in a minute the service gives up and reports "off". Off means mpv stops (it idles and releases the screen) and the console is cleared to black. Until the Pi is paired, the console shows the pairing QR code.
 - **Who controls the power.** Matter, the web page, the schedule and the restore-after-power-cut all go through one path. While a DMX source is live, only DMX may change the power (see [DMX](#dmx-sacn)). Thermal protection can always switch off.
 - **Services.** `videofx-player.service` runs `/opt/videofx/src/main.js` as an ordinary user: `videofx` on the release image, your login user with `pi/config` or `install.sh`. It has the groups video, render, audio, tty and gpio, and `CAP_NET_BIND_SERVICE` for port 80. It never runs as root. `videofx-hostname.service` runs on first boot only. Avahi publishes the name and the web page.
@@ -44,7 +44,7 @@ Sources: Raspberry Pi's [video playback page](https://github.com/raspberrypi/doc
 - mpv is pinned to `--drm-connector=HDMI-A-1` (the **Video output** setting), so on a Pi 4B or 5 use **HDMI0**. The option name was checked against the mpv 0.40 manual.
 - mpv runs with `--vo=gpu --gpu-context=drm --hwdec=auto-safe`. mpv's docs don't list the Pi's V4L2 decoder in `auto`'s whitelist. If a Pi 3 or Zero 2 W struggles, add `--hwdec=v4l2m2m-copy` under Settings > Advanced (not verified).
 - **Pi 5 power is a hardware decision for you.** A Pi 5 wants 5 V/5 A over USB-C PD. The GPIO header can't negotiate PD, and the DigiAMP+ supplies 5.1 V at 2.5 A. If `vcgencmd get_throttled` isn't `0x0` or it reboots under load, use a Pi 4B sled; don't add a second 5 V supply, Raspberry Pi says not to power the Pi's own input while the DigiAMP+ is fitted. The software doesn't work around it.
-- **config.txt:** the audio, IR and relay lines are the same on every board and go in `[all]`. The 1-wire overlay differs on the Pi 5 (`w1-gpio-pi5`), so that block uses `[pi3]`, `[pi4]`, `[pi02]` and `[pi5]` sections (names from Raspberry Pi's [conditional filters](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/config_txt/conditional.adoc)). `pwm-2chan` for the fans isn't verified on the Pi 5.
+- **config.txt:** the audio, IR and relay lines are the same on every board and go in `[all]`. Older installs also had overlays for the since-removed fans and temperature sensors; `setup.sh` removes that block.
 
 ## Files
 
@@ -62,7 +62,7 @@ pi/
   src/gpio.js          relay output via gpioset
   src/pir.js           PIR input via gpiomon
   src/dmx.js           sACN (E1.31) receiver, merge, fixture map, DMX hand-over
-  src/thermal.js       fan curves, DS18B20, over-temperature and fan-failure logic, PWM and tach
+  src/thermal.js       SoC temperature watch and over-temperature guard
   src/fsutil.js        durable atomic writes (temp, fsync, rename, fsync dir)
   src/watchdog.js      systemd READY/WATCHDOG pings
   src/system.js        clock sync, Wi-Fi link, power-cut protection status
@@ -78,7 +78,7 @@ pi/
   image/               pi-gen build (build.sh, stage-videofx/)
   dmx/DIY-VideoFX-Player.qxf   QLC+ fixture
   tools/sacn-send.mjs  tiny sACN sender for testing; gen-default.mjs regenerates videofx.default
-  test/                Vitest (480 tests), test/fixtures/fake-mpv.mjs
+  test/                Vitest (464 tests), test/fixtures/fake-mpv.mjs
   install.sh, config.example
 ```
 
@@ -116,7 +116,7 @@ ssh you@raspberrypi.local 'cd videofx-setup && sudo ./install.sh && sudo reboot'
 `setup.sh` does the following (both options):
 
 - installs `mpv gpiod v4l-utils alsa-utils avahi-daemon`, plus Node 24 from NodeSource if the system Node is older than 20.19;
-- installs the app, udev rules for CEC, lirc, GPIO, PWM and fb blank, and the systemd units;
+- installs the app, udev rules for CEC, lirc, GPIO and fb blank, and the systemd units;
 - disables the tty1 login prompt;
 - edits `config.txt` (see [GPIO pins](#gpio-pins-and-wiring)). It is idempotent.
 
@@ -281,13 +281,13 @@ Setting: **Projector power** = `cec` (default) | `relay-ir` | `relay` | `hdmi-of
   - Use a relay module rated for the projector's DC current, with an opto-isolated input and a flyback diode (most modules have one).
   - Switch the **+ line (high side) only**. Never switch the projector's ground: the HDMI shield would carry its return current.
   - At boot the firmware drives the relay line to "open" before Linux runs (`gpio=27=op,dh` for active-low modules; use `dl` for active-high). The service keeps it open until it decides.
-  - When the service stops, for any reason, the relay opens: the service does it on a clean stop, and `videofx-relay-open` (the unit's `ExecStopPost`) does it after a crash, a kill or the watchdog. A projector is never left powered with nothing watching its temperature.
-  - The relay, IR and 1-wire pins are also in `config.txt`, written once with the defaults. If you change them in `/etc/default/videofx`, change `config.txt` by hand too.
+  - When the service stops, for any reason, the relay opens: the service does it on a clean stop, and `videofx-relay-open` (the unit's `ExecStopPost`) does it after a crash, a kill or the watchdog. The relay never stays closed once the service is gone (the service only watches the Pi's own SoC; the projector has its own thermal cut-off).
+  - The relay and IR pins are also in `config.txt`, written once with the defaults. If you change them in `/etc/default/videofx`, change `config.txt` by hand too.
   - Cutting power suits LED mini projectors; don't do it to a lamp projector that needs a cool-down.
 - **IR** uses the `gpio-ir-tx` overlay for the LED and `gpio-ir` for a TSOP38238-style receiver, driven with `ir-ctl`.
   - On the page: **Learn power button**, then press the remote's power button at the receiver. The capture is decoded as NEC (`nec`, `necx` or `nec32`, the same scancode forms the kernel's encoder sends) or kept as raw pulse/space data.
   - Or paste a code (`nec:0x40bf`, `rc5:0x1e01`, `raw:+9000 -4500 ...`). **Send test** fires it.
-  - `pwm-ir-tx` is refused, because its PWM0 channel drives the projector fan.
+  - `pwm-ir-tx` is allowed (set `VIDEOFX_IR_TX_DRIVER` and use its overlay in `config.txt`): the case has no fans, so hardware PWM0 is free.
 
 ## GPIO pins and wiring
 
@@ -300,15 +300,11 @@ Setting: **Projector power** = `cec` (default) | `relay-ir` | `relay` | `hdmi-of
 | Relay out | 27 | 13 | file only (boot level in config.txt) |
 | IR LED out | 16 | 36 | file only (overlay) |
 | IR receiver in | 23 | 16 | file only (overlay) |
-| Projector fan PWM | 12 | 32 | hardware PWM0 |
-| Pi/brick fan PWM | 13 | 33 | hardware PWM1 |
-| Fan tach in | 24, 25 | 18, 22 | pull-ups to 3.3 V |
-| 1-wire (DS18B20) | 26 | 37 | overlay |
 | 5 V / 3.3 V / GND | | 2, 4 / 1, 17 / 6, 9, 14, 20, 25, 30, 34, 39 | |
 
 **Reaching the pins.** The DigiAMP+ has a 40-pin pass-through header on top (Raspberry Pi's product page), so the leads above plug straight into it; no stacking header is needed. On the Zero 2 W, which needs a header soldered anyway, leave the pins long.
 
-If you ever need more I/O, an I2C expander (MCP23017) or an I2C fan controller (EMC2301) can share GPIO 2/3 with the DigiAMP+'s codec.
+If you ever need more I/O, an I2C expander (MCP23017) can share GPIO 2/3 with the DigiAMP+'s codec.
 
 **Wiring:**
 
@@ -316,18 +312,13 @@ If you ever need more I/O, an I2C expander (MCP23017) or an I2C fan controller (
 - **Relay module (5 V coil, opto input):** VCC 5 V (pin 4), GND (pin 14), IN to GPIO27 (pin 13). The contacts (COM/NO) go in series with the projector's DC **+** only.
 - **IR LED (940 nm):** don't drive it straight from the pin (16 mA max). Use GPIO16 (pin 36; GPIO22 is the DigiAMP+ mute line), then 1 kΩ, then an NPN transistor base (BC337/2N2222). LED plus series resistor (about 47 Ω) from 5 V to the collector; emitter to GND.
 - **IR receiver (TSOP38238):** VS to 3.3 V (pin 17), GND, OUT to GPIO23 (pin 16). Powering it at 3.3 V keeps its output at 3.3 V.
-- **Fans (24 V 4-pin PWM, for example Noctua NF-A4x10 24V PWM):**
-  - + and GND from the DC splice (the second wall-wart's 24 V rail; a 12 V fan would burn), with a **common ground with the Pi**.
-  - PWM (blue): GPIO12 (pin 32) or GPIO13 (pin 33) through 1 kΩ. Noctua's PWM white paper (via its search summary; the PDF was rate-limited) gives 25 kHz (21-28 kHz), 3.3 V logic accepted, input pulled up inside the fan, so it's driven directly with no transistor.
-  - Tach (green, open collector, 2 pulses per revolution): GPIO24 (pin 18) or GPIO25 (pin 22), with 10 kΩ to **3.3 V** (never the fan rail).
-- **DS18B20 (one per zone, same bus):** VDD 3.3 V, GND, DQ to GPIO26 (pin 37) with 4.7 kΩ to 3.3 V. Put the projector-zone sensor near the projector exhaust. Choose which ROM ID is which zone under **Cooling** on the page.
 
 ## Audio
 
-A **Raspberry Pi DigiAMP+** (TAS5756M, 2 channels) drives 4-8 Ω speakers behind the projection. It runs from the DC splice (12-24 V, through its P5 hard-wire header or the 5.5 x 2.5 mm centre-positive barrel jack) and **powers the Pi through the header** at 5.1 V / 2.5 A. Up to 35 W per channel, rated for 0-50 °C ambient ([product brief](<https://pip-assets.raspberrypi.com/categories/765-raspberry-pi-digiamp/documents/RP-008138-DS-1-digiamp-plus-hat-product-brief.pdf>)): the Pi-zone fan curve has to hold the shelf under that, and the brief says not to cover a case it sits in, which is what the louvers and fans are for.
+A **Raspberry Pi DigiAMP+** (TAS5756M, 2 channels) drives 4-8 Ω speakers behind the projection. It runs from the DC splice (12-24 V, through its P5 hard-wire header or the 5.5 x 2.5 mm centre-positive barrel jack) and **powers the Pi through the header** at 5.1 V / 2.5 A. Up to 35 W per channel, rated for 0-50 °C ambient ([product brief](<https://pip-assets.raspberrypi.com/categories/765-raspberry-pi-digiamp/documents/RP-008138-DS-1-digiamp-plus-hat-product-brief.pdf>)): the Pi zone has to stay under that with only a passive louver, and the brief says not to cover a case it sits in, which is what the louvers are for (bring-up logs the shelf temperature).
 
 - **Speakers:** speaker wire from the DigiAMP+'s terminals, same polarity on both speakers; the outputs can't be bridged.
-- **Power budget:** the brick must supply the projector, the Pi, the amp and the fans at once. Check its label.
+- **Power budget:** the brick must supply the projector, the Pi and the amp at once. Check its label.
 - **Software:**
   - `dtoverlay=rpi-digiampplus,unmute_amp` (Raspberry Pi's overlay; the HAT EEPROM identifies the board, but the amp starts **muted** until `unmute_amp` or `auto_mute_amp` is set. `iqaudio-digiampplus` is the same overlay for the older black IQaudIO board);
   - `dtparam=audio=off` and `vc4-kms-v3d,noaudio`;
@@ -337,25 +328,22 @@ A **Raspberry Pi DigiAMP+** (TAS5756M, 2 channels) drives 4-8 Ω speakers behind
 
 ## Cooling
 
-Settings > Cooling: turn it on once the fans and sensors are wired, **and choose the projector-zone sensor**.
+The case has no fans or temperature sensors: the projector's own fan moves the air through the case's louver banks, and the projector has its own thermal cut-off. The Pi only watches **its own SoC temperature** (`/sys/class/thermal/thermal_zone0`, read every 5 s) and switches the projector off if the Pi itself overheats.
 
-- **Off (the default):** both fans run flat out and nothing is protected. They also go flat out when the service stops.
-- **What the cut-off can do depends on the projector power mode.** With `relay` or `relay-ir` it cuts the projector's power. With `cec` it asks for standby, which a hung projector can ignore; with `hdmi-off` it only drops the signal; with `none` it only stops playback. If you want a cut-off that always works, fit the relay.
+Settings > Cooling:
 
-- **Fans:** 25 kHz hardware PWM through `/sys/class/pwm` (the `pwm-2chan` overlay).
-  - Fan 1 follows the projector-zone sensor; fan 2 follows the hotter of the Pi-zone sensor and the SoC.
-  - Each fan has a curve (°C:duty%, linear). Defaults: `30:25 40:50 50:100` and `45:25 60:60 70:100`.
-  - Minimum 30% while the projector is on, and the projector fan keeps running for 120 s after power-off.
-  - A missing reading runs the fan at 100%.
-- **No projector-zone reading** for 60 s while playing (no sensor chosen, unplugged, failed) counts as critical: without it nothing is protected. It clears when a good reading comes back. To run without the sensor, turn Cooling off.
-- **Warning** (default 45 °C): banner on the page.
-- **Critical** (projector zone, default 55 °C):
+_Upgrade note: `tempWarnC` / `tempCritC` now refer to the Pi's SoC. A saved `tempCritC` of 55 (the old projector-zone default) would trip during normal operation, so delete the old saved values or set them to 70 / 80._
+
+- **Pi over-temperature protection** (on by default). When off, nothing is checked and nothing is protected.
+- **Warning** (default 70 °C, 40-90): banner on the page.
+- **Critical** (default 80 °C, 50-95):
   - stops playback and switches the projector off through its configured path, even under DMX;
   - blocks switching on;
-  - fans go to 100%;
-  - it switches back on (only if it was on) once the zone is 5 °C below critical.
-- **Fan failure:** tach under 200 rpm for 5 s while driven at or above the minimum raises an alarm. An unwired tach isn't counted.
-- **Matter:** the projector-zone temperature is endpoint 4.
+  - it switches back on (only if it was on) once the SoC is below critical by the hysteresis.
+- **Cool-down before resuming** (default 5 °C, 1-20).
+- **What the cut-off can do depends on the projector power mode.** With `relay` or `relay-ir` it cuts the projector's power. With `cec` it asks for standby, which a hung projector can ignore; with `hdmi-off` it only drops the signal; with `none` it only stops playback. The relay is the only way the Pi can really cut the projector's power on over-temperature.
+- **A missing reading** (the sysfs file unreadable) changes nothing: no trip, no clear.
+- **Matter:** the SoC temperature is endpoint 4.
 
 ## DMX (sACN)
 
@@ -414,7 +402,7 @@ Everything is on the web page under **Settings**. Each setting shows its value, 
 - **Password:** stored as a scrypt hash and never sent back. Changing it needs the current password; removing it needs the current password and a confirmation.
 - **Extra mpv options (Advanced):** only `--name=value`, no shell, and only from an allow-list: decoding (`--hwdec`, `--vd-lavc-*`), DRM output (`--vo=gpu|gpu-next|drm`, `--gpu-context`, `--drm-*`, `--drm-device=/dev/dri/cardN`), sync and scaling (`--video-sync`, `--interpolation`, `--scale`, `--deband`, `--video-*`, `--panscan`, picture controls), cache (`--cache*`, `--demuxer-max-bytes`), audio timing (`--audio-delay`, `--audio-buffer`, `--volume-max`, `--alsa-*`), `--profile=fast|sw-fast|high-quality|low-latency`, `--msg-level`, and `--vf` with simple filters (`crop`, `hflip`, `vflip`, `scale`, `pad`, `format`, `fps`, `eq`, `rotate`, `transpose`, `yadif`, `bwdif`). Everything else is refused. A deny-list missed `--ao=pcm --ao-pcm-file=...`, which writes any file the service can.
 - **JSON values in `/etc/default/videofx`** (scare clips, schedule, quiet hours) go in single quotes. systemd reads the file, and it drops the quotes inside an unquoted value.
-- **File only** (need root, or would let the page point the service anywhere): ports, media folder, playlist path, mpv command, state folder, and the relay, IR, fan and 1-wire pins. Edit `/etc/default/videofx` (every key is listed there, commented) and restart.
+- **File only** (need root, or would let the page point the service anywhere): ports, media folder, playlist path, mpv command, state folder, and the relay and IR pins. Edit `/etc/default/videofx` (every key is listed there, commented) and restart.
 - **Migration from the VLC version:** `VIDEOFX_VLC*` in the file and `vlcExtraArgs` in settings.json are ignored, with a warning. VLC options don't translate to mpv; the audio card and video output settings carry over as they are.
 
 ### Web page security
@@ -441,7 +429,6 @@ kmsprint | grep Connector              # HDMI connectors (Pi 5: first card only)
 cec-ctl -d /dev/cec0 --playback -S     # is there CEC?
 ir-ctl -f -d /dev/lirc0                # IR devices (TX and RX may swap numbers)
 aplay -l; amixer -c RPiDigiAMP sget Digital
-ls /sys/bus/w1/devices/                # DS18B20 ROM IDs (28-...)
 vcgencmd get_throttled                 # under-voltage (Pi 5 on the DigiAMP+)
 ```
 
@@ -469,7 +456,7 @@ Node 20.19+ to run, 22.12+ for the tests. On macOS keep `RUNTIME_DIRECTORY` shor
 
 **Verified** (Mac, Node 26, `npx vitest run` in `pi/` outside the sandbox, because some tests bind local sockets):
 
-- **480 tests pass.** They cover:
+- **464 tests pass.** They cover:
   - the player: loop, scare arm/trigger/re-arm, sequential and random order, cooldown, ignore and queue, off during a scare, seam measurement, command ordering, mirror, clip and dimmer;
   - mpv: the allow-list, the IPC client on a real Unix socket, supervisor crash/restart/give-up;
   - schedule: sunset against published times, polar days, both DST changes, the manual-override rule, stale events, the desired state for the DMX hand-back;
@@ -477,7 +464,7 @@ Node 20.19+ to run, 22.12+ for the tests. On macOS keep `RUNTIME_DIRECTORY` shor
   - IR: code validation, NEC decoding (nec, necx, nec32), learn and timeout, send;
   - GPIO: the pin budget and conflicts, the relay holder, PIR debounce and restart;
   - DMX: packet parsing (valid and malformed), universe, preview and terminated flags, sequence wrap, priority and HTP merge, the 2.5 s timeout, hold and hand-over, channel map, pacing, rising-edge trigger, the arbiter refusing Matter writes;
-  - thermal: curves, cool-down, hysteresis, the over-temperature shutdown and resume rule, fan failure, DS18B20 parsing, PWM and tach adapters;
+  - thermal: the SoC watch (warning, critical trip, hysteresis, a missing reading), the over-temperature shutdown and resume rule;
   - settings, the web API and all earlier features.
 - **matter.js API** checked against the installed 0.17.9 package: `OccupancySensorDevice` + `OccupancySensingServer.with("PassiveInfrared","OccupancyEvent")`, `TemperatureSensorDevice`, a second On/Off endpoint, runtime `server.set({basicInformation:{nodeLabel}})`.
 - **mpv** options and IPC commands checked against the v0.40.0 manual source (`--drm-connector`, `--input-ipc-server`, `--prefetch-playlist`, `--audio-device=alsa/...`, `loadfile`/`loadlist`/`playlist-next`/`playlist-clear`/`stop`, `vf add/remove @label`, the `hwdec` values).
@@ -492,7 +479,7 @@ Node 20.19+ to run, 22.12+ for the tests. On macOS keep `RUNTIME_DIRECTORY` shor
 - The smoke run found and fixed two real bugs: interleaved mpv commands from quick reloads, and banners that ignored `hidden`.
 - **Reliability:** durable writes (the call order is tested, and the files were written on disk); watchdog pinging (interval, READY once, stops while unhealthy, no pile-up); schedule gated on clock sync; Wi-Fi and storage-status parsers. Checked against the sources: raspi-config trixie (`overlayroot`), overlayroot's `recurse` option, the timesyncd `synchronized` file and drop-in dirs (systemd v257 man pages), NetworkManager's `DHCP4_*` dispatcher variables and its `ntp_servers` request, the UniFi DHCP option 42, Raspberry Pi board bands and the Pi 5 RTC battery.
 - **This round:** quiet hours (windows including past midnight, cap and mute, the DMX bypass, the scare gate for every source, unsynced clock); version compare, release-asset pick and update status; backup create/validate/stage/apply on disk (path traversal and bad content refused, locks skipped, old pairing kept aside); backup and restore routes (attachment, no-store, password, big body, write header). Smoke run: quiet hours active, the scare refused, a backup downloaded, a restore with the pairing refused without confirmation, then staged, then applied on restart.
-- **Review round (October):** the sensor-loss trip and its reset, fans flat out outside thermal control, a failed state save not blocking power-off, relay changes run in order, no second IR press when already on, the relay opening at shutdown, CEC re-configuring until it has a physical address, on-link IPv6 sources, the password guess limit, the free-space reserve and upload clean-up, the schedule's boot catch-up, mpv restarted after it gave up, the HDMI wait. The new tests were run against the old code and fail there.
+- **Review round (October):** a failed state save not blocking power-off, relay changes run in order, no second IR press when already on, the relay opening at shutdown, CEC re-configuring until it has a physical address, on-link IPv6 sources, the password guess limit, the free-space reserve and upload clean-up, the schedule's boot catch-up, mpv restarted after it gave up, the HDMI wait. The new tests were run against the old code and fail there.
 - **First-boot repartitioning, the risky part:** the grow-and-add-partition block from `videofx-storage` was run as written in a Debian trixie container (parted 3.6, sfdisk 2.41) on a loop disk with partition 2 mounted. The old `parted -s ... resizepart 2` fails there with "Partition is being used" (exit 1), which would have stopped first boot. The `sfdisk` replacement grows the partition, `resize2fs` grows the mounted filesystem, the data partition is made, and both pass `e2fsck`.
 - **QLC+ fixture** validates against QLC+'s `fixture.xsd`. **config.txt edits** are correct and idempotent on pi-gen's stock file. shellcheck is clean.
 
@@ -500,9 +487,9 @@ Node 20.19+ to run, 22.12+ for the tests. On macOS keep `RUNTIME_DIRECTORY` shor
 
 - The image build, first boot on each board, and `install.sh` on Raspberry Pi OS.
 - mpv on the Pi: DRM output as non-root, `HDMI-A-1`, hardware decoding per board, **the real seam times**, and mirror CPU cost.
-- CEC with a real projector (including the `pwr-state:` output format), relay switching, IR send and learn, gpiomon, gpioset and gpio-ir on hardware, and the Pi 5 GPIO/PWM overlays.
+- CEC with a real projector (including the `pwr-state:` output format), relay switching, IR send and learn, gpiomon, gpioset and gpio-ir on hardware, and the Pi 5 GPIO overlays.
 - `videofx-update` end to end (GitHub download with a token, maintenance reboot and resume, rollback), `make-release.sh` from a clean checkout.
 - The first-boot repartitioning (`videofx-storage`) on a real SD card and as a whole (only its partition steps ran, on a loop disk), overlayroot with `recurse=0` on a real card, maintenance mode, fsck after a real power cut, timesyncd with DHCP NTP, Wi-Fi power save and route metrics, the hardware watchdog and `systemd-notify` pings under systemd.
-- The DigiAMP+ on each board and powering a Pi 5; that its unpopulated encoder/IR headers really leave GPIO 17, 23-25 and 27 floating; fans, tach and DS18B20 on real hardware; the fbdev blank turning HDMI off.
-- From the review round: `ProtectHome=read-only` with the media bind mount, the `ExecStopPost` relay hook (`pinctrl`), the HDMI status files and how long your projector takes to report connected, CEC Active Source as a broadcast, `gpiomon -b` on libgpiod 1.x, the first-boot ordering after SSH key generation, and the `nofail` mounts. Fan PWM on a Pi 5 is not expected to work yet (`pwmchip0` is assumed and `pwm-2chan` has no Pi 5 mapping).
+- The DigiAMP+ on each board and powering a Pi 5; that its unpopulated encoder/IR headers really leave GPIO 17, 23-25 and 27 floating; the fbdev blank turning HDMI off.
+- From the review round: `ProtectHome=read-only` with the media bind mount, the `ExecStopPost` relay hook (`pinctrl`), the HDMI status files and how long your projector takes to report connected, CEC Active Source as a broadcast, `gpiomon -b` on libgpiod 1.x, the first-boot ordering after SSH key generation, and the `nofail` mounts.
 - Apple Home pairing, the Scare switch in Home automations, the Occupancy and Temperature endpoints in Home, avahi and matter.js together, UniFi behaviour, and sACN from QLC+, xLights or FPP over Wi-Fi.

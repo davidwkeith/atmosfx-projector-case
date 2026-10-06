@@ -170,7 +170,7 @@ describe("pins across settings", () => {
     const s = make();
     expect(status(() => s.set("pirPin", 27))).toEqual([400, "GPIO27 is set for both the PIR and the relay"]);
     expect(status(() => s.set("pirPin", 18))[0]).toBe(400);
-    expect(status(() => s.set("pirPin", 24))).toEqual([400, "GPIO24 is set for both the PIR and the projector fan tach"]);
+    expect(status(() => s.set("pirPin", 16))).toEqual([400, "GPIO16 is set for both the PIR and the IR LED"]);
     s.set("pirPin", 5);
     expect(s.get("pirPin")).toBe(5);
   });

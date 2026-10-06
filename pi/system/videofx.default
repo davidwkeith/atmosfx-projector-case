@@ -93,26 +93,14 @@
 #VIDEOFX_SCHEDULE='{"enabled":false,"sunsetOffsetMin":0,"days":{"sun":{"on":"","off":""},"mon":{"on":"","off":""},"tue":{"on":"","off":""},"wed":{"on":"","off":""},"thu":{"on":"","off":""},"fri":{"on":"","off":""},"sat":{"on":"","off":""}}}'
 
 # --- Cooling
-# Fans and temperature protection. Turn on once the fans and DS18B20 sensors are wired, and choose the projector-zone sensor: with no reading from it for 60 s while playing, playback stops. Off: the fans run flat out and nothing is protected.
-#VIDEOFX_THERMAL=false
-# Projector fan curve (°C:duty%). Linear between points, e.g. 30:25 40:50 50:100.
-#VIDEOFX_FAN1_CURVE=30:25 40:50 50:100
-# Pi/brick fan curve (°C:duty%). Follows the hotter of the Pi-zone sensor and the SoC.
-#VIDEOFX_FAN2_CURVE=45:25 60:60 70:100
-# Minimum fan duty while the projector is on (%)
-#VIDEOFX_FAN_MIN_DUTY=30
-# Projector fan run-on after power-off (s)
-#VIDEOFX_FAN_COOLDOWN_SEC=120
-# Warning temperature (°C)
-#VIDEOFX_TEMP_WARN_C=45
-# Critical projector-zone temperature (°C). Stops playback and switches the projector off until it cools by the hysteresis.
-#VIDEOFX_TEMP_CRIT_C=55
+# Pi over-temperature protection. The case has no fans: the projector's own fan moves the air. If the Pi's SoC reaches the critical temperature, playback stops and the projector switches off until it cools.
+#VIDEOFX_THERMAL=true
+# Pi warning temperature (°C)
+#VIDEOFX_TEMP_WARN_C=70
+# Pi critical temperature (°C). Stops playback and switches the projector off until it cools by the hysteresis.
+#VIDEOFX_TEMP_CRIT_C=80
 # Cool-down before resuming (°C below critical)
 #VIDEOFX_TEMP_HYSTERESIS_C=5
-# Projector-zone sensor (DS18B20 ROM ID)
-#VIDEOFX_SENSOR_PROJECTOR=
-# Pi-zone sensor (DS18B20 ROM ID)
-#VIDEOFX_SENSOR_PI=
 
 # --- DMX
 # DMX (sACN / E1.31) control. While a source sends our universe, DMX controls power, mode, clip, volume, mute and dimmer.
@@ -139,8 +127,8 @@
 #VIDEOFX_CONSOLE=/dev/tty1
 
 # --- File only (needs root, or would let the page point the service anywhere)
-# The relay, IR and 1-wire pins are also in /boot/firmware/config.txt (the relay's
-# boot level, the IR and w1-gpio overlays), written once by setup.sh with the
+# The relay and IR pins are also in /boot/firmware/config.txt (the relay's
+# boot level, and the IR overlays), written once by setup.sh with the
 # defaults. Change them there too, or the new pins won't work.
 # Relay GPIO (BCM)
 #VIDEOFX_RELAY_GPIO=27
@@ -152,16 +140,6 @@
 #VIDEOFX_IR_TX_DRIVER=gpio-ir-tx
 # IR receiver GPIO (BCM)
 #VIDEOFX_IR_RX_GPIO=23
-# Projector fan PWM GPIO (hardware PWM0)
-#VIDEOFX_FAN1_PWM_GPIO=12
-# Pi/brick fan PWM GPIO (hardware PWM1)
-#VIDEOFX_FAN2_PWM_GPIO=13
-# Projector fan tach GPIO
-#VIDEOFX_FAN1_TACH_GPIO=24
-# Pi/brick fan tach GPIO
-#VIDEOFX_FAN2_TACH_GPIO=25
-# 1-wire (DS18B20) GPIO
-#VIDEOFX_W1_GPIO=26
 # Web page port
 #VIDEOFX_HTTP_PORT=80
 # Matter port

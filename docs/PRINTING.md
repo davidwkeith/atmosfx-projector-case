@@ -1,6 +1,6 @@
 # Printing plan
 
-Two Prusa i3 MK3S (bed 250 x 210 x 210 mm), Prusament PETG (or ASA, which fades less in sun). Times and weights are PrusaSlicer's estimates from the current (v0.9 draft) STLs with the stock `Original Prusa i3 MK3S & MK3S+` printer profile. Real prints run a little longer.
+Two Prusa i3 MK3S (bed 250 x 210 x 210 mm), Prusament PETG (or ASA, which fades less in sun). Times and weights are PrusaSlicer's estimates from the current (v0.10) STLs with the stock `Original Prusa i3 MK3S & MK3S+` printer profile. Real prints run a little longer.
 
 ## Settings
 
@@ -19,15 +19,16 @@ Two Prusa i3 MK3S (bed 250 x 210 x 210 mm), Prusament PETG (or ASA, which fades 
 | `window_frame` | 1 | 1 h 25 m | 22 g | |
 | `hatch_cover` | 1 | 2 h 33 m | 46 g | |
 | `sled_pi3` / `pi4` / `pi5` / `zero2w` | 1 | 1 h 8 m to 1 h 20 m | 18-19 g | The one for your Pi |
-| `vent_cap` | 3 | 13 m each | 2 g each | |
-| `intake_cap` | 1 | 21 m | 4 g | |
-| `ir_holder` | 0-1 | 15 m | 2 g | Only for the relay + IR fallback |
+| `vent_cap` | 1 | 13 m | 2 g | Pi-zone louver |
+| `intake_cap` | 1 | 15 m | 3 g | Rear inlet bank, wall-mounted |
+| `exhaust_cap` | 1 | 22 m | 4 g | Front exhaust bank; the opening is about 74 x 58 mm, the biggest of the three caps |
+| `ir_holder` | 0-1 | 11 m | 1 g | Only for the relay + IR fallback |
 | `power_shelf` | 1 | 4 h 53 m | 66 g | Prints flat with the 90 mm receptacle plate standing up |
 | `lid_rear` | 1 | 6 h 42 m | 113 g | |
 | `lid_front` | 1 | 9 h 46 m | 169 g | |
-| `base_rear` | 1 | 18 h 4 m | 259 g | 12 h 58 m with 0.30mm DRAFT |
-| `base_front` | 1 | **35 h 12 m** | 530 g | 25 h 25 m with 0.30mm DRAFT (set `layer_h = 0.3`) |
-| **Total** | | **about 84 h** | **about 1.3 kg** | Two 1 kg spools |
+| `base_rear` | 1 | 17 h 49 m | 259 g | 12 h 49 m with 0.30mm DRAFT (291 g) |
+| `base_front` | 1 | **35 h 8 m** | 531 g | 25 h 23 m with 0.30mm DRAFT (580 g; set `layer_h = 0.3`) |
+| **Total** | | **about 84 h** | **about 1.3 kg** | Two 1 kg spools. Re-sliced after the airflow change: the two base tiles, the three caps and `ir_holder`; the other parts are unchanged from the earlier slice. |
 
 ## Order, on two printers
 

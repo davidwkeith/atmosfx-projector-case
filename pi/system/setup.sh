@@ -112,30 +112,18 @@ grep -q '^dtoverlay=rpi-digiampplus\|^dtoverlay=iqaudio-digiampplus' "$config" |
 # "open" by the firmware at boot, before Linux runs: dh = high for the usual
 # active-low relay modules (use dl for active-high ones).
 # These are the default pins. They are written once: if you change
-# VIDEOFX_RELAY_GPIO, _RELAY_ACTIVE_LOW, _IR_TX_GPIO, _IR_RX_GPIO or _W1_GPIO in
+# VIDEOFX_RELAY_GPIO, _RELAY_ACTIVE_LOW, _IR_TX_GPIO or _IR_RX_GPIO in
 # /etc/default/videofx, change the matching lines in config.txt by hand too.
 grep -q '^dtoverlay=gpio-ir-tx\|^dtoverlay=pwm-ir-tx' "$config" || missing+=$'# IR LED (projector power)\ndtoverlay=gpio-ir-tx,gpio_pin=16\n'
 grep -q '^dtoverlay=gpio-ir,' "$config" || missing+=$'# IR receiver (learning remote codes)\ndtoverlay=gpio-ir,gpio_pin=23\n'
 grep -q '^gpio=27=' "$config" || missing+=$'# Projector relay open at boot (active-low module)\ngpio=27=op,dh\n'
 [ -z "$missing" ] || printf '\n[all]\n%s' "$missing" >>"$config"
-# Fans (hardware PWM, 25 kHz) and 1-wire temperature sensors. The w1 overlay has
-# a Pi 5 variant, so this block uses model sections; it ends with [all].
-grep -q '^# videofx: fans and 1-wire' "$config" || cat >>"$config" <<'CFG'
-
-# videofx: fans and 1-wire
-[all]
-# Fan PWM: PWM0 on GPIO12, PWM1 on GPIO13 (GPIO18/19 are the DigiAMP+'s I2S)
-dtoverlay=pwm-2chan,pin=12,func=4,pin2=13,func2=4
-[pi3]
-dtoverlay=w1-gpio,gpiopin=26
-[pi4]
-dtoverlay=w1-gpio,gpiopin=26
-[pi02]
-dtoverlay=w1-gpio,gpiopin=26
-[pi5]
-dtoverlay=w1-gpio-pi5,gpiopin=26
-[all]
-CFG
+# Older installs added fan PWM and 1-wire overlays; the case has no fans or DS18B20s now.
+# Only when both ends of the block are there, so a hand-edited file never loses everything after the marker.
+if grep -q '^# videofx: fans and 1-wire' "$config" && grep -q '^dtoverlay=w1-gpio-pi5' "$config"; then
+  # Drop the whole block, from its marker to the Pi 5 w1 line (a trailing [all] stays, which is harmless).
+  sed -i '/^# videofx: fans and 1-wire/,/^dtoverlay=w1-gpio-pi5/d' "$config"
+fi
 install -m 644 "$src/system/asound.conf" /etc/asound.conf
 
 echo "== console: tty1 is the projector's idle screen"
