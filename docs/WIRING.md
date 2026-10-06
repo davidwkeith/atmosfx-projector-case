@@ -1,4 +1,4 @@
-# Wiring and fuses
+# Wiring and fuse
 
 > **Mains voltage is inside this box.** If you are not confident wiring mains, have a qualified electrician do the AC side. Nothing here has been built or tested yet; check every rating against the labels on your own parts.
 
@@ -6,7 +6,7 @@ This case is rain-shedding and ventilated, not waterproof, and not certified for
 
 ## Overview
 
-One diagram per side of the barrier on the power shelf: [high voltage](#high-voltage-ac-side) (mains, left of the barrier: the receptacle plate with both wall-warts) and [low voltage](#low-voltage-side) (right of the barrier and down to the sled, drawn as the two DC rails and then the Pi's signals). Each comes twice: a schematic (`docs/wiring-*.svg`, drawn by `scripts/render_wiring.py` with [Schemdraw](https://schemdraw.readthedocs.io/); click one for full size) and a flowchart of the same connections. Red is live or +, grey is neutral or -, green is earth, blue is a signal. Pin numbers are the Pi header's physical pins; GPIO assignments and the reasoning behind them are in `pi/README.md` ("GPIO pins and wiring"). The fuse values on the schematics are the examples from "Fuse sizing" below; size yours from your own labels.
+One diagram per side of the barrier on the power shelf: [high voltage](#high-voltage-ac-side) (mains, left of the barrier: the receptacle plate with both wall-warts) and [low voltage](#low-voltage-side) (right of the barrier and down to the sled, drawn as the two DC rails and then the Pi's signals). Each comes twice: a schematic (`docs/wiring-*.svg`, drawn by `scripts/render_wiring.py` with [Schemdraw](https://schemdraw.readthedocs.io/); click one for full size) and a flowchart of the same connections. Red is live or +, grey is neutral or -, green is earth, blue is a signal. Pin numbers are the Pi header's physical pins; GPIO assignments and the reasoning behind them are in `pi/README.md` ("GPIO pins and wiring"). The AC fuse value on the schematic is the example from "AC fuse and DC protection" below; size yours from your own labels.
 
 ## High voltage: AC side
 
@@ -62,14 +62,12 @@ Right of the barrier, and down to the Pi sled.
 
 ### DC rails
 
-![DC rails schematic: the stock wall-wart's 21 V cord fused and switched by the relay contact into the projector's barrel plug, the second wall-wart's 12-24 V cord fused into a Wago + rail feeding the DigiAMP+ (which powers the Pi and the speakers), and one Wago - rail joining both minuses](wiring-lv-power.svg)
+![DC rails schematic: the stock wall-wart's 21 V cord switched by the relay contact into the projector's barrel plug, the second wall-wart's 12-24 V cord into a Wago + rail feeding the DigiAMP+ (which powers the Pi and the speakers), and one Wago - rail joining both minuses](wiring-lv-power.svg)
 
 ```mermaid
 flowchart TB
   W1["Stock wall-wart DC cord, 21 V<br/>cut a hand's width from the barrel plug; confirm centre + with a meter"]
   W2["Second wall-wart DC cord, 12-24 V<br/>same treatment"]
-  F1["21 V fuse<br/>blade, 3 A"]
-  F2["12-24 V fuse<br/>blade, 2.5 A"]
   WN(["Wago 221, - rail<br/>both minuses joined"])
   WP(["Wago 221, 12-24 V + rail"])
   subgraph PJ["Projector (21 V)"]
@@ -81,10 +79,10 @@ flowchart TB
     PI["Raspberry Pi<br/>5 V from the DigiAMP+ via the header<br/>no USB power"]
     SPK["Speakers behind the projection<br/>16 AWG zip cord, stripe to +<br/>out through the floor chimney"]
   end
-  W1 -- "+ 18 AWG" --> F1 --> RELAY -- "+" --> PROJ
+  W1 -- "+ 18 AWG" --> RELAY -- "+" --> PROJ
   W1 -- "- 18 AWG" --> WN
   WN -- "- never switched" --> PROJ
-  W2 -- "+ 18 AWG" --> F2 --> WP
+  W2 -- "+ 18 AWG" --> WP
   W2 -- "- 18 AWG" --> WN
   WP -- "20 AWG" --> AMP
   WN -- "20 AWG" --> AMP
@@ -98,8 +96,8 @@ Both rails share one - rail: the projector's HDMI shield ties its ground to the 
 
 | Circuit | Wire | Notes |
 |---|---|---|
-| Stock wall-wart DC lead to the 21 V fuse and the projector | 18 AWG (0.75 mm²) | Cut the lead a hand's width from its barrel plug, fuse the **+** conductor (the label's symbol says centre +; confirm with a meter before cutting) and splice it back with lever nuts, so the projector keeps its own plug (if the stock plug is straight, fit the BOM's right-angle plug on the cut tail instead). The relay, if fitted, goes in this + line |
-| Second wall-wart DC lead to the second fuse and splice | 18 AWG | Same treatment: fuse the +, lever-nut splice. 12-24 V (the DigiAMP+'s range; higher gives it more power) |
+| Stock wall-wart DC lead to the projector | 18 AWG (0.75 mm²) | Cut the lead a hand's width from its barrel plug (the label's symbol says centre +; confirm with a meter before cutting) and splice it back with lever nuts, so the projector keeps its own plug (if the stock plug is straight, fit the BOM's right-angle plug on the cut tail instead). The relay, if fitted, goes in this + line |
+| Second wall-wart DC lead to the splice | 18 AWG | Same treatment: lever-nut splice. 12-24 V (the DigiAMP+'s range; higher gives it more power) |
 | Both rails' **minus** conductors | 18 AWG | Join them at the splice. The projector's HDMI shield ties its ground to the Pi's; without this joint that shield would be the only return path between the rails |
 | Splice to DigiAMP+ power input | 20 AWG (0.5 mm²) | DigiAMP+ accepts 12-24 V on its P5 hard-wire header (or its 5.5 x 2.5 mm centre-positive barrel jack); it powers the Pi, so never also power the Pi by USB |
 | Relay (fallback only) | 18 AWG | Switch the **+** line to the projector. Never switch its ground: the HDMI cable would carry the return current. Use an **active-low** module: the Pi holds GPIO 27 high (relay open, projector off) from boot |
@@ -139,22 +137,20 @@ The DigiAMP+ re-exposes the header on top, so the leads plug into its pass-throu
 
 Trick-or-treaters walk through the yard in the dark. Run the power cord and speaker wires along edges, not across paths. Where they must cross a path, use a rubber cord cover (cable ramp), or bury or stake them flat. Keep every plug joint in a weatherproof connection box, off the ground.
 
-## Fuse sizing
+## AC fuse and DC protection
 
-Fill this in from **your** labels. The stock wall-wart reads 1.0 A in and 21 V 2.28 A (48 W) out; the TO2's own label says DC 21 V 3 A, so the supply has no headroom beyond the projector. The example column assumes that wall-wart plus a 12-24 V 2.5 A second one with a 0.8 A input rating.
+Fill this in from **your** labels. The stock wall-wart reads 1.0 A in and 21 V 2.28 A (48 W) out; the TO2's own label says DC 21 V 3 A, so the supply has no headroom beyond the projector. The example assumes that wall-wart plus a 12-24 V 2.5 A second one with a 0.8 A input rating.
 
 | Fuse | How to size it | Type | Example |
 |---|---|---|---|
 | AC fuse (live) | About 1.5x the **sum** of both wall-warts' rated input currents (the labels' "Input ... A"), and no more than the cord's rating | 5 x 20 mm, **time-delay (T)**, 250 V: switch-mode supplies have an inrush surge | 1.0 + 0.8 = 1.8 A gives **3 A T** (2.5 A T if you can get it) |
-| 21 V rail (stock wall-wart) | The wall-wart's rated output is 2.28 A and the projector can draw all of it, so a fuse at that rating would run at its limit. Use the next size up: it protects the 18 AWG lead (good for far more), and the wall-wart has its own overload protection | Automotive blade (ATO/ATC), inline holder | **3 A** |
-| Second rail (12-24 V wall-wart) | No more than its rated output, and at least 1.25x the DigiAMP+ + Pi load | Blade | 2.5 A wall-wart gives **2.5 A** (or 3 A) |
 
-Check the second rail's total: the DigiAMP+ at your volume plus the Pi must stay under that wall-wart's output rating. If it doesn't, buy a bigger wall-wart; a fuse won't fix that.
+**No DC fuses.** Each wall-wart limits its own output current and carries its own short-circuit protection, and its rated output is far below what the 18 AWG leads can carry, so a fault downstream cannot overheat the wire. Buy a UL/ETL-listed second wall-wart (short-circuit protected) and keep each rail's load under its output rating: the DigiAMP+ at your volume plus the Pi for the second one. If it doesn't fit, buy a bigger wall-wart.
 
 ## Before first power-up
 
 1. With nothing plugged in, check continuity: live, neutral (and earth, if used) each reach only where they should, with no short between them.
 2. Confirm the AC fuse sits in the **live** conductor.
-3. With both wall-warts plugged in but the splices open, measure each rail's DC voltage and polarity at its fuse. The stock wall-wart's label symbol says centre-positive; confirm it with the meter anyway.
+3. With both wall-warts plugged in but the splices open, measure each rail's DC voltage and polarity at its splice. The stock wall-wart's label symbol says centre-positive; confirm it with the meter anyway.
 4. Connect loads one at a time: the DigiAMP+ (the Pi should boot), then the projector.
 5. Close the lid, then test the GFCI outlet's trip button with the case running: everything must go dark.

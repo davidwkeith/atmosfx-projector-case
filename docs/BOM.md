@@ -1,6 +1,6 @@
 # Bill of materials
 
-Quantities for one case. Printed parts and filament are in [PRINTING.md](PRINTING.md); wire gauges and fuse sizing are in [WIRING.md](WIRING.md). Sizes marked "check" depend on parts you haven't bought yet.
+Quantities for one case. Printed parts and filament are in [PRINTING.md](PRINTING.md); wire gauges and the AC fuse sizing are in [WIRING.md](WIRING.md). Sizes marked "check" depend on parts you haven't bought yet.
 
 **Buy links:** Micro Center (Santa Clara store) where they stock it, otherwise Amazon; acrylic from TAP Plastics. Every link was opened on 2026-10-05; stock and prices move, so treat them as a starting point. Micro Center links carry `storeid=195` so the page shows Santa Clara stock.
 
@@ -26,12 +26,11 @@ Quantities for one case. Printed parts and filament are in [PRINTING.md](PRINTIN
 | Outdoor cord, SJTW 18 AWG or better, 3-wire | 1 | Round jacket for the PG9 grip | [Amazon: PLUGTUL 16/3 SJTW 25 ft](https://www.amazon.com/dp/B0B7JH3RHL). Micro Center's Inland cords don't state a gauge or jacket type |
 | PG9 cord grip (mains-rated) | 1 | | [Amazon: uxcell PG9 IP68 nylon, 10-pack](https://www.amazon.com/dp/B01MQWU2NM) |
 | NEMA 5-15R panel-mount receptacle, snap-in (SS-6B, 15 A 125 V, 2-pack) | 2 | Chosen 2026-10-06. Drawing: 24 x 24 mm cutout, 27 x 27 mm flange, 1.5 mm panel gap, body 20.6 + terminals to 30.6 mm behind the panel (`rcpt_cut`, `rcpt_t`, `rcpt_back` 40). **Not confirmed from the listing: UL/ETL listing and the tab width** (the drawing says only "2-2.2x7", which looks like the blade slots), so check the labels and match the quick-connects to the real tabs before wiring. Check the fit on the coupon | [Amazon: SS-6B 2-pack](https://www.amazon.com/dp/B0HBXKKJ35). Fallback, a listed part with the old 26 x 22 cutout: [Digi-Key: Qualtek 738W-X2/01](https://www.digikey.com/en/products/detail/qualtek/738W-X2-01/1164208) |
-| Second wall-wart, 12-24 V, 2.5-3 A, 5.5 x 2.5 mm centre-positive barrel (the DigiAMP+'s jack) | 1 | The Pi + DigiAMP+ rail (12-24 V is the DigiAMP+'s range; higher gives it more power). Up to 86 x 47 x 35 mm standing on its long edge (`wart2`); measure yours into the model | [Amazon: Facmogu 24 V 3 A, 5.5 x 2.5 mm](https://www.amazon.com/dp/B07TB3L72F) (claims UL; confirm it is the plug-in style and fits `wart2`). Micro Center has no 24 V barrel supplies |
+| Second wall-wart, 12-24 V, 2.5-3 A, 5.5 x 2.5 mm centre-positive barrel (the DigiAMP+'s jack) | 1 | The Pi + DigiAMP+ rail (12-24 V is the DigiAMP+'s range; higher gives it more power). Up to 86 x 47 x 35 mm standing on its long edge (`wart2`); measure yours into the model | [Amazon: Facmogu 24 V 3 A, 5.5 x 2.5 mm](https://www.amazon.com/dp/B07TB3L72F) (claims UL; confirm it is UL/ETL listed with short-circuit protection, since no DC fuse backs it up, and that it is the plug-in style and fits `wart2`). Micro Center has no 24 V barrel supplies |
 | Right-angle DC barrel adapter, 5.5 x 2.5 mm male to 5.5 x 2.5 mm female | 1 | The projector's jack is 5.5 mm OD x 2.5 mm ID (owner, 2026-10-06), so the stock plug is the same size. The male end goes into the jack (stands out about 15 mm, `port_depth`) and the stock plug or its stub goes into the elbow's female end, so the stock cable's 45 mm bend runs along the rear face. A straight plug would need about 45 mm behind the rear face, which the rear tile can't take. Do not use the 2.1 mm variants | [Amazon: GINTOOYUN 5.5 x 2.5 mm male-to-female, 5-pack](https://www.amazon.com/dp/B0BQGM4NBS) |
 | 4.8 mm fully insulated female quick-connects, plus piggybacks for the jumper | about 8 | 18 AWG crimp size | [Amazon: BAOMAIN 0.187 in fully insulated spade kit, 22-16 AWG](https://www.amazon.com/dp/B01MYV3BS0) (no piggybacks: jumper with a short lead and the lever nuts instead) |
 | Velcro strap, 20 mm | 1-2 | Through the shelf slots, round both wall-warts | [Micro Center: VELCRO One-Wrap roll, 3/4 in x 4 ft](https://www.microcenter.com/product/657584/velcro-90302-one-wrap-roll-4%e2%80%99-x-075-black-%281-roll%29?storeid=195) |
 | 5 x 20 mm inline fuse holder + time-delay fuse | 1 | AC live | [Amazon: uxcell inline 5 x 20 holder, 18 AWG, 5-pack](https://www.amazon.com/dp/B07SM5KYZ7) + [BOJACK 5 x 20 time-delay fuses](https://www.amazon.com/dp/B07WPW2QBF) (pick the rating from WIRING.md, sized for both wall-warts; Micro Center only stocks fast-blow) |
-| Blade (ATO/ATC) inline fuse holder + fuse | 2 | One per DC rail | [Amazon: SIM&NAT 16 AWG inline ATO holder, 2-pack](https://www.amazon.com/dp/B0D8XWW5HC) (comes with 10 A and 15 A fuses; buy the WIRING.md rating separately) |
 | Lever-nut connectors (Wago 221, 5-way) | 2 | DC splice | [Amazon: WAGO 221-415, 10-pack](https://www.amazon.com/dp/B07W7W9J95) |
 | Wire: 18, 20 and 24 AWG | a few metres | | Micro Center: [18 AWG hook-up, 25 ft](https://www.microcenter.com/product/689131/leo-sales-ltd-hook-up-wire-300vhu-18-gauge-ul1007-copper-25ft?storeid=195), [22 AWG stranded, 25 ft](https://www.microcenter.com/product/689133/leo-sales-ltd-wire-stranded-22-gauge-300v-orange-25-ft?storeid=195). Amazon: [20 AWG silicone kit](https://www.amazon.com/dp/B073RDG2J6), [24 AWG silicone kit](https://www.amazon.com/dp/B073RD76QD) |
 | 16 AWG speaker wire | to suit | | [Amazon: Amazon Basics 16 AWG, 50 ft](https://www.amazon.com/dp/B006LW0WDQ) (Micro Center sells 16 AWG only by the 500 ft spool) |
@@ -84,7 +83,7 @@ Printing takes 2 to 3 days on two printers and bring-up about a week, so order e
 |---|---|---|
 | Picture frame (glazing) | Same day at a craft or discount store, or a few days from Amazon | Any time |
 | Zero 2 W (if used) | 2-5 days | Now |
-| Filament (2 x 1 kg), fasteners, wire, fuses, silicone, screen | 1-3 days | Now |
+| Filament (2 x 1 kg), fasteners, wire, fuse, silicone, screen | 1-3 days | Now |
 
 Micro Center Santa Clara had the Pi boards, DigiAMP+, microSD, filament, PIR, relay, IR board, insert kit, hook-up wire, thin HDMI cable and cable ties in stock on 2026-10-05, so one trip covers those.
 
@@ -99,7 +98,7 @@ These are estimates from typical retail prices, not quotes; check current prices
 | Speakers (outdoor pair) + wire | 50-120 |
 | Ball head + stud | 15-35 |
 | PIR | 5-10 |
-| Power parts (cord, gland, 2 receptacles, second wall-wart, fuses, lever nuts, wire, connection box) | 55-90 |
+| Power parts (cord, gland, 2 receptacles, second wall-wart, fuse, lever nuts, wire, connection box) | 55-90 |
 | Acrylic pane | 10-25 |
 | Inserts, screws, foam, silicone, screen, paint | 30-50 |
 | Filament, about 1.3 kg | 30-60 |

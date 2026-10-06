@@ -10,10 +10,10 @@
 Three drawings, matching the sections of docs/WIRING.md:
 
     wiring-hv.svg          mains: outlet, cord, gland, live-only fuse, two NEMA 5-15R receptacles, both wall-warts
-    wiring-lv-power.svg    the two DC rails: a fuse each, Wago rails, relay contact, projector, DigiAMP+
+    wiring-lv-power.svg    the two DC rails: Wago rails, relay contact, projector, DigiAMP+
     wiring-lv-signals.svg  the Pi header: every GPIO used, the IR LED driver
 
-Ratings are the examples from WIRING.md "Fuse sizing" (stock 21 V 2.28 A wall-wart,
+Ratings are the examples from WIRING.md "AC fuse and DC protection" (stock 21 V 2.28 A wall-wart,
 12-24 V 2.5 A second one); size yours from your own labels. Keep this file in step with
 WIRING.md, pi/README.md ("GPIO pins and wiring") and BOM.md.
 """
@@ -168,7 +168,7 @@ def draw_hv(path):
     note(d, (x_bar + 1.3, y24n), '12-24 V -', halign='left', color=NEG, fontsize=FS)
     note(d, (x_bar + 1.3, y21p), '21 V +', halign='left', color=POS, fontsize=FS)
     note(d, (x_bar + 1.3, y21n), '21 V -', halign='left', color=NEG, fontsize=FS)
-    note(d, (x_bar + 1.3, y21n - 1.9), 'captive DC cords, cut and fused\non the low-voltage side\n(wiring-lv-power.svg)', halign='left')
+    note(d, (x_bar + 1.3, y21n - 1.9), 'captive DC cords, cut and spliced\non the low-voltage side\n(wiring-lv-power.svg)', halign='left')
 
     note(d, (x_wall + 0.4, -8.9),
          'Every AC joint inside a connector shell or heat-shrink; no bare metal. The tabs sit behind the plate, in the corner with the gland. '
@@ -188,8 +188,7 @@ def draw_lv_power(path):
                .label('Stock wall-wart\n21 V 2.28 A', fontsize=FSS))
     note(d, (w1.center[0], w1.center[1] - 1.6), 'DC cord cut a hand\'s width from its plug;\nlabel says centre +: confirm with a meter')
     d.add(elm.Line().at(w1.pos).right(0.6).color(POS))
-    f1 = d.add(elm.Fuse().right().color(POS)
-               .label('F1  21 V rail, blade (ATO)\nnext size above the 2.28 A output\nexample: 3 A', loc='top', fontsize=FSS, ofst=0.15))
+    f1 = d.add(elm.Line().right(3).color(POS))
     x_bp = f1.end[0] + 2.4   # second + rail
     x_bn = x_bp + 1.6        # shared - rail
     x_load = x_bn + 8.0
@@ -224,8 +223,7 @@ def draw_lv_power(path):
     d.add(elm.Line().at(w2.neg).to((x_bn, w2.neg[1])).color(NEG))
     d.add(elm.Dot().at((x_bn, w2.neg[1])).color(NEG))
     d.add(elm.Line().at(w2.pos).right(0.6).color(POS))
-    f2 = d.add(elm.Fuse().right().color(POS)
-               .label('F2  12-24 V rail, blade (ATO)\n<= wall-wart output, >= 1.25x load\nexample: 2.5 A', loc='bottom', fontsize=FSS, ofst=0.15))
+    f2 = d.add(elm.Line().right(3).color(POS))
     d.add(elm.Line().at(f2.end).to((x_bp, f2.end[1])).color(POS))
     d.add(elm.Dot().at((x_bp, f2.end[1])).color(POS))
     d.add(elm.Line().at((x_bp, f2.end[1])).to((x_bp, y_bot)).color(POS).linewidth(3))
@@ -303,7 +301,7 @@ def draw_lv_signals(path):
     # relay coil side, straight off GPIO27, in the far column so the wire passes under the PIR
     relay = d.add(ic([pin('IN', 'R', 'inp'),
                       pin('VCC', 'L', 'vcc', pos=0.88, pin='5 V, pin 4'), pin('GND', 'L', 'gnd', pos=0.63, pin='GND, pin 14'),
-                      pin('COM', 'L', 'com', pos=0.37, pin='21 V + from F1'), pin('NO', 'L', 'no', pos=0.12, pin='+ to projector')],
+                      pin('COM', 'L', 'com', pos=0.37, pin='21 V + from the wall-wart'), pin('NO', 'L', 'no', pos=0.12, pin='+ to projector')],
                      size=(3.0, 3.2)).at((XL2, y(13))).anchor('inp')
                   .label('Relay module\n5 V coil, opto in\nACTIVE-LOW', fontsize=FSS - 2))
     wire([(XLW, y(13)), relay.inp])
