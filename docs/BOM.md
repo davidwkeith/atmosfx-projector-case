@@ -21,11 +21,14 @@ Quantities for one case. Printed parts and filament are in [PRINTING.md](PRINTIN
 
 | Item | Qty | Notes |
 |---|---|---|
-| Outdoor cord, SJTW 18 AWG or better | 1 | 2- or 3-wire to match the brick's inlet |
+| Outdoor cord, SJTW 18 AWG or better, 3-wire | 1 | Round jacket for the PG9 grip |
 | PG9 cord grip (mains-rated) | 1 | |
-| Rewireable IEC connector (C7, C5 or C13 to match the brick) | 1 | Leaves the brick unmodified |
+| NEMA 5-15R panel-mount receptacle, snap-in, 4.8 mm tabs (Qualtek 738W-X2/01) | 2 | 26 x 22 mm cutout in a 0.8-2 mm panel; the shelf's plate is 2 mm at the cutout (`rcpt_cut`, `rcpt_t`). Check the fit on the coupon. [Digi-Key 1164208](https://www.digikey.com/en/products/detail/qualtek/738W-X2-01/1164208) |
+| Second wall-wart, 24 V, 2.5-3 A, barrel plug to match the Amp4 | 1 | The Pi + Amp4 + fans rail. Up to 86 x 47 x 35 mm standing on its long edge (`wart2`); measure yours into the model |
+| 4.8 mm fully insulated female quick-connects, plus piggybacks for the jumper | about 8 | 18 AWG crimp size |
+| Velcro strap, 20 mm | 1-2 | Through the shelf slots, round both wall-warts |
 | 5 x 20 mm inline fuse holder + time-delay fuse | 1 | AC live |
-| Blade (ATO/ATC) inline fuse holder + fuse | 1-3 | Main DC, optional projector and Amp4 branches |
+| Blade (ATO/ATC) inline fuse holder + fuse | 2 | One per DC rail |
 | Lever-nut connectors (Wago 221, 5-way) | 2 | DC splice |
 | Wire: 18, 20 and 24 AWG | a few metres | |
 | 16 AWG speaker wire | to suit | |
@@ -35,7 +38,7 @@ Quantities for one case. Printed parts and filament are in [PRINTING.md](PRINTIN
 
 | Item | Qty | Notes |
 |---|---|---|
-| 40 x 40 x 10 mm 24 V 4-pin PWM fan (e.g. Noctua NF-A4x10 24V PWM) | 2 | Runs on the 21 V rail; a 12 V fan would burn. Check its datasheet accepts 3.3 V PWM |
+| 40 x 40 x 10 mm 24 V 4-pin PWM fan (e.g. Noctua NF-A4x10 24V PWM) | 2 | Runs on the second wall-wart's 24 V rail; a 12 V fan would burn there. Check its datasheet accepts 3.3 V PWM |
 | DS18B20 temperature sensor + 4.7 kohm resistor | 2 + 1 | One per zone, one pull-up |
 | HC-SR501 PIR motion sensor | 1 | |
 | Relay module, 5 V coil, opto-isolated, active-low | 0-1 | Only if the projector lacks CEC |
@@ -66,7 +69,7 @@ Quantities for one case. Printed parts and filament are in [PRINTING.md](PRINTIN
 | Item | Notes |
 |---|---|
 | PETG or ASA, about 1.3 kg, "Go Away Green" | Plus a little for reprints |
-| Flame-retardant PETG (UL 94 V-0, e.g. Prusament PETG V0), about 0.1-0.3 kg | Recommended for `power_shelf` (and `base_rear`, if the colour works): mains and the brick sit there |
+| Flame-retardant PETG (UL 94 V-0, e.g. Prusament PETG V0), about 0.1-0.3 kg | Recommended for `power_shelf` (and `base_rear`, if the colour works): the receptacles and both wall-warts sit there |
 | Foam tape, 2 mm (lid rim) and 1.5 mm (hatch) | |
 | Neutral-cure outdoor silicone | Base seam, pane, PIR dome |
 | Insect screen, mosquito grade (about 18 x 16 mesh) | Caps and behind the fans |
@@ -97,7 +100,7 @@ These are estimates from typical retail prices, not quotes; check current prices
 | Speakers (outdoor pair) + wire | 50-120 |
 | Ball head + stud | 15-35 |
 | Fans (2x Noctua) + sensors + PIR | 40-55 |
-| Power parts (cord, gland, IEC, fuses, lever nuts, wire, connection box) | 35-60 |
+| Power parts (cord, gland, 2 receptacles, second wall-wart, fuses, lever nuts, wire, connection box) | 55-90 |
 | Acrylic pane | 10-25 |
 | Inserts, screws, foam, silicone, screen, paint | 30-50 |
 | Filament, about 1.3 kg | 30-60 |
