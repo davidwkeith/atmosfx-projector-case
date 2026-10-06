@@ -51,8 +51,7 @@ Quantities for one case. Printed parts and filament are in [PRINTING.md](PRINTIN
 
 | Item | Qty | Where | Buy |
 |---|---|---|---|
-| 3/8-16 heat-set insert | 1 | Tripod | [Amazon: E-Z LOK 3/8-16 brass insert for plastic, 25-pack](https://www.amazon.com/dp/B08P1VF4NB) |
-| 1/4-20 heat-set insert | 2 | Pedestal, tripod | [Amazon: ruthex 1/4-20 heat-set inserts, 20-pack](https://www.amazon.com/dp/B09MTS6ZZQ) |
+| 1/4-20 heat-set insert | 1 | Pedestal | [Amazon: ruthex 1/4-20 heat-set inserts, 20-pack](https://www.amazon.com/dp/B09MTS6ZZQ) |
 | M4 heat-set insert | 4 | Hatch studs | [Micro Center: Leo Sales heat-set insert kit (M3/M4/M5)](https://www.microcenter.com/product/675642/leo-sales-ltd-heat-set-insert-kit-%28m3-m4-m5%29?storeid=195) |
 | M3 heat-set insert | 1 | Sled thumbscrew | Same kit |
 | M4 x 12 button-head | 4 | Hatch keyholes | [Amazon: M4 x 12 stainless button head, 100-pack](https://www.amazon.com/dp/B01H6EZRCS) |
@@ -87,7 +86,6 @@ Printing takes 2 to 3 days on two printers and bring-up about a week, so order e
 |---|---|---|
 | Cut-to-size acrylic | Same day at TAP Plastics (3-10 days if mail-ordered) | Any time |
 | Noctua fans, DS18B20, Zero 2 W (if used) | 2-5 days | Now |
-| 3/8-16 heat-set insert | 2-5 days (a less common size) | With the fasteners |
 | Filament (2 x 1 kg), fasteners, wire, fuses, silicone, screen | 1-3 days | Now |
 
 Micro Center Santa Clara had the Pi boards, DigiAMP+, microSD, filament, PIR, relay, IR board, insert kit, hook-up wire, thin HDMI cable and cable ties in stock on 2026-10-05, so one trip covers those.

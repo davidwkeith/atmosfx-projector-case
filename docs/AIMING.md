@@ -26,7 +26,6 @@ Past that, the projector hits the window frame or the Pi divider. Get the case c
 
 1. **Place the case.**
    - On the ground: firm, level ground with all feet down, out of puddles, because air comes in through the floor. Turn the whole case until the image lands roughly on target.
-   - On a tripod: screw it on with the 3/8" or 1/4" thread under the floor, and do the coarse aim with the tripod head. Use a tripod rated for at least 3 kg, and weigh it down against wind.
    - Either way, keep it low and tilt the image up, so people walking past aren't looking into the lens (a bright "hot spot").
 2. **Take off the hatch cover.** If the optional lock screw is fitted (bottom centre of the cover), remove it first. Lift it straight up about 8 mm, until the bolt heads line up with the wide ends of the keyholes, then pull it straight out. Don't pry it.
 3. **Support the projector.** Put one hand through the hatch and hold the projector before loosening anything. It weighs about 0.7 kg and will flop if the head is loose.
