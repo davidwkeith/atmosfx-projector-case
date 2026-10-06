@@ -94,7 +94,7 @@ flowchart TB
   linkStyle 3,4,7,9 stroke:#424242,stroke-width:2px
 ```
 
-Both rails share one - rail: the projector's HDMI shield ties its ground to the Pi's anyway, and without the joint that shield would be the only return path between the rails. The relay is only needed if the projector lacks HDMI-CEC (see `pi/README.md`, "Projector power"). It is also the only way the Pi can cut the projector's power on over-temperature: with CEC alone it can only ask for standby, so consider fitting it anyway (see `pi/README.md`, "Cooling"). The relay opens whenever the Pi's service stops. Use an **active-low** module: the Pi holds GPIO 27 high (relay open, projector off) from boot.
+Both rails share one - rail: the projector's HDMI shield ties its ground to the Pi's anyway, and without the joint that shield would be the only return path between the rails. The relay is only needed if the projector lacks HDMI-CEC (see `pi/README.md`, "Projector power"). It is also the only way the Pi can cut the projector's power if the Pi itself overheats: with CEC alone it can only ask for standby, so consider fitting it anyway (see `pi/README.md`, "Cooling"). The relay opens whenever the Pi's service stops. Use an **active-low** module: the Pi holds GPIO 27 high (relay open, projector off) from boot.
 
 | Circuit | Wire | Notes |
 |---|---|---|

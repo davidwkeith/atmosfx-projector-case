@@ -35,7 +35,7 @@ Past that, the projector hits the window frame or the Pi divider. Get the case c
 7. **Lock the ball head** firmly while still holding the projector. Let go, wait a minute, and check the image hasn't drooped.
 8. **Focus.** Use the projector's focus control if you can reach it through the hatch. If you can't, remove the four lid screws on the sides of the lid and lift it off.
 9. **Hang the cover.** Refit the lock screw if you use one. Line up the wide ends of the keyholes over the four bolt heads, press it flat against the foam, and let it drop about 8 mm so it seats. It should sit flush and not pull straight out.
-10. **Final check.** The fan and louvers are clear and the power cord hangs in a drip loop below the gland.
+10. **Final check.** The louver banks are clear of the HDMI cable and the power cord hangs in a drip loop below the gland.
 
 ## Troubleshooting
 
