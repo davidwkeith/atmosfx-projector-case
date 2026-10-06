@@ -4,7 +4,7 @@ Context for Claude Code. Read this first, then `docs/DESIGN_LOG.md` for why thin
 
 ## What this is
 
-A parametric OpenSCAD design (`projector_pi_case.scad`, currently v0.10) for an outdoor case that holds a mini projector plus a Raspberry Pi 3 running an AtmosFX Halloween effect. The projector is a Tkisko TO2: 165 x 130 x 66 mm, lens on the long face and offset to the left, short throw (about 0.95:1), DC 21 V 3 A input per its label. Owner: David (dwk), web engineer, comfortable with code, learning 3D design through real projects. Halloween is the deadline, so bias toward getting parts printed and iterated over perfecting the model on screen.
+A parametric OpenSCAD design (`projector_pi_case.scad`, currently v0.10 in its own internal design changelog — see "Versioning" below for how that differs from the repo release version) for an outdoor case that holds a mini projector plus a Raspberry Pi 3 running an AtmosFX Halloween effect. The projector is a Tkisko TO2: 165 x 130 x 66 mm, lens on the long face and offset to the left, short throw (about 0.95:1), DC 21 V 3 A input per its label. Owner: David (dwk), web engineer, comfortable with code, learning 3D design through real projects. Halloween is the deadline, so bias toward getting parts printed and iterated over perfecting the model on screen.
 
 **Status: design only. Nothing has been printed, fit-checked or wired.** The projector's depth is measured; its other dimensions come from the manual and photos (see "Unverified" below). `docs/measurements.xlsx` is the owner's fill-in worksheet (defaults, manual specs, measured, flag).
 
@@ -12,7 +12,7 @@ A parametric OpenSCAD design (`projector_pi_case.scad`, currently v0.10) for an 
 
 ```sh
 make parts                    # all STLs -> stl/ (gitignored). OPENSCAD=/path/to/openscad if not on PATH
-scripts/check_clash.sh        # interference checks incl. cover lift-off path, lid tiles, the projector, plug, side-port, baffle and IR-holder aim sweep and the light cone. Must all say ok. Needs python3
+scripts/check_clash.sh        # interference checks incl. cover lift-off path, lid tiles, an aim sweep of the projector/plug/side-port/IR-holder against the case (baffle included), and the light cone. Must all say ok. Needs python3
 # docs/PRINTING.md has sliced times (PrusaSlicer CLI with the stock MK3S profiles); print fit_coupon first
 scripts/render_previews.sh    # regenerate preview/*.png (needs a GL context; xvfb-run on headless Linux)
 uv run scripts/render_wiring.py  # regenerate docs/wiring-*.svg (Schemdraw schematics; deps come from the script header)
@@ -25,7 +25,7 @@ Single part by hand: `openscad -o out.stl -D "part=\"base\"" -D "tile=\"front\""
 
 `part` = assembly | base | lid | window_frame | pedestal | hatch_cover | power_shelf | sled | ir_holder | vent_cap | intake_cap | exhaust_cap | fit_coupon. `sled` = pi3 | pi4 | pi5 | zero2w (assembly shows it; `make parts` builds all four). `tile` = all | front | rear (base and lid only). STLs are not committed: CI attaches them to a GitHub Release for each `v*` tag, together with the Pi tarball, the public Pi image (`image` job on `ubuntu-24.04-arm`) and `videofx-imager.json` (Raspberry Pi Imager OS list, so Imager offers the image with its first-boot options); `stl/` is regenerated output.
 
-Versioning: one version for the whole repo. `pi/package.json` version = the git tag without the `v` (e.g. 0.8.1 / `v0.8.1`); `videofx-update` compares them. Bump both together.
+Versioning: one version for the whole repo. `pi/package.json` version = the git tag without the `v` (e.g. 0.8.1 / `v0.8.1`); `videofx-update` compares them. Bump both together. This is separate from the `projector_pi_case.scad` design changelog's own vN counter (see "What this is" above and `docs/DESIGN_LOG.md`), which tracks model revisions and can run ahead of the last tagged release.
 
 Docs: `docs/PRINTING.md` (sliced times, order), `docs/BOM.md` (quantities, ordering, cost), `docs/ASSEMBLY.md`, `docs/WIRING.md` (plus the `docs/wiring-*.svg` schematics: edit `scripts/render_wiring.py`, never the SVGs), `docs/AIMING.md`, `docs/BRINGUP.md` (hardware test checklist), `docs/DESIGN_LOG.md`. Keep them in step with model changes; re-slice for PRINTING.md with the PrusaSlicer CLI (`--printer-profile "Original Prusa i3 MK3S & MK3S+" --print-profile "0.20mm SPEED @MK3" --material-profile "Prusament PETG"`, datadir seeded with the bundled PrusaResearch.ini: copy `PrusaResearch.ini` and `.idx` from `/Applications/Original Prusa Drivers/PrusaSlicer.app/Contents/Resources/profiles/ (the owner's install)` into `<datadir>/vendor/` and write `<datadir>/PrusaSlicer.ini` containing `[vendor:PrusaResearch]` and `model:MK3S = 0.4`; then `<app>/Contents/MacOS/PrusaSlicer --datadir <datadir> --export-gcode ... --output x.gcode part.stl` and read the `estimated printing time` and `total filament used [g]` comments; runs inside the sandbox).
 
@@ -69,7 +69,7 @@ Print orientation is baked into the `part` dispatch at the bottom (lid flipped r
 - Projector power: HDMI-CEC first; fallback is a relay on the projector's + DC line (never switch its ground: HDMI would carry the return) plus an IR LED in `ir_holder` sending the remote's power code. The relay forces a known off state, so the IR toggle stays in step. The relay opens whenever the service stops (`videofx-relay-open`).
 - Insects: every opening is screened. The three right-wall louver banks (exhaust, inlet, Pi vent) get `screen_cap`s (`exhaust_cap`, `intake_cap`, `vent_cap`: screen glued inside, 2x M2 into 1 mm bosses; tabs top/bottom for driver access). The chimney takes a foam plug; the gland and PIR dome are sealed. `screen-caps` in check_clash.sh.
 - Motion sensor: PIR in the rear wall (`pir_*`), facing where visitors approach (the case faces the projection surface, so the street is behind it), under a 45 deg hood; its wires drop to the Pi through a slot in the shelf's low-voltage side. The Pi software fires scares from it, from a Matter "Scare" endpoint, or from the web page.
-- Audio: DigiAMP+ on the Pi drives speakers behind the projection over standard speaker wire. The wire goes down a floor chimney (`spk_x`, `spk_d`, `spk_collar`) into the gap under the floor and out between the feet. Figure-8 zip cord doesn't seal in a round gland, which is why the wire exits through the floor. `pi_stack()` is the Pi + HAT envelope; `pi-shelf` in check_clash.sh keeps it under the shelf.
+- Audio: DigiAMP+ on the Pi drives speakers behind the projection over standard speaker wire. The wire goes down a floor chimney (`spk_x`, `spk_d`, `spk_collar`) into the gap under the floor and out between the feet. Figure-8 zip cord doesn't seal in a round gland, which is why the wire exits through the floor. `pi_stack()` is the Pi + HAT envelope; the `stack-<gen>` pairs in check_clash.sh (one per sled generation) keep it clear of both the base and the shelf.
 
 ## Unverified / assumptions (fix these first)
 

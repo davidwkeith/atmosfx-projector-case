@@ -2,7 +2,7 @@
 
 The projector sits on a ball head inside the case. You reach it through the aim hatch without taking the lid off. No tools are needed.
 
-> Nothing has been printed yet. These steps describe the v0.8 design; update them after the first fit check.
+> Nothing has been printed yet. These steps describe the current design; update them after the first fit check.
 
 ## Before you start
 
