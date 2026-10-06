@@ -6,6 +6,10 @@
 # Precedence: web page > this file > built-in default. Lines are commented out,
 # so the defaults apply until you set them.
 #
+# systemd reads this file, not a shell. Put a value that contains quotes (the
+# JSON ones) in single quotes, as the examples do: quotes inside an unquoted
+# value are dropped, and the setting then falls back to its default.
+#
 # After editing: sudo systemctl restart videofx-player
 # Root-only (mode 600) because it can hold the web page password.
 
@@ -53,7 +57,7 @@
 #VIDEOFX_MIRROR=false
 
 # --- Advanced
-# Extra mpv options (applies on the next play). --name=value options, space separated, added after the built-in ones (so they can override them), e.g. --hwdec=v4l2m2m-copy.
+# Extra mpv options (applies on the next play). --name=value options, space separated, added after the built-in ones (so they can override them), e.g. --hwdec=v4l2m2m-copy. Only decoding, DRM output, scaling, sync, cache and audio-timing options are accepted.
 #VIDEOFX_MPV_EXTRA_ARGS=
 
 # --- Playback
@@ -63,7 +67,7 @@
 # --- Scare
 # Calm clip (loops between scares)
 #VIDEOFX_SCARE_BUFFER=
-# Scare clips. In /etc/default/videofx: a JSON list of file names.
+# Scare clips. In /etc/default/videofx: a JSON list of file names in single quotes, e.g. '["ghost.mp4"]'.
 #VIDEOFX_SCARE_CLIPS=[]
 # Scare order
 #VIDEOFX_SCARE_ORDER=sequential
@@ -85,11 +89,11 @@
 #VIDEOFX_LATITUDE=
 # Longitude. Degrees, east positive (west is negative).
 #VIDEOFX_LONGITUDE=
-# Weekly schedule. In /etc/default/videofx: JSON.
-#VIDEOFX_SCHEDULE={"enabled":false,"sunsetOffsetMin":0,"days":{"sun":{"on":"","off":""},"mon":{"on":"","off":""},"tue":{"on":"","off":""},"wed":{"on":"","off":""},"thu":{"on":"","off":""},"fri":{"on":"","off":""},"sat":{"on":"","off":""}}}
+# Weekly schedule. In /etc/default/videofx: JSON, in single quotes.
+#VIDEOFX_SCHEDULE='{"enabled":false,"sunsetOffsetMin":0,"days":{"sun":{"on":"","off":""},"mon":{"on":"","off":""},"tue":{"on":"","off":""},"wed":{"on":"","off":""},"thu":{"on":"","off":""},"fri":{"on":"","off":""},"sat":{"on":"","off":""}}}'
 
 # --- Cooling
-# Fans and temperature protection. Turn on once the fans and DS18B20 sensors are wired.
+# Fans and temperature protection. Turn on once the fans and DS18B20 sensors are wired, and choose the projector-zone sensor: with no reading from it for 60 s while playing, playback stops. Off: the fans run flat out and nothing is protected.
 #VIDEOFX_THERMAL=false
 # Projector fan curve (°C:duty%). Linear between points, e.g. 30:25 40:50 50:100.
 #VIDEOFX_FAN1_CURVE=30:25 40:50 50:100
@@ -123,8 +127,8 @@
 #VIDEOFX_DMX_MULTICAST=true
 
 # --- Schedule
-# Quiet hours. In /etc/default/videofx: JSON.
-#VIDEOFX_QUIET_HOURS={"enabled":false,"volumeCap":10,"disableScares":true,"dmxBypass":false,"days":{"sun":{"start":"","end":""},"mon":{"start":"","end":""},"tue":{"start":"","end":""},"wed":{"start":"","end":""},"thu":{"start":"","end":""},"fri":{"start":"","end":""},"sat":{"start":"","end":""}}}
+# Quiet hours. In /etc/default/videofx: JSON, in single quotes.
+#VIDEOFX_QUIET_HOURS='{"enabled":false,"volumeCap":10,"disableScares":true,"dmxBypass":false,"days":{"sun":{"start":"","end":""},"mon":{"start":"","end":""},"tue":{"start":"","end":""},"wed":{"start":"","end":""},"thu":{"start":"","end":""},"fri":{"start":"","end":""},"sat":{"start":"","end":""}}}'
 
 # --- Web page
 # Hide the Matter pairing code once paired. Anyone who can open this page could use the code while pairing mode is open.
@@ -135,6 +139,9 @@
 #VIDEOFX_CONSOLE=/dev/tty1
 
 # --- File only (needs root, or would let the page point the service anywhere)
+# The relay, IR and 1-wire pins are also in /boot/firmware/config.txt (the relay's
+# boot level, the IR and w1-gpio overlays), written once by setup.sh with the
+# defaults. Change them there too, or the new pins won't work.
 # Relay GPIO (BCM)
 #VIDEOFX_RELAY_GPIO=27
 # Relay input is active-low

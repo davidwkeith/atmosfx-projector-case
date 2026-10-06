@@ -27,9 +27,14 @@ export class HttpError extends Error {
 }
 
 const MAX_PLAYLIST_BYTES = 1024 * 1024;
+const TEMP_UPLOAD = /^\.upload-[0-9a-f]{12}$/;
 
-/** maxUploadBytes: a number, or a function so the limit can change at runtime. */
-export function createMediaStore({ dir, playlist, maxUploadBytes: limit = 4 * 1024 ** 3 }) {
+/**
+ * maxUploadBytes: a number, or a function so the limit can change at runtime.
+ * reserveBytes: free space uploads must leave. Settings, the Matter pairing and
+ * the on/off state live on the same partition, and a full disk fails their writes.
+ */
+export function createMediaStore({ dir, playlist, maxUploadBytes: limit = 4 * 1024 ** 3, reserveBytes = 64 * 1024 ** 2, statfs: statfsFn = statfs }) {
   const maxUpload = typeof limit === "function" ? limit : () => limit;
   const root = resolvePath(dir);
   const playlistPath = resolvePath(playlist);
@@ -66,6 +71,15 @@ export function createMediaStore({ dir, playlist, maxUploadBytes: limit = 4 * 10
 
   // Durable: temp file, fsync, rename, fsync of the folder (power cuts).
   const atomicWrite = (path, data) => writeFileAtomic(path, data);
+
+  async function freeBytes() {
+    try {
+      const fs = await statfsFn(root);
+      return fs.bavail * fs.bsize;
+    } catch {
+      return undefined; // not critical
+    }
+  }
 
   return {
     root,
@@ -110,14 +124,17 @@ export function createMediaStore({ dir, playlist, maxUploadBytes: limit = 4 * 10
         files.push({ name: d.name, size: s.size, modified: s.mtime.toISOString() });
       }
       files.sort((a, b) => a.name.localeCompare(b.name));
-      let freeBytes;
-      try {
-        const fs = await statfs(root);
-        freeBytes = fs.bavail * fs.bsize;
-      } catch {
-        // not critical
+      return { files, freeBytes: await freeBytes(), maxUploadBytes: maxUpload() };
+    },
+
+    /** Remove uploads a crash or power cut left half-written. Call once at startup. */
+    async cleanTemp() {
+      let removed = 0;
+      for (const d of await readdir(root, { withFileTypes: true }).catch(() => [])) {
+        if (!d.isFile() || !TEMP_UPLOAD.test(d.name)) continue;
+        await unlink(join(root, d.name)).then(() => removed++, () => {});
       }
-      return { files, freeBytes, maxUploadBytes: maxUpload() };
+      return removed;
     },
 
     /**
@@ -135,12 +152,16 @@ export function createMediaStore({ dir, playlist, maxUploadBytes: limit = 4 * 10
       if (declaredLength > maxUploadBytes) throw new HttpError(413, "file too large");
 
       await mkdir(root, { recursive: true });
+      const free = await freeBytes();
+      const room = free === undefined ? Infinity : free - reserveBytes;
+      const noRoom = () => new HttpError(507, "not enough free space on the Pi: delete some videos first");
+      if (declaredLength > room) throw noRoom();
       const tmp = join(root, `.upload-${randomBytes(6).toString("hex")}`);
       let bytes = 0;
       const limit = new Transform({
         transform(chunk, _enc, done) {
           bytes += chunk.length;
-          done(bytes > maxUploadBytes ? new HttpError(413, "file too large") : null, chunk);
+          done(bytes > maxUploadBytes ? new HttpError(413, "file too large") : bytes > room ? noRoom() : null, chunk);
         },
       });
       try {

@@ -28,8 +28,20 @@ export class GpioOut {
     return this.#value;
   }
 
-  /** Drive the line (logical value: true = active). Resolves once the new holder runs. */
-  async set(value) {
+  /**
+   * Drive the line (logical value: true = active). Resolves once the new holder runs.
+   * Calls run one at a time, in order: an off then on a few ms apart must not race
+   * for the line, or the relay could end up opposite to what was asked last.
+   */
+  set(value) {
+    const job = this.#queue.then(() => this.#apply(value));
+    this.#queue = job.catch(() => {});
+    return job;
+  }
+
+  #queue = Promise.resolve();
+
+  async #apply(value) {
     if (value === this.#value && this.#child) return;
     this.#value = value;
     // Only one process can hold the line: stop the old holder first. The Pi keeps

@@ -1,7 +1,10 @@
 # First boot only: data partition + read-only root, then one reboot.
 [Unit]
 Description=VideoFX power-cut protection (data partition, read-only root)
-After=local-fs.target videofx-hostname.service
+# After Pi OS's own first-boot jobs: this unit reboots when it is done, and
+# anything it cuts short would run again on every boot under the read-only root
+# (new SSH host keys each time, for one).
+After=local-fs.target videofx-hostname.service regenerate_ssh_host_keys.service ssh.service userconfig.service
 Before=videofx-player.service
 ConditionPathExists=!/var/lib/videofx-storage.state
 

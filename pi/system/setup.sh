@@ -66,6 +66,7 @@ install -m 644 "$src/system/99-videofx.rules" /etc/udev/rules.d/99-videofx.rules
 install -m 644 "$src/system/videofx-storage.service" /etc/systemd/system/videofx-storage.service
 install -m 755 "$src/system/videofx-storage" /usr/local/sbin/videofx-storage
 install -m 755 "$src/system/videofx-maint" /usr/local/sbin/videofx-maint
+install -m 755 "$src/system/videofx-relay-open" /usr/local/sbin/videofx-relay-open
 install -m 755 "$src/system/videofx-update" /usr/local/sbin/videofx-update
 install -m 644 "$src/system/videofx-update-resume.service" /etc/systemd/system/videofx-update-resume.service
 systemctl enable videofx-update-resume.service
@@ -103,6 +104,9 @@ grep -q '^dtoverlay=hifiberry-' "$config" || missing+=$'# HiFiBerry Amp4\ndtover
 # Projector relay and IR (see README "GPIO pins"). The relay line is driven to
 # "open" by the firmware at boot, before Linux runs: dh = high for the usual
 # active-low relay modules (use dl for active-high ones).
+# These are the default pins. They are written once: if you change
+# VIDEOFX_RELAY_GPIO, _RELAY_ACTIVE_LOW, _IR_TX_GPIO, _IR_RX_GPIO or _W1_GPIO in
+# /etc/default/videofx, change the matching lines in config.txt by hand too.
 grep -q '^dtoverlay=gpio-ir-tx\|^dtoverlay=pwm-ir-tx' "$config" || missing+=$'# IR LED (projector power)\ndtoverlay=gpio-ir-tx,gpio_pin=22\n'
 grep -q '^dtoverlay=gpio-ir,' "$config" || missing+=$'# IR receiver (learning remote codes)\ndtoverlay=gpio-ir,gpio_pin=23\n'
 grep -q '^gpio=27=' "$config" || missing+=$'# Projector relay open at boot (active-low module)\ngpio=27=op,dh\n'

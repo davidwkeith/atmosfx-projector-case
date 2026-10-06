@@ -1,7 +1,8 @@
 // Weekly on/off schedule with optional "on at sunset + N minutes".
 // Times are local (the system time zone); sunset comes from NOAA's general solar
 // position equations, computed here, no network. The schedule acts only at its
-// event times, so a manual change holds until the next scheduled event.
+// event times, so a manual change holds until the next scheduled event. An event
+// that passed while the Pi had no power is caught up at boot (missedEvent).
 
 export const DAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"]; // Date#getDay order
 
@@ -133,6 +134,17 @@ export function lastEvent(schedule, at, geo) {
   return best;
 }
 
+/**
+ * Boot catch-up: the schedule event that passed while the Pi was down, or null.
+ * lastChangeAt: when the power state last changed before this boot (epoch ms; 0 if
+ * never). An event newer than that was never acted on. A manual change after the
+ * last event is newer than it, so it still holds until the next event.
+ */
+export function missedEvent(last, lastChangeAt, isOn) {
+  if (!last || last.at <= lastChangeAt || last.on === isOn) return null;
+  return last;
+}
+
 const STALE_MS = 5 * 60_000;
 
 /**
@@ -179,6 +191,12 @@ export class Scheduler {
   desiredNow() {
     if (!this.#clockOk()) return null;
     return lastEvent(this.#getSchedule(), this.#now(), this.#getGeo())?.on ?? null;
+  }
+
+  /** The latest event at or before now ({ at, on, label }), or null (also while the clock is unknown). */
+  lastEvent() {
+    if (!this.#clockOk()) return null;
+    return lastEvent(this.#getSchedule(), this.#now(), this.#getGeo());
   }
 
   /** (Re)plan from now; call after the schedule or location changes. */

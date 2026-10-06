@@ -73,6 +73,9 @@ export const parseMilli = (text) => (/^-?\d+$/.test((text ?? "").trim()) ? Numbe
  * The control loop's brain; no I/O. update() takes readings and returns fan duties
  * and events. Protection: warn above warnC; at critC in the projector zone stop
  * and switch off, and stay locked until it cools below critC - hysteresisC.
+ * No projector-zone reading for sensorLossSec while on trips it too: with no
+ * sensor (none chosen, unplugged, failed) there is no protection, so it must not
+ * keep running as if there were.
  */
 export class ThermalControl extends EventEmitter {
   #cfg;
@@ -80,12 +83,15 @@ export class ThermalControl extends EventEmitter {
   #cooldownUntil = 0;
   #wasOn = false;
   #locked = false;
+  #lost = false; // tripped on a missing reading rather than a temperature
+  #noReadingSince = null;
   #lowRpmSince = [null, null];
   #state = { duty: [0, 0], alarms: [], locked: false };
 
   /**
    * @param {() => { curves: [string, string], minDuty: number, cooldownSec: number,
-   *   warnC: number, critC: number, hysteresisC: number, failRpm: number, failAfterSec: number }} cfg
+   *   warnC: number, critC: number, hysteresisC: number, failRpm: number, failAfterSec: number,
+   *   sensorLossSec?: number }} cfg
    */
   constructor({ cfg, now = Date.now }) {
     super();
@@ -101,6 +107,16 @@ export class ThermalControl extends EventEmitter {
     return this.#locked;
   }
 
+  /** Cooling was switched off in Settings: forget trips, alarms and timers. */
+  reset() {
+    this.#locked = false;
+    this.#lost = false;
+    this.#noReadingSince = null;
+    this.#cooldownUntil = 0;
+    this.#lowRpmSince = [null, null];
+    this.#state = { duty: [0, 0], alarms: [], locked: false };
+  }
+
   /**
    * @param {{ projectorC: number|null, piC: number|null, socC: number|null, rpm: [number|null, number|null], on: boolean }} r
    */
@@ -112,12 +128,22 @@ export class ThermalControl extends EventEmitter {
     const cooling = !r.on && now < this.#cooldownUntil;
 
     // Critical: projector zone. Lock, and emit once.
-    const pt = r.projectorC;
+    const pt = r.projectorC ?? null;
+    const lossMs = (c.sensorLossSec ?? 60) * 1000;
+    // The clock for a missing reading runs while on; a bad read now and then is normal.
+    if (pt !== null || !r.on) this.#noReadingSince = null;
+    else this.#noReadingSince ??= now;
     if (!this.#locked && pt !== null && pt >= c.critC) {
       this.#locked = true;
+      this.#lost = false;
       this.emit("critical", { temp: pt });
+    } else if (!this.#locked && this.#noReadingSince !== null && now - this.#noReadingSince >= lossMs) {
+      this.#locked = true;
+      this.#lost = true;
+      this.emit("critical", { temp: null, reason: `no projector-zone temperature for ${Math.round(lossMs / 1000)} s` });
     } else if (this.#locked && pt !== null && pt < c.critC - c.hysteresisC) {
       this.#locked = false;
+      this.#lost = false;
       this.emit("cleared", { temp: pt });
     }
     // Fan 1 follows the projector zone; fan 2 the hotter of the Pi zone and the SoC.
@@ -137,7 +163,11 @@ export class ThermalControl extends EventEmitter {
       else if (t >= c.warnC) alarms.push({ level: "warn", text: `${zone[i]}: ${t.toFixed(1)} °C (warning at ${c.warnC} °C)` });
     });
 
-    if (this.#locked) alarms.push({ level: "critical", text: `Projector zone over ${c.critC} °C: playback stopped until it cools below ${c.critC - c.hysteresisC} °C` });
+    if (this.#locked && this.#lost && pt === null) {
+      alarms.push({ level: "critical", text: "Projector zone: no temperature reading, so no over-temperature protection: playback stopped. Check the sensor and its ID in Settings, or turn Cooling off to run the fans flat out with no protection" });
+    } else if (this.#locked) {
+      alarms.push({ level: "critical", text: `Projector zone over ${c.critC} °C: playback stopped until it cools below ${c.critC - c.hysteresisC} °C` });
+    }
 
     // Fan failure: tach ~0 while driven above the minimum for a while.
     duty.forEach((d, i) => {
@@ -184,12 +214,19 @@ export class OverTempGuard {
     return this.#tripped;
   }
 
-  critical(temp, limit) {
+  /** temp null: tripped for `reason` (no reading) rather than a temperature. */
+  critical(temp, limit, reason) {
     if (this.#tripped) return;
-    this.#tripped = `over-temperature: ${temp.toFixed(1)} °C (limit ${limit} °C)`;
+    this.#tripped = temp === null ? `temperature protection: ${reason ?? "no projector-zone reading"}` : `over-temperature: ${temp.toFixed(1)} °C (limit ${limit} °C)`;
     this.#resume = this.#isOn();
     this.#log.error(`Thermal: ${this.#tripped}; switching off`);
     this.#powerOff();
+  }
+
+  /** Protection switched off: unblock without switching anything on. */
+  reset() {
+    this.#tripped = null;
+    this.#resume = false;
   }
 
   cleared(temp) {
@@ -289,5 +326,5 @@ export class Tach extends EventEmitter {
 /** gpiomon args for the tach lines (falling edges, pull-up to 3.3 V). */
 export function tachArgs(major, pins) {
   if (major >= 2) return ["--consumer=videofx-tach", "--edges=falling", "--bias=pull-up", "--format=%l", ...pins.map((p) => `GPIO${p}`)];
-  return ["-f", "-B", "pull-up", "-F", "%o", "gpiochip0", ...pins.map(String)];
+  return ["-b", "-f", "-B", "pull-up", "-F", "%o", "gpiochip0", ...pins.map(String)]; // -b: line-buffered (see pirArgs)
 }

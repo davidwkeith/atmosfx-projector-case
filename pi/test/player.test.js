@@ -342,6 +342,77 @@ describe("mirror", () => {
   });
 });
 
+describe("failures around power changes", () => {
+  it("a failed state save (full or read-only disk) does not stop a power-off, or a power-on", async () => {
+    const { mpv, player, store, cmds, clear } = setup();
+    mpv.up();
+    store.save.mockImplementation(() => {
+      throw new Error("ENOSPC: no space left on device");
+    });
+    expect(player.setOn(true)).toBe(true);
+    await flush();
+    expect(player.isPlaying).toBe(true);
+    clear();
+    expect(player.setOn(false)).toBe(false);
+    await flush();
+    expect(cmds()).toEqual(["stop"]);
+    expect(player.isOn).toBe(false);
+  });
+
+  it("power-on starts mpv again after it gave up", async () => {
+    const { mpv, player, failed } = setup();
+    mpv.start = vi.fn();
+    mpv.up();
+    player.setOn(true);
+    mpv.down();
+    mpv.emit("failed", "the video player keeps crashing");
+    expect(failed).toHaveBeenCalled();
+    expect(player.isOn).toBe(false);
+    player.setOn(true);
+    expect(mpv.start).toHaveBeenCalledTimes(1);
+    mpv.up(); // it came back: plays
+    await flush();
+    expect(player.isPlaying).toBe(true);
+  });
+
+  it("stopped() waits for mpv to go idle after a stop, but not for ever", async () => {
+    const { mpv, player } = setup();
+    mpv.up();
+    player.setOn(true);
+    await flush();
+    let idle = false;
+    const command = mpv.command.bind(mpv);
+    mpv.command = async (...args) => (args[1] === "idle-active" ? idle : command(...args));
+    player.setOn(false);
+    let done = false;
+    player.stopped().then(() => (done = true));
+    await vi.advanceTimersByTimeAsync(300);
+    expect(done).toBe(false);
+    idle = true;
+    await vi.advanceTimersByTimeAsync(100);
+    expect(done).toBe(true);
+
+    idle = false; // a stuck mpv: give up after the timeout
+    player.setOn(true);
+    await flush();
+    player.setOn(false);
+    done = false;
+    player.stopped({ timeoutMs: 2000 }).then(() => (done = true));
+    await vi.advanceTimersByTimeAsync(1900);
+    expect(done).toBe(false);
+    await vi.advanceTimersByTimeAsync(200);
+    expect(done).toBe(true);
+  });
+
+  it("stopped() returns at once when mpv is not running", async () => {
+    const { player } = setup();
+    let done = false;
+    player.stopped().then(() => (done = true));
+    await flush();
+    expect(done).toBe(true);
+  });
+});
+
 describe("shutdown", () => {
   it("shuts mpv down", async () => {
     const { mpv, player } = setup();

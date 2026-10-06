@@ -5,7 +5,8 @@
 
 import { readFile } from "node:fs/promises";
 import { createServer } from "node:http";
-import { isIP } from "node:net";
+import { BlockList, isIP } from "node:net";
+import { networkInterfaces } from "node:os";
 import { fileURLToPath } from "node:url";
 import { HttpError } from "./media.js";
 
@@ -22,18 +23,43 @@ const STATIC = {
 const JSON_LIMIT = 256 * 1024;
 export const WRITE_HEADER = "x-videofx";
 
-/** Private, loopback, link-local and ULA addresses only. */
-export function isLanAddress(addr = "") {
+/**
+ * Private, loopback, link-local and ULA addresses, plus anything on one of this
+ * Pi's own subnets. The last part matters for IPv6: a LAN with a routed prefix
+ * gives every device a global address, avahi then publishes the Pi's global AAAA,
+ * and Apple devices prefer it for videofx-xxxx.local. A router never forwards
+ * traffic from outside with an on-link source address.
+ */
+export function isLanAddress(addr = "", ifaces = networkInterfaces) {
   const ip = addr.replace(/^::ffff:(?=\d+\.)/i, "").replace(/%.*$/, "");
-  if (isIP(ip) === 4) {
+  const family = isIP(ip);
+  if (family === 4) {
     const [a, b] = ip.split(".").map(Number);
-    return a === 10 || a === 127 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 169 && b === 254);
-  }
-  if (isIP(ip) === 6) {
+    if (a === 10 || a === 127 || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 169 && b === 254)) return true;
+  } else if (family === 6) {
     const lower = ip.toLowerCase();
-    return lower === "::1" || /^fe[89ab]/.test(lower) || /^f[cd]/.test(lower);
+    if (lower === "::1" || /^fe[89ab]/.test(lower) || /^f[cd]/.test(lower)) return true;
+  } else {
+    return false;
   }
-  return false;
+  return onLink(ip, family, typeof ifaces === "function" ? ifaces() : ifaces);
+}
+
+// Is ip inside the subnet of one of our own (non-loopback) interface addresses?
+function onLink(ip, family, ifaces) {
+  const name = family === 4 ? "ipv4" : "ipv6";
+  const own = new BlockList();
+  for (const a of Object.values(ifaces ?? {}).flat()) {
+    const prefix = Number(a?.cidr?.split("/")[1]);
+    if (!a || a.internal || isIP(a.address) !== family || !Number.isInteger(prefix)) continue;
+    if (prefix < (family === 4 ? 8 : 16)) continue; // a default-route-sized "subnet" is not a LAN
+    try {
+      own.addSubnet(a.address.replace(/%.*$/, ""), prefix, name);
+    } catch {
+      // odd address: skip it
+    }
+  }
+  return own.check(ip, name);
 }
 
 /** IP literals, localhost and our own names; anything else could be DNS rebinding. */
@@ -87,6 +113,7 @@ async function readJson(req, limit = JSON_LIMIT) {
  * @param {object} o
  * @param {ReturnType<import("./media.js").createMediaStore>} o.media
  * @param {() => object} o.status          device state for the UI
+ * @param {() => string|undefined} [o.problem]  why playback cannot start in the current mode
  * @param {(on: boolean) => Promise<void>} o.setPower  goes through Matter so controllers stay in sync
  * @param {(v: {level?: number, muted?: boolean}) => Promise<object>} o.setVolume
  * @param {() => void} o.playlistChanged   restarts playback if playing
@@ -136,7 +163,8 @@ export function createWebServer(o) {
       const { on } = await readJson(req);
       if (typeof on !== "boolean") throw new HttpError(400, "on must be true or false");
       if (on) {
-        const problem = o.media.problem();
+        // For the current mode (loop: the playlist; scare: the calm and scare clips).
+        const problem = o.problem ? o.problem() : o.media.problem();
         if (problem) throw new HttpError(409, problem);
       }
       await o.setPower(on);

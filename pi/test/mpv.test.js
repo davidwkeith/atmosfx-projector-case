@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MpvIpc, MpvSupervisor, checkMpvArgs } from "../src/mpv.js";
 
-describe("mpv extra-args deny-list", () => {
+describe("mpv extra-args allow-list", () => {
   it.each([
     "",
     "--hwdec=v4l2m2m-copy",
@@ -17,6 +17,10 @@ describe("mpv extra-args deny-list", () => {
     "--video-sync=display-resample --interpolation=no",
     "--audio-delay=-0.2 --volume=80",
     "--osd-level=0",
+    "--vo=gpu-next --gpu-context=drm --drm-connector=HDMI-A-2 --drm-mode=1920x1080@60",
+    "--no-deband --cache=yes --demuxer-max-bytes=150MiB",
+    "--vd-lavc-threads=4 --msg-level=vd=v,ffmpeg/video=debug",
+    "--vf=hflip,crop=w=1920:h=800:x=0:y=140",
   ])("allows %j", (args) => expect(() => checkMpvArgs(args)).not.toThrow());
 
   it.each([
@@ -51,6 +55,19 @@ describe("mpv extra-args deny-list", () => {
     "--vf=hflip https://evil/x.mp4",
     "/tmp/evil.mp4",
     "-v",
+    // got past the old deny-list: write any file the service user can
+    "--ao=pcm --ao-pcm-file=/home/pi/.ssh/authorized_keys --ao-pcm-waveheader=no",
+    "--vo=image --vo-image-outdir=/home/pi",
+    "--vo=image",
+    "--audio-device=alsa/file:FILE=/tmp/x",
+    "--drm-device=/etc/passwd",
+    "--hwdec=/dev/null",
+    "--profile=pseudo-gui",
+    "--vf=lavfi=[hflip]",
+    "--vf=movie=x.mp4",
+    "--no-hwdec=yes",
+    "--some-future-option=1",
+    "--loop-file=inf",
   ])("refuses %j", (args) => expect(() => checkMpvArgs(args)).toThrow(/not allowed|not an --option/));
 
   it("refuses control characters, too many and too long", () => {

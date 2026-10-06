@@ -101,6 +101,48 @@ describe("ThermalControl", () => {
     ]);
   });
 
+  it("no projector-zone reading for 60 s while on: trips (there is no protection without it)", () => {
+    const { t, r, events, advance } = control();
+    t.update(r({ projectorC: null, on: true }));
+    advance(59_000);
+    expect(t.update(r({ projectorC: null, on: true }))).toMatchObject({ locked: false, duty: [100, 30] });
+    advance(1000);
+    const s = t.update(r({ projectorC: null, on: true }));
+    expect(s).toMatchObject({ locked: true, duty: [100, 100] });
+    expect(s.alarms.filter((a) => a.level === "critical")).toEqual([{ level: "critical", text: expect.stringMatching(/no temperature reading.*playback stopped/) }]);
+    expect(events).toEqual([["critical", null]]);
+    // stays locked while off with no reading; a good reading below the limit clears it
+    advance(600_000);
+    expect(t.update(r({ projectorC: null, on: false })).locked).toBe(true);
+    expect(t.update(r({ projectorC: 30, on: false })).locked).toBe(false);
+    expect(events.at(-1)).toEqual(["cleared", 30]);
+  });
+
+  it("a few missed readings, or none while off, do not trip", () => {
+    const { t, r, events, advance } = control();
+    t.update(r({ projectorC: null, on: true }));
+    advance(50_000);
+    t.update(r({ projectorC: 30, on: true })); // back in time: the clock starts over
+    advance(50_000);
+    t.update(r({ projectorC: null, on: true }));
+    advance(50_000);
+    expect(t.update(r({ projectorC: null, on: true })).locked).toBe(false);
+    const off = control();
+    off.t.update(off.r({ projectorC: null }));
+    off.advance(3_600_000);
+    expect(off.t.update(off.r({ projectorC: null })).locked).toBe(false);
+    expect([...events, ...off.events]).toEqual([]);
+  });
+
+  it("reset (Cooling switched off) forgets a trip and its alarms", () => {
+    const { t, r } = control();
+    t.update(r({ projectorC: 60 }));
+    expect(t.locked).toBe(true);
+    t.reset();
+    expect(t.locked).toBe(false);
+    expect(t.state).toMatchObject({ alarms: [], locked: false });
+  });
+
   it("fan failure: tach ~0 while driven above the minimum for 5 s", () => {
     const { t, r, advance } = control();
     const stuck = () => t.update(r({ projectorC: 45, on: true, rpm: [0, 1500] })).alarms.filter((a) => /not turning/.test(a.text));
@@ -140,6 +182,17 @@ describe("over-temperature shutdown and resume rule", () => {
     g.cleared(49);
     expect(calls).toEqual(["off", "on", "off"]); // was off: stays off
   });
+
+  it("a lost sensor trips it with its own reason; reset unblocks without switching on", () => {
+    const calls = [];
+    const g = new OverTempGuard({ powerOff: () => calls.push("off"), powerOn: () => calls.push("on"), isOn: () => true, log: { error() {}, warn() {} } });
+    g.critical(null, 55, "no projector-zone temperature for 60 s");
+    expect(g.blocked).toBe("temperature protection: no projector-zone temperature for 60 s");
+    g.reset();
+    expect(g.blocked).toBeNull();
+    g.cleared(30); // nothing to resume after a reset
+    expect(calls).toEqual(["off"]);
+  });
 });
 
 describe("I/O adapters", () => {
@@ -169,6 +222,7 @@ describe("I/O adapters", () => {
     expect(tach.rpm()).toEqual([1500, 300]);
     now = 2000;
     expect(tach.rpm()).toEqual([0, 0]);
+    expect(tachArgs(1, [24, 25])).toEqual(["-b", "-f", "-B", "pull-up", "-F", "%o", "gpiochip0", "24", "25"]);
     expect(tachArgs(2, [24, 25])).toEqual(["--consumer=videofx-tach", "--edges=falling", "--bias=pull-up", "--format=%l", "GPIO24", "GPIO25"]);
   });
 });

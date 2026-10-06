@@ -16,15 +16,23 @@ Everything below has only been tested in software. Work through it on the bench 
 
 | # | Test | Pass | If not |
 |---|---|---|---|
-| 6 | Flash the image (or `install.sh`), first boot | One extra reboot, then `videofx-xxxx.local` answers and the name shows as VideoFX-XXXX | See `pi/README.md` troubleshooting |
+| 6 | Flash the image (or `install.sh`), first boot | One extra reboot, then `videofx-xxxx.local` answers and the name shows as VideoFX-XXXX. `videofx-maint status` says protected, `lsblk` shows three partitions, and `ssh` doesn't warn about a changed host key after a second reboot | `journalctl -b -u videofx-storage`; see `pi/README.md` troubleshooting |
 | 7 | Storage protection: `videofx-maint status`, then pull the power mid-upload | Overlay on, data partition mounted, settings intact after the cut | Leave protection off for Halloween; report it |
 | 8 | Amp4 powers the Pi (especially a **Pi 5**) at full volume | No undervoltage warnings (`vcgencmd get_throttled` = 0x0) | Use a Pi 4B sled, or a separate 5 V supply |
 | 9 | HDMI-CEC with your projector: power on/off from the web page | Projector wakes and sleeps; page says "CEC supported" | Use `relay-ir` (relay + IR LED), learn the remote's code |
+| 9a | Projector powered after the Pi: with playback on, pull the projector's power for 10 s and restore it (or use relay mode and switch off and on) | The picture comes back by itself; the journal says "HDMI display connected" | Add the `video=` line from the README's troubleshooting |
+| 9b | Relay mode only: `sudo systemctl stop videofx-player`, then `sudo systemctl kill -s KILL videofx-player` while playing | The relay opens (projector off) both times | Check `videofx-relay-open` and that `pinctrl` is installed |
 | 10 | Scare seam: calm clip to scare and back, then `journalctl -u videofx-player \| grep seam` | No visible black frame (log shows under about 100 ms) | Re-encode per the README; try `--hwdec=v4l2m2m-copy` on Pi 3 / Zero 2 W |
 | 11 | Video decode: your AtmosFX files at their native resolution | Smooth, CPU under about 70% | Transcode with the README's ffmpeg commands |
 | 12 | PIR: walk toward it from the street side | Triggers at the distance you want, not from passing cars | Adjust the sensor's sensitivity/time pots; aim the case |
 | 13 | Fans and sensors: page shows both RPMs and both DS18B20 temperatures; unplug a fan | RPM readings, fan-failure alarm fires | Check wiring against the pin table |
+| 13a | Over-temperature: set the critical temperature just above the room's (Settings > Cooling) and warm the projector-zone sensor in your hand | Playback stops, the projector goes off by your power mode, the fans go to full, and it resumes after cooling | Report it; do not run unattended |
+| 13b | Lost sensor: unplug the projector-zone DS18B20 while playing | A warning at once; after 60 s playback stops with "no temperature reading". Plug it back in: it resumes | Report it |
+| 13c | Cooling off, and service stopped (`sudo systemctl stop videofx-player`) | Both fans at full speed in both cases | Check the PWM wiring; a fan that stops at 0% needs Cooling on |
 | 14 | Pairing: add to Apple Home ("Add Anyway"), toggle power, fire a scare from an automation | All four endpoints appear and work | See `pi/README.md` Matter notes |
+| 14a | Boot with the Wi-Fi access point off, state "on" | It plays, and `systemctl status videofx-player` stays "active (running)" for 5 minutes with no restarts | Report it |
+| 14b | Schedule catch-up: with "on at 18:00" set, pull the Pi's power at 17:55 and restore it at 18:05 | It switches on within a minute of boot (once the clock is set) | Set "After a power cut" to on for the night |
+| 14c | Open `http://videofx-xxxx.local/` from an iPhone on the same Wi-Fi | The page loads (not "LAN only") | Report the phone's and the Pi's addresses |
 | 15 | DMX: send from QLC+/xLights/FPP (unicast) to the Pi's universe | Page shows the source; power, clip and volume follow | Check universe/address and UniFi multicast settings |
 | 16 | Update and rollback: `videofx-update --tarball` with the release tarball, then `--rollback` | Both complete and the page shows the right version | Report it |
 

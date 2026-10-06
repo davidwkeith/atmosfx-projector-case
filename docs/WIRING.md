@@ -43,7 +43,7 @@ flowchart LR
   RPI -. "GPIO" .-> RELAY
 ```
 
-Solid lines carry power. Dotted lines are signals. The relay is only fitted if the projector lacks HDMI-CEC (see `pi/README.md`, "Projector power"). GPIO pin assignments are in `pi/README.md` (PIR 17, relay 27, IR LED 22, IR receiver 23, fan PWM 12/13, fan tach 24/25, 1-wire 26; the Amp4 uses 2, 3, 4 and 18-21). The Amp4 covers the header, so fit a stacking header or solder leads under the Pi.
+Solid lines carry power. Dotted lines are signals. The relay is only needed if the projector lacks HDMI-CEC (see `pi/README.md`, "Projector power"). It is also the only way the Pi can cut the projector's power on over-temperature: with CEC alone it can only ask for standby, so consider fitting it anyway (see `pi/README.md`, "Cooling"). The relay opens whenever the Pi's service stops. GPIO pin assignments are in `pi/README.md` (PIR 17, relay 27, IR LED 22, IR receiver 23, fan PWM 12/13, fan tach 24/25, 1-wire 26; the Amp4 uses 2, 3, 4 and 18-21). The Amp4 covers the header, so fit a stacking header or solder leads under the Pi.
 
 ## AC side
 
@@ -65,7 +65,7 @@ Right of the barrier, and down to the Pi sled.
 | Brick DC out to main fuse and splice | 18 AWG (0.75 mm²) | Check the brick's plug polarity (centre + is common, not universal) before cutting |
 | Splice to projector | 18 AWG | Keep the projector's own barrel plug; splice into its cable |
 | Splice to Amp4 power input | 20 AWG (0.5 mm²) | Amp4 accepts 12-24 V; it powers the Pi, so don't also power the Pi by USB |
-| Splice to fans | 24 AWG | 12 V fans; PWM and tach go to the Pi |
+| Splice to fans | 24 AWG | 12 V fans; PWM and tach go to the Pi. With Cooling off in the settings, or the service stopped, the fans run at full speed |
 | Relay (fallback only) | 18 AWG | Switch the **+** line to the projector. Never switch its ground: the HDMI cable would carry the return current. Use an **active-low** module: the Pi holds GPIO 27 high (relay open, projector off) from boot |
 | Amp4 to speakers | 16 AWG zip cord | Out through the floor chimney; red/striped to + on both ends |
 

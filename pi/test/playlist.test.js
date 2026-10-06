@@ -120,6 +120,15 @@ describe("media store", () => {
 
   const upload = (name, data) => store.save(name, Readable.from([Buffer.from(data)]), data.length);
 
+  it("cleans up half-written uploads, and nothing else", async () => {
+    await writeFile(join(dir, ".upload-0123456789ab"), "half a video");
+    await writeFile(join(dir, ".upload-notours"), "x");
+    await writeFile(join(dir, "keep.mp4"), "video");
+    expect(await store.cleanTemp()).toBe(1);
+    expect((await readdir(dir)).sort()).toEqual([".upload-notours", "keep.mp4"]);
+    expect(await store.cleanTemp()).toBe(0);
+  });
+
   it("reports a missing playlist, then an empty one, then none", async () => {
     expect(store.problem()).toMatch(/not found/);
     await store.writePlaylist([{ file: "a.mp4", enabled: false }]);

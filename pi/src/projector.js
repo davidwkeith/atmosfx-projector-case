@@ -47,6 +47,7 @@ export class Projector extends EventEmitter {
   #pressGapMs;
   #sleep;
   #configured = false;
+  #relayClosed = false;
   #physAddr = null;
   #retry = null;
   #state = { cec: "unknown", power: "unknown", notice: null };
@@ -93,9 +94,19 @@ export class Projector extends EventEmitter {
     if (this.#usesRelay()) await this.#setRelay(false);
   }
 
+  /**
+   * The service is stopping: nothing will watch the temperature, so a
+   * relay-switched projector goes off (the GPIO keeps its level after we exit).
+   */
+  async shutdown() {
+    this.#cancelRetry();
+    if (this.#usesRelay()) await this.#setRelay(false);
+  }
+
   async #setRelay(closed) {
     try {
       await this.#relay.set(closed);
+      this.#relayClosed = closed;
       this.#set({ power: closed ? "on" : "off" });
       return true;
     } catch (err) {
@@ -106,6 +117,9 @@ export class Projector extends EventEmitter {
   }
 
   async #relayOn() {
+    // Already powered (a second "on" from the schedule, the page, DMX...): the IR
+    // power code is a toggle, so pressing it again would switch the projector off.
+    if (this.#relayClosed) return;
     if (!(await this.#setRelay(true))) return;
     await this.#sleep(this.#settleMs());
     if (this.#mode() !== "relay-ir") return;
@@ -188,7 +202,8 @@ export class Projector extends EventEmitter {
     if (!(await this.#configure())) return this.#noResponse("the Pi has no CEC device or no HDMI connection");
     await this.#cec(["--to", "0", "--image-view-on"]);
     await this.#cec(["--to", "0", "--text-view-on"]);
-    if (this.#physAddr) await this.#cec(["--to", "0", "--active-source", `phys-addr=${this.#physAddr}`]);
+    // Active Source is a broadcast message (CEC 1.4, 13.1): a TV may ignore a directed one.
+    if (this.#physAddr) await this.#cec(["--to", "15", "--active-source", `phys-addr=${this.#physAddr}`]);
     const out = await this.#cec(["--to", "0", "--give-device-power-status"]);
     const power = parsePowerStatus(out);
     if (!power) return this.#noResponse("the projector did not answer CEC");
@@ -222,7 +237,9 @@ export class Projector extends EventEmitter {
     const out = await this.#cec(["--playback", "--osd-name", this.#osdName]);
     if (out === null) return false;
     this.#physAddr = parsePhysicalAddress(out);
-    this.#configured = true;
+    // No physical address yet (the projector was off or unplugged, so no EDID):
+    // configure again next time instead of never sending Active Source.
+    this.#configured = this.#physAddr !== null;
     return true;
   }
 
