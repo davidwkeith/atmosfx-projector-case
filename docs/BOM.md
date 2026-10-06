@@ -23,11 +23,14 @@ Quantities for one case. Printed parts and filament are in [PRINTING.md](PRINTIN
 
 | Item | Qty | Notes | Buy |
 |---|---|---|---|
-| Outdoor cord, SJTW 18 AWG or better | 1 | 2- or 3-wire to match the brick's inlet | [Amazon: PLUGTUL 16/3 SJTW 25 ft](https://www.amazon.com/dp/B0B7JH3RHL). Micro Center's Inland cords don't state a gauge or jacket type |
+| Outdoor cord, SJTW 18 AWG or better, 3-wire | 1 | Round jacket for the PG9 grip | [Amazon: PLUGTUL 16/3 SJTW 25 ft](https://www.amazon.com/dp/B0B7JH3RHL). Micro Center's Inland cords don't state a gauge or jacket type |
 | PG9 cord grip (mains-rated) | 1 | | [Amazon: uxcell PG9 IP68 nylon, 10-pack](https://www.amazon.com/dp/B01MQWU2NM) |
-| Rewireable IEC connector (C7, C5 or C13 to match the brick) | 1 | Leaves the brick unmodified | [Amazon: Toptekits rewirable C13](https://www.amazon.com/dp/B002T0JMTY); search the same way for C7 or C5 once you know the brick's inlet |
-| 5 x 20 mm inline fuse holder + time-delay fuse | 1 | AC live | [Amazon: uxcell inline 5 x 20 holder, 18 AWG, 5-pack](https://www.amazon.com/dp/B07SM5KYZ7) + [BOJACK 5 x 20 time-delay fuses](https://www.amazon.com/dp/B07WPW2QBF) (pick the rating from WIRING.md; Micro Center only stocks fast-blow) |
-| Blade (ATO/ATC) inline fuse holder + fuse | 1-3 | Main DC, optional projector and DigiAMP+ branches | [Amazon: SIM&NAT 16 AWG inline ATO holder, 2-pack](https://www.amazon.com/dp/B0D8XWW5HC) (comes with 10 A and 15 A fuses; buy the WIRING.md rating separately) |
+| NEMA 5-15R panel-mount receptacle, snap-in, 4.8 mm tabs (Qualtek 738W-X2/01) | 2 | 26 x 22 mm cutout in a 0.8-2 mm panel; the shelf's plate is 2 mm at the cutout (`rcpt_cut`, `rcpt_t`). Check the fit on the coupon | [Digi-Key 1164208](https://www.digikey.com/en/products/detail/qualtek/738W-X2-01/1164208). Amazon's snap-in receptacles use other cutouts (the [SS-6B pair](https://www.amazon.com/dp/B0HBXKKJ35) quotes 27 x 12.7 mm), so they'd need `rcpt_cut` changed |
+| Second wall-wart, 24 V, 2.5-3 A, 5.5 x 2.5 mm centre-positive barrel (the DigiAMP+'s jack) | 1 | The Pi + DigiAMP+ + fans rail. Up to 86 x 47 x 35 mm standing on its long edge (`wart2`); measure yours into the model | [Amazon: Facmogu 24 V 3 A, 5.5 x 2.5 mm](https://www.amazon.com/dp/B07TB3L72F) (claims UL; confirm it is the plug-in style and fits `wart2`). Micro Center has no 24 V barrel supplies |
+| 4.8 mm fully insulated female quick-connects, plus piggybacks for the jumper | about 8 | 18 AWG crimp size | [Amazon: BAOMAIN 0.187 in fully insulated spade kit, 22-16 AWG](https://www.amazon.com/dp/B01MYV3BS0) (no piggybacks: jumper with a short lead and the lever nuts instead) |
+| Velcro strap, 20 mm | 1-2 | Through the shelf slots, round both wall-warts | [Micro Center: VELCRO One-Wrap roll, 3/4 in x 4 ft](https://www.microcenter.com/product/657584/velcro-90302-one-wrap-roll-4%e2%80%99-x-075-black-%281-roll%29?storeid=195) |
+| 5 x 20 mm inline fuse holder + time-delay fuse | 1 | AC live | [Amazon: uxcell inline 5 x 20 holder, 18 AWG, 5-pack](https://www.amazon.com/dp/B07SM5KYZ7) + [BOJACK 5 x 20 time-delay fuses](https://www.amazon.com/dp/B07WPW2QBF) (pick the rating from WIRING.md, sized for both wall-warts; Micro Center only stocks fast-blow) |
+| Blade (ATO/ATC) inline fuse holder + fuse | 2 | One per DC rail | [Amazon: SIM&NAT 16 AWG inline ATO holder, 2-pack](https://www.amazon.com/dp/B0D8XWW5HC) (comes with 10 A and 15 A fuses; buy the WIRING.md rating separately) |
 | Lever-nut connectors (Wago 221, 5-way) | 2 | DC splice | [Amazon: WAGO 221-415, 10-pack](https://www.amazon.com/dp/B07W7W9J95) |
 | Wire: 18, 20 and 24 AWG | a few metres | | Micro Center: [18 AWG hook-up, 25 ft](https://www.microcenter.com/product/689131/leo-sales-ltd-hook-up-wire-300vhu-18-gauge-ul1007-copper-25ft?storeid=195), [22 AWG stranded, 25 ft](https://www.microcenter.com/product/689133/leo-sales-ltd-wire-stranded-22-gauge-300v-orange-25-ft?storeid=195). Amazon: [20 AWG silicone kit](https://www.amazon.com/dp/B073RDG2J6), [24 AWG silicone kit](https://www.amazon.com/dp/B073RD76QD) |
 | 16 AWG speaker wire | to suit | | [Amazon: Amazon Basics 16 AWG, 50 ft](https://www.amazon.com/dp/B006LW0WDQ) (Micro Center sells 16 AWG only by the 500 ft spool) |
@@ -37,7 +40,7 @@ Quantities for one case. Printed parts and filament are in [PRINTING.md](PRINTIN
 
 | Item | Qty | Notes | Buy |
 |---|---|---|---|
-| 40 x 40 x 10 mm 24 V 4-pin PWM fan (e.g. Noctua NF-A4x10 24V PWM) | 2 | Runs on the 21 V rail; a 12 V fan would burn. Check its datasheet accepts 3.3 V PWM | [Amazon: Noctua NF-A4x10 24V PWM](https://www.amazon.com/dp/B0CN39MCPL) (Micro Center carries no 40 mm Noctua) |
+| 40 x 40 x 10 mm 24 V 4-pin PWM fan (e.g. Noctua NF-A4x10 24V PWM) | 2 | Runs on the second wall-wart's 24 V rail; a 12 V fan would burn there. Check its datasheet accepts 3.3 V PWM | [Amazon: Noctua NF-A4x10 24V PWM](https://www.amazon.com/dp/B0CN39MCPL) (Micro Center carries no 40 mm Noctua) |
 | DS18B20 temperature sensor + 4.7 kohm resistor | 2 + 1 | One per zone, one pull-up | [Amazon: WWZMDiB waterproof DS18B20, 5-pack with 4.7 k resistors](https://www.amazon.com/dp/B0C8J77NJR). Resistors alone: [Micro Center: Inland 1/4 W assortment](https://www.microcenter.com/product/618896/inland-1-4-watt-1-resistors-610-pack?storeid=195) |
 | HC-SR501 PIR motion sensor | 1 | | [Micro Center: Inland PIR module](https://www.microcenter.com/product/618776/inland-pir-motion-sensor-module?storeid=195) (HC-SR501 type) or [Amazon: HC-SR501 5-pack](https://www.amazon.com/dp/B07KBWVJMP) |
 | Relay module, 5 V coil, opto-isolated, active-low | 0-1 | Only if the projector lacks CEC | [Micro Center: Inland single 5 V relay module](https://www.microcenter.com/product/659887/inland-single-5v-relay-module-for-arduino?storeid=195); confirm the trigger polarity on the board before wiring |
@@ -68,10 +71,10 @@ Quantities for one case. Printed parts and filament are in [PRINTING.md](PRINTIN
 | Item | Notes | Buy |
 |---|---|---|
 | PETG or ASA, about 1.3 kg, "Go Away Green" | Plus a little for reprints | [Micro Center: Inland ASA Army Green](https://www.microcenter.com/product/660561/inland-175mm-army-green-asa-3d-printer-filament-1kg-spool-%2822-lbs%29?storeid=195) is the closest stock colour; [Inland PETG Green](https://www.microcenter.com/product/503782/inland-175mm-petg-3d-printer-filament-1kg-%2822-lbs%29-cardboard-spool-green?storeid=195) is brighter. Match by eye |
-| Flame-retardant PETG (UL 94 V-0, e.g. Prusament PETG V0), about 0.1-0.3 kg | Recommended for `power_shelf` (and `base_rear`, if the colour works): mains and the brick sit there | [Prusa: Prusament PETG V0 Jet Black](https://www.prusa3d.com/product/prusament-petg-v0-jet-black-1kg/) or [Amazon](https://www.amazon.com/dp/B0GP79Z9WY). Not at Micro Center |
+| Flame-retardant PETG (UL 94 V-0, e.g. Prusament PETG V0), about 0.1-0.3 kg | Recommended for `power_shelf` (and `base_rear`, if the colour works): the receptacles and both wall-warts sit there | [Prusa: Prusament PETG V0 Jet Black](https://www.prusa3d.com/product/prusament-petg-v0-jet-black-1kg/) or [Amazon](https://www.amazon.com/dp/B0GP79Z9WY). Not at Micro Center |
 | Foam tape, 2 mm (lid rim) and 1.5 mm (hatch) | | [Amazon: EPDM 2 x 20 mm, 10 m](https://www.amazon.com/dp/B0DFXQS5BL); [Amazon: 1/16 in (1.5 mm) x 1 in, 33 ft](https://www.amazon.com/dp/B08HV48WQV) |
 | Neutral-cure outdoor silicone | Base seam, pane, PIR dome | [Amazon: GE Advanced Silicone 2, clear, 2.8 oz](https://www.amazon.com/dp/B001JK5R0I) |
-| Insect screen, mosquito grade (about 18 x 16 mesh) | | [Amazon: fiberglass window screen, charcoal](https://www.amazon.com/dp/B0CP2PY26C) (any hardware store roll works) |
+| Insect screen, mosquito grade (about 18 x 16 mesh) | Caps and behind the fans | [Amazon: fiberglass window screen, charcoal](https://www.amazon.com/dp/B0CP2PY26C) (any hardware store roll works) |
 | Matte black spray paint | Inside of the case, against light glow | [Amazon: Rust-Oleum 2X flat black](https://www.amazon.com/dp/B002BWOS7Q) |
 | VHB tape, velcro strap, zip ties, foam plug for the chimney | | [Amazon: 3M VHB 5952, 1 in x 5 yd](https://www.amazon.com/dp/B007Y7H5W8); Micro Center: [8 in UV cable ties, 100](https://www.microcenter.com/product/657186/8-inch-black-uv-standard-cable-tie-100-pack?storeid=195), [VELCRO One-Wrap ties](https://www.microcenter.com/product/658953/velcro-90924-one-wrap-8-x-05-reusable-ties-black-%2850-pack%29?storeid=195) |
 | 8 mm tent stakes | 4, optional | [Amazon: forged steel 10 in stakes, 40-pack](https://www.amazon.com/dp/B072QB3L8S) |
@@ -100,8 +103,8 @@ These are estimates from typical retail prices, not quotes; check current prices
 | Speakers (outdoor pair) + wire | 50-120 |
 | Ball head + stud | 15-35 |
 | Fans (2x Noctua) + sensors + PIR | 40-55 |
-| Power parts (cord, gland, IEC, fuses, lever nuts, wire, connection box) | 35-60 |
+| Power parts (cord, gland, 2 receptacles, second wall-wart, fuses, lever nuts, wire, connection box) | 55-90 |
 | Acrylic pane | 10-25 |
 | Inserts, screws, foam, silicone, screen, paint | 30-50 |
 | Filament, about 1.3 kg | 30-60 |
-| **Total** | **about 285-520** |
+| **Total** | **about 305-550** |
