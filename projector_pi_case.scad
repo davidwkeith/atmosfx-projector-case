@@ -66,7 +66,7 @@ top_air  = 25;
 front_gap = 30;      // lens-down tilt swings the top front corner forward (more so panned, now the body is 165 wide); aim-sweep and light-cone checks size this
 rear_gap  = 34;      // lens-up tilt swings the rear plugs back (port_depth) toward the divider; aim-sweep sizes this
 pi_zone_d = 85;    // Pi compartment depth: the wall-warts hang 68 off the rear wall (rcpt_back + plate + wart_t, asserted) and the shelf's low-voltage side needs wiring room
-pane_t = 3.2;      // acrylic thickness (1/8 in); photo-frame glazing is often thinner
+pane_t = 2;        // acrylic thickness: 2 mm sheet on hand (1/8 in = 3.2 also fits)
 lap = 8;           // pane overlap past the window opening
 boss_h = 4;
 
