@@ -280,7 +280,7 @@ assert(cord_x - gland_d/2 - 4 >= -shelf_w/2 && cord_x + gland_d/2 + 4 <= plate_x
 assert(cord_dz - gland_d/2 - 4 >= 3, "raise cord_dz: the gland's locknut lands on the shelf");
 assert(rcpt_back + 3 + max(wart_t, wart2[2]) + 6 <= shelf_d, "deepen pi_zone_d: the wall-warts hang past the divider end of the shelf");
 assert(shelf_zz + rcpt_zc[1] + wart2[1]/2 + 2 <= base_h + gasket - 1, "the wall-wart stack hits the lid roof: raise top_air (or lower shelf_z)");
-assert(bar_x + 60 <= shelf_w/2, "the shelf's low-voltage side is too narrow for the splice and fuses: shorter wall-warts or a wider case");
+assert(bar_x + 60 <= shelf_w/2, "the shelf's low-voltage side is too narrow for the splice: shorter wall-warts or a wider case");
 assert(shelf_zz + 3 + cord_dz + gland_d/2 + 6 <= lid_z0, "lower cord_dz: the gland runs into the lid skirt");
 assert(pane_top_clear >= pane_t + clearance + 2.5, "raise pane_top_clear: the rebate's 45 deg ceiling would cut through the base rim");
 
@@ -434,7 +434,7 @@ module ledge(sx) {
 // Power shelf above the Pi. AC side (left of the barrier): a plate near the rear wall carries two panel-mount NEMA 5-15R
 // receptacles, one above the other; the wall-warts plug in facing the divider and stand on their long edges, the stock one
 // on the shelf and the second on top of it. Spade terminals and the cord from the gland sit behind the plate.
-// Low-voltage side (right): each wart's DC cord comes through the barrier notch to its fused splice; feeds run down to the DigiAMP+.
+// Low-voltage side (right): each wart's DC cord comes through the barrier notch to its splice; feeds run down to the DigiAMP+.
 module power_shelf() {
   bar = bar_x;
   py1 = plate_y1;
