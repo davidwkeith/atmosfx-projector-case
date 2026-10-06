@@ -284,8 +284,9 @@ module tile_cut(t, seam_y) {
 // and both print roof-down without supports. front = everything forward of the plane y - z = c.
 module lid_tile(t) {
   c = lid_seam + seam_t/2 - zp(lid_seam);
+  // trapezoid, sloped edge on the right: the old parallelogram crossed itself once c went negative (CGAL rejects that)
   module front_region() rotate([90,0,90]) linear_extrude(big, center=true)
-    polygon([[-big, -big], [c-big, -big], [c+big, big], [-big, big]]);
+    polygon([[-3*big, -big], [c-big, -big], [c+big, big], [-3*big, big]]);
   if (t == "all") children();
   else if (t == "front") intersection() { children(); front_region(); }
   else difference() { children(); front_region(); }
