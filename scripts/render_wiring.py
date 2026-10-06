@@ -286,7 +286,7 @@ def draw_lv_signals(path):
 
     XLW, XRW = hdr.absanchors['pin1'][0] - 2.3, hdr.absanchors['pin2'][0] + 2.3   # wires start past the pin labels
     XL1, XL2 = -6.0, -11.6     # near and far device columns, left
-    XR1, XR2 = 6.4, 13.4       # right
+    XR1 = 6.4                  # right
 
     def wire(points, color=SIG):
         for a, b in zip(points, points[1:]):

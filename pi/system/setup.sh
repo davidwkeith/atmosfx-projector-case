@@ -119,7 +119,8 @@ grep -q '^dtoverlay=gpio-ir,' "$config" || missing+=$'# IR receiver (learning re
 grep -q '^gpio=27=' "$config" || missing+=$'# Projector relay open at boot (active-low module)\ngpio=27=op,dh\n'
 [ -z "$missing" ] || printf '\n[all]\n%s' "$missing" >>"$config"
 # Older installs added fan PWM and 1-wire overlays; the case has no fans or DS18B20s now.
-if grep -q '^# videofx: fans and 1-wire' "$config"; then
+# Only when both ends of the block are there, so a hand-edited file never loses everything after the marker.
+if grep -q '^# videofx: fans and 1-wire' "$config" && grep -q '^dtoverlay=w1-gpio-pi5' "$config"; then
   # Drop the whole block, from its marker to the Pi 5 w1 line (a trailing [all] stays, which is harmless).
   sed -i '/^# videofx: fans and 1-wire/,/^dtoverlay=w1-gpio-pi5/d' "$config"
 fi

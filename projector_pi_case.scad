@@ -1,6 +1,6 @@
 // Ground-standing projector + Raspberry Pi 3 case: rain-proof (not sealed), ventilated
 // v0.9 - the stock supply is a wall-wart, so the shelf grew a receptacle plate: two panel-mount NEMA 5-15R stacked,
-//        the stock 21 V wall-wart below and a second (Pi, DigiAMP+, fans) above, hanging on their prongs; the AC gland
+//        the stock 21 V wall-wart below and a second (Pi, DigiAMP+) above, hanging on their prongs; the AC gland
 //        moved beside the plate, next to the left wall; Pi zone 85 deep; the fit coupon has the receptacle cutout
 // v0.8 - AC gland moved above the shelf (AC side of the barrier); barrier clears the brick; keyholes lift off;
 //        45 deg scarf joint at the lid seam; flat gasket land under the sloped roof;
@@ -60,7 +60,7 @@ foot_ribs = [-88, -68, -40, -15, 15, 40, 68, 88];   // inner front-to-back ribs;
 rib_t = 4;
 layer_h = 0.2;     // print layer height: gap above the window's snap-out ribs
 clearance = 0.3;
-side_air = 25;     // gap each side of projector: clears +/-10 deg pan with the fan body (14 mm) in the gap
+side_air = 25;     // gap each side of projector: clears the +/-10 deg pan sweep of the right face, the HDMI plug and the baffle; could shrink to about 19 mm (separate change)
 top_air  = 25;
 front_gap = 30;      // lens-down tilt swings the top front corner forward (more so panned, now the body is 165 wide); aim-sweep and light-cone checks size this
 rear_gap  = 34;      // lens-up tilt swings the rear plugs back (port_depth) toward the divider; aim-sweep sizes this
@@ -89,7 +89,7 @@ cord_dz = 20;       // gland centre above the shelf's top face: level with the l
 // Stock supply (label, 2026-10-05): wall-wart MX48CC-210228US, in AC 100-240 V 1.0 A, out 21 V 2.28 A (48 W), centre +,
 // fixed 2-pin NEMA 1-15 prongs and a captive DC cord: no AC inlet. It plugs into a panel-mount NEMA 5-15R on the shelf's
 // receptacle plate and hangs on its prongs, standing on its long edge: length along X (cord end toward the barrier),
-// width = height above the shelf, thickness along Y. A second wall-wart (12-24 V rail for the Pi, DigiAMP+ and fans) plugs in above it.
+// width = height above the shelf, thickness along Y. A second wall-wart (12-24 V rail for the Pi and DigiAMP+) plugs in above it.
 wart_l = 86;        // stock wall-wart length (X): measured 85.6
 wart_w = 47;        // width = standing height (Z): scaled off the photo against the caliper reading; confirm (the stack is asserted against the lid roof)
 wart_t = 35;        // thickness, prong face to back (Y): not measured yet
