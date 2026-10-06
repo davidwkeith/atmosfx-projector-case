@@ -34,7 +34,6 @@ lens_z = 33;    // lens centre height above projector underside: estimated from 
 throw_ratio = 0.95; // throw distance / image width: from the manual's image sizes (36 in at 2.5 ft, 72 in at 5 ft); measure it
 aspect = 16/9;
 port_depth = 15;    // HDMI + power plugs on the projector's rear face: right-angle plugs with slack (a straight HDMI plug needs ~40)
-port_band = [15, 55];   // plug height range above the projector underside (guess: check yours)
 lens_offset = 0;    // vertical image offset: 0 = image centred on the lens axis, 1 = image bottom on the axis
 pane_w = 127;   // acrylic pane: 4 x 5 in (127 x 101.6 mm), a stock size; the window opening is the pane minus lap
 pane_h = 101.6;
@@ -155,7 +154,7 @@ baffle_t = 4;
 baffle_gap = side_port_h + 4;   // baffle top stops this far below the projector's top, under the HDMI plug
 ir_x = 35;              // IR receiver on the projector's front face, right of centre (above the logo)
 ir_z = 50;              // and its height above the projector underside
-ir_holder_h = 10;       // ir_holder body height off the front face
+ir_holder_h = 7;        // ir_holder body height off the front face
 
 /* [Pi sled] */
 sled_pad = 2;       // floor pads lift the sled so floor water drains underneath
@@ -459,7 +458,6 @@ module warts() {
   translate([wart_x0, plate_y0-wart2[2], rcpt_zc[1]-wart2[1]/2]) cube([wart2[0], wart2[2], wart2[1]]);
 }
 
-// 45-degree rain hood over the aim hatch (prints without supports)
 // Lip baffle on the right wall between the exhaust and the rear inlet: exhaust that stays in the case does not creep back to the
 // intake along the side gap. Stops baffle_gap below the projector's top so the HDMI plug passes over it. A lip, not a seal.
 module baffle() {
@@ -467,6 +465,7 @@ module baffle() {
   translate([inner_w/2 - baffle_d, by, z_pj - air_margin_z]) cube([baffle_d + 0.1, baffle_t, proj_h + air_margin_z - baffle_gap]);
 }
 
+// 45-degree rain hood over the aim hatch (prints without supports)
 module hood() {
   translate([-out_w/2, hatch_y+cover_s/2, hatch_zz+cover_s/2+hood_lift]) rotate([90,0,0])
     linear_extrude(cover_s) polygon([[0.1, 3], [-hood_d, 0], [0.1, -hood_d]]);
@@ -576,6 +575,7 @@ module assembly() {
   // ghosts (preview only): ball head + projector
   %translate([ped_x, ped_y, z_floor+ped_top]) cylinder(d=35, h=ball_head_h);
   %projector(aim[0], aim[1]);
+  %ir_holder_placed(aim[0], aim[1]);
 }
 
 // Insect-screen cap: a shallow box that seats on the wall/floor all round, screen glued inside the
@@ -627,7 +627,7 @@ module fit_coupon() {
 // IR receiver, 5 mm LED aimed ir_angle off the pad's normal. Prints pad-down.
 module ir_holder() {
   difference() {
-    translate([-8, -8, 0]) cube([16, 16, 10]);
+    translate([-8, -8, 0]) cube([16, 16, ir_holder_h]);
     translate([0, 0, 2]) rotate([ir_angle, 0, 0]) cylinder(d=5.2, h=30);
     translate([-1.5, -9, 1]) cube([3, 9, 3]);   // lead channel out the side, clear of the taped face
   }
@@ -677,10 +677,22 @@ module light_cone(pan=0, tilt=0, len=400) {
                faces=[[0,2,1], [0,3,2], [0,4,3], [0,1,4], [1,2,3,4]]);
 }
 
-// Keep-out for the plugs behind the projector, in the same pose
+// Keep-out for the DC barrel plug in the rear face's top-right corner (a right-angle plug pointing back), in the same pose
 module projector_ports(pan=0, tilt=0) {
   translate(pivot) rotate([0,0,pan]) rotate([-tilt,0,0]) translate(-pivot)
-    translate([-45, y0+front_gap+proj_d, z_pj+port_band[0]]) cube([90, port_depth, port_band[1]-port_band[0]]);
+    translate([proj_w/2 - dc_jack[0] - 7, y_pf + proj_d, z_pj + proj_h - dc_jack[1] - 7]) cube([14, port_depth, 14]);
+}
+// Keep-out for the right-angle HDMI plug on the right face's I/O strip and its cable run back to the projector's rear plane
+module projector_side_ports(pan=0, tilt=0) {
+  translate(pivot) rotate([0,0,pan]) rotate([-tilt,0,0]) translate(-pivot) {
+    translate([proj_w/2, y_pf + hdmi_y - 8, z_pj + proj_h - side_port_h]) cube([side_port_depth, 16, side_port_h]);
+    translate([proj_w/2, y_pf + hdmi_y + 8, z_pj + proj_h - side_port_h]) cube([side_cable_d, proj_d - hdmi_y - 8, side_port_h]);
+  }
+}
+// IR LED holder stuck to the projector's front face above the logo, in the same pose (pad on the face, body toward the window)
+module ir_holder_placed(pan=0, tilt=0) {
+  translate(pivot) rotate([0,0,pan]) rotate([-tilt,0,0]) translate(-pivot)
+    translate([ir_x, y_pf, z_pj + ir_z]) rotate([90,0,0]) ir_holder();
 }
 
 // Projector block panned (about Z) and tilted (about X, + = lens up) around the ball-head pivot
