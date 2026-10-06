@@ -36,8 +36,8 @@ aspect = 16/9;
 port_depth = 15;    // HDMI + power plugs on the projector's rear face: right-angle plugs with slack (a straight HDMI plug needs ~40)
 port_band = [15, 55];   // plug height range above the projector underside (guess: check yours)
 lens_offset = 0;    // vertical image offset: 0 = image centred on the lens axis, 1 = image bottom on the axis
-pane_w = 127;   // acrylic pane: 4 x 5 in (127 x 101.6 mm), a stock size; the window opening is the pane minus lap
-pane_h = 101.6;
+pane_w = 127;   // pane: 3.5 x 5 in (127 x 88.9 mm) picture-frame glazing, the smallest stock size the light cone clears; the window opening is the pane minus lap
+pane_h = 88.9;
 pane_top_clear = 7;  // pane top this far below the base rim: the window sits as high as it can, for upward tilt
 mount_x = 19;   // 1/4-20 socket offset from projector centre (+ = right): scaled off the underside photo, measure it
 mount_y = -4;   // + = toward rear: scaled off the underside photo, measure it
@@ -66,7 +66,7 @@ top_air  = 25;
 front_gap = 30;      // lens-down tilt swings the top front corner forward (more so panned, now the body is 165 wide); aim-sweep and light-cone checks size this
 rear_gap  = 34;      // lens-up tilt swings the rear plugs back (port_depth) toward the divider; aim-sweep sizes this
 pi_zone_d = 85;    // Pi compartment depth: the wall-warts hang 68 off the rear wall (rcpt_back + plate + wart_t, asserted) and the shelf's low-voltage side needs wiring room
-pane_t = 2;        // acrylic thickness: 2 mm sheet on hand (1/8 in = 3.2 also fits)
+pane_t = 2;        // pane thickness: 2 mm (typical frame glazing; measure yours, 1/8 in = 3.2 also fits)
 lap = 8;           // pane overlap past the window opening
 boss_h = 4;
 

@@ -2,7 +2,7 @@
 
 In order. Parts are in [BOM.md](BOM.md); wiring is in [WIRING.md](WIRING.md) and must be followed exactly. Nothing here has been built yet, so expect to adjust.
 
-1. **Fit coupon.** Print `fit_coupon` first. Press in each heat-set insert, drive each screw into its pilot, hang the keyhole on an M4 bolt, snap a receptacle into the 5-15R cutout, and slide the acrylic into its slot. Adjust `insert_d`, `m4_insert_d`, `m3_insert_d`, `clearance` and so on in the SCAD until everything fits, then export the rest.
+1. **Fit coupon.** Print `fit_coupon` first. Press in each heat-set insert, drive each screw into its pilot, hang the keyhole on an M4 bolt, snap a receptacle into the 5-15R cutout, and slide the frame glazing into its slot. Adjust `insert_d`, `m4_insert_d`, `m3_insert_d`, `clearance` and so on in the SCAD until everything fits, then export the rest.
 2. **Clean up the prints.** Snap out the two thin ribs in the window opening. Mask the window rebate, insert holes and screw holes, then spray the inside of both base halves and the lid matte black.
 3. **Heat-set inserts.**
    - `base_front`: 4x M4 in the hatch studs (from outside).
