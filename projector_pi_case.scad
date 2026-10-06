@@ -44,8 +44,8 @@ mount_x = 19;   // 1/4-20 socket offset from projector centre (+ = right): scale
 mount_y = -4;   // + = toward rear: scaled off the underside photo, measure it
 
 /* [Ball head] */
-ball_head_h = 40;  // height of your ball head, base to mounting stud
-pivot_h = 25;      // ball centre above the head's base (aim pivot)
+ball_head_h = 52;  // UTEBIT 20 mm mini head (58 mm overall incl. ~6 mm stud, which screws into the projector): base to the platform the projector sits on, scaled off the vendor drawing
+pivot_h = 32;      // ball centre above the head's base (aim pivot); UTEBIT: 30 mm body, 20 mm ball, scaled off the vendor drawing
 aim_max = 15;      // tilt range the case must clear (check_clash.sh sweeps it)
 pan_max = 10;      // pan range the case must clear: the light cone clips the window frame past this at throw_ratio 0.95 (turn the case for more)
 cone_tilt = 11;     // light-cone check: the image must clear the window, frame and visor at +/- this tilt
@@ -577,7 +577,7 @@ module assembly() {
   %pi_stack(sled);
   %pi_hdmi_plug(sled);
   // ghosts (preview only): ball head + projector
-  %translate([ped_x, ped_y, z_floor+ped_top]) cylinder(d=35, h=ball_head_h);
+  %translate([ped_x, ped_y, z_floor+ped_top]) cylinder(d=32, h=ball_head_h);
   %projector(aim[0], aim[1]);
   %ir_holder_placed(aim[0], aim[1]);
 }

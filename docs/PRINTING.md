@@ -26,13 +26,13 @@ Two Prusa i3 MK3S (bed 250 x 210 x 210 mm), Prusament PETG (or ASA, which fades 
 | `power_shelf` | 1 | 4 h 51 m | 67 g | Prints flat with the 90 mm receptacle plate standing up |
 | `lid_rear` | 1 | 6 h 41 m | 112 g | |
 | `lid_front` | 1 | 9 h 45 m | 169 g | |
-| `base_rear` | 1 | 17 h 49 m | 259 g | 12 h 49 m with 0.30mm DRAFT (291 g) |
-| `base_front` | 1 | **35 h 2 m** | 529 g | 25 h 32 m with 0.30mm DRAFT (582 g; set `layer_h = 0.3`) |
-| **Total** | | **about 84 h** | **about 1.3 kg** | Two 1 kg spools. Re-sliced from the 3.5 x 5 in pane and airflow-change STLs. |
+| `base_rear` | 1 | 18 h 43 m | 272 g | 13 h 25 m with 0.30mm DRAFT (305 g) |
+| `base_front` | 1 | **37 h 4 m** | 559 g | 26 h 55 m with 0.30mm DRAFT (615 g; set `layer_h = 0.3`) |
+| **Total** | | **about 86 h** | **about 1.3 kg** | Two 1 kg spools. Re-sliced for the UTEBIT 20 mm ball head (`ball_head_h` 52), which only changed the two base tiles. |
 
 ## Order, on two printers
 
-The small parts first, so any fit problem shows up before a 35-hour print.
+The small parts first, so any fit problem shows up before a 37-hour print.
 
 | Day | Printer A | Printer B |
 |---|---|---|

@@ -16,7 +16,7 @@ Everything below has only been tested in software. Work through it on the bench 
 | 2a | Signal-loss standby, from the Mac: with the projector showing the Mac's desktop, sleep the Mac and time how long the projector takes to blank, then wake the Mac | The projector blanks (or goes to standby) by itself within a few minutes and the picture returns when the signal does | `hdmi-off` mode won't save the lamp at night; plan on `relay` or `relay-ir` |
 | 3 | Throw ratio and offset: project onto a wall from a measured distance, and measure image width and how far the bottom edge sits above the lens | Throw ratio about 0.95, offset recorded; the Site rows' tilt stays under `cone_tilt` (11 deg) | Set `throw_ratio`, `lens_offset`; check the `light-cone` result |
 | 4 | Wall-warts. Stock (done 2026-10-05): MX48CC-210228US, in 100-240 V 1.0 A, out 21 V 2.28 A (48 W), centre +, no AC inlet, 85.6 long; still to measure: its width (standing height) and thickness, and the prong offset from the end. Second wall-wart (12-24 V, 2.5-3 A): label and size | `wart_w` within 1 mm (the stack has 3 mm under the lid roof); both bodies hang clear of the divider; polarity confirmed with a meter | Set `wart_w`, `wart_t`, `wart_prong`, `wart2`; if the stack hits the roof, raise `top_air`; fill in the fuse table in WIRING.md |
-| 5 | Ball head height and where the lock knob sits | Knob reachable through the hatch diamond | Change `ball_head_h`; move the hatch (`hatch_zc`) |
+| 5 | UTEBIT head: platform height (52) and ball centre (32) with calipers, and where the lock knob sits | Knob reachable through the hatch diamond | Change `ball_head_h`; move the hatch (`hatch_zc`) |
 
 ## Pi on the bench (before it goes in the case)
 
