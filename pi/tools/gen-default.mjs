@@ -18,6 +18,10 @@ const out = [
   "# Precedence: web page > this file > built-in default. Lines are commented out,",
   "# so the defaults apply until you set them.",
   "#",
+  "# systemd reads this file, not a shell. Put a value that contains quotes (the",
+  "# JSON ones) in single quotes, as the examples do: quotes inside an unquoted",
+  "# value are dropped, and the setting then falls back to its default.",
+  "#",
   "# After editing: sudo systemctl restart videofx-player",
   "# Root-only (mode 600) because it can hold the web page password.",
   "",
@@ -28,9 +32,17 @@ for (const s of SETTINGS) {
   if (s.group !== group) {
     group = s.group;
     out.push("", group === "Fixed" ? "# --- File only (needs root, or would let the page point the service anywhere)" : `# --- ${group}`);
+    if (group === "Fixed") {
+      out.push(
+        "# The relay, IR and 1-wire pins are also in /boot/firmware/config.txt (the relay's",
+        "# boot level, the IR and w1-gpio overlays), written once by setup.sh with the",
+        "# defaults. Change them there too, or the new pins won't work.",
+      );
+    }
   }
   const env = [s.env].flat().at(-1);
   out.push(`# ${s.label}${s.apply === "play" ? " (applies on the next play)" : s.apply === "restart" ? " (needs a service restart)" : ""}${s.help ? `. ${s.help}` : ""}`);
-  out.push(`#${env}=${show(defaults[s.key], s.key)}`);
+  const value = show(defaults[s.key], s.key);
+  out.push(`#${env}=${/["]/.test(value) ? `'${value}'` : value}`);
 }
 console.log(out.join("\n"));

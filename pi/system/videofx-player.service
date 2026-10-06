@@ -7,7 +7,7 @@ After=network-online.target sound.target videofx-hostname.service videofx-storag
 RequiresMountsFor=/var/lib/videofx MEDIA_DIR
 
 [Service]
-# notify: READY=1 once Matter is online, then WATCHDOG=1 from the main loop.
+# notify: READY=1 once start-up is done (not tied to the network), then WATCHDOG=1 from the main loop.
 # The pings come from a short-lived systemd-notify, hence NotifyAccess=all.
 Type=notify
 NotifyAccess=all
@@ -22,6 +22,10 @@ AmbientCapabilities=CAP_NET_BIND_SERVICE
 EnvironmentFile=-/etc/default/videofx
 WorkingDirectory=/opt/videofx
 ExecStart=/usr/bin/node /opt/videofx/src/main.js
+# After any stop (crash, kill, watchdog, update): relay open, so a relay-switched
+# projector is never left powered with nothing watching its temperature.
+# "+": as root. Reads VIDEOFX_RELAY_GPIO / _ACTIVE_LOW from the EnvironmentFile.
+ExecStopPost=+/usr/local/sbin/videofx-relay-open
 # Matter fabrics and last on/off state: /var/lib/videofx (exported as $STATE_DIRECTORY).
 StateDirectory=videofx
 StateDirectoryMode=0700
@@ -37,6 +41,10 @@ TimeoutStopSec=15
 NoNewPrivileges=yes
 ProtectSystem=full
 PrivateTmp=yes
+# The service runs as the login user; it (and mpv) only ever write the media
+# folder and /var/lib/videofx, never the rest of the home folder (SSH keys...).
+ProtectHome=read-only
+ReadWritePaths=-MEDIA_DIR
 
 [Install]
 WantedBy=multi-user.target

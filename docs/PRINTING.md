@@ -25,8 +25,8 @@ Two Prusa i3 MK3S (bed 250 x 210 x 210 mm), Prusament PETG (or ASA, which fades 
 | `power_shelf` | 1 | 3 h 33 m | 50 g | |
 | `lid_rear` | 1 | 6 h 19 m | 106 g | |
 | `lid_front` | 1 | 9 h 46 m | 169 g | |
-| `base_rear` | 1 | 17 h 3 m | 238 g | 11 h 54 m with 0.30mm DRAFT |
-| `base_front` | 1 | **35 h 21 m** | 534 g | 25 h 23 m with 0.30mm DRAFT (set `layer_h = 0.3`) |
+| `base_rear` | 1 | 17 h 16 m | 241 g | 12 h 2 m with 0.30mm DRAFT |
+| `base_front` | 1 | **35 h 25 m** | 533 g | 25 h 25 m with 0.30mm DRAFT (set `layer_h = 0.3`) |
 | **Total** | | **about 82 h** | **about 1.25 kg** | Two 1 kg spools |
 
 ## Order, on two printers

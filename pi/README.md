@@ -14,7 +14,7 @@ It also:
 
 A web page on your LAN (`http://videofx-xxxx.local/`) handles videos, the playlist, scare clips, the schedule and every setting.
 
-**Status: untested on hardware.** The logic is unit tested (426 tests). The whole service was run on a Mac against a fake mpv, with real UDP sACN. Nothing has run on a Pi, the image has not been built, and nothing has been paired with Apple Home. See [What is verified](#what-is-verified).
+**Status: untested on hardware.** The logic is unit tested (480 tests). The whole service was run on a Mac against a fake mpv, with real UDP sACN. Nothing has run on a Pi, the image has not been built, and nothing has been paired with Apple Home. See [What is verified](#what-is-verified).
 
 ## How it works
 
@@ -26,7 +26,7 @@ A web page on your LAN (`http://videofx-xxxx.local/`) handles videos, the playli
   4. **Temperature** (Temperature sensor): the projector zone, so Home can alert on it.
 - **Player.** One long-lived **mpv** with DRM/KMS output and no desktop, controlled over its JSON IPC socket (`/run/videofx/mpv.sock`). Changing videos is a playlist command, not a process restart, so there is no black gap. If mpv crashes it is restarted; after more than 5 crashes in a minute the service gives up and reports "off". Off means mpv stops (it idles and releases the screen) and the console is cleared to black. Until the Pi is paired, the console shows the pairing QR code.
 - **Who controls the power.** Matter, the web page, the schedule and the restore-after-power-cut all go through one path. While a DMX source is live, only DMX may change the power (see [DMX](#dmx-sacn)). Thermal protection can always switch off.
-- **Services.** `videofx-player.service` runs `/opt/videofx/src/main.js` as your login user. It has the groups video, render, audio, tty and gpio, and `CAP_NET_BIND_SERVICE` for port 80. It never runs as root. `videofx-hostname.service` runs on first boot only. Avahi publishes the name and the web page.
+- **Services.** `videofx-player.service` runs `/opt/videofx/src/main.js` as an ordinary user: `videofx` on the release image, your login user with `pi/config` or `install.sh`. It has the groups video, render, audio, tty and gpio, and `CAP_NET_BIND_SERVICE` for port 80. It never runs as root. `videofx-hostname.service` runs on first boot only. Avahi publishes the name and the web page.
 
 ## Supported boards
 
@@ -54,7 +54,8 @@ pi/
   src/config.js        every setting: variable, default, validation, when it applies; GPIO pin checks
   src/settings.js      settings.json store: precedence, password rules, migration
   src/player.js        playback control over mpv IPC: loop, scare mode, clip select, dimmer, mirror
-  src/mpv.js           mpv arguments, extra-options deny-list, JSON IPC client, supervisor
+  src/mpv.js           mpv arguments, extra-options allow-list, JSON IPC client, supervisor
+  src/display.js       HDMI connector status: playback waits for the projector to appear
   src/schedule.js      weekly schedule, NOAA sunset, scheduler
   src/projector.js     projector power: cec / relay-ir / relay / hdmi-off / none
   src/ir.js            IR codes: validate, learn (NEC decode or raw), send with ir-ctl
@@ -77,22 +78,35 @@ pi/
   image/               pi-gen build (build.sh, stage-videofx/)
   dmx/DIY-VideoFX-Player.qxf   QLC+ fixture
   tools/sacn-send.mjs  tiny sACN sender for testing; gen-default.mjs regenerates videofx.default
-  test/                Vitest (426 tests), test/fixtures/fake-mpv.mjs
+  test/                Vitest (480 tests), test/fixtures/fake-mpv.mjs
   install.sh, config.example
 ```
 
 ## Install
 
-**Option A: build an image.** You need Docker ([Docker Desktop](https://docs.docker.com/desktop/) on a Mac), git, rsync and uuidgen.
+**Option A: the release image.** Every [release](https://github.com/davidwkeith/atmosfx-projector-case/releases) carries `videofx-<version>-arm64.img.xz` (Raspberry Pi OS Lite 64-bit with the player baked in, built by CI from `pi/image/build.sh --generic`) and `videofx-imager.json`. The image holds no password, SSH key or Wi-Fi; [Raspberry Pi Imager](https://www.raspberrypi.com/software/) (2.0 or newer) puts yours in on first boot through cloud-init, the same way it sets up Raspberry Pi OS trixie:
+
+1. Imager > **App options** > **Content repository** > **Custom URL**: `https://github.com/davidwkeith/atmosfx-projector-case/releases/latest/download/videofx-imager.json`. Imager reloads with "VideoFX projector player" as its only OS.
+2. Pick it and the card, then fill in the usual options: user and password, Wi-Fi and country, SSH, locale. The hostname field is ignored: the Pi names itself `videofx-xxxx` anyway.
+3. Boot. One extra reboot (storage setup, below), then `videofx-xxxx.local` answers.
+
+Imager's **Use custom** button offers no first-boot options for a plain image file (Imager 2.0 removed them; the repository JSON is the supported way). Without the repository, flash the `.img.xz` with **Use custom**, then edit `user-data` and `network-config` on the card's boot partition before the first boot; both carry commented examples. A Pi booted with no user set up cannot be logged into at all: no password, and the console login is off.
+
+The service runs as the baked-in `videofx` user. Name your Imager user `videofx` to keep one account (Imager then sets its password and SSH key), or pick any other name; both get sudo.
+
+**Option B: build the image yourself.** Your user, password, SSH key and Wi-Fi are baked in, so there is no first-boot setup. Never share this image. You need Docker ([Docker Desktop](https://docs.docker.com/desktop/) on a Mac), git, rsync, uuidgen and node.
 
 ```sh
 cp pi/config.example pi/config   # user, password, SSH key, Wi-Fi, country; gitignored
-pi/image/build.sh                # pi-gen arm64 pinned to one commit; image in pi/deploy/*-videofx.img.xz
+pi/image/build.sh                # pi-gen arm64 pinned to one commit; image in pi/deploy/videofx-<version>-arm64.img.xz
+pi/image/build.sh --generic      # the public flavour CI builds (no pi/config needed)
 ```
 
-Flash it with [Raspberry Pi Imager](https://github.com/raspberrypi/rpi-imager) (**Use custom**) and skip Imager's OS customisation. Every Pi flashed from the image names itself on first boot. pi-gen and npm are pinned; Debian and NodeSource packages are whatever is current on build day.
+Flash it with Imager's **Use custom** (no options are offered, none are needed). pi-gen and npm are pinned; Debian and NodeSource packages are whatever is current on build day.
 
-**Option B: install on stock Raspberry Pi OS Lite (64-bit).**
+**Fresh card, either way.** Flash the image onto the card and let that card's first boot run: `videofx-storage` grows the root to `ROOT_SIZE_MB` and makes the data partition from the rest, and Pi OS's own grow-to-fill is disabled. Don't copy files onto an existing Pi OS card to "upgrade" it, and don't boot the freshly flashed card in another Pi first. A card whose root already fills it reports `no-space` and runs unprotected; re-flash it.
+
+**Option C: install on stock Raspberry Pi OS Lite (64-bit).**
 
 ```sh
 scp -r pi/ you@raspberrypi.local:videofx-setup
@@ -161,7 +175,7 @@ The Pi 3, 4 and Zero 2 W have no real-time clock, so after a power cut the clock
 ### Hang recovery
 
 - **Hardware watchdog:** `RuntimeWatchdogSec=14s` in `/etc/systemd/system.conf.d/`. systemd pets the Broadcom watchdog, and if the kernel or systemd hangs the board resets. 14 s stays under the chip's roughly 15 s limit.
-- **Service watchdog:** `videofx-player` is `Type=notify` with `WatchdogSec=30`. It sends `READY=1` once Matter is online, then `WATCHDOG=1` every 15 s from the main event loop, but only while healthy. It stops pinging if the loop was blocked for more than 5 s, and systemd then restarts it.
+- **Service watchdog:** `videofx-player` is `Type=notify` with `WatchdogSec=30`. It sends `READY=1` once its own start-up is done (not when Matter comes online: with the Wi-Fi down that may never happen, and systemd would restart it every 2 minutes), then `WATCHDOG=1` every 15 s from the main event loop, but only while healthy. It stops pinging if the loop was blocked for more than 5 s, and systemd then restarts it.
 - Node can't write to the notify socket without a native addon, so pings go through `systemd-notify` with `NotifyAccess=all`. Crediting that short-lived helper's message to our unit needs kernel ≥ 6.5 and systemd ≥ 254, which trixie has; on older systems the pings may be lost. At most one helper runs at a time.
 
 ### Updates
@@ -172,7 +186,7 @@ VideoFX never updates itself, and the web page never touches the network. With t
 sudo videofx-update --check                   # asks GitHub; the page then shows "update available"
 sudo videofx-update                           # latest release
 sudo videofx-update --tag v0.3.0 --os         # a given release, plus apt full-upgrade
-sudo videofx-update --tarball ~/videofx-pi-0.3.0.tar.gz   # offline: scp the tarball over first
+sudo videofx-update --tarball ~/videofx-pi-0.3.0.tar.gz   # no GitHub access needed: scp the tarball over first
 sudo videofx-update --rollback                # back to the previous version
 ```
 
@@ -180,12 +194,12 @@ sudo videofx-update --rollback                # back to the previous version
   1. If the root is protected, it records the job and any tarball on the data partition, switches maintenance mode on and reboots. `videofx-update-resume.service` picks the job up after the reboot.
   2. Downloads the release asset `videofx-pi-X.Y.Z.tar.gz` and checks it's VideoFX.
   3. Copies the running version to `/opt/videofx.prev` (with its `node_modules`, so a rollback works offline).
-  4. Runs the new release's `system/setup.sh`, which does `npm ci --omit=dev`, units and config.
+  4. Runs the new release's `system/setup.sh`, which does `apt-get install`, `npm ci --omit=dev`, units and config. Both need the internet, with `--tarball` too.
   5. With `--os`, runs `apt full-upgrade`.
   6. Switches maintenance off and reboots.
-  7. A failed update leaves maintenance mode on and doesn't retry; fix it or `--rollback`.
-- **Private repo:** until it's public, put a GitHub token with read access to the repo's contents (a fine-grained token, "Contents: read") in `/srv/videofx/update/github-token`, mode 600, owned by root. It lives on the data partition so it survives the read-only root. Or use `--tarball`.
-- **Making a release** (on your computer): `pi/tools/make-release.sh` builds `pi/dist/videofx-pi-<version>.tar.gz` with `version.json` (version plus git sha), then run `gh release create vX.Y.Z pi/dist/videofx-pi-X.Y.Z.tar.gz`. The page footer shows the version and sha, and "update available" when the last `--check` found a newer release.
+  7. If step 4 fails (no network, say), it puts the previous version back, switches protection back on, reboots and exits with an error. It doesn't retry.
+- **Private fork:** if your copy of the repo is private, put a GitHub token with read access to its contents (a fine-grained token, "Contents: read") in `/srv/videofx/update/github-token`, mode 600, owned by root. It lives on the data partition so it survives the read-only root. Or use `--tarball`.
+- **Making a release:** bump the version in `pi/package.json`, tag `vX.Y.Z` and push the tag. CI (`.github/workflows/build.yml`) attaches the STLs, `videofx-pi-X.Y.Z.tar.gz` (`pi/tools/make-release.sh`), the public image with its `.sha256`, and `videofx-imager.json` (`pi/tools/imager-json.sh`). The image job runs on GitHub's arm64 runner and takes about ten minutes. By hand: `pi/tools/make-release.sh && gh release create vX.Y.Z pi/dist/videofx-pi-X.Y.Z.tar.gz`. The page footer shows the version and sha, and "update available" when the last `--check` found a newer release.
 
 ### Backup and restore
 
@@ -202,6 +216,9 @@ With no password set, the page shows a warning: anyone on your network can contr
 
 - Set a password, and keep the Pi off networks that guests can reach. On UniFi that means a separate guest network with **Network Isolation** on (Settings > Networks) and, on its SSID, **Client Device Isolation**, as in Ubiquiti's [Guest WiFi best practices](https://help.ui.com/hc/en-us/articles/23948850278295-Best-Practices-Guest-WiFi). Keep VideoFX on your own network with the home hub, since it must share one with Matter.
 - Once paired, the page hides the Matter pairing code (Settings > Web page > **Hide the Matter pairing code once paired**, on by default).
+- "LAN only" means the usual private ranges plus anything on one of the Pi's own subnets. The second part is for IPv6: on a network with a routed prefix every device has a global address, and iPhones and Macs use it for `videofx-xxxx.local`.
+- Password guessing is slowed down: five new guesses, then one a second. A tab that keeps polling with an old password doesn't use them up.
+- The service can't write to the home folder apart from the media folder (`ProtectHome=read-only`). If you move the media folder elsewhere under `/home` with `VIDEOFX_MEDIA_DIR`, add a matching `ReadWritePaths=` to the unit.
 
 ### Quiet hours
 
@@ -241,6 +258,7 @@ On the page: an on time and an off time per weekday. The on time can be **At sun
 - Sunset is computed on the Pi from Settings > Schedule > Latitude/Longitude, using NOAA's general solar position equations (tested within 5 minutes of published times). Days with no sunset (polar summer or winter) get no on event.
 - Times use the Pi's time zone (`sudo raspi-config` > Localisation). Tested across both DST changes: a time in the spring-forward gap fires once, at 03:30; a time in the fall-back hour fires once.
 - **The schedule only acts at its event times.** Switching on or off by hand (Home, the page) holds until the next scheduled event. The page shows the next event.
+- **After a power cut** the "After a power cut" setting applies first. Then, once the clock is set, an event that passed while the power was out is caught up: a cut across "on at sunset" still gets you a show. A change you made by hand after the last event is left alone.
 - A Pi has no real-time clock. Events more than 5 minutes stale, for example after NTP corrects the clock at boot, are skipped rather than replayed.
 - While DMX is in control the schedule is paused. When DMX lets go, the schedule's current wish is applied.
 
@@ -254,14 +272,17 @@ Setting: **Projector power** = `cec` (default) | `relay-ir` | `relay` | `hdmi-of
   - If the projector never answers, the service falls back to `hdmi-off` with a notice, and tries CEC again at the next power-on. CEC is only used on power changes, never on page polls.
   - **Buying:** many mini projectors have no CEC. Look for "HDMI-CEC" in the projector's own spec. Brand names like Anynet+, SimpLink or Bravia Sync are the TV makers' CEC and don't tell you anything about a projector.
   - **Test** on the Pi: `cec-ctl -d /dev/cec0 --playback -S` shows the CEC devices. `cec-ctl -d0 --to 0 --image-view-on` should wake it.
-- **hdmi-off.** Powers the HDMI signal down (fbdev blank) when stopped. Many projectors drop to standby after their own no-signal timeout. **Waking may still need the remote.** Before the Pi is paired, the signal stays on so the pairing code is visible.
+- **hdmi-off.** Powers the HDMI signal down (fbdev blank) when stopped, once mpv has let go of the display. Many projectors drop to standby after their own no-signal timeout. **Waking may still need the remote.** Before the Pi is paired, the signal stays on so the pairing code is visible.
 - **relay / relay-ir.** A relay on the projector's DC feed. Off: stop playback, then open the relay. On: close it, wait the settle time (default 3 s), then:
   - `relay`: nothing more, for projectors that power up by themselves.
-  - `relay-ir`: send the IR power code (twice if "needs two presses" is set). The relay forces a known "off" first, so the IR toggle can't get out of step.
+  - `relay-ir`: send the IR power code (twice if "needs two presses" is set). The relay forces a known "off" first, so the IR toggle can't get out of step. A second "on" while it is already on (the schedule after you switched on by hand, say) doesn't press power again.
+  - Either way, playback then waits up to 20 s for the projector to show up on HDMI, and starts again if it appears later. mpv gives a disconnected output no picture.
 - **Relay safety:**
   - Use a relay module rated for the projector's DC current, with an opto-isolated input and a flyback diode (most modules have one).
   - Switch the **+ line (high side) only**. Never switch the projector's ground: the HDMI shield would carry its return current.
   - At boot the firmware drives the relay line to "open" before Linux runs (`gpio=27=op,dh` for active-low modules; use `dl` for active-high). The service keeps it open until it decides.
+  - When the service stops, for any reason, the relay opens: the service does it on a clean stop, and `videofx-relay-open` (the unit's `ExecStopPost`) does it after a crash, a kill or the watchdog. A projector is never left powered with nothing watching its temperature.
+  - The relay, IR and 1-wire pins are also in `config.txt`, written once with the defaults. If you change them in `/etc/default/videofx`, change `config.txt` by hand too.
   - Cutting power suits LED mini projectors; don't do it to a lamp projector that needs a cool-down.
 - **IR** uses the `gpio-ir-tx` overlay for the LED and `gpio-ir` for a TSOP38238-style receiver, driven with `ir-ctl`.
   - On the page: **Learn power button**, then press the remote's power button at the receiver. The capture is decoded as NEC (`nec`, `necx` or `nec32`, the same scancode forms the kernel's encoder sends) or kept as raw pulse/space data.
@@ -320,13 +341,17 @@ A **HiFiBerry Amp4** (TAS5756M, 2 channels) drives 4-8 Ω speakers behind the pr
 
 ## Cooling
 
-Settings > Cooling: turn it on once the fans and sensors are wired.
+Settings > Cooling: turn it on once the fans and sensors are wired, **and choose the projector-zone sensor**.
+
+- **Off (the default):** both fans run flat out and nothing is protected. They also go flat out when the service stops.
+- **What the cut-off can do depends on the projector power mode.** With `relay` or `relay-ir` it cuts the projector's power. With `cec` it asks for standby, which a hung projector can ignore; with `hdmi-off` it only drops the signal; with `none` it only stops playback. If you want a cut-off that always works, fit the relay.
 
 - **Fans:** 25 kHz hardware PWM through `/sys/class/pwm` (the `pwm-2chan` overlay).
   - Fan 1 follows the projector-zone sensor; fan 2 follows the hotter of the Pi-zone sensor and the SoC.
   - Each fan has a curve (°C:duty%, linear). Defaults: `30:25 40:50 50:100` and `45:25 60:60 70:100`.
   - Minimum 30% while the projector is on, and the projector fan keeps running for 120 s after power-off.
   - A missing reading runs the fan at 100%.
+- **No projector-zone reading** for 60 s while playing (no sensor chosen, unplugged, failed) counts as critical: without it nothing is protected. It clears when a good reading comes back. To run without the sensor, turn Cooling off.
 - **Warning** (default 45 °C): banner on the page.
 - **Critical** (projector zone, default 55 °C):
   - stops playback and switches the projector off through its configured path, even under DMX;
@@ -391,7 +416,8 @@ Everything is on the web page under **Settings**. Each setting shows its value, 
 
 - **Precedence:** web page (`/var/lib/videofx/settings.json`, written atomically, mode 600) > `/etc/default/videofx` > default. A corrupt settings.json is backed up to `settings.json.corrupt` and ignored, with a warning.
 - **Password:** stored as a scrypt hash and never sent back. Changing it needs the current password; removing it needs the current password and a confirmation.
-- **Extra mpv options (Advanced):** only `--name=value`, no shell. The following are refused: `--input-*` (including `--input-ipc-server`), `--script*`, `--load-*`, `--config*`, `--include`, `--ytdl*`, `--http-*` and other network options, file-writing options (`--o`, `--log-file`, `--screenshot-*`, `--record-file`, `--stream-*`), `--lavfi-complex`, lavfi `movie=` sources, `--external-files`, `--idle`, `--terminal`, and any URL.
+- **Extra mpv options (Advanced):** only `--name=value`, no shell, and only from an allow-list: decoding (`--hwdec`, `--vd-lavc-*`), DRM output (`--vo=gpu|gpu-next|drm`, `--gpu-context`, `--drm-*`, `--drm-device=/dev/dri/cardN`), sync and scaling (`--video-sync`, `--interpolation`, `--scale`, `--deband`, `--video-*`, `--panscan`, picture controls), cache (`--cache*`, `--demuxer-max-bytes`), audio timing (`--audio-delay`, `--audio-buffer`, `--volume-max`, `--alsa-*`), `--profile=fast|sw-fast|high-quality|low-latency`, `--msg-level`, and `--vf` with simple filters (`crop`, `hflip`, `vflip`, `scale`, `pad`, `format`, `fps`, `eq`, `rotate`, `transpose`, `yadif`, `bwdif`). Everything else is refused. A deny-list missed `--ao=pcm --ao-pcm-file=...`, which writes any file the service can.
+- **JSON values in `/etc/default/videofx`** (scare clips, schedule, quiet hours) go in single quotes. systemd reads the file, and it drops the quotes inside an unquoted value.
 - **File only** (need root, or would let the page point the service anywhere): ports, media folder, playlist path, mpv command, state folder, and the relay, IR, fan and 1-wire pins. Edit `/etc/default/videofx` (every key is listed there, commented) and restart.
 - **Migration from the VLC version:** `VIDEOFX_VLC*` in the file and `vlcExtraArgs` in settings.json are ignored, with a warning. VLC options don't translate to mpv; the audio card and video output settings carry over as they are.
 
@@ -423,7 +449,7 @@ ls /sys/bus/w1/devices/                # DS18B20 ROM IDs (28-...)
 vcgencmd get_throttled                 # under-voltage (Pi 5 on the Amp4)
 ```
 
-- **No picture on a 4B or 5:** use HDMI0. **No picture when the projector is powered after the Pi:** add `video=HDMI-A-1:1280x720@60D` to `cmdline.txt`.
+- **No picture on a 4B or 5:** use HDMI0. **No picture when the projector is powered after the Pi:** playback waits up to 20 s for the HDMI connection and starts again when it appears (`journalctl -u videofx-player | grep HDMI`). If your projector never reports itself connected, add `video=HDMI-A-1:1280x720@60D` to `cmdline.txt`.
 - **mpv errors about the DRM device on a Pi 5:** add `--drm-device=/dev/dri/card1` in Settings > Advanced.
 - **Stutter on a Pi 3 or Zero 2 W:** re-encode (above), or add `--hwdec=v4l2m2m-copy`.
 
@@ -447,9 +473,9 @@ Node 20.19+ to run, 22.12+ for the tests. On macOS keep `RUNTIME_DIRECTORY` shor
 
 **Verified** (Mac, Node 26, `npx vitest run` in `pi/` outside the sandbox, because some tests bind local sockets):
 
-- **381 tests pass.** They cover:
+- **480 tests pass.** They cover:
   - the player: loop, scare arm/trigger/re-arm, sequential and random order, cooldown, ignore and queue, off during a scare, seam measurement, command ordering, mirror, clip and dimmer;
-  - mpv: the deny-list, the IPC client on a real Unix socket, supervisor crash/restart/give-up;
+  - mpv: the allow-list, the IPC client on a real Unix socket, supervisor crash/restart/give-up;
   - schedule: sunset against published times, polar days, both DST changes, the manual-override rule, stale events, the desired state for the DMX hand-back;
   - projector: the CEC sequence, retry, fallback, relay and relay-IR timing, double press;
   - IR: code validation, NEC decoding (nec, necx, nec32), learn and timeout, send;
@@ -470,14 +496,17 @@ Node 20.19+ to run, 22.12+ for the tests. On macOS keep `RUNTIME_DIRECTORY` shor
 - The smoke run found and fixed two real bugs: interleaved mpv commands from quick reloads, and banners that ignored `hidden`.
 - **Reliability:** durable writes (the call order is tested, and the files were written on disk); watchdog pinging (interval, READY once, stops while unhealthy, no pile-up); schedule gated on clock sync; Wi-Fi and storage-status parsers. Checked against the sources: raspi-config trixie (`overlayroot`), overlayroot's `recurse` option, the timesyncd `synchronized` file and drop-in dirs (systemd v257 man pages), NetworkManager's `DHCP4_*` dispatcher variables and its `ntp_servers` request, the UniFi DHCP option 42, Raspberry Pi board bands and the Pi 5 RTC battery.
 - **This round:** quiet hours (windows including past midnight, cap and mute, the DMX bypass, the scare gate for every source, unsynced clock); version compare, release-asset pick and update status; backup create/validate/stage/apply on disk (path traversal and bad content refused, locks skipped, old pairing kept aside); backup and restore routes (attachment, no-store, password, big body, write header). Smoke run: quiet hours active, the scare refused, a backup downloaded, a restore with the pairing refused without confirmation, then staged, then applied on restart.
+- **Review round (October):** the sensor-loss trip and its reset, fans flat out outside thermal control, a failed state save not blocking power-off, relay changes run in order, no second IR press when already on, the relay opening at shutdown, CEC re-configuring until it has a physical address, on-link IPv6 sources, the password guess limit, the free-space reserve and upload clean-up, the schedule's boot catch-up, mpv restarted after it gave up, the HDMI wait. The new tests were run against the old code and fail there.
+- **First-boot repartitioning, the risky part:** the grow-and-add-partition block from `videofx-storage` was run as written in a Debian trixie container (parted 3.6, sfdisk 2.41) on a loop disk with partition 2 mounted. The old `parted -s ... resizepart 2` fails there with "Partition is being used" (exit 1), which would have stopped first boot. The `sfdisk` replacement grows the partition, `resize2fs` grows the mounted filesystem, the data partition is made, and both pass `e2fsck`.
 - **QLC+ fixture** validates against QLC+'s `fixture.xsd`. **config.txt edits** are correct and idempotent on pi-gen's stock file. shellcheck is clean.
 
-**Untested** (no Pi, no mpv, no Docker here):
+**Untested** (no Pi, no mpv):
 
 - The image build, first boot on each board, and `install.sh` on Raspberry Pi OS.
 - mpv on the Pi: DRM output as non-root, `HDMI-A-1`, hardware decoding per board, **the real seam times**, and mirror CPU cost.
 - CEC with a real projector (including the `pwr-state:` output format), relay switching, IR send and learn, gpiomon, gpioset and gpio-ir on hardware, and the Pi 5 GPIO/PWM overlays.
 - `videofx-update` end to end (GitHub download with a token, maintenance reboot and resume, rollback), `make-release.sh` from a clean checkout.
-- The first-boot repartitioning (`videofx-storage`), overlayroot with `recurse=0` on a real card, maintenance mode, fsck after a real power cut, timesyncd with DHCP NTP, Wi-Fi power save and route metrics, the hardware watchdog and `systemd-notify` pings under systemd.
+- The first-boot repartitioning (`videofx-storage`) on a real SD card and as a whole (only its partition steps ran, on a loop disk), overlayroot with `recurse=0` on a real card, maintenance mode, fsck after a real power cut, timesyncd with DHCP NTP, Wi-Fi power save and route metrics, the hardware watchdog and `systemd-notify` pings under systemd.
 - The Amp4 on each board and powering a Pi 5; fans, tach and DS18B20 on real hardware; the fbdev blank turning HDMI off.
+- From the review round: `ProtectHome=read-only` with the media bind mount, the `ExecStopPost` relay hook (`pinctrl`), the HDMI status files and how long your projector takes to report connected, CEC Active Source as a broadcast, `gpiomon -b` on libgpiod 1.x, the first-boot ordering after SSH key generation, and the `nofail` mounts. Fan PWM on a Pi 5 is not expected to work yet (`pwmchip0` is assumed and `pwm-2chan` has no Pi 5 mapping).
 - Apple Home pairing, the Scare switch in Home automations, the Occupancy and Temperature endpoints in Home, avahi and matter.js together, UniFi behaviour, and sACN from QLC+, xLights or FPP over Wi-Fi.

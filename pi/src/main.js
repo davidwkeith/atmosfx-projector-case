@@ -11,7 +11,7 @@
 
 import { execFile, spawn } from "node:child_process";
 import dgram from "node:dgram";
-import { existsSync, mkdirSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, statSync } from "node:fs";
 import { access, readFile, readdir, writeFile } from "node:fs/promises";
 import { hostname } from "node:os";
 import { fileURLToPath } from "node:url";
@@ -24,7 +24,8 @@ import { OccupancySensorDevice, OnOffPlugInUnitDevice, TemperatureSensorDevice }
 import { QrCode } from "@matter/main/types";
 import { applyStagedRestore, createBackup, stageRestore, validateBackup } from "./backup.js";
 import { defaultContext, resolveSettings } from "./config.js";
-import { DmxControl, PowerArbiter, SACN_PORT, SacnReceiver, fixtureValues, interpret, multicastGroup } from "./dmx.js";
+import { DisplayWatch, displayConnected } from "./display.js";
+import { DmxControl, InternalWrites, PowerArbiter, SACN_PORT, SacnReceiver, fixtureValues, interpret, multicastGroup } from "./dmx.js";
 import { writeFileAtomicSync } from "./fsutil.js";
 import { GpioOut, gpiosetArgs } from "./gpio.js";
 import { Ir, lircFeatures } from "./ir.js";
@@ -35,7 +36,7 @@ import { Pir, gpiomonMajor, pirArgs } from "./pir.js";
 import { Player } from "./player.js";
 import { Projector } from "./projector.js";
 import { qrTextToSvg } from "./qr.js";
-import { Scheduler } from "./schedule.js";
+import { Scheduler, missedEvent } from "./schedule.js";
 import { createScreen } from "./screen.js";
 import { Settings } from "./settings.js";
 import { TIMESYNC_FLAG, parseIwLink, parseNmcliDevices, signalVerdict, storageStatus } from "./system.js";
@@ -86,6 +87,8 @@ const media = createMediaStore({
   playlist: get("playlist"),
   maxUploadBytes: () => get("maxUploadMb") * 1024 * 1024,
 });
+// Uploads cut short by a crash or power cut would otherwise fill the card over time.
+media.cleanTemp().then((n) => n && console.info(`Removed ${n} unfinished upload(s)`), () => {});
 
 // --- GPIO tools (libgpiod 1 on bookworm, 2 on trixie)
 
@@ -155,6 +158,15 @@ const mpv = new MpvSupervisor({
 });
 
 const playerState = join(stateDir, "player.json");
+// When the power state last changed before this boot (the file is rewritten on
+// every change): tells a schedule event that was acted on from one that passed
+// while the power was out.
+let lastChangeAt = 0;
+try {
+  lastChangeAt = statSync(playerState).mtimeMs;
+} catch {
+  // never switched: any past schedule event counts as missed
+}
 let dmxOverride = {}; // runtime values DMX sets while in control (not saved)
 const clipPath = (name) => (name ? join(get("mediaDir"), name) : "");
 const scareNames = () => get("scareClips").filter((n) => existsSync(clipPath(n)));
@@ -220,6 +232,16 @@ const projector = new Projector({
 });
 await projector.init(); // relay open (projector off) until the restored state is applied
 
+// The HDMI sink: playback waits for it, and starts again if it turns up late.
+const DISPLAY_WAIT_MS = 20_000;
+const display = new DisplayWatch({ probe: () => displayConnected({ connector: get("videoOutput") }) });
+display.on("connected", () => {
+  if (!player.isOn) return;
+  console.info("HDMI display connected: starting playback again");
+  player.reload();
+});
+display.start();
+
 // --- power
 
 let powerSeq = 0;
@@ -228,24 +250,40 @@ async function powerChanged(on) {
   if (on) {
     await projector.on(); // wake first (and wait out the relay settle time)
     if (seq !== powerSeq) return; // switched off meanwhile
+    // mpv gives a disconnected HDMI output no picture, and a projector that was
+    // just powered takes a few seconds to appear.
+    if ((await display.wait(DISPLAY_WAIT_MS)) === false) {
+      console.warn(`No HDMI display after ${DISPLAY_WAIT_MS / 1000} s: starting anyway; playback starts again when it appears`);
+    }
+    if (seq !== powerSeq) return;
     player.setOn(true);
   } else {
-    player.setOn(false);
+    // Whatever happens to the player, the projector must still be switched off.
+    try {
+      player.setOn(false);
+      // hdmi-off: the console blank is ignored while mpv still holds the display.
+      await player.stopped();
+    } catch (err) {
+      console.error(`Player stop: ${err.message}`);
+    }
+    if (seq !== powerSeq) return; // switched back on meanwhile
     await projector.off({ keepSignal: !server.lifecycle.isCommissioned });
   }
 }
 
 // Our own writes to the Matter attribute vs. writes from a controller.
-let internalWrites = 0;
+const ownWrites = new InternalWrites();
 async function writePower(on) {
   if (plug.state.onOff.onOff === on) return powerChanged(on);
-  internalWrites++;
-  await plug.set({ onOff: { onOff: on } });
+  await ownWrites.run(on, () => plug.set({ onOff: { onOff: on } }));
 }
 
+// Boot catch-up of a schedule event missed while the power was out (see
+// scheduleCatchUp). Any power decision made since boot cancels it.
+let catchUp = true;
+
 plug.events.onOff.onOff$Changed.on((on) => {
-  if (internalWrites > 0) {
-    internalWrites--;
+  if (ownWrites.take(on)) {
     powerChanged(on).catch((err) => console.error(`Power: ${err.message}`));
     return;
   }
@@ -260,6 +298,7 @@ const arbiter = new PowerArbiter({
   actual: () => player.isOn,
   blocked: () => guard.blocked,
   apply: (on, source) => {
+    if (source !== "catch-up") catchUp = false;
     const job = source === "matter" ? powerChanged(on) : writePower(on);
     job.catch((err) => console.error(`Power (${source}): ${err.message}`));
   },
@@ -308,9 +347,23 @@ setInterval(() => {
   if (now && !wasSynced) {
     console.info("Clock synchronised: schedule active");
     scheduler.start();
+    scheduleCatchUp();
   }
   wasSynced = now;
 }, 15_000).unref();
+
+// The schedule only acts at its event times. One that passed while the Pi had no
+// power (a cut across "on at sunset") would leave the show dark all night, so it
+// is applied once at boot, as soon as the clock is known.
+function scheduleCatchUp() {
+  if (!catchUp || !clockSynced()) return;
+  catchUp = false;
+  // The Matter attribute is the intended state; the player lags it while the projector wakes.
+  const missed = missedEvent(scheduler.lastEvent(), lastChangeAt, plug.state.onOff.onOff);
+  if (!missed) return;
+  console.info(`Schedule: ${missed.label} passed while the power was out: turning ${missed.on ? "on" : "off"}`);
+  requestPower("catch-up", missed.on);
+}
 
 const scheduler = new Scheduler({
   clockOk: clockSynced,
@@ -409,9 +462,10 @@ const thermal = new ThermalControl({
     hysteresisC: get("tempHysteresisC"),
     failRpm: 200,
     failAfterSec: 5,
+    sensorLossSec: 60,
   }),
 });
-thermal.on("critical", ({ temp }) => guard.critical(temp, get("tempCritC")));
+thermal.on("critical", ({ temp, reason }) => guard.critical(temp, get("tempCritC"), reason));
 thermal.on("cleared", ({ temp }) => guard.cleared(temp));
 const sysfs = { access, readFile, writeFile };
 const fans = [new SysfsPwm({ channel: 0, fs: sysfs }), new SysfsPwm({ channel: 1, fs: sysfs })];
@@ -420,6 +474,23 @@ let sensorsSeen = [];
 let lastRpm = [null, null];
 const fanErrors = [null, null];
 let thermalTimer = null;
+let stopping = false;
+
+// Not under thermal control (Cooling off, or shutting down): run the fans flat
+// out. Left alone, the PWM pins idle low, which a 4-pin fan reads as "stop".
+async function fansFull() {
+  await Promise.all(
+    fans.map((f, i) =>
+      f.set(100).then(
+        () => (fanErrors[i] = null),
+        (err) => {
+          if (fanErrors[i] !== err.message) console.info(`Fan ${i + 1}: not driven (${err.message})`); // once per new error
+          fanErrors[i] = err.message;
+        },
+      ),
+    ),
+  );
+}
 
 async function readSensor(id) {
   if (!id) return null;
@@ -443,6 +514,7 @@ async function thermalTick() {
       readFile("/sys/class/thermal/thermal_zone0/temp", "utf8").then(parseMilli, () => null),
     ]);
     lastRpm = tach?.rpm() ?? [null, null];
+    if (stopping || !get("thermalEnabled")) return; // switched off while reading
     const state = thermal.update({ projectorC, piC, socC, rpm: lastRpm, on: player.isOn });
     await Promise.all(
       fans.map((f, i) =>
@@ -469,7 +541,14 @@ function startThermal() {
   thermalTimer = null;
   tach?.stop();
   tach = null;
-  if (!get("thermalEnabled")) return;
+  if (!get("thermalEnabled")) {
+    // No protection: forget any trip (or it would block power-on for good).
+    thermal.reset();
+    guard.reset();
+    lastRpm = [null, null];
+    fansFull();
+    return;
+  }
   if (gpiodMajor !== null) {
     tach = new Tach({ spawn, args: tachArgs(gpiodMajor, [get("fan1TachPin"), get("fan2TachPin")]), lines: gpiodMajor >= 2 ? [`GPIO${get("fan1TachPin")}`, `GPIO${get("fan2TachPin")}`] : [get("fan1TachPin"), get("fan2TachPin")] });
     tach.start();
@@ -529,10 +608,6 @@ const watchdog = new Watchdog({
     return lagMs > 5000 ? `event loop blocked for ${Math.round(lagMs)} ms` : null;
   },
 });
-server.lifecycle.online.on(() => {
-  watchdog.ready().catch(() => {});
-});
-
 // --- lifecycle and settings
 
 server.lifecycle.online.on(() => {
@@ -586,6 +661,9 @@ async function afterSettingChange(key) {
       return undefined;
     case "thermalEnabled":
       startThermal();
+      if (get("thermalEnabled") && !get("sensorProjector")) {
+        return "Choose the projector-zone sensor: with no reading, playback stops after 60 s.";
+      }
       return undefined;
     case "projectorPower":
     case "cecDevice":
@@ -658,6 +736,7 @@ const web = createWebServer({
       },
     };
   },
+  problem: () => media.problem({ mode: dmxOverride.mode ?? get("mode"), buffer: get("scareBuffer"), scares: get("scareClips") }),
   setPower: async (on) => {
     const r = requestPower("web", on);
     if (!r.ok) throw new HttpError(409, r.reason);
@@ -727,17 +806,33 @@ web.listen(get("httpPort"), () => console.info(`Web UI on port ${get("httpPort")
 mpv.start();
 scheduler.start();
 const initial = player.initialState(get("restore"));
-await writePower(initial);
+// Matter's saved attribute already matches: apply it without holding start-up
+// while the projector wakes (relay settle time, then up to 20 s for HDMI).
+if (plug.state.onOff.onOff === initial) powerChanged(initial).catch((err) => console.error(`Power: ${err.message}`));
+else await writePower(initial);
+scheduleCatchUp();
+
+// Tell systemd we are up once our own start-up is done. Not when Matter comes
+// online: with the Wi-Fi down that may never happen, and systemd would restart us
+// every TimeoutStartSec (cycling the projector) although playback works.
+watchdog.ready().catch(() => {});
 
 // run() starts the node and resolves when it is closed; matter.js closes it on
 // SIGTERM/SIGINT. While not commissioned it logs the pairing QR code and manual
 // code to stdout, which is the journal under systemd.
 await server.run();
+stopping = true;
 await watchdog.stopping();
 web.close();
 scheduler.stop();
+display.stop();
 pir?.stop();
 tach?.stop();
+if (thermalTimer) clearInterval(thermalTimer);
 dmxSocket?.close();
 await player.shutdown();
+// Nothing watches the temperature from here on: fans flat out, and a
+// relay-switched projector off (videofx-relay-open covers a crash or kill).
+await fansFull();
+await projector.shutdown();
 relay.release();

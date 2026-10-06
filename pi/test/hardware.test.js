@@ -74,7 +74,7 @@ describe("CEC", () => {
       "cec-ctl -d /dev/cec0 --playback --osd-name VideoFX-BEEF-a",
       "cec-ctl -d /dev/cec0 --to 0 --image-view-on",
       "cec-ctl -d /dev/cec0 --to 0 --text-view-on",
-      "cec-ctl -d /dev/cec0 --to 0 --active-source phys-addr=1.0.0.0",
+      "cec-ctl -d /dev/cec0 --to 15 --active-source phys-addr=1.0.0.0", // broadcast
       "cec-ctl -d /dev/cec0 --to 0 --give-device-power-status",
     ]);
     expect(state).toMatchObject({ cec: "supported", power: "on", effective: "cec", notice: null });
@@ -140,6 +140,20 @@ describe("CEC", () => {
     expect(calls).toContain("cec-ctl -d /dev/cec0 --to 0 --image-view-on");
   });
 
+  it("no physical address yet (projector off at first try): configures again next time, then sends Active Source", async () => {
+    let edid = false;
+    const { p, calls } = projectorSetup({
+      replies: { "--playback --osd-name VideoFX-BEEF-a": () => (edid ? CONFIGURED : "Physical Address           : f.f.f.f\n"), "--to 0 --give-device-power-status": PWR("on") },
+    });
+    await p.on();
+    expect(calls.some((c) => c.includes("--active-source"))).toBe(false);
+    edid = true;
+    calls.length = 0;
+    await p.on();
+    expect(calls.filter((c) => c.includes("--playback"))).toHaveLength(1);
+    expect(calls).toContain("cec-ctl -d /dev/cec0 --to 15 --active-source phys-addr=1.0.0.0");
+  });
+
   it("no CEC device (cec-ctl fails): same fallback", async () => {
     const { p } = projectorSetup({ replies: { "--playback --osd-name VideoFX-BEEF-a": new Error("No such file or directory") } });
     expect(await p.on()).toMatchObject({ cec: "no-response", effective: "hdmi-off" });
@@ -198,6 +212,33 @@ describe("relay modes", () => {
     await vi.advanceTimersByTimeAsync(1);
     await on;
     expect(calls).toEqual(["blank false", "relay closed", "ir nec:0x40bf"]);
+  });
+
+  it("relay-ir: a second 'on' while already on does not press power again (the code is a toggle)", async () => {
+    const { p, calls } = projectorSetup({ mode: "relay-ir", settleMs: 1000 });
+    const first = p.on();
+    await vi.advanceTimersByTimeAsync(1000);
+    await first;
+    await p.on(); // the schedule's "on" after a manual one, the page, DMX...
+    await vi.advanceTimersByTimeAsync(5000);
+    expect(calls.filter((c) => c.startsWith("ir"))).toHaveLength(1);
+    await p.off();
+    const again = p.on(); // after a real off, it presses again
+    await vi.advanceTimersByTimeAsync(1000);
+    await again;
+    expect(calls.filter((c) => c.startsWith("ir"))).toHaveLength(2);
+  });
+
+  it("shutdown opens the relay; in CEC mode it leaves the projector alone", async () => {
+    const { p, calls } = projectorSetup({ mode: "relay", settleMs: 0 });
+    const on = p.on();
+    await vi.advanceTimersByTimeAsync(0);
+    await on;
+    await p.shutdown();
+    expect(calls.at(-1)).toBe("relay open");
+    const cec = projectorSetup({ mode: "cec" });
+    await cec.p.shutdown();
+    expect(cec.calls).toEqual([]);
   });
 
   it("relay-ir with two presses: second press after the gap", async () => {
@@ -327,6 +368,21 @@ describe("GPIO output (relay)", () => {
     expect(spawn.mock.calls.map((c) => c[1][0])).toEqual(["GPIO27=0", "GPIO27=1"]);
     expect(out.value).toBe(true);
   });
+
+  it("runs quick changes one at a time, so the last one asked for is the one that holds", async () => {
+    const children = [];
+    const spawn = vi.fn(() => {
+      const c = new FakeChild();
+      children.push(c);
+      return c;
+    });
+    const out = new GpioOut({ spawn, argsFor: (v) => [`GPIO27=${v ? 1 : 0}`], log: quiet });
+    await Promise.all([out.set(true), out.set(false), out.set(true)]); // not awaited one by one
+    expect(spawn.mock.calls.map((c) => c[1][0])).toEqual(["GPIO27=1", "GPIO27=0", "GPIO27=1"]);
+    // each holder was stopped before the next started; only the last is left running
+    expect(children.map((c) => c.signals.length)).toEqual([1, 1, 0]);
+    expect(out.value).toBe(true);
+  });
 });
 
 describe("PIR", () => {
@@ -334,7 +390,8 @@ describe("PIR", () => {
     expect(gpiomonMajor("gpiomon (libgpiod) v2.2.1\nCopyright")).toBe(2);
     expect(gpiomonMajor("gpiomon (libgpiod) v1.6.3")).toBe(1);
     expect(pirArgs(2, 17, 50)).toEqual(["--consumer=videofx-pir", "--edges=both", "--bias=pull-down", "--debounce-period=50ms", "--format=%e", "GPIO17"]);
-    expect(pirArgs(1, 17, 50)).toEqual(["-B", "pull-down", "-r", "-f", "-F", "%e", "gpiochip0", "17"]);
+    // -b: libgpiod 1.x block-buffers its output into a pipe unless told to line-buffer
+    expect(pirArgs(1, 17, 50)).toEqual(["-b", "-B", "pull-down", "-r", "-f", "-F", "%e", "gpiochip0", "17"]);
     expect(RESERVED_GPIOS).toEqual([0, 1, 2, 3, 4, 18, 19, 20, 21]);
   });
 

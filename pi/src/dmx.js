@@ -345,3 +345,50 @@ export class PowerArbiter {
     return { ok: true };
   }
 }
+
+/**
+ * Tells our own writes to the Matter on/off attribute from a controller's. A tag
+ * is used up by the change event its write causes. A write that causes no event
+ * (the attribute already had that value, or the write failed) lets its tag
+ * expire, so the next controller write is not mistaken for ours and waved past
+ * the arbiter (DMX in control, over temperature).
+ */
+export class InternalWrites {
+  #tags = new Set();
+  #graceMs;
+  #setTimer;
+
+  constructor({ graceMs = 1000, setTimeout: st = setTimeout } = {}) {
+    this.#graceMs = graceMs;
+    this.#setTimer = st;
+  }
+
+  get pending() {
+    return this.#tags.size;
+  }
+
+  /** Run write() (which sets the attribute to `on`) marked as ours. */
+  async run(on, write) {
+    const tag = { on };
+    this.#tags.add(tag);
+    try {
+      await write();
+    } catch (err) {
+      this.#tags.delete(tag);
+      throw err;
+    }
+    // The event normally comes before write() resolves; allow for it coming just after.
+    const timer = this.#setTimer(() => this.#tags.delete(tag), this.#graceMs);
+    timer?.unref?.();
+  }
+
+  /** From the change event: was this change to `on` ours? */
+  take(on) {
+    for (const tag of this.#tags) {
+      if (tag.on !== on) continue;
+      this.#tags.delete(tag);
+      return true;
+    }
+    return false;
+  }
+}

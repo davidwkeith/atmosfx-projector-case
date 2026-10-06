@@ -49,7 +49,7 @@ insert_len = 9;
 wall = 3;
 floor_t = 6;
 foot_h = 6;        // ground clearance so rain drains out underneath
-foot_ribs = [-88, -68, -40, -15, 15, 40, 68, 88];   // front-to-back ribs: floor bridges <= 27 mm, channels drain/vent/route wires
+foot_ribs = [-88, -68, -40, -15, 15, 40, 68, 88];   // inner front-to-back ribs; two more run under the side walls. Floor bridges <= max_bridge (asserted); channels drain/vent/route wires
 rib_t = 4;
 layer_h = 0.2;     // print layer height: gap above the window's snap-out ribs
 clearance = 0.3;
@@ -78,7 +78,7 @@ shelf_z = 60;       // power shelf height above floor: clears the tallest sled s
 ledge_w = 9;        // shelf ledge on the side walls
 tie_gap = 34;       // zip-tie slot spacing across the shelf (module sits between)
 cord_x = -65;       // where the single AC cord enters the rear wall (AC side, left of the barrier)
-cord_dz = 15;       // gland centre above the shelf's top face, so mains never enters the Pi zone
+cord_dz = 46;       // gland centre above the shelf's top face: mains never enters the Pi zone, and the cord comes in over the brick, not into its side (asserted)
 brick_l = 100;      // your DC brick: length (X) - measure it
 brick_w = 50;       // width (Y)
 brick_h = 32;       // height
@@ -132,6 +132,12 @@ sled_pad = 2;       // floor pads lift the sled so floor water drains underneath
 sled_t = 3;         // sled plate
 sled_post = 3;      // board standoffs on the sled
 m3_insert_d = 4.0;  // M3 heat-set insert for the sled thumbscrew; check your insert
+hdmi_plug = [22, 45, 13];   // straight HDMI plug at the Pi, with strain relief: [width, length, height] (check_clash.sh keep-out)
+pass_x = [-40, 25];         // divider pass-through, left/right edge: spans every board's HDMI port
+
+/* [Printer] */
+bed = [250, 210, 210];   // print volume; every tile is asserted to fit (either way round)
+max_bridge = 30;         // longest unsupported bridge under the floor
 
 /* [Hardware] */
 gland_d = 15.5;    // PG9 mains-rated cord grip for the single AC cord
@@ -144,7 +150,7 @@ skirt_h = 22;
 top_t = 3;
 rise = 12;         // roof slope, drains to rear
 visor_len = 30;     // longer visors and deeper lips cut into upward-tilted light (see light-cone check)
-lid_front_len = 200; // front lid tile, visor tip to seam: both base_front and lid_front must fit the 210 mm bed axis end-on
+lid_front_len = 200; // front lid tile, visor tip to seam: base_front and lid_front print end-on, depth along the bed's 210 mm axis (asserted)
 lip_h = 4;          // drip lip at the visor tip
 gasket = 2;        // foam tape on the base rim; lid bosses stop 1 mm short so it compresses
 seam_rib = 4;      // extra roof thickness at the lid seam for the scarf joint
@@ -161,6 +167,8 @@ inner_d = proj_zone_d + div_t + pi_zone_d;
 inner_h = proj_z0 + proj_h + top_air;
 out_w = inner_w + 2*wall;
 out_d = inner_d + fw + wall;
+ribs_x = concat([-(out_w-rib_t)/2], foot_ribs, [(out_w-rib_t)/2]);   // outer ribs sit under the side walls: no floor past them
+assert(max([for (i=[1:len(ribs_x)-1]) ribs_x[i]-ribs_x[i-1]-rib_t]) <= max_bridge, "floor bridge too long: add or move foot_ribs");
 base_h = z_floor + inner_h;
 y_front = -out_d/2;
 y0 = y_front + fw;
@@ -204,6 +212,7 @@ function sled_holes(s) = s == "zero2w" ? [[3.5,3.5],[61.5,3.5],[3.5,26.5],[61.5,
                                        : [[3.5,3.5],[61.5,3.5],[3.5,52.5],[61.5,52.5]];   // 3B/3B+/4B/5 share 58 x 49
 function sled_stack(s) = s == "pi5" ? pi5_stack_h : s == "zero2w" ? zero_stack_h : pi_stack_h;
 function sled_label(s) = s == "zero2w" ? "Zero 2W" : str("Pi ", s[2]);
+function sled_hdmi_x(s) = s == "pi3" ? 32 : s == "zero2w" ? 12.4 : 26;   // HDMI (HDMI0) centre from the board's SD-card end
 assert(z_board + max([for (s=SLEDS) sled_stack(s)]) + 1 <= shelf_zz, "raise shelf_z: a sled stack hits the shelf");
 shelf_w = inner_w - 1;
 shelf_d = pi_zone_d - 1;
@@ -217,6 +226,18 @@ seam_t = top_t + seam_rib;                // roof thickness across the scarf
 pivot = [ped_x, ped_y, z_floor + ped_top + pivot_h];
 assert(barrier_h > brick_h, "barrier_h must exceed brick_h");
 lid_z0 = base_h + gasket - (skirt_h - top_t);
+assert(cord_dz >= brick_h + gland_d/2 + 6, "raise cord_dz: the gland and its locknut must clear the top of the brick");
+assert(shelf_zz + 3 + cord_dz + gland_d/2 + 6 <= lid_z0, "lower cord_dz: the gland runs into the lid skirt");
+assert(pane_top_clear >= pane_t + clearance + 2.5, "raise pane_top_clear: the rebate's 45 deg ceiling would cut through the base rim");
+
+// Every tile must fit the bed, either way round. These fire when the projector parameters grow the case.
+function fits_bed(x, y, z) = z <= bed[2] && ((x <= bed[0] && y <= bed[1]) || (x <= bed[1] && y <= bed[0]));
+base_front_len = base_seam - y_front;
+assert(fits_bed(base_front_len, out_w + hood_d, base_h), str("base_front is ", base_front_len, " x ", out_w + hood_d, " x ", base_h,
+  " mm, too big for the bed: trim front_gap / rear_gap / side_air / top_air, or it needs another split"));
+assert(fits_bed(out_w, out_d/2 - base_seam + (pir ? hood_d : 0), base_h), "base_rear does not fit the bed");
+assert(fits_bed(lid_seam + seam_t - (yfl - visor_len), lid_w, skirt_h + rise + lip_h), "lid_front does not fit the bed");
+assert(fits_bed(lid_d/2 - lid_seam + skirt_h + rise, lid_w, skirt_h + rise), "lid_rear does not fit the bed: the lid needs a third tile");
 big = 900;
 function zp(y) = skirt_h + rise*(1 - (y - yfl)/lid_d);
 
@@ -251,6 +272,9 @@ module cuts() {
   translate([lens_x-win_w/2, y_front-1, win_zc-win_h/2]) cube([win_w, fw+2, win_h]);
   translate([lens_x-(pane_w+2*clearance)/2, y0-pane_t-0.4, win_zc-(pane_h+2*clearance)/2])
     cube([pane_w+2*clearance, pane_t+0.5, pane_h+2*clearance]);
+  zt = win_zc + (pane_h+2*clearance)/2;   // 45 deg rebate ceiling: a flat one is an unsupported edge as wide as the pane
+  translate([lens_x-(pane_w+2*clearance)/2, 0, 0]) rotate([90,0,90]) linear_extrude(pane_w+2*clearance)
+    polygon([[y0-pane_t-0.4, zt-0.01], [y0+0.1, zt-0.01], [y0+0.1, zt+pane_t+0.5]]);
   for (sx=[-1,1], sz=[-1,1])   // frame screws on the sides, so the frame hugs the pane top and bottom
     translate([lens_x+sx*(pane_w/2+8), y0+0.1, win_zc+sz*pane_h/4])
       rotate([90,0,0]) cylinder(d=2.6, h=8.1);
@@ -273,9 +297,11 @@ module cuts() {
     translate([inner_w/2-4.1, f[0]+sy, f[1]+sz]) rotate([0,90,0]) cylinder(d=2.6, h=6);
   // single power-cord gland (rear wall, above the shelf, AC side of the barrier)
   translate([cord_x, y_back-1, shelf_zz+3+cord_dz]) rotate([-90,0,0]) cylinder(d=gland_d, h=wall+2);
-  // divider pass-through (HDMI + projector power)
+  // divider pass-through (HDMI + projector power). Open down to the sled: the Pi's HDMI edge sits about 10 mm
+  // behind the divider, so the plug goes straight through and the cable loops under the projector
   translate([0, y_div+div_t+1, 0]) rotate([90,0,0]) linear_extrude(div_t+2)   // gabled top prints unsupported
-    polygon([[-25, z_floor+30], [25, z_floor+30], [25, shelf_zz+23], [0, shelf_zz+48], [-25, shelf_zz+23]]);
+    polygon([[pass_x[0], z_floor+sled_pad], [pass_x[1], z_floor+sled_pad], [pass_x[1], shelf_zz+23],
+             [(pass_x[0]+pass_x[1])/2, shelf_zz+23+(pass_x[1]-pass_x[0])/2], [pass_x[0], shelf_zz+23]]);
   // drains (exit into the gap under the floor)
   for (sx=[-1,1], y=[y0+8, y_back-10]) translate([sx*55, y, foot_h-0.5]) cylinder(d=4, h=floor_t+1);
   // pedestal plate pilots
@@ -326,7 +352,7 @@ module base_all(ribs=true) {
         hull() for (y=[tripod_y, tripod_y2]) translate([0, y, 0]) cylinder(d=30, h=foot_h+0.1);
         translate([0, tripod_y, z_floor-0.1]) cylinder(d=18, h=insert38_len+2-z_floor+0.1);   // 2 mm above the insert
       }
-      for (x=foot_ribs) translate([x-rib_t/2, y_front, 0]) cube([rib_t, out_d, foot_h+0.1]);   // feet
+      for (x=ribs_x) translate([x-rib_t/2, y_front, 0]) cube([rib_t, out_d, foot_h+0.1]);   // feet
       translate([-inner_w/2, y_div, z_floor-0.1]) cube([inner_w, div_t, base_h-z_floor+0.1]);   // divider
       for (sx=[-1,1], sy=[-1,1]) translate([ped_x+sx*35, ped_y+sy*25, z_floor-0.1]) cylinder(d=9, h=boss_h+0.1);
       for (sx=[-1,1], y=lid_screw_ys) hull() {   // lid screw blocks inside the wall tops, 45 deg underside
@@ -484,6 +510,7 @@ module assembly() {
   for (v=vents) vent_cap_placed(v);
   intake_cap_placed();
   %pi_stack(sled);
+  %pi_hdmi_plug(sled);
   %for (f=fans) fan_body(f);
   // ghosts (preview only): ball head + projector
   %translate([ped_x, ped_y, z_floor+ped_top]) cylinder(d=35, h=ball_head_h);
@@ -549,6 +576,12 @@ module ir_holder() {
 // same place; full-size boards' ports overhang the +X end by about 3 mm.
 module pi_stack(s) {
   translate([-42.5, y_gpio-56, z_board]) cube([s == "zero2w" ? 65 : 88, 56, sled_stack(s)]);
+}
+
+// Keep-out for a straight HDMI plug in the Pi, running forward through the divider pass-through
+module pi_hdmi_plug(s) {
+  translate([-42.5+sled_hdmi_x(s)-hdmi_plug[0]/2, y_gpio-sled_board(s)[1]-hdmi_plug[1], z_board+1.6+3.2-hdmi_plug[2]/2])
+    cube(hdmi_plug);
 }
 
 // Removable Pi sled: lifts out from the top (lid off, shelf out), located by two floor pins and held

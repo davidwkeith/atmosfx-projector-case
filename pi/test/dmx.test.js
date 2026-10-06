@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { DmxControl, PowerArbiter, SacnReceiver, fixtureValues, interpret, multicastGroup, parseSacn, sequenceOk } from "../src/dmx.js";
+import { DmxControl, PowerArbiter, SacnReceiver, fixtureValues, interpret, multicastGroup, parseSacn, sequenceOk, InternalWrites } from "../src/dmx.js";
 import { buildPacket } from "../tools/sacn-packet.mjs";
 
 const cidA = Buffer.alloc(16, 0xaa);
@@ -274,4 +274,38 @@ it("thermal protection switches off even under DMX, and blocks switching on whil
   tripped = "too hot";
   expect(arbiter.request("dmx", true)).toEqual({ ok: false, actual: false, reason: "too hot" });
   expect(arbiter.request("dmx", false)).toEqual({ ok: true });
+});
+
+describe("our own writes to the Matter attribute", () => {
+  it("a write is matched to the change event it causes, once", async () => {
+    const w = new InternalWrites();
+    let fire;
+    const done = w.run(true, () => new Promise((r) => (fire = r)));
+    expect(w.take(false)).toBe(false); // a controller's "off" racing ours is not ours
+    expect(w.take(true)).toBe(true);
+    expect(w.take(true)).toBe(false); // the next "on" comes from a controller
+    fire();
+    await done;
+    expect(w.pending).toBe(0);
+  });
+
+  it("a write that causes no event expires instead of waving the next controller write through", async () => {
+    vi.useFakeTimers();
+    try {
+      const w = new InternalWrites({ graceMs: 1000 });
+      await w.run(true, async () => {}); // attribute already true: no change event
+      expect(w.pending).toBe(1);
+      await vi.advanceTimersByTimeAsync(1000);
+      expect(w.pending).toBe(0);
+      expect(w.take(true)).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("a failed write leaves nothing behind", async () => {
+    const w = new InternalWrites();
+    await expect(w.run(false, async () => { throw new Error("no such endpoint"); })).rejects.toThrow("no such endpoint");
+    expect(w.pending).toBe(0);
+  });
 });

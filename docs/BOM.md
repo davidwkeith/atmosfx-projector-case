@@ -15,7 +15,7 @@ Quantities for one case. Printed parts and filament are in [PRINTING.md](PRINTIN
 | microSD card, 32 GB, high-endurance | 1 | |
 | Outdoor speakers, 4-8 ohm | 2 | Placed behind the projection |
 | 4 x 5 in (127 x 101.6 mm) clear acrylic, 1/8 in (3.2 mm) | 1 | Cut-to-size, e.g. Acme Plastics |
-| Short HDMI cable + right-angle adapter | 1 | Full-size (Pi 3), micro (Pi 4/5) or mini (Zero 2 W) at the Pi end; right-angle at the projector |
+| HDMI cable, about 0.5 m, thin and flexible, + right-angle adapter | 1 | Full-size (Pi 3), micro (Pi 4/5) or mini (Zero 2 W) at the Pi end, with a straight plug no bigger than 22 x 13 mm and 45 mm long (`hdmi_plug`); right-angle at the projector. Zero 2 W: a slim plug (under 12 mm wide), because a HAT post stands beside its port |
 
 ## Power (see WIRING.md; mains inside the box)
 
