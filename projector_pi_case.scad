@@ -51,6 +51,13 @@ pan_max = 10;      // pan range the case must clear: the light cone clips the wi
 cone_tilt = 11;     // light-cone check: the image must clear the window, frame and visor at +/- this tilt
 aim_combo = 8;     // tilt while panned by pan_max (corners): the rear plugs reach the divider past this; more would lengthen base_front past the 210 mm bed axis
 ped_top = 30;      // pedestal top height above floor
+shoe_ch_w = 18.6;  // hot-shoe receiver (ISO 518, UNVERIFIED against the UTEBIT adapter; fit_coupon only so far): channel width under the lips
+shoe_foot_t = 2;   // foot plate thickness (ISO 2 +0.15)
+shoe_open = 12.5;  // opening between the lips
+shoe_lip_t = 2;    // lip thickness: the adapter's ring clamps on this
+shoe_foot_l = 18;  // foot length along the slide (guess: measure the adapter)
+shoe_neck_d = 12;  // round neck between foot and ring (guess: measure the adapter)
+shoe_clr = 0.3;    // clearance per side
 insert_d = 8.2;    // 1/4-20 heat-set insert hole; check your insert's datasheet
 insert_len = 9;
 
@@ -605,6 +612,14 @@ module intake_cap_placed()  { translate([inner_w/2-cap_h, in_c[0], in_c[1]]) rot
 
 // Fit-test coupon: every critical hole, the keyhole and the pane slot in one short print.
 // Holes are made with the same parameters as the real parts, so tune them here first.
+// Hot-shoe receiver cut, stud centre at the origin, top of the lips at z=0, open toward -X for open_len;
+// the far end of the channel is the stop. Overhangs are about 3 mm per lip, so it prints without supports.
+module hot_shoe_cut(open_len=25) {
+  ch_h = shoe_foot_t + 0.15 + 0.3;
+  translate([-open_len, -shoe_ch_w/2-shoe_clr, -shoe_lip_t-ch_h]) cube([open_len+shoe_foot_l/2+0.5, shoe_ch_w+2*shoe_clr, ch_h]);
+  translate([-open_len, -shoe_open/2-shoe_clr, -shoe_lip_t-1]) cube([open_len+shoe_neck_d/2+shoe_clr, shoe_open+2*shoe_clr, shoe_lip_t+2]);
+}
+
 module fit_coupon() {
   holes = [[insert_d, "1/4", insert_len+2], [m4_insert_d, "M4i", 10], [m3_insert_d, "M3i", 8], [gland_d, "PG9", 3], [3.4, "M3", 3], [2.6, "M3p", 8], [2.2, "M2.5p", 7], [1.8, "M2p", 6]];   // [d, label, boss height]
   difference() {
@@ -614,6 +629,7 @@ module fit_coupon() {
       for (i=[0:len(holes)-1]) translate([8 + i*12.5, 15, 0]) cylinder(d=holes[i][0]+5, h=holes[i][2]);   // a boss per hole
       translate([96, -12, 0]) cube([22, 12, 10]);                     // pane slot block
       translate([34, 30, 0]) cube([rcpt_cut[0]+14, 32, rcpt_t]);       // receptacle tab, plate thickness at the cutout
+      translate([0, -31, 0]) cube([34, 31, 2 + shoe_foot_t + 0.45 + shoe_lip_t]);   // hot-shoe block: floor 2, channel, lips
     }
     translate([41, 35, -1]) cube([rcpt_cut[0], rcpt_cut[1], 5]);        // NEMA 5-15R snap-in cutout
     translate([41+rcpt_cut[0]/2, 35+rcpt_cut[1]+2.5, rcpt_t-0.6]) linear_extrude(1) text("5-15R", size=2.4, halign="center");
@@ -624,6 +640,7 @@ module fit_coupon() {
     }
     translate([15, 52, -1]) hull() { cylinder(d=4.8, h=5); translate([0, -kh_drop, 0]) cylinder(d=9, h=5); }   // keyhole
     translate([105, -13, 3]) cube([pane_t+0.5, 14, 8]);   // acrylic slot: same width as the pane rebate
+    translate([18, -15.5, 2 + shoe_foot_t + 0.45 + shoe_lip_t]) hot_shoe_cut(19);   // slide the ball head's hot-shoe adapter in from the left edge
   }
 }
 
