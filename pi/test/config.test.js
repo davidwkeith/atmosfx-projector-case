@@ -18,8 +18,7 @@ describe("config", () => {
     expect([c.pirEnabled, c.pirPin, c.relayPin, c.irTxPin, c.irRxPin]).toEqual([false, 17, 27, 16, 23]);
     expect(c.projectorPower).toBe("cec");
     expect(c.mpv).toBe("mpv");
-    expect([c.fan1PwmPin, c.fan2PwmPin, c.fan1TachPin, c.fan2TachPin, c.w1Pin]).toEqual([12, 13, 24, 25, 26]);
-    expect([c.thermalEnabled, c.tempCritC, c.tempHysteresisC, c.fanMinDuty]).toEqual([false, 55, 5, 30]);
+    expect([c.thermalEnabled, c.tempWarnC, c.tempCritC, c.tempHysteresisC]).toEqual([true, 70, 80, 5]);
   });
 
   it("builds mpv arguments: DRM connector, DigiAMP+ by card name, IPC socket, idle", () => {
@@ -100,14 +99,8 @@ describe("GPIO pins", () => {
     expect(() => loadConfig({ VIDEOFX_PIR_GPIO: String(pin) }, ctx)).toThrow(/DigiAMP+/);
     expect(() => loadConfig({ VIDEOFX_RELAY_GPIO: String(pin) }, ctx)).toThrow(/DigiAMP+/);
   });
-  it("pwm-ir-tx is refused: its PWM0 channel drives the projector fan", () => {
-    expect(checkPins({ ...base, irTxDriver: "pwm-ir-tx", irTxPin: 12 })).toMatch(/fan/);
-  });
-  it("the fan and 1-wire pins join the budget", () => {
-    const all = { ...base, fan1PwmPin: 12, fan2PwmPin: 13, fan1TachPin: 24, fan2TachPin: 25, w1Pin: 26 };
-    expect(checkPins(all)).toBeUndefined();
-    expect(checkPins({ ...all, w1Pin: 17 })).toMatch(/GPIO17 is set for both the PIR and the 1-wire sensors/);
-    expect(checkPins({ ...all, fan2TachPin: 24 })).toMatch(/GPIO24/);
+  it("pwm-ir-tx is allowed now that the fans are gone (GPIO12 is free)", () => {
+    expect(checkPins({ ...base, irTxDriver: "pwm-ir-tx", irTxPin: 12 })).toBeUndefined();
   });
   it("a file conflict is an error in strict mode and a warning otherwise", () => {
     expect(() => loadConfig({ VIDEOFX_PIR_GPIO: "27" }, ctx)).toThrow(/both/);
