@@ -50,7 +50,7 @@ flowchart LR
 
 1. **Supply.** Keep every plug-and-socket joint off the ground and out of puddles: put any extension-cord joint in a weatherproof connection box (a clamshell "cord connection" cover) and raise it off the lawn. Plug into an outdoor GFCI outlet (US code already requires GFCI for outdoor receptacles; test it with its button). Use an outdoor-rated cord (SJTW or better, 18 AWG minimum) and an in-use weatherproof cover on the outlet.
 2. **Cord entry.** The cord enters through the PG9 cord grip in the rear wall, above the shelf. Tighten the grip on the round cord jacket. Leave a drip loop outside, below the grip, so water drips off before reaching it.
-3. **Receptacles.** The projector's stock supply is a wall-wart (MX48CC-210228US: AC 100-240 V 1.0 A in, 21 V 2.28 A / 48 W out, centre-positive, 2-pin non-polarized prongs, captive DC cord), so the shelf's plate carries two panel-mount NEMA 5-15R snap-in receptacles facing the divider: the stock wall-wart plugs into the lower one and stands on the shelf on its long edge; the second wall-wart (the 24 V rail for the Pi, Amp4 and fans) plugs into the upper one and rests on the first. Both hang on their prongs; a velcro strap through the shelf slots round both keeps them seated. Wire the receptacles' 4.8 mm tabs with **fully insulated** female quick-connects: live from the fuse to the brass (narrow-slot) tab, neutral from the cord to the silver (wide-slot) tab, earth to the green tab. Jumper the second receptacle from the first with piggyback quick-connects, or two crimps per tab. Leave the wall-warts unmodified on the AC side.
+3. **Receptacles.** The projector's stock supply is a wall-wart (MX48CC-210228US: AC 100-240 V 1.0 A in, 21 V 2.28 A / 48 W out, centre-positive, 2-pin non-polarized prongs, captive DC cord), so the shelf's plate carries two panel-mount NEMA 5-15R snap-in receptacles facing the divider: the stock wall-wart plugs into the lower one and stands on the shelf on its long edge; the second wall-wart (the 24 V rail for the Pi, DigiAMP+ and fans) plugs into the upper one and rests on the first. Both hang on their prongs; a velcro strap through the shelf slots round both keeps them seated. Wire the receptacles' 4.8 mm tabs with **fully insulated** female quick-connects: live from the fuse to the brass (narrow-slot) tab, neutral from the cord to the silver (wide-slot) tab, earth to the green tab. Jumper the second receptacle from the first with piggyback quick-connects, or two crimps per tab. Leave the wall-warts unmodified on the AC side.
 4. **AC fuse.** An inline fuse holder on the **live** (hot) conductor only, between the cord grip and the first receptacle. US polarized plugs: the live is the narrow blade, usually the smooth or black conductor.
 5. **Earth.** The wall-warts are 2-pin Class II, so nothing uses the earth contact. Use a 3-wire cord and land its green on both receptacles' earth tabs anyway: it costs nothing and covers anything 3-pin that is ever plugged in there.
 6. **Insulate.** Every AC joint is inside a connector shell or heat-shrink. No bare metal, no tape-only joints. The spade terminals sit behind the plate, in the corner with the gland, away from the low-voltage side.
@@ -62,7 +62,7 @@ Right of the barrier, and down to the Pi sled.
 
 ### DC rails
 
-![DC rails schematic: the stock wall-wart's 21 V cord fused and switched by the relay contact into the projector's barrel plug, the second wall-wart's 24 V cord fused into a Wago + rail feeding the Amp4 (which powers the Pi and the speakers) and both fans, and one Wago - rail joining both minuses](wiring-lv-power.svg)
+![DC rails schematic: the stock wall-wart's 21 V cord fused and switched by the relay contact into the projector's barrel plug, the second wall-wart's 24 V cord fused into a Wago + rail feeding the DigiAMP+ (which powers the Pi and the speakers) and both fans, and one Wago - rail joining both minuses](wiring-lv-power.svg)
 
 ```mermaid
 flowchart TB
@@ -77,8 +77,8 @@ flowchart TB
     PROJ["Projector barrel plug<br/>its own cable, spliced back"]
   end
   subgraph PIZ["Pi sled, below the shelf (24 V)"]
-    AMP["HiFiBerry Amp4<br/>12-24 V in"]
-    PI["Raspberry Pi<br/>5 V from the Amp4 via the header<br/>no USB power"]
+    AMP["Raspberry Pi DigiAMP+<br/>12-24 V in"]
+    PI["Raspberry Pi<br/>5 V from the DigiAMP+ via the header<br/>no USB power"]
     SPK["Speakers behind the projection<br/>16 AWG zip cord, stripe to +<br/>out through the floor chimney"]
   end
   subgraph FANS["Right wall fans, 40 mm 24 V 4-pin PWM"]
@@ -107,12 +107,12 @@ Both rails share one - rail: the projector's HDMI shield ties its ground to the 
 | Circuit | Wire | Notes |
 |---|---|---|
 | Stock wall-wart DC lead to the 21 V fuse and the projector | 18 AWG (0.75 mm²) | Cut the lead a hand's width from its barrel plug, fuse the **+** conductor (the label's symbol says centre +; confirm with a meter before cutting) and splice it back with lever nuts, so the projector keeps its own plug. The relay, if fitted, goes in this + line |
-| Second wall-wart DC lead to the 24 V fuse and splice | 18 AWG | Same treatment: fuse the +, lever-nut splice. 24 V keeps the fans on their rated voltage and the Amp4 inside its 12-24 V range; 12-24 V works if the fans match |
+| Second wall-wart DC lead to the 24 V fuse and splice | 18 AWG | Same treatment: fuse the +, lever-nut splice. 24 V keeps the fans on their rated voltage and the DigiAMP+ inside its 12-24 V range; 12-24 V works if the fans match |
 | Both rails' **minus** conductors | 18 AWG | Join them at the splice. The projector's HDMI shield ties its ground to the Pi's; without this joint that shield would be the only return path between the rails |
-| Splice to Amp4 power input | 20 AWG (0.5 mm²) | Amp4 accepts 12-24 V; it powers the Pi, so don't also power the Pi by USB |
+| Splice to DigiAMP+ power input | 20 AWG (0.5 mm²) | DigiAMP+ accepts 12-24 V on its P5 hard-wire header (or its 5.5 x 2.5 mm centre-positive barrel jack); it powers the Pi, so never also power the Pi by USB |
 | Splice to fans | 24 AWG | Fans must match the second rail's voltage (24 V fans on a 24 V wall-wart); PWM and tach go to the Pi. With Cooling off in the settings, or the service stopped, the fans run at full speed |
 | Relay (fallback only) | 18 AWG | Switch the **+** line to the projector. Never switch its ground: the HDMI cable would carry the return current. Use an **active-low** module: the Pi holds GPIO 27 high (relay open, projector off) from boot |
-| Amp4 to speakers | 16 AWG zip cord | Out through the floor chimney; red/striped to + on both ends |
+| DigiAMP+ to speakers | 16 AWG zip cord | Out through the floor chimney; red/striped to + on both ends |
 
 Use lever-nut connectors (e.g. Wago 221) for the splice so it can be undone. Pass low-voltage wires from the shelf to the Pi through the wire slot at the back of the shelf, never across the barrier's AC side.
 
@@ -130,7 +130,7 @@ flowchart LR
     TACH2["Fan 2 tach (green)<br/>10 kΩ pull-up to 3.3 V"]
     IRRX["TSOP38238 IR receiver, optional<br/>VS 3.3 V pin 17, GND"]
   end
-  PI["Raspberry Pi header<br/>(stacking header under the Amp4;<br/>GPIO 2-4 and 18-21 belong to the Amp4)"]
+  PI["Raspberry Pi header<br/>(the DigiAMP+'s pass-through header;<br/>GPIO 2-4, 18-21 and 22 belong to the DigiAMP+)"]
   subgraph OUTS["Outputs"]
     PWM1["Fan 1 PWM (blue)"]
     PWM2["Fan 2 PWM (blue)"]
@@ -148,11 +148,11 @@ flowchart LR
   PI -- "GPIO12, pin 32, via 1 kΩ (PWM0)" --> PWM1
   PI -- "GPIO13, pin 33, via 1 kΩ (PWM1)" --> PWM2
   PI -- "GPIO27, pin 13" --> RELAY
-  PI -- "GPIO22, pin 15, via 1 kΩ to the base" --> Q1 --> IRLED
+  PI -- "GPIO16, pin 36, via 1 kΩ to the base" --> Q1 --> IRLED
   PI -. "HDMI (CEC power control)" .-> PROJ
 ```
 
-The Amp4 covers the header, so fit a stacking header or solder leads under the Pi. Every tach and 1-wire pull-up goes to **3.3 V**, never to a DC rail or 5 V. The fans and the Pi must share a ground. The IR LED needs the transistor: a GPIO pin can only source 16 mA.
+The DigiAMP+ re-exposes the header on top, so the leads plug into its pass-through header (a Zero 2 W needs its own 40-pin header soldered first). GPIO 22 is the DigiAMP+ mute line, which is why the IR LED sits on GPIO 16. Every tach and 1-wire pull-up goes to **3.3 V**, never to a DC rail or 5 V. The fans and the Pi must share a ground. The IR LED needs the transistor: a GPIO pin can only source 16 mA.
 
 ## Cords outdoors
 
@@ -166,14 +166,14 @@ Fill this in from **your** labels. The stock wall-wart reads 1.0 A in and 21 V 2
 |---|---|---|---|
 | AC fuse (live) | About 1.5x the **sum** of both wall-warts' rated input currents (the labels' "Input ... A"), and no more than the cord's rating | 5 x 20 mm, **time-delay (T)**, 250 V: switch-mode supplies have an inrush surge | 1.0 + 0.8 = 1.8 A gives **3 A T** (2.5 A T if you can get it) |
 | 21 V rail (stock wall-wart) | The wall-wart's rated output is 2.28 A and the projector can draw all of it, so a fuse at that rating would run at its limit. Use the next size up: it protects the 18 AWG lead (good for far more), and the wall-wart has its own overload protection | Automotive blade (ATO/ATC), inline holder | **3 A** |
-| 24 V rail (second wall-wart) | No more than its rated output, and at least 1.25x the Amp4 + Pi + fans load | Blade | 2.5 A wall-wart gives **2.5 A** (or 3 A) |
+| 24 V rail (second wall-wart) | No more than its rated output, and at least 1.25x the DigiAMP+ + Pi + fans load | Blade | 2.5 A wall-wart gives **2.5 A** (or 3 A) |
 
-Check the second rail's total: Amp4 at your volume + the Pi + two fans must stay under that wall-wart's output rating with some margin. If it doesn't, buy a bigger wall-wart; a fuse won't fix that.
+Check the second rail's total: DigiAMP+ at your volume + the Pi + two fans must stay under that wall-wart's output rating with some margin. If it doesn't, buy a bigger wall-wart; a fuse won't fix that.
 
 ## Before first power-up
 
 1. With nothing plugged in, check continuity: live, neutral (and earth, if used) each reach only where they should, with no short between them.
 2. Confirm the AC fuse sits in the **live** conductor.
 3. With both wall-warts plugged in but the splices open, measure each rail's DC voltage and polarity at its fuse. The stock wall-wart's label symbol says centre-positive; confirm it with the meter anyway.
-4. Connect loads one at a time: fans, then the Amp4 (the Pi should boot), then the projector.
+4. Connect loads one at a time: fans, then the DigiAMP+ (the Pi should boot), then the projector.
 5. Close the lid, then test the GFCI outlet's trip button with the case running: everything must go dark.

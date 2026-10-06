@@ -4,9 +4,12 @@
 import { EventEmitter } from "node:events";
 import { createInterface } from "node:readline";
 
-// Used by the HiFiBerry Amp4 or reserved on every Pi: ID EEPROM (0, 1), I2C
-// configuration (2, 3), power stage mute (4), I2S sound (18-21).
-export const RESERVED_GPIOS = [0, 1, 2, 3, 4, 18, 19, 20, 21];
+// Used by the Raspberry Pi DigiAMP+ or reserved on every Pi: ID EEPROM (0, 1), I2C
+// configuration (2, 3), GPCLK0 (4, per pinout.xyz), I2S sound (18-21) and the
+// amp mute line (22, driven by the rpi-digiampplus overlay). The board also
+// brings 17, 23, 24, 25 and 27 to its optional rotary-encoder and IR headers;
+// those stay free as long as nothing is plugged into them.
+export const RESERVED_GPIOS = [0, 1, 2, 3, 4, 18, 19, 20, 21, 22];
 
 /** "gpiomon (libgpiod) v2.2.1" -> 2 */
 export function gpiomonMajor(versionText) {

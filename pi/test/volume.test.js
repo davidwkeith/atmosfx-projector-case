@@ -88,9 +88,9 @@ describe("volume", () => {
 
 describe("amixerArgs", () => {
   it("addresses the card by name and uses the mapped scale", () => {
-    expect(amixerArgs("sndrpihifiberry", "Digital", { level: 30, muted: false })).toEqual([
-      "-q", "-c", "sndrpihifiberry", "-M", "sset", "Digital", "30%", "unmute",
+    expect(amixerArgs("RPiDigiAMP", "Digital", { level: 30, muted: false })).toEqual([
+      "-q", "-c", "RPiDigiAMP", "-M", "sset", "Digital", "30%", "unmute",
     ]);
-    expect(amixerArgs("sndrpihifiberry", "Digital", { level: 0, muted: true }).at(-1)).toBe("mute");
+    expect(amixerArgs("RPiDigiAMP", "Digital", { level: 0, muted: true }).at(-1)).toBe("mute");
   });
 });

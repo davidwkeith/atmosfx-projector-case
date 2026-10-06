@@ -10,7 +10,7 @@
 Three drawings, matching the sections of docs/WIRING.md:
 
     wiring-hv.svg          mains: outlet, cord, gland, live-only fuse, two NEMA 5-15R receptacles, both wall-warts
-    wiring-lv-power.svg    the two DC rails: a fuse each, Wago rails, relay contact, projector, Amp4, fans
+    wiring-lv-power.svg    the two DC rails: a fuse each, Wago rails, relay contact, projector, DigiAMP+, fans
     wiring-lv-signals.svg  the Pi header: every GPIO used, pull-ups, the IR LED driver
 
 Ratings are the examples from WIRING.md "Fuse sizing" (stock 21 V 2.28 A wall-wart,
@@ -143,7 +143,7 @@ def draw_hv(path):
             note(d, (w.center[0], w.center[1] - 1.7), note_text)
         return w
     w1 = wart(r1, yE - 2.0, 'Stock wall-wart\nunmodified\n21 V 2.28 A out', 'MX48CC-210228US\ncentre +, 2-pin,\ncaptive DC cord')
-    w2 = wart(r2, yE - 2.0, 'Second wall-wart\nunmodified\n24 V, 2.5-3 A out\nfor the Pi, Amp4, fans')
+    w2 = wart(r2, yE - 2.0, 'Second wall-wart\nunmodified\n24 V, 2.5-3 A out\nfor the Pi, DigiAMP+, fans')
 
     # the barrier and its notch; both DC cords cross through it
     x_bar = w2.pos[0] + 1.6
@@ -216,7 +216,7 @@ def draw_lv_power(path):
     note(d, (proj.neg[0] - 0.3, proj.neg[1] - 0.3), '- straight through, 18 AWG', halign='right', fontsize=FSS - 2)
     note(d, (x_bn + 0.3, w1.neg[1] - 1.1), 'Wago 221, - rail\nboth minuses joined: the HDMI shield\nties the grounds anyway', halign='left', color=NEG)
 
-    # second wall-wart: 24 V for the Pi, Amp4 and fans
+    # second wall-wart: 24 V for the Pi, DigiAMP+ and fans
     w2 = d.add(ic([pin('-', 'R', 'neg', pos=0.72), pin('+', 'R', 'pos', pos=0.28)],
                   size=(3.0, 2.4)).at((0, -3.6)).anchor('neg')
                .label('Second wall-wart\n24 V, 2.5-3 A', fontsize=FSS))
@@ -232,7 +232,7 @@ def draw_lv_power(path):
     note(d, (x_bp - 0.3, f2.end[1] + 0.4), 'Wago 221\n24 V + rail', halign='right', color=POS)
     note(d, ((x_bp + x_bn) / 2 + 1.5, y_bot - 0.4), '18 AWG from the wall-warts; each branch in its own gauge')
 
-    # --- Amp4 branch; the Amp4 powers the Pi over the header; speakers out
+    # --- DigiAMP+ branch; the DigiAMP+ powers the Pi over the header; speakers out
     ya = -7.0
     d.add(elm.Dot().at((x_bp, ya)).color(POS))
     d.add(elm.Line().at((x_bp, ya)).to((x_load, ya)).color(POS))
@@ -241,7 +241,7 @@ def draw_lv_power(path):
                     pin('5 V', 'R', 'v5', pos=0.86), pin('GND', 'R', 'gnd', pos=0.68),
                     pin('SPK+', 'R', 'spkp', pos=0.28), pin('SPK-', 'R', 'spkn', pos=0.12)],
                    size=(4.6, 4.0)).at((x_load, ya)).anchor('pos')
-                .label('HiFiBerry Amp4\n12-24 V in', fontsize=FSS))
+                .label('Raspberry Pi DigiAMP+\n12-24 V in (P5 or barrel)', fontsize=FSS))
     d.add(elm.Dot().at((x_bn, amp.neg[1])).color(NEG))
     d.add(elm.Line().at((x_bn, amp.neg[1])).to(amp.neg).color(NEG))
     note(d, (x_bn + 0.3, amp.neg[1] - 0.3), '20 AWG', halign='left', fontsize=FSS - 2)
@@ -282,10 +282,10 @@ def draw_lv_power(path):
 # ----------------------------------------------------------------------------
 # Low voltage: the Pi header and every signal
 # ----------------------------------------------------------------------------
-GPIO_L = ['3V3', 'GPIO2 Amp4', 'GPIO3 Amp4', 'GPIO4 Amp4', 'GND', 'GPIO17', 'GPIO27', 'GPIO22', '3V3',
-          'GPIO10', 'GPIO9', 'GPIO11', 'GND', 'ID_SD', 'GPIO5', 'GPIO6', 'GPIO13', 'GPIO19 Amp4', 'GPIO26', 'GND']
-GPIO_R = ['5V', '5V', 'GND', 'GPIO14', 'GPIO15', 'GPIO18 Amp4', 'GND', 'GPIO23', 'GPIO24', 'GND',
-          'GPIO25', 'GPIO8', 'GPIO7', 'ID_SC', 'GND', 'GPIO12', 'GND', 'GPIO16', 'GPIO20 Amp4', 'GPIO21 Amp4']
+GPIO_L = ['3V3', 'GPIO2 DigiAMP+', 'GPIO3 DigiAMP+', 'GPIO4 DigiAMP+', 'GND', 'GPIO17', 'GPIO27', 'GPIO22 DigiAMP+ mute', '3V3',
+          'GPIO10', 'GPIO9', 'GPIO11', 'GND', 'ID_SD', 'GPIO5', 'GPIO6', 'GPIO13', 'GPIO19 DigiAMP+', 'GPIO26', 'GND']
+GPIO_R = ['5V', '5V', 'GND', 'GPIO14', 'GPIO15', 'GPIO18 DigiAMP+', 'GND', 'GPIO23', 'GPIO24', 'GND',
+          'GPIO25', 'GPIO8', 'GPIO7', 'ID_SC', 'GND', 'GPIO12', 'GND', 'GPIO16', 'GPIO20 DigiAMP+', 'GPIO21 DigiAMP+']
 PINS_L = [f'{2 * i + 1}  {n}' for i, n in enumerate(GPIO_L)]
 PINS_R = [f'{n}  {2 * i + 2}' for i, n in enumerate(GPIO_R)]
 
@@ -295,8 +295,8 @@ def draw_lv_signals(path):
 
     hdr = d.add(elm.Header(rows=20, cols=2, pinsleft=PINS_L, pinsright=PINS_R, shownumber=False,
                            numbering='lr', pinspacing=0.6, pinfontsizeleft=FSS - 1, pinfontsizeright=FSS - 1)
-                .right().at((0, 0)).label('Pi 40-pin header: stacking header under the Amp4.\n'
-                                  'The Amp4 owns pins 3, 5, 7, 12, 35, 38 and 40.', loc='top', fontsize=FSS, ofst=0.3))
+                .right().at((0, 0)).label('Pi 40-pin header, re-exposed on top of the DigiAMP+ (pass-through).\n'
+                                  'The DigiAMP+ owns pins 3, 5, 7, 12, 15 (mute), 35, 38 and 40.', loc='top', fontsize=FSS, ofst=0.3))
 
     def y(n):
         return hdr.absanchors[f'pin{n}'][1]
@@ -326,9 +326,16 @@ def draw_lv_signals(path):
     wire([(XLW, y(13)), relay.inp])
     note(d, ((XLW + XL1) / 2, y(13) - 0.32), 'high = contact open (from boot)', fontsize=FSS - 2, color=SIG)
 
-    # IR LED driver: GPIO22 -> R1 -> Q1 base; 5 V -> D1 -> R2 -> collector; emitter -> GND
+    # IR LED driver: GPIO16 (pin 36, right column; GPIO22 is the DigiAMP+ mute line) -> R1 -> Q1 base;
+    # 5 V -> D1 -> R2 -> collector; emitter -> GND. The wire comes round under the header to the
+    # driver on the left, hopping the GPIO13 (PWM1) run on the way up.
     yb = y(11) - 5.6
-    wire([(XLW, y(15)), (-2.6, y(15)), (-2.6, yb), (-4.6, yb)])
+    y_ir = y(39) - 1.5               # below the PWM1 run under the header
+    x_ir = -3.0                      # left of the pin labels and the GPIO13 riser at -2.6
+    wire([(XRW, y(36)), (6.3, y(36)), (6.3, y_ir), (x_ir, y_ir), (x_ir, y(37) - 0.18)])
+    d.add(elm.Arc2(k=0.6).at((x_ir, y(37) - 0.18)).to((x_ir, y(37) + 0.18)).color(SIG))   # hop the 1-wire bus
+    wire([(x_ir, y(37) + 0.18), (x_ir, yb), (-4.6, yb)])
+    note(d, (XRW + 0.1, y(36) + 0.2), 'to the IR LED driver (left)', halign='left', fontsize=FSS - 2, color=SIG)
     d.add(elm.Resistor().at((-4.6, yb)).left().length(1.2).color(SIG).label('R1 1 k', fontsize=FSS - 1))
     q1 = d.add(elm.BjtNpn(circle=True).right().reverse().at((-5.8, yb)).anchor('base')
                .label('Q1\nBC337 / 2N2222', loc='left', fontsize=FSS - 2, ofst=0.3))
@@ -393,7 +400,7 @@ def draw_lv_signals(path):
 
     note(d, (0.6, y_under - 2.2),
          'Pin numbers are the header\'s physical pins; GPIO numbers are BCM. HDMI from the Pi to the projector carries CEC, the default power control.\n'
-         'Service pins: PIR 17, relay 27, IR LED 22, IR receiver 23, fan PWM 12 / 13, fan tach 24 / 25, 1-wire 26.')
+         'Service pins: PIR 17, relay 27, IR LED 16, IR receiver 23, fan PWM 12 / 13, fan tach 24 / 25, 1-wire 26. GPIO 22 is the DigiAMP+ mute line.')
     d.save(str(path))
 
 

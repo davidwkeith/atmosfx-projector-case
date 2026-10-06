@@ -91,7 +91,7 @@ install -m 644 "$src/system/videofx.avahi.service" /etc/avahi/services/videofx.s
 echo "== media folder $home/media"
 install -d -o "$user" -g "$(id -gn "$user")" "$home/media"
 
-echo "== audio: HiFiBerry Amp4 only (onboard and HDMI audio off)"
+echo "== audio: Raspberry Pi DigiAMP+ only (onboard and HDMI audio off)"
 config=/boot/firmware/config.txt
 [ -e "$config" ] || config=/boot/config.txt
 # Onboard 3.5 mm audio off (stock config.txt has dtparam=audio=on in its top section).
@@ -101,18 +101,20 @@ sed -i 's/^dtoverlay=vc4-kms-v3d$/dtoverlay=vc4-kms-v3d,noaudio/' "$config"
 grep -q '^dtoverlay=vc4-kms-v3d,.*noaudio' "$config" ||
   echo "WARNING: add ,noaudio to the vc4-kms-v3d line in $config by hand" >&2
 # Anything still missing goes in an [all] block at the end, so no [pi4]/[cm5]
-# section can swallow it. Amp4 overlay per HiFiBerry: hifiberry-dacplus-std on
-# kernel >= 6.1.77 (hifiberry-dacplus on older kernels).
+# section can swallow it. DigiAMP+ overlay per Raspberry Pi's overlay README:
+# rpi-digiampplus (iqaudio-digiampplus for the older black IQaudIO board).
+# unmute_amp unmutes the TAS5756 (GPIO22) when the driver loads; without it the
+# amp starts muted and auto_mute_amp only opens it while ALSA has the device.
 missing=""
 grep -q '^dtparam=audio=off' "$config" || missing+=$'dtparam=audio=off\n'
-grep -q '^dtoverlay=hifiberry-' "$config" || missing+=$'# HiFiBerry Amp4\ndtoverlay=hifiberry-dacplus-std\n'
+grep -q '^dtoverlay=rpi-digiampplus\|^dtoverlay=iqaudio-digiampplus' "$config" || missing+=$'# Raspberry Pi DigiAMP+ (GPIO22 = mute, owned by the driver)\ndtoverlay=rpi-digiampplus,unmute_amp\n'
 # Projector relay and IR (see README "GPIO pins"). The relay line is driven to
 # "open" by the firmware at boot, before Linux runs: dh = high for the usual
 # active-low relay modules (use dl for active-high ones).
 # These are the default pins. They are written once: if you change
 # VIDEOFX_RELAY_GPIO, _RELAY_ACTIVE_LOW, _IR_TX_GPIO, _IR_RX_GPIO or _W1_GPIO in
 # /etc/default/videofx, change the matching lines in config.txt by hand too.
-grep -q '^dtoverlay=gpio-ir-tx\|^dtoverlay=pwm-ir-tx' "$config" || missing+=$'# IR LED (projector power)\ndtoverlay=gpio-ir-tx,gpio_pin=22\n'
+grep -q '^dtoverlay=gpio-ir-tx\|^dtoverlay=pwm-ir-tx' "$config" || missing+=$'# IR LED (projector power)\ndtoverlay=gpio-ir-tx,gpio_pin=16\n'
 grep -q '^dtoverlay=gpio-ir,' "$config" || missing+=$'# IR receiver (learning remote codes)\ndtoverlay=gpio-ir,gpio_pin=23\n'
 grep -q '^gpio=27=' "$config" || missing+=$'# Projector relay open at boot (active-low module)\ngpio=27=op,dh\n'
 [ -z "$missing" ] || printf '\n[all]\n%s' "$missing" >>"$config"
@@ -122,7 +124,7 @@ grep -q '^# videofx: fans and 1-wire' "$config" || cat >>"$config" <<'CFG'
 
 # videofx: fans and 1-wire
 [all]
-# Fan PWM: PWM0 on GPIO12, PWM1 on GPIO13 (GPIO18/19 are the Amp4's I2S)
+# Fan PWM: PWM0 on GPIO12, PWM1 on GPIO13 (GPIO18/19 are the DigiAMP+'s I2S)
 dtoverlay=pwm-2chan,pin=12,func=4,pin2=13,func2=4
 [pi3]
 dtoverlay=w1-gpio,gpiopin=26

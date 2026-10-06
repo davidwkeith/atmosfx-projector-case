@@ -71,10 +71,10 @@ const coord = (max) => (v) => {
   return Math.round(n * 1e4) / 1e4;
 };
 
-// BCM GPIO on the 40-pin header, not one the Amp4 (or the ID EEPROM) uses.
+// BCM GPIO on the 40-pin header, not one the DigiAMP+ (or the ID EEPROM) uses.
 const gpioPin = (v) => {
   const n = int(2, 27)(v);
-  if (RESERVED_GPIOS.includes(n)) throw new Error(`GPIO${n} is used by the Amp4 or reserved; pick another`);
+  if (RESERVED_GPIOS.includes(n)) throw new Error(`GPIO${n} is used by the DigiAMP+ or reserved; pick another`);
   return n;
 };
 
@@ -96,7 +96,7 @@ export function checkPins(values) {
   for (const [key, role] of Object.entries(PIN_ROLES)) {
     const pin = values[key];
     if (pin === undefined) continue;
-    if (RESERVED_GPIOS.includes(pin)) return `${role}: GPIO${pin} is used by the Amp4 or reserved`;
+    if (RESERVED_GPIOS.includes(pin)) return `${role}: GPIO${pin} is used by the DigiAMP+ or reserved`;
     if (seen.has(pin)) return `GPIO${pin} is set for both the ${seen.get(pin)} and the ${role}`;
     seen.set(pin, role);
   }
@@ -214,9 +214,9 @@ export const SETTINGS = [
     env: "VIDEOFX_AUDIO_CARD",
     group: "Audio",
     label: "ALSA card name",
-    help: "Card by name, never by number. HiFiBerry Amp4: sndrpihifiberry.",
+    help: "Card by name, never by number. Raspberry Pi DigiAMP+: RPiDigiAMP (aplay -l shows it as \"RPi DigiAMP+\").",
     apply: "play",
-    default: () => "sndrpihifiberry",
+    default: () => "RPiDigiAMP",
     parse: text(/^[A-Za-z0-9_-]{1,32}$/, "must be 1-32 letters, digits, _ or -", 32),
   },
   {
@@ -224,7 +224,7 @@ export const SETTINGS = [
     env: "VIDEOFX_MIXER_CONTROL",
     group: "Audio",
     label: "Mixer control",
-    help: "Hardware volume control on the card. Amp4: Digital.",
+    help: "Hardware volume control on the card. DigiAMP+: Digital.",
     apply: "play",
     default: () => "Digital",
     parse: text(/^[A-Za-z0-9][A-Za-z0-9 _-]{0,39}$/, "must be 1-40 letters, digits, spaces, _ or -", 40),
@@ -415,7 +415,7 @@ export const SETTINGS = [
     env: "VIDEOFX_PIR_GPIO",
     group: "Motion sensor",
     label: "PIR GPIO (BCM number)",
-    help: "GPIO17 is physical pin 11. The Amp4 uses GPIO 2, 3, 4 and 18-21.",
+    help: "GPIO17 is physical pin 11. The DigiAMP+ uses GPIO 2, 3, 4, 18-21 and 22.",
     apply: "live",
     default: () => 17,
     parse: gpioPin,
@@ -651,7 +651,7 @@ export const SETTINGS = [
   // config.txt (boot level, IR overlays), which needs root, so they are file-only.
   { key: "relayPin", env: "VIDEOFX_RELAY_GPIO", group: "Fixed", label: "Relay GPIO (BCM)", apply: "fixed", default: () => 27, parse: gpioPin },
   { key: "relayActiveLow", env: "VIDEOFX_RELAY_ACTIVE_LOW", group: "Fixed", label: "Relay input is active-low", apply: "fixed", default: () => true, parse: bool },
-  { key: "irTxPin", env: "VIDEOFX_IR_TX_GPIO", group: "Fixed", label: "IR LED GPIO (BCM)", apply: "fixed", default: () => 22, parse: gpioPin },
+  { key: "irTxPin", env: "VIDEOFX_IR_TX_GPIO", group: "Fixed", label: "IR LED GPIO (BCM)", apply: "fixed", default: () => 16, parse: gpioPin },
   { key: "irTxDriver", env: "VIDEOFX_IR_TX_DRIVER", group: "Fixed", label: "IR LED driver", apply: "fixed", options: ["gpio-ir-tx", "pwm-ir-tx"], default: () => "gpio-ir-tx", parse: oneOf(["gpio-ir-tx", "pwm-ir-tx"]) },
   { key: "irRxPin", env: "VIDEOFX_IR_RX_GPIO", group: "Fixed", label: "IR receiver GPIO (BCM)", apply: "fixed", default: () => 23, parse: gpioPin },
   { key: "fan1PwmPin", env: "VIDEOFX_FAN1_PWM_GPIO", group: "Fixed", label: "Projector fan PWM GPIO (hardware PWM0)", apply: "fixed", default: () => 12, parse: oneOf([12]) },

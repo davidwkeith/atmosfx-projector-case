@@ -1,14 +1,14 @@
 // Ground-standing projector + Raspberry Pi 3 case: rain-proof (not sealed), ventilated
 // v0.9 - the stock supply is a wall-wart, so the shelf grew a receptacle plate: two panel-mount NEMA 5-15R stacked,
-//        the stock 21 V wall-wart below and a second (Pi, Amp4, fans) above, hanging on their prongs; the AC gland
+//        the stock 21 V wall-wart below and a second (Pi, DigiAMP+, fans) above, hanging on their prongs; the AC gland
 //        moved beside the plate, next to the left wall; Pi zone 85 deep; the fit coupon has the receptacle cutout
 // v0.8 - AC gland moved above the shelf (AC side of the barrier); barrier clears the brick; keyholes lift off;
 //        45 deg scarf joint at the lid seam; flat gasket land under the sloped roof;
-//        audio: HiFiBerry Amp4 HAT on the Pi (also powers it), speaker wire out through a floor chimney;
+//        audio: Raspberry Pi DigiAMP+ HAT on the Pi (also powers it), speaker wire out through a floor chimney;
 //        Pi rides on a removable sled (Pi 3B/3B+, 4B, 5, Zero 2 W), shelf raised to clear the Pi 5 stack;
 //        PIR motion sensor in the rear wall under a rain hood, for startle scares
 // v0.7 - ONE AC cord in (rear gland) -> DC brick INSIDE on the power shelf, walled off from the low-voltage side;
-//        a wire splice feeds the projector's barrel plug and the Amp4 HAT (which powers the Pi).
+//        a wire splice feeds the projector's barrel plug and the DigiAMP+ HAT (which powers the Pi).
 // v0.4 - quick-aim hatch on the left (-X) wall: reach the ball head with the lid on, tool-free
 // sized for a ~171x134x75 mm mini projector (0.72 kg) on an internal ball head
 // Print PETG/ASA. Lid prints roof-down. Base+lid split front/rear (MK3S bed 250x210x210); front pieces lie flat with X along the 250 mm axis.
@@ -90,7 +90,7 @@ cord_dz = 20;       // gland centre above the shelf's top face: level with the l
 // Stock supply (label, 2026-10-05): wall-wart MX48CC-210228US, in AC 100-240 V 1.0 A, out 21 V 2.28 A (48 W), centre +,
 // fixed 2-pin NEMA 1-15 prongs and a captive DC cord: no AC inlet. It plugs into a panel-mount NEMA 5-15R on the shelf's
 // receptacle plate and hangs on its prongs, standing on its long edge: length along X (cord end toward the barrier),
-// width = height above the shelf, thickness along Y. A second wall-wart (12-24 V rail for the Pi, Amp4 and fans) plugs in above it.
+// width = height above the shelf, thickness along Y. A second wall-wart (12-24 V rail for the Pi, DigiAMP+ and fans) plugs in above it.
 wart_l = 86;        // stock wall-wart length (X): measured 85.6
 wart_w = 47;        // width = standing height (Z): scaled off the photo against the caliper reading; confirm (the stack is asserted against the lid roof)
 wart_t = 35;        // thickness, prong face to back (Y): not measured yet
@@ -106,9 +106,9 @@ barrier_h = 50;         // AC/low-voltage barrier above the shelf; must exceed t
 spk_x = 58;         // speaker-wire chimney: beside the Pi's USB end, clear of the drains
 spk_d = 12;         // bore: two runs of 16 AWG zip cord
 spk_collar = 15;    // chimney height above the floor, so floor water can't reach the bore
-pi_stack_h = 40;    // Pi 3/4: board bottom to top of the Amp4 HAT (assumption: check yours)
+pi_stack_h = 40;    // Pi 3/4: board bottom to top of the DigiAMP+ HAT (assumption: check yours)
 pi5_stack_h = 50;   // Pi 5 with Active Cooler under the HAT (taller header)
-zero_stack_h = 30;  // Zero 2 W + Amp4
+zero_stack_h = 30;  // Zero 2 W + DigiAMP+
 zero_hat_z = 13;    // Zero 2 W: HAT underside above the Zero's board bottom (sets the HAT support posts)
 
 /* [Motion sensor (rear wall)] */
@@ -403,7 +403,7 @@ module ledge(sx) {
 // Power shelf above the Pi. AC side (left of the barrier): a plate near the rear wall carries two panel-mount NEMA 5-15R
 // receptacles, one above the other; the wall-warts plug in facing the divider and stand on their long edges, the stock one
 // on the shelf and the second on top of it. Spade terminals and the cord from the gland sit behind the plate.
-// Low-voltage side (right): each wart's DC cord comes through the barrier notch to its fused splice; feeds run down to the Amp4.
+// Low-voltage side (right): each wart's DC cord comes through the barrier notch to its fused splice; feeds run down to the DigiAMP+.
 module power_shelf() {
   bar = bar_x;
   py1 = plate_y1;
@@ -607,7 +607,7 @@ module ir_holder() {
   }
 }
 
-// Pi + Amp4 envelope. Every generation sits with its GPIO edge at y_gpio, so the HAT lands in the
+// Pi + DigiAMP+ envelope. Every generation sits with its GPIO edge at y_gpio, so the HAT lands in the
 // same place; full-size boards' ports overhang the +X end by about 3 mm.
 module pi_stack(s) {
   translate([-42.5, y_gpio-56, z_board]) cube([s == "zero2w" ? 65 : 88, 56, sled_stack(s)]);
@@ -628,7 +628,7 @@ module pi_sled(s) {
     union() {
       translate([sled_x[0], y_gpio-59, 0]) cube([sled_x[1]-sled_x[0], 62, sled_t]);
       for (h=sled_holes(s)) translate([x0+h[0], y0b+h[1], 0]) cylinder(d=6, h=sled_t+sled_post);
-      if (s == "zero2w")   // hold up the part of the Amp4 that overhangs the Zero
+      if (s == "zero2w")   // hold up the part of the DigiAMP+ that overhangs the Zero
         for (hx=[3.5, 61.5]) translate([x0+hx, y_gpio-52.5, 0]) cylinder(d=6, h=sled_t+sled_post+zero_hat_z);
     }
     for (p=[sled_pts[0], sled_pts[1]]) translate([p[0], p[1], -1]) cylinder(d=4.4, h=sled_t+2);
