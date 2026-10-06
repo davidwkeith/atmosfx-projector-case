@@ -576,10 +576,10 @@ module fit_coupon() {
   holes = [[insert_d, "1/4", insert_len+2], [m4_insert_d, "M4i", 10], [m3_insert_d, "M3i", 8], [gland_d, "PG9", 3], [3.4, "M3", 3], [2.6, "M3p", 8], [2.2, "M2.5p", 7], [1.8, "M2p", 6]];   // [d, label, boss height]
   difference() {
     union() {
-      cube([105.5, 30, 2]);                                           // strip under the holes
+      cube([118, 30, 2]);                                             // strip under the holes; 118 is the shrink gauge in measurements.xlsx
       translate([0, 30, 0]) cube([30, 32, 3]);                        // keyhole tab, cover thickness
       for (i=[0:len(holes)-1]) translate([8 + i*12.5, 15, 0]) cylinder(d=holes[i][0]+5, h=holes[i][2]);   // a boss per hole
-      translate([83.5, -12, 0]) cube([22, 12, 10]);                   // pane slot block
+      translate([96, -12, 0]) cube([22, 12, 10]);                     // pane slot block
       translate([34, 30, 0]) cube([rcpt_cut[0]+14, 32, rcpt_t]);       // receptacle tab, plate thickness at the cutout
     }
     translate([41, 35, -1]) cube([rcpt_cut[0], rcpt_cut[1], 5]);        // NEMA 5-15R snap-in cutout
@@ -590,7 +590,7 @@ module fit_coupon() {
       translate([x, 25, 1.4]) linear_extrude(1) text(holes[i][1], size=2.4, halign="center");
     }
     translate([15, 52, -1]) hull() { cylinder(d=4.8, h=5); translate([0, -kh_drop, 0]) cylinder(d=9, h=5); }   // keyhole
-    translate([92.5, -13, 3]) cube([pane_t+0.5, 14, 8]);   // acrylic slot: same width as the pane rebate
+    translate([105, -13, 3]) cube([pane_t+0.5, 14, 8]);   // acrylic slot: same width as the pane rebate
   }
 }
 

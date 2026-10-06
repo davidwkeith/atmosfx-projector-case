@@ -14,7 +14,7 @@ Two Prusa i3 MK3S (bed 250 x 210 x 210 mm), Prusament PETG (or ASA, which fades 
 
 | Part | Qty | Time (0.20 SPEED) | PETG | Notes |
 |---|---|---|---|---|
-| `fit_coupon` | 1 | 1 h 24 m | 16 g | **Print first.** Test inserts, pilots, the keyhole on an M4 bolt, the acrylic in its slot, the receptacle in its cutout |
+| `fit_coupon` | 1 | 1 h 27 m | 17 g | **Print first.** Test inserts, pilots, the keyhole on an M4 bolt, the acrylic in its slot, the receptacle in its cutout |
 | `pedestal` | 1 | 1 h 42 m | 29 g | |
 | `window_frame` | 1 | 1 h 25 m | 22 g | |
 | `hatch_cover` | 1 | 2 h 33 m | 46 g | |
