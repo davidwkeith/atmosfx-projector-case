@@ -23,7 +23,7 @@ flowchart LR
     RELAY["Relay (fallback only)<br/>switches + line"]
     PROJ["Projector barrel plug"]
     AMP["HiFiBerry Amp4<br/>12-24 V in, powers Pi"]
-    FANS["2x 12 V PWM fans"]
+    FANS["2x 24 V PWM fans"]
   end
   subgraph PI["Pi sled (below shelf)"]
     RPI["Raspberry Pi"]
@@ -65,7 +65,7 @@ Right of the barrier, and down to the Pi sled.
 | Brick DC out to main fuse and splice | 18 AWG (0.75 mm²) | Check the brick's plug polarity (centre + is common, not universal) before cutting |
 | Splice to projector | 18 AWG | Keep the projector's own barrel plug; splice into its cable |
 | Splice to Amp4 power input | 20 AWG (0.5 mm²) | Amp4 accepts 12-24 V; it powers the Pi, so don't also power the Pi by USB |
-| Splice to fans | 24 AWG | 12 V fans; PWM and tach go to the Pi |
+| Splice to fans | 24 AWG | 24 V fans on the 21 V rail (12 V fans would burn); PWM and tach go to the Pi |
 | Relay (fallback only) | 18 AWG | Switch the **+** line to the projector. Never switch its ground: the HDMI cable would carry the return current. Use an **active-low** module: the Pi holds GPIO 27 high (relay open, projector off) from boot |
 | Amp4 to speakers | 16 AWG zip cord | Out through the floor chimney; red/striped to + on both ends |
 
@@ -77,7 +77,7 @@ Trick-or-treaters walk through the yard in the dark. Run the power cord and spea
 
 ## Fuse sizing
 
-Fill this in from **your** labels. The example column assumes a 12 V 5 A brick, a projector drawing 3 A and a 60 W-class brick input.
+Fill this in from **your** labels. The TO2's label reads DC 21 V 3 A (confirm it with a meter), and its stock brick is rated for the projector alone: feeding the Amp4, Pi and fans too needs a 21 V brick of 5 A or more. The example column assumes a 21 V 5 A brick, the projector drawing 3 A and a 110 W-class brick input.
 
 | Fuse | How to size it | Type | Example |
 |---|---|---|---|

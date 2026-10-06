@@ -46,9 +46,9 @@ Preview in OpenSCAD: open `projector_pi_case.scad`, set `part` and `tile` in the
 
 | File | Notes |
 |---|---|
-| `base_front` | Rotate 90 deg so the 241 mm side runs along the 250 mm bed axis |
+| `base_front` | 231 x 207 mm: lies flat as exported, wide side along the 250 mm bed axis; no skirt |
 | `base_rear` | Pi compartment. Joins `base_front` with 4x M3 x 12 screws through the divider into its collars; silicone the joint faces |
-| `lid_front`, `lid_rear` | Already flipped roof-down; rotate `lid_front` 90 deg. Seal the scarf joint with silicone |
+| `lid_front`, `lid_rear` | Already flipped roof-down; `lid_front` (228 x 204 mm) lies flat as exported. Seal the scarf joint with silicone |
 | `window_frame` | Holds the acrylic pane |
 | `pedestal` | Screws to the floor bosses; carries the ball head |
 | `hatch_cover` | Print ribs-up |

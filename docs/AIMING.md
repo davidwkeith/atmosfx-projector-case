@@ -14,11 +14,11 @@ The projector sits on a ball head inside the case. You reach it through the aim 
 
 | Movement | Inside the case |
 |---|---|
-| Pan (left/right) only | +/-15 deg |
+| Pan (left/right) only | +/-10 deg (beyond this the image clips the window frame; turn the case instead) |
 | Tilt (up/down) only | +/-12 deg (the image starts clipping on the window or visor beyond this) |
-| Pan and tilt together | +/-10 deg each |
+| Pan and tilt together | +/-8 deg each |
 
-These assume a typical 1.4:1 projector with the image centred on the lens. Many mini projectors throw the image upward ("offset"); those clear about +10 to -18 deg of tilt, but their image already points about 11 deg up at 0 deg.
+These assume the Tkisko TO2's short throw (about 0.95:1, derived from its manual) with the image centred on the lens. Measure both (`throw_ratio`, `lens_offset`) and rerun the light-cone check: a shorter throw means a wider cone and less pan, and a projector that throws the image upward ("offset") trades downward tilt for upward.
 
 Past that, the projector hits the window frame or the Pi divider. Get the case close first and use the ball head for fine adjustment.
 
