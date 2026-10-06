@@ -14,7 +14,7 @@ Two Prusa i3 MK3S (bed 250 x 210 x 210 mm), Prusament PETG (or ASA, which fades 
 
 | Part | Qty | Time (0.20 SPEED) | PETG | Notes |
 |---|---|---|---|---|
-| `fit_coupon` | 1 | 1 h 36 m | 18 g | **Print first.** Test inserts, pilots, the keyhole on an M4 bolt, the acrylic in its slot, the receptacle in its cutout |
+| `fit_coupon` | 1 | 1 h 24 m | 16 g | **Print first.** Test inserts, pilots, the keyhole on an M4 bolt, the acrylic in its slot, the receptacle in its cutout |
 | `pedestal` | 1 | 1 h 42 m | 29 g | |
 | `window_frame` | 1 | 1 h 25 m | 22 g | |
 | `hatch_cover` | 1 | 2 h 33 m | 46 g | |
@@ -26,7 +26,7 @@ Two Prusa i3 MK3S (bed 250 x 210 x 210 mm), Prusament PETG (or ASA, which fades 
 | `lid_rear` | 1 | 6 h 42 m | 113 g | |
 | `lid_front` | 1 | 9 h 46 m | 169 g | |
 | `base_rear` | 1 | 18 h 4 m | 259 g | 12 h 58 m with 0.30mm DRAFT |
-| `base_front` | 1 | **35 h 25 m** | 533 g | 25 h 25 m with 0.30mm DRAFT (set `layer_h = 0.3`) |
+| `base_front` | 1 | **35 h 12 m** | 530 g | 25 h 25 m with 0.30mm DRAFT (set `layer_h = 0.3`) |
 | **Total** | | **about 84 h** | **about 1.3 kg** | Two 1 kg spools |
 
 ## Order, on two printers
@@ -44,5 +44,5 @@ About 2 to 2.5 days of printing if nothing fails. A failed `base_front` costs th
 ## After printing
 
 - Snap out the two thin ribs in the window opening.
-- Heat-set inserts: 3/8-16 and 1/4-20 (tripod, pedestal), M4 (hatch studs), M3 (sled thumbscrew). Use the sizes that fit the coupon.
+- Heat-set inserts: 1/4-20 (pedestal), M4 (hatch studs), M3 (sled thumbscrew). Use the sizes that fit the coupon.
 - Spray the inside of the case matte black (masking the window rebate and screw holes) so projector light doesn't glow through the vents at night.

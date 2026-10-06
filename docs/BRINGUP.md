@@ -11,7 +11,7 @@ Everything below has only been tested in software. Work through it on the bench 
 
 | # | Test | Pass | If not |
 |---|---|---|---|
-| 1 | `fit_coupon`: heat-set inserts (3/8, 1/4, M4, M3), screws in the M3/M2.5/M2 pilots, M4 bolt in the keyhole, acrylic in the slot, receptacle in the 5-15R cutout | Each fits snug, with no cracking and no slop; the receptacle snaps in and stays | Adjust `insert38_d`, `insert_d`, `m4_insert_d`, `m3_insert_d`, `clearance`, `rcpt_cut`, `rcpt_t`, re-export |
+| 1 | `fit_coupon`: heat-set inserts (1/4, M4, M3), screws in the M3/M2.5/M2 pilots, M4 bolt in the keyhole, acrylic in the slot, receptacle in the 5-15R cutout | Each fits snug, with no cracking and no slop; the receptacle snaps in and stays | Adjust `insert_d`, `m4_insert_d`, `m3_insert_d`, `clearance`, `rcpt_cut`, `rcpt_t`, re-export |
 | 2 | Measure the projector into `docs/measurements.xlsx`: width and height (depth is done: 130.0), lens height and left/right offset, tripod socket position, vents, **where the HDMI and power ports are**, plus which face holds the focus wheel and IR receiver. The sheet's Site rows (throw distance, surface height) compute the tilt you need; do them before printing the big tiles | Within a few mm of `proj_w/d/h`, `lens_z`, `lens_x`, `mount_x/y`, `port_band` | Update the flagged parameters, run `scripts/check_clash.sh` |
 | 2a | Signal-loss standby, from the Mac: with the projector showing the Mac's desktop, sleep the Mac and time how long the projector takes to blank, then wake the Mac | The projector blanks (or goes to standby) by itself within a few minutes and the picture returns when the signal does | `hdmi-off` mode won't save the lamp at night; plan on `relay` or `relay-ir` |
 | 3 | Throw ratio and offset: project onto a wall from a measured distance, and measure image width and how far the bottom edge sits above the lens | Throw ratio about 0.95, offset recorded; the Site rows' tilt stays under `cone_tilt` (12 deg) | Set `throw_ratio`, `lens_offset`; check the `light-cone` result |
@@ -48,6 +48,6 @@ Everything below has only been tested in software. Work through it on the bench 
 |---|---|---|---|
 | 17 | Wiring checklist in WIRING.md, then power up | Everything in its "Before first power-up" list passes; the GFCI trips cleanly | Stop and fix before continuing |
 | 18 | Heat: run for 2 hours with the lid on, on a warm evening | Projector zone under about 45 C, no throttling, fans below full speed | Check airflow and screens; lower the fan curve thresholds |
-| 19 | Aim: full range per AIMING.md | Image clears the window at your aim; nothing rubs | Tilt the case (tripod or shim) instead |
+| 19 | Aim: full range per AIMING.md | Image clears the window at your aim; nothing rubs | Shim the case instead |
 | 20 | Rain: 10 minutes of garden hose "rain" from above and the sides, running | Nothing wet inside beyond a few drops at the louvers | Silicone the leaks; do not run in heavy rain until fixed |
 | 21 | Night check from the street | No glow from the vents; cords routed away from paths or covered | Paint the inside black; reroute the cords |
