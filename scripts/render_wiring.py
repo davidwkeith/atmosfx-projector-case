@@ -111,7 +111,7 @@ def draw_hv(path):
     d.add(elm.Line().at((x_wall + 0.3, yL)).to((x_wall + 3.0, yL)).color(LIVE))
     d.add(elm.Fuse().right().color(LIVE)
           .label('F1  5 x 20 mm, time-delay (T), 250 V, LIVE ONLY\n'
-                 'about 1.5x both wall-warts\' input currents; example 3 A T', loc='bottom', fontsize=FSS, ofst=0.15))
+                 'about 1.5x both wall-warts\' input currents; example 4 A T', loc='bottom', fontsize=FSS, ofst=0.15))
     d.add(elm.Line().to((x_rc, yL)).color(LIVE))
     d.add(elm.Line().at((x_wall + 0.3, yN)).to((x_rc, yN)).color(NEUTRAL))
     d.add(elm.Line().at((x_wall + 0.3, yE)).to((x_rc, yE)).color(EARTH).linestyle('--'))
@@ -119,14 +119,14 @@ def draw_hv(path):
     # the two receptacles: the lower one takes the cord, the upper is jumpered from its piggyback tabs
     H = 4.0
     def rcpt(x, name):
-        return d.add(ic([pin('brass', 'L', 'L', pos=0.5 + (yL - yN) / (H - 1)), pin('silver', 'L', 'N', pos=0.5),
-                         pin('green', 'L', 'E', pos=0.5 + (yE - yN) / (H - 1)),
+        return d.add(ic([pin('L tab', 'L', 'L', pos=0.5 + (yL - yN) / (H - 1)), pin('N tab', 'L', 'N', pos=0.5),
+                         pin('E tab', 'L', 'E', pos=0.5 + (yE - yN) / (H - 1)),
                          pin('', 'R', 'Lo', pos=0.5 + (yL - yN) / (H - 1)), pin('', 'R', 'No', pos=0.5),
                          pin('', 'R', 'Eo', pos=0.5 + (yE - yN) / (H - 1)),
                          pin('prongs', 'B', 'face', pos=0.5)],
                         size=(3.0, H)).at((x, yN)).anchor('N').label(name, fontsize=FSS))
     r1 = rcpt(x_rc, 'NEMA 5-15R\nlower')
-    note(d, (r1.center[0] - 0.2, r1.center[1] + 2.6), 'brass = narrow slot = L\nsilver = wide slot = N\n4.8 mm tabs, fully insulated quick-connects')
+    note(d, (r1.center[0] - 0.2, r1.center[1] + 2.6), 'identify L / N / E by probing each slot to its tab\n(SS-6B: no tab colours or width given)\nfully insulated quick-connects')
     x_r2 = r1.Lo[0] + 2.0
     r2 = rcpt(x_r2, 'NEMA 5-15R\nupper')
     for a, b, col, ls in ((r1.Lo, r2.L, LIVE, '-'), (r1.No, r2.N, NEUTRAL, '-'), (r1.Eo, r2.E, EARTH, '--')):

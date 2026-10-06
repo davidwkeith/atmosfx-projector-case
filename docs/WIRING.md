@@ -27,7 +27,7 @@ flowchart LR
   end
   subgraph ACS["Power shelf, AC side (left of the barrier): the receptacle plate"]
     FAC["5 x 20 mm inline holder<br/>time-delay fuse<br/>LIVE ONLY"]
-    R1["Lower NEMA 5-15R<br/>brass / silver / green tabs<br/>fully insulated quick-connects"]
+    R1["Lower NEMA 5-15R (SS-6B)<br/>L / N / E tabs, identified by probing<br/>fully insulated quick-connects"]
     R2["Upper NEMA 5-15R<br/>jumpered from the lower<br/>(piggyback quick-connects)"]
     W1["Stock wall-wart, unmodified<br/>21 V 2.28 A, 2-pin"]
     W2["Second wall-wart, unmodified<br/>12-24 V, 2.5-3 A, 2-pin"]
@@ -35,9 +35,9 @@ flowchart LR
   NOTCH["Notch at the barrier foot<br/>DC cords only cross here"]
   GFCI -- "SJTW 18 AWG, 3-wire" --> BOX --> LOOP --> GLAND
   GLAND -- "L: black / smooth (narrow blade)" --> FAC
-  FAC -- "L to the brass (narrow-slot) tab" --> R1
-  GLAND -- "N: white / ribbed (wide blade), to the silver tab" --> R1
-  GLAND -. "E: green, to the green tab (nothing uses it)" .-> R1
+  FAC -- "L to the live tab (probe to identify)" --> R1
+  GLAND -- "N: white / ribbed (wide blade), to the neutral tab" --> R1
+  GLAND -. "E: green, to the earth tab (nothing uses it)" .-> R1
   R1 -- "L / N / E jumper" --> R2
   R1 --> W1
   R2 --> W2
@@ -50,11 +50,11 @@ flowchart LR
 
 1. **Supply.** Keep every plug-and-socket joint off the ground and out of puddles: put any extension-cord joint in a weatherproof connection box (a clamshell "cord connection" cover) and raise it off the lawn. Plug into an outdoor GFCI outlet (US code already requires GFCI for outdoor receptacles; test it with its button). Use an outdoor-rated cord (SJTW or better, 18 AWG minimum) and an in-use weatherproof cover on the outlet.
 2. **Cord entry.** The cord enters through the PG9 cord grip in the rear wall, above the shelf. Tighten the grip on the round cord jacket. Leave a drip loop outside, below the grip, so water drips off before reaching it.
-3. **Receptacles.** The projector's stock supply is a wall-wart (MX48CC-210228US: AC 100-240 V 1.0 A in, 21 V 2.28 A / 48 W out, centre-positive, 2-pin non-polarized prongs, captive DC cord), so the shelf's plate carries two panel-mount NEMA 5-15R snap-in receptacles facing the divider: the stock wall-wart plugs into the lower one and stands on the shelf on its long edge; the second wall-wart (the 12-24 V rail for the Pi and DigiAMP+) plugs into the upper one and rests on the first. Both hang on their prongs; a velcro strap through the shelf slots round both keeps them seated. Wire the receptacles' 4.8 mm tabs with **fully insulated** female quick-connects: live from the fuse to the brass (narrow-slot) tab, neutral from the cord to the silver (wide-slot) tab, earth to the green tab. Jumper the second receptacle from the first with piggyback quick-connects, or two crimps per tab. Leave the wall-warts unmodified on the AC side.
+3. **Receptacles.** The projector's stock supply is a wall-wart (MX48CC-210228US: AC 100-240 V 1.0 A in, 21 V 2.28 A / 48 W out, centre-positive, 2-pin non-polarized prongs, captive DC cord), so the shelf's plate carries two panel-mount NEMA 5-15R snap-in receptacles facing the divider: the stock wall-wart plugs into the lower one and stands on the shelf on its long edge; the second wall-wart (the 12-24 V rail for the Pi and DigiAMP+) plugs into the upper one and rests on the first. Both hang on their prongs; a velcro strap through the shelf slots round both keeps them seated. Wire the receptacles' tabs with **fully insulated** female quick-connects (the SS-6B drawing gives no tab width and no tab colours: measure the tabs and match the connectors, and find which tab reaches which slot with a continuity meter before you crimp anything, since its two blade slots look the same size): live from the fuse to the tab behind the live slot, neutral from the cord to the neutral tab, earth to the earth tab. Mark all three before wiring. If the second supply turns out to be a desktop brick with its own AC cord (the Facmogu in the order looks like one), its cord plugs into the upper receptacle and the brick rests on the shelf under the strap. Jumper the second receptacle from the first with piggyback quick-connects, or two crimps per tab. Leave the wall-warts unmodified on the AC side.
 4. **AC fuse.** An inline fuse holder on the **live** (hot) conductor only, between the cord grip and the first receptacle. US polarized plugs: the live is the narrow blade, usually the smooth or black conductor.
 5. **Earth.** The wall-warts are 2-pin Class II, so nothing uses the earth contact. Use a 3-wire cord and land its green on both receptacles' earth tabs anyway: it costs nothing and covers anything 3-pin that is ever plugged in there.
 6. **Insulate.** Every AC joint is inside a connector shell or heat-shrink. No bare metal, no tape-only joints. The spade terminals sit behind the plate, in the corner with the gland, away from the low-voltage side.
-7. **Cord drop.** The cord comes through the gland in the rear-left corner, level with the lower receptacle's terminals, and runs behind the plate to them: 30 mm of room, no bend tighter than the cord's own radius.
+7. **Cord drop.** The cord comes through the gland in the rear-left corner, level with the lower receptacle's terminals, and runs behind the plate to them. The plate stands 40 mm off the rear wall (`rcpt_back`) but the SS-6B's terminals reach about 30.6 mm behind the panel, which leaves about 9 mm for the spades and the cord: bend the wires sideways right at the spades, and keep every bend no tighter than the cord's own radius.
 
 ## Low-voltage side
 
@@ -96,7 +96,7 @@ Both rails share one - rail: the projector's HDMI shield ties its ground to the 
 
 | Circuit | Wire | Notes |
 |---|---|---|
-| Stock wall-wart DC lead to the projector | 18 AWG (0.75 mm²) | Cut the lead a hand's width from its barrel plug (the label's symbol says centre +; confirm with a meter before cutting) and splice it back with lever nuts, so the projector keeps its own plug (if the stock plug is straight, fit the BOM's right-angle plug on the cut tail instead). The relay, if fitted, goes in this + line |
+| Stock wall-wart DC lead to the projector | 18 AWG (0.75 mm²) | Cut the lead a hand's width from its barrel plug (the label's symbol says centre +; confirm with a meter before cutting) and splice it back with lever nuts, so the projector keeps its own plug, and put the BOM's right-angle 5.5 x 2.5 mm adapter between the projector's jack and that plug, so the stock cable's 45 mm bend runs along the rear face (a straight plug would need about 45 mm behind it, which the rear gap can't give). The relay, if fitted, goes in this + line |
 | Second wall-wart DC lead to the splice | 18 AWG | Same treatment: lever-nut splice. 12-24 V (the DigiAMP+'s range; higher gives it more power) |
 | Both rails' **minus** conductors | 18 AWG | Join them at the splice. The projector's HDMI shield ties its ground to the Pi's; without this joint that shield would be the only return path between the rails |
 | Splice to DigiAMP+ power input | 20 AWG (0.5 mm²) | DigiAMP+ accepts 12-24 V on its P5 hard-wire header (or its 5.5 x 2.5 mm centre-positive barrel jack); it powers the Pi, so never also power the Pi by USB |
@@ -105,7 +105,7 @@ Both rails share one - rail: the projector's HDMI shield ties its ground to the 
 
 Use lever-nut connectors (e.g. Wago 221) for the splice so it can be undone. Pass low-voltage wires from the shelf to the Pi through the wire slot at the back of the shelf, never across the barrier's AC side.
 
-**Projector cables.** The DC barrel plug goes on the projector's rear face, top-right corner: use a right-angle plug pointing back. HDMI goes on the I/O strip on the right face: use a right-angle plug, and run the cable back along the side gap above the baffle. Leave USB, AV and Type-C unplugged; their plugs would foul the side gap.
+**Projector cables.** The DC barrel plug goes on the projector's rear face, top-right corner: put the right-angle 5.5 x 2.5 mm adapter from the BOM on the jack, pointing back. HDMI goes on the I/O strip on the right face: use a right-angle plug, and run the cable back along the side gap above the baffle. Leave USB, AV and Type-C unplugged; their plugs would foul the side gap.
 
 ### Pi header signals
 
@@ -139,11 +139,11 @@ Trick-or-treaters walk through the yard in the dark. Run the power cord and spea
 
 ## AC fuse and DC protection
 
-Fill this in from **your** labels. The stock wall-wart reads 1.0 A in and 21 V 2.28 A (48 W) out; the TO2's own label says DC 21 V 3 A, so the supply has no headroom beyond the projector. The example assumes that wall-wart plus a 12-24 V 2.5 A second one with a 0.8 A input rating.
+Fill this in from **your** labels. The stock wall-wart reads 1.0 A in and 21 V 2.28 A (48 W) out; the TO2's own label says DC 21 V 3 A, so the supply has no headroom beyond the projector. The example assumes that wall-wart plus the 24 V 3 A 72 W Facmogu from the BOM, whose input rating I have not read off its label (72 W supplies commonly say about 1.5 A): replace the figure with your own label.
 
 | Fuse | How to size it | Type | Example |
 |---|---|---|---|
-| AC fuse (live) | About 1.5x the **sum** of both wall-warts' rated input currents (the labels' "Input ... A"), and no more than the cord's rating | 5 x 20 mm, **time-delay (T)**, 250 V: switch-mode supplies have an inrush surge | 1.0 + 0.8 = 1.8 A gives **3 A T** (2.5 A T if you can get it) |
+| AC fuse (live) | About 1.5x the **sum** of both wall-warts' rated input currents (the labels' "Input ... A"), and no more than the cord's rating | 5 x 20 mm, **time-delay (T)**, 250 V: switch-mode supplies have an inrush surge | 1.0 + 1.5 = 2.5 A gives about 3.75 A, so **4 A T**; a second supply labelled 0.8 A in gives 1.0 + 0.8 = 1.8 A and **3 A T** (2.5 A T if you can get it) |
 
 **No DC fuses.** Each wall-wart limits its own output current and carries its own short-circuit protection, and its rated output is far below what the 18 AWG leads can carry, so a fault downstream cannot overheat the wire. Buy a UL/ETL-listed second wall-wart (short-circuit protected) and keep each rail's load under its output rating: the DigiAMP+ at your volume plus the Pi for the second one. If it doesn't fit, buy a bigger wall-wart.
 
