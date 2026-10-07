@@ -62,13 +62,12 @@ Right of the barrier, and down to the Pi sled.
 
 ### DC rails
 
-![DC rails schematic: the stock wall-wart's 21 V cord switched by the relay contact into the projector's barrel plug, the second wall-wart's 12-24 V cord into a Wago + rail feeding the DigiAMP+ (which powers the Pi and the speakers), and one Wago - rail joining both minuses](wiring-lv-power.svg)
+![DC rails schematic: the stock wall-wart's 21 V cord switched by the relay contact into the projector's barrel plug, the second wall-wart's 12-24 V cord into a Wago + rail feeding the DigiAMP+ (which powers the Pi and the speakers); each wall-wart's minus runs straight to its own load](wiring-lv-power.svg)
 
 ```mermaid
 flowchart TB
   W1["Stock wall-wart DC cord, 21 V<br/>cut a hand's width from the barrel plug; confirm centre + with a meter"]
   W2["Second wall-wart DC cord, 12-24 V<br/>same treatment"]
-  WN(["Wago 221, - rail<br/>both minuses joined"])
   WP(["Wago 221, 12-24 V + rail"])
   subgraph PJ["Projector (21 V)"]
     RELAY["Relay module, fallback only<br/>COM / NO in the + line"]
@@ -80,27 +79,25 @@ flowchart TB
     SPK["Speakers behind the projection<br/>16 AWG zip cord, stripe to +<br/>out through the floor chimney"]
   end
   W1 -- "+ 18 AWG" --> RELAY -- "+" --> PROJ
-  W1 -- "- 18 AWG" --> WN
-  WN -- "- never switched" --> PROJ
+  W1 -- "- 18 AWG, never switched" --> PROJ
   W2 -- "+ 18 AWG" --> WP
-  W2 -- "- 18 AWG" --> WN
+  W2 -- "- 18 AWG" --> AMP
   WP -- "20 AWG" --> AMP
-  WN -- "20 AWG" --> AMP
   AMP --> PI
   AMP --> SPK
-  linkStyle 0,1,2,5,6,8 stroke:#c62828,stroke-width:2px
-  linkStyle 3,4,7,9 stroke:#424242,stroke-width:2px
+  linkStyle 0,1,3,4 stroke:#c62828,stroke-width:2px
+  linkStyle 2,5,6,7 stroke:#424242,stroke-width:2px
 ```
 
-Both rails share one - rail: the projector's HDMI shield ties its ground to the Pi's anyway, and without the joint that shield would be the only return path between the rails. The relay is only needed if the projector lacks HDMI-CEC (see `pi/README.md`, "Projector power"). It is also the only way the Pi can cut the projector's power if the Pi itself overheats: with CEC alone it can only ask for standby, so consider fitting it anyway (see `pi/README.md`, "Cooling"). The relay opens whenever the Pi's service stops. Use an **active-low** module: the Pi holds GPIO 27 high (relay open, projector off) from boot.
+The two rails are separate: each wall-wart's minus goes straight to its own load, and nothing joins them. Both wall-warts are isolated (floating) outputs, so each load's current returns to its own supply; the HDMI cable's shield joins the grounds anyway, as it does for any projector and Pi with their own adapters. The relay is only needed if the projector lacks HDMI-CEC (see `pi/README.md`, "Projector power"). It is also the only way the Pi can cut the projector's power if the Pi itself overheats: with CEC alone it can only ask for standby, so consider fitting it anyway (see `pi/README.md`, "Cooling"). The relay opens whenever the Pi's service stops. Use an **active-low** module: the Pi holds GPIO 27 high (relay open, projector off) from boot.
 
 | Circuit | Wire | Notes |
 |---|---|---|
 | Stock wall-wart DC lead to the projector | 18 AWG (0.75 mm²) | Cut the lead a hand's width from its barrel plug (the label's symbol says centre +; confirm with a meter before cutting) and splice it back with lever nuts, so the projector keeps its own plug, and put the BOM's right-angle 5.5 x 2.5 mm adapter between the projector's jack and that plug, so the stock cable's 45 mm bend runs along the rear face (a straight plug would need about 45 mm behind it, which the rear gap can't give). The relay, if fitted, goes in this + line |
 | Second wall-wart DC lead to the splice | 18 AWG | Same treatment: lever-nut splice. 12-24 V (the DigiAMP+'s range; higher gives it more power) |
-| Both rails' **minus** conductors | 18 AWG | Join them at the splice. The projector's HDMI shield ties its ground to the Pi's; without this joint that shield would be the only return path between the rails |
+| Each wall-wart's **minus** conductor | 18 AWG | Straight to its own load (projector, or the splice to the DigiAMP+). Don't join the two minuses: the HDMI shield already ties the grounds, and nothing needs a second link |
 | Splice to DigiAMP+ power input | 20 AWG (0.5 mm²) | DigiAMP+ accepts 12-24 V on its P5 hard-wire header (or its 5.5 x 2.5 mm centre-positive barrel jack); it powers the Pi, so never also power the Pi by USB |
-| Relay (fallback only) | 18 AWG | Switch the **+** line to the projector. Never switch its ground: the HDMI cable would carry the return current. Use an **active-low** module: the Pi holds GPIO 27 high (relay open, projector off) from boot |
+| Relay (fallback only) | 18 AWG | Switch the **+** line to the projector. Never switch its ground: the HDMI cable would then carry the projector's return current. Use an **active-low** module: the Pi holds GPIO 27 high (relay open, projector off) from boot |
 | DigiAMP+ to speakers | 16 AWG zip cord | Out through the floor chimney; red/striped to + on both ends |
 
 Use lever-nut connectors (e.g. Wago 221) for the splice so it can be undone. Pass low-voltage wires from the shelf to the Pi through the wire slot at the back of the shelf, never across the barrier's AC side.

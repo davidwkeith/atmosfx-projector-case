@@ -190,7 +190,7 @@ def draw_lv_power(path):
     d.add(elm.Line().at(w1.pos).right(0.6).color(POS))
     f1 = d.add(elm.Line().right(3).color(POS))
     x_bp = f1.end[0] + 2.4   # second + rail
-    x_bn = x_bp + 1.6        # shared - rail
+    x_bn = x_bp + 1.6        # x of the minus runs' bends
     x_load = x_bn + 8.0
     yp = f1.end[1]
     d.add(elm.Line().at(f1.end).right(2.4).color(POS))
@@ -203,17 +203,11 @@ def draw_lv_power(path):
                  .label('Projector\nbarrel plug', fontsize=FSS))
     note(d, (proj.center[0], proj.center[1] - 1.8), 'its own cable, spliced back')
 
-    # the shared - rail: both wall-warts' minuses, every load's return
-    y_top = w1.neg[1] + 0.3
-    y_bot = -10.6
+    # the wall-wart's minus goes straight to the projector; the HDMI shield is the only link to the Pi's ground
     d.add(elm.Line().at(w1.neg).to((x_bn, w1.neg[1])).color(NEG))
-    d.add(elm.Dot().at((x_bn, w1.neg[1])).color(NEG))
-    d.add(elm.Line().at((x_bn, y_top)).to((x_bn, y_bot)).color(NEG).linewidth(3))
-    note(d, (x_bn + 0.3, w1.neg[1] - 0.3), '18 AWG', halign='left', fontsize=FSS - 2)
-    d.add(elm.Dot().at((x_bn, proj.neg[1])).color(NEG))
-    d.add(elm.Line().at((x_bn, proj.neg[1])).to(proj.neg).color(NEG))
+    d.add(elm.Line().to((x_bn, proj.neg[1])).color(NEG))
+    d.add(elm.Line().to(proj.neg).color(NEG))
     note(d, (proj.neg[0] - 0.3, proj.neg[1] - 0.3), '- straight through, 18 AWG', halign='right', fontsize=FSS - 2)
-    note(d, (x_bn + 0.3, w1.neg[1] - 1.1), 'Wago 221, - rail\nboth minuses joined: the HDMI shield\nties the grounds anyway', halign='left', color=NEG)
 
     # second wall-wart: 12-24 V for the Pi and DigiAMP+
     w2 = d.add(ic([pin('-', 'R', 'neg', pos=0.72), pin('+', 'R', 'pos', pos=0.28)],
@@ -221,11 +215,11 @@ def draw_lv_power(path):
                .label('Second wall-wart\n12-24 V, 2.5-3 A', fontsize=FSS))
     note(d, (w2.center[0], w2.center[1] - 1.6), 'same treatment')
     d.add(elm.Line().at(w2.neg).to((x_bn, w2.neg[1])).color(NEG))
-    d.add(elm.Dot().at((x_bn, w2.neg[1])).color(NEG))
     d.add(elm.Line().at(w2.pos).right(0.6).color(POS))
     f2 = d.add(elm.Line().right(3).color(POS))
     d.add(elm.Line().at(f2.end).to((x_bp, f2.end[1])).color(POS))
     d.add(elm.Dot().at((x_bp, f2.end[1])).color(POS))
+    y_bot = -10.6
     d.add(elm.Line().at((x_bp, f2.end[1])).to((x_bp, y_bot)).color(POS).linewidth(3))
     note(d, (x_bp - 0.3, f2.end[1] + 0.4), 'Wago 221\n12-24 V + rail', halign='right', color=POS)
     note(d, ((x_bp + x_bn) / 2 + 1.5, y_bot - 0.4), '18 AWG from the wall-warts; each branch in its own gauge')
@@ -240,8 +234,8 @@ def draw_lv_power(path):
                     pin('SPK+', 'R', 'spkp', pos=0.28), pin('SPK-', 'R', 'spkn', pos=0.12)],
                    size=(4.6, 4.0)).at((x_load, ya)).anchor('pos')
                 .label('Raspberry Pi DigiAMP+\n12-24 V in (P5 or barrel)', fontsize=FSS))
-    d.add(elm.Dot().at((x_bn, amp.neg[1])).color(NEG))
-    d.add(elm.Line().at((x_bn, amp.neg[1])).to(amp.neg).color(NEG))
+    d.add(elm.Line().at((x_bn, w2.neg[1])).to((x_bn, amp.neg[1])).color(NEG))
+    d.add(elm.Line().to(amp.neg).color(NEG))
     note(d, (x_bn + 0.3, amp.neg[1] - 0.3), '20 AWG', halign='left', fontsize=FSS - 2)
     pi = d.add(ic([pin('5 V', 'L', 'v5', pos=0.72), pin('GND', 'L', 'gnd', pos=0.28)], size=(3.4, 1.6))
                .at((amp.v5[0] + 1.8, amp.v5[1])).anchor('v5')
