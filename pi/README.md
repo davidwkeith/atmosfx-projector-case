@@ -273,13 +273,13 @@ Setting: **Projector power** = `cec` (default) | `relay-ir` | `relay` | `hdmi-of
   - **Buying:** many mini projectors have no CEC. Look for "HDMI-CEC" in the projector's own spec. Brand names like Anynet+, SimpLink or Bravia Sync are the TV makers' CEC and don't tell you anything about a projector.
   - **Test** on the Pi: `cec-ctl -d /dev/cec0 --playback -S` shows the CEC devices. `cec-ctl -d0 --to 0 --image-view-on` should wake it.
 - **hdmi-off.** Powers the HDMI signal down (fbdev blank) when stopped, once mpv has let go of the display. Many projectors drop to standby after their own no-signal timeout. **Waking may still need the remote.** Before the Pi is paired, the signal stays on so the pairing code is visible.
-- **relay / relay-ir.** A relay on the projector's DC feed. Off: stop playback, then open the relay. On: close it, wait the settle time (default 3 s), then:
+- **relay / relay-ir.** Fallbacks, built only if CEC fails (BRINGUP row 9). A relay on the projector's DC feed. Off: stop playback, then open the relay. On: close it, wait the settle time (default 3 s), then:
   - `relay`: nothing more, for projectors that power up by themselves.
   - `relay-ir`: send the IR power code (twice if "needs two presses" is set). The relay forces a known "off" first, so the IR toggle can't get out of step. A second "on" while it is already on (the schedule after you switched on by hand, say) doesn't press power again.
   - Either way, playback then waits up to 20 s for the projector to show up on HDMI, and starts again if it appears later. mpv gives a disconnected output no picture.
 - **Relay safety:**
   - Use a relay module rated for the projector's DC current, with an opto-isolated input and a flyback diode (most modules have one).
-  - Switch the **+ line (high side) only**. Never switch the projector's ground: the HDMI shield would carry its return current.
+  - Switch the **+ line (high side) only**, in the + line of the projector leg only. Never switch the projector's ground: the HDMI shield would carry its return current.
   - At boot the firmware drives the relay line to "open" before Linux runs (`gpio=27=op,dh` for active-low modules; use `dl` for active-high). The service keeps it open until it decides.
   - When the service stops, for any reason, the relay opens: the service does it on a clean stop, and `videofx-relay-open` (the unit's `ExecStopPost`) does it after a crash, a kill or the watchdog. The relay never stays closed once the service is gone (the service only watches the Pi's own SoC; the projector has its own thermal cut-off).
   - The relay and IR pins are also in `config.txt`, written once with the defaults. If you change them in `/etc/default/videofx`, change `config.txt` by hand too.
@@ -310,12 +310,12 @@ If you ever need more I/O, an I2C expander (MCP23017) can share GPIO 2/3 with th
 
 - **PIR (HC-SR501):** VCC to 5 V (pin 2), GND (pin 9), OUT (3.3 V logic) to GPIO17 (pin 11). Use the retrigger jumper (H), a short hold time, and allow about a minute of warm-up after power-on.
 - **Relay module (5 V coil, opto input):** VCC 5 V (pin 4), GND (pin 14), IN to GPIO27 (pin 13). The contacts (COM/NO) go in series with the projector's DC **+** only.
-- **IR LED (940 nm):** don't drive it straight from the pin (16 mA max). Use GPIO16 (pin 36; GPIO22 is the DigiAMP+ mute line), then 1 kΩ, then an NPN transistor base (BC337/2N2222). LED plus series resistor (about 47 Ω) from 5 V to the collector; emitter to GND.
-- **IR receiver (TSOP38238):** VS to 3.3 V (pin 17), GND, OUT to GPIO23 (pin 16). Powering it at 3.3 V keeps its output at 3.3 V.
+- **IR LED (940 nm), fallback only (built only if CEC fails):** GPIO16 (pin 36; GPIO22 is the DigiAMP+ mute line) drives the LED directly through 150 Ω to GND (about 14 mA at 3.3 V, inside the pin's 16 mA limit).
+- **IR receiver (TSOP38238), bench-only (for learning the remote's codes):** VS to 3.3 V (pin 17), GND, OUT to GPIO23 (pin 16). Powering it at 3.3 V keeps its output at 3.3 V.
 
 ## Audio
 
-A **Raspberry Pi DigiAMP+** (TAS5756M, 2 channels) drives 4-8 Ω speakers behind the projection. It runs from the DC splice (12-24 V, through its P5 hard-wire header or the 5.5 x 2.5 mm centre-positive barrel jack) and **powers the Pi through the header** at 5.1 V / 2.5 A. Up to 35 W per channel, rated for 0-50 °C ambient ([product brief](<https://pip-assets.raspberrypi.com/categories/765-raspberry-pi-digiamp/documents/RP-008138-DS-1-digiamp-plus-hat-product-brief.pdf>)): the Pi zone has to stay under that with only a passive louver, and the brief says not to cover a case it sits in, which is what the louvers are for (bring-up logs the shelf temperature).
+A **Raspberry Pi DigiAMP+** (TAS5756M, 2 channels) drives 4-8 Ω speakers behind the projection. It runs from the Y-splitter's second leg (12-24 V, through its P5 hard-wire header or the 5.5 x 2.5 mm centre-positive barrel jack) and **powers the Pi through the header** at 5.1 V / 2.5 A. Up to 35 W per channel, rated for 0-50 °C ambient ([product brief](<https://pip-assets.raspberrypi.com/categories/765-raspberry-pi-digiamp/documents/RP-008138-DS-1-digiamp-plus-hat-product-brief.pdf>)): the Pi zone has to stay under that with only a passive louver, and the brief says not to cover a case it sits in, which is what the louvers are for (bring-up logs the shelf temperature).
 
 - **Speakers:** speaker wire from the DigiAMP+'s terminals, same polarity on both speakers; the outputs can't be bridged.
 - **Power budget:** the brick must supply the projector, the Pi and the amp at once. Check its label.

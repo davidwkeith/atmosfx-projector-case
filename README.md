@@ -13,7 +13,7 @@ Parametric [OpenSCAD](https://openscad.org) design for a ground-standing, rain-p
 - Sloped lid with no holes in the roof (it screws on through the side skirt), a front visor, drip lip and a 45 deg scarf joint at the seam (the front half laps over the rear like a shingle); 45 deg louvers shed rain. Cooling is passive: the projector's own fan draws air in through a louver bank on the right wall's rear and out through one at its front, with a lip baffle between them, and one more louver vents the Pi zone; every bank is insect-screened. The Pi watches its own temperature and switches the projector off at a critical temperature.
 - Acrylic lens window in a rebate, held by a printed frame.
 - Pi compartment behind a divider. The Pi rides on a removable sled: one per generation (Pi 3B/3B+, 4B, 5, Zero 2 W), located by two floor pins and held by one M3 thumbscrew. Lid off, shelf out, sled lifts out. A pass-through in the divider, open down to the sled, takes a straight HDMI plug from the Pi (the cable loops under the projector) and the projector power lead.
-- One AC cord in through a rear gland on the AC side of the power shelf. The projector's stock wall-wart and a second one (12-24 V for the Pi and DigiAMP+) plug into two panel-mount NEMA 5-15R receptacles on a plate on the shelf, walled off from the low-voltage side; the AC live is fused, and the Raspberry Pi DigiAMP+ HAT powers the Pi.
+- One supply: a 24 V 5 A desktop brick lies on the power shelf. A standard molded AC cord comes in through a rear-wall opening closed by a two-piece printed clamp (`cord_clamp`) and plugs into the brick, so nothing is hand-wired on the AC side. A Y-splitter feeds the projector (once bring-up shows it runs on 24 V, otherwise through a buck converter to 21 V) and the Raspberry Pi DigiAMP+ HAT, which powers the Pi.
 - DMX: the Pi is a first-class E1.31/sACN fixture (8 channels: power, mode, clip, scare trigger, volume, mute, dimmer, reserved), so xLights, Falcon Player, Vixen or QLC+ can run it as part of a show. DMX takes over while its signal is present; the schedule, Home app and web page take back control when it stops.
 - Motion sensor: an HC-SR501-style PIR looks out the rear wall (toward people approaching from the street) under a 45 deg rain hood, for startle scares. A remote sensor on a cable can come in through the floor chimney instead. Scares can also be fired from any Apple Home automation.
 - Sound: the DigiAMP+ (stereo class D, 12-24 V) sits on the Pi and drives speakers placed behind the projection over ordinary speaker wire. The wire leaves through a chimney in the floor, which stands 15 mm above the floor so water can't reach it, then runs out under the case between the feet.
@@ -51,7 +51,8 @@ Preview in OpenSCAD: open `projector_pi_case.scad`, set `part` and `tile` in the
 | `window_frame` | Holds the acrylic pane |
 | `pedestal` | Screws to the floor bosses; carries the ball head |
 | `hatch_cover` | Print ribs-up |
-| `power_shelf` | Receptacle plate (two NEMA 5-15R snap-ins, stacked), barrier, strap and zip-tie slots |
+| `power_shelf` | Holds the brick: strap, zip-tie and wire slots |
+| `cord_clamp` | Two halves; clamps the AC cord's jacket at the rear-wall opening (M3 into the bosses, foam gasket) |
 | `exhaust_cap`, `intake_cap`, `vent_cap` (print 1 each) | Insect-screen caps for the three right-wall louver banks (exhaust, rear inlet, Pi vent). Glue screen inside the plate, then screw on with 2x M2 |
 | `ir_holder` | Only for the relay + IR projector-power fallback. Stick it near the projector's IR receiver with VHB tape |
 | `sled_pi3`, `sled_pi4`, `sled_pi5`, `sled_zero2w` | Print the one for your Pi. The name is engraved on the plate |
