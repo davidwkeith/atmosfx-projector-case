@@ -52,7 +52,7 @@ def pin(name, side, anchor=None, **kw):
 
 
 # ----------------------------------------------------------------------------
-# High voltage: the AC side of the barrier
+# High voltage: outlet, cord, brick
 # ----------------------------------------------------------------------------
 def drawing():
     """A Drawing built with explicit add() calls. No `with` block: inside one, schemdraw
@@ -94,7 +94,7 @@ def draw_hv(path):
     note(d, (x_cord + 0.15, yL + 0.2), 'L  black / smooth / narrow blade', halign='left', color=LIVE)
     note(d, (x_cord + 0.15, yN + 0.2), 'N  white / ribbed / wide blade', halign='left', color=NEUTRAL)
     note(d, (x_cord + 0.15, yE + 0.2), 'E  green; land it anyway', halign='left', color=EARTH)
-    note(d, (x_wall - 4.3, 2.8),
+    note(d, (x_wall - 5.0, 2.8),
          "Standard cord with the brick's molded plug, not cut. Not outdoor-rated:\n"
          'owner accepts one month outside; inspect daily, replace if damaged.\n'
          'Every plug joint in a weatherproof box, off the ground. Drip loop.')
@@ -124,7 +124,7 @@ def draw_hv(path):
     note(d, (br.neg[0] + 1.7, br.neg[1]), '24 V -', halign='left', color=NEG, fontsize=FS)
     note(d, (br.pos[0] + 1.7, br.neg[1] - 1.4), 'DC cord, not cut:\nplugs into the Y-splitter\n(wiring-lv-power.svg)', halign='left')
     note(d, (x_wall + 0.4, -8.9),
-         'No AC fuse and no hand-wired AC: the cord and the brick are listed, molded parts; the GFCI is upstream. '
+         'No AC fuse and no hand-wired AC: the cord and the brick are molded parts; the brick must be UL/ETL listed (check its label); the GFCI is upstream. '
          'Flame-retardant (V-0) PETG for the shelf.', halign='left')
     d.save(str(path))
 
@@ -138,7 +138,7 @@ def draw_lv_power(path):
     w1 = d.add(ic([pin('+', 'R', 'pos', pos=0.72), pin('-', 'R', 'neg', pos=0.28)],
                   size=(3.8, 2.4)).at((0, 0.6)).anchor('pos')
                .label('Parts Express brick\n24 V 5 A', fontsize=FSS))
-    note(d, (w1.center[0], w1.center[1] - 1.6), 'DC cord NOT cut. Tip is centre +:\nmeter both Y-splitter legs before connecting')
+    note(d, (w1.center[0] - 1.9, w1.center[1] - 2.2), 'DC cord NOT cut. Tip is centre +:\nmeter both Y-splitter legs before connecting', halign='left')
     yp, yn = w1.pos[1], w1.neg[1]
     x_s = 4.4            # + side of the Y-splitter
     x_n = x_s + 1.6      # - side
@@ -191,11 +191,12 @@ def draw_lv_power(path):
                 .label('Speakers behind\nthe projection', loc='right', fontsize=FSS, ofst=0.3))
     d.add(elm.Line().at(amp.spkp).to(spk.in1).color(POS))
     d.add(elm.Line().at(amp.spkn).to(spk.in2).color(NEG))
-    note(d, (amp.spkp[0] + 1.2, amp.spkn[1] - 0.8),
+    note(d, (amp.spkp[0] + 1.2, amp.spkn[1] - 2.0),
          '16 AWG zip cord, stripe to +,\nout through the floor chimney', halign='left')
     note(d, (x_load - 4.0, amp.spkn[1] - 3.2),
          'Do not connect the brick to the projector until BRINGUP row 4a passes (its label says 21 V).', halign='left')
     d.save(str(path))
+
 
 # ----------------------------------------------------------------------------
 # Low voltage: the Pi header and every signal
@@ -230,9 +231,9 @@ def draw_lv_signals(path):
     # PIR, straight off GPIO17
     pir = d.add(ic([pin('OUT', 'R', 'out'), pin('VCC', 'L', 'vcc', pos=0.85, pin='5 V, pin 2'),
                     pin('GND', 'L', 'gnd', pos=0.15, pin='GND, pin 9')], size=(3.0, 1.7))
-                .at((XL1, y(11))).anchor('out'))
+                .at((XL1, y(11) + 0.45)).anchor('out'))
     note(d, (pir.center[0], pir.center[1] + 1.3), 'HC-SR501 PIR (rear wall)')
-    wire([(XLW, y(11)), pir.out])
+    wire([(XLW, y(11)), (pir.out[0] + 0.5, y(11)), (pir.out[0] + 0.5, pir.out[1]), pir.out])
     note(d, ((XLW + XL1) / 2, y(11) + 0.2), 'OUT, 3.3 V logic', fontsize=FSS - 2, color=SIG)
 
     # relay coil side, straight off GPIO27, in the far column so the wire passes under the PIR
@@ -256,7 +257,7 @@ def draw_lv_signals(path):
           .label('D1  940 nm IR LED in ir_holder,\nONLY if CEC fails', loc='bottom', fontsize=FSS - 2, ofst=0.7))
     d.add(elm.Line().down(0.4).color(NEG))
     d.add(elm.Ground().label('GND', loc='bottom', fontsize=FSS - 1, ofst=0.1))
-    note(d, (x_ir - 2.0, yb + 1.2), "no transistor: about 13 mA, under a pin's 16 mA", halign='right')
+    note(d, (x_ir - 0.2, yb + 1.3), "no transistor: about 13 mA, under a pin's 16 mA", halign='right')
 
     note(d, (0.6, y_ir - 1.4),
          'Pin numbers are the header\'s physical pins; GPIO numbers are BCM. HDMI from the Pi to the projector carries CEC, the default power control.\n'
