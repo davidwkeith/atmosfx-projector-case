@@ -6,7 +6,7 @@ OUT  = stl
 .PHONY: parts clean
 parts: $(OUT)/base_front.stl $(OUT)/base_rear.stl $(OUT)/lid_front.stl $(OUT)/lid_rear.stl \
      $(OUT)/window_frame.stl $(OUT)/pedestal.stl $(OUT)/hatch_cover.stl $(OUT)/power_shelf.stl \
-     $(OUT)/sled_pi3.stl $(OUT)/sled_pi4.stl $(OUT)/sled_pi5.stl $(OUT)/sled_zero2w.stl $(OUT)/ir_holder.stl \
+     $(OUT)/sled_pi3.stl $(OUT)/sled_pi4.stl $(OUT)/sled_pi5.stl $(OUT)/sled_zero2w.stl $(OUT)/ir_holder.stl $(OUT)/cord_clamp.stl \
      $(OUT)/vent_cap.stl $(OUT)/exhaust_cap.stl $(OUT)/intake_cap.stl $(OUT)/fit_coupon.stl
 
 $(OUT):
@@ -31,6 +31,9 @@ $(OUT)/power_shelf.stl: $(SCAD) | $(OUT)
 
 $(OUT)/ir_holder.stl: $(SCAD) | $(OUT)
 	$(OPENSCAD) -o $@ -D 'part="ir_holder"' $(SCAD)
+
+$(OUT)/cord_clamp.stl: $(SCAD) | $(OUT)
+	$(OPENSCAD) -o $@ -D 'part="cord_clamp"' $(SCAD)
 
 $(OUT)/vent_cap.stl: $(SCAD) | $(OUT)
 	$(OPENSCAD) -o $@ -D 'part="vent_cap"' $(SCAD)

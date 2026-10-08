@@ -60,6 +60,7 @@ for s in pi3 pi4 pi5; do   # a straight HDMI plug in the Pi, through the divider
   run "hdmi-$s"   "intersection(){ pi_hdmi_plug(\"$s\"); union(){ base_all(); translate([0,0,z_floor+sled_pad]) pi_sled(\"$s\"); translate([ped_x, ped_y, z_floor+boss_h]) pedestal(); for (a=[-aim_max, aim_max]) { projector(0, a); projector_ports(0, a); } } }"
 done
 run screen-caps   "intersection(){ base_all(); union(){ for (v=vents) vent_cap_placed(v); exhaust_cap_placed(); intake_cap_placed(); } }"
+run cord-clamp     "intersection(){ cord_clamp_placed(); union(){ base_all(); $LID; } }"   # clamp against the rear wall and lid skirt: contact only
 run brick          "intersection(){ translate([0, y_pi0+0.3, shelf_zz]) brick_env(); union(){ base_all(); $LID; translate([0, y_pi0+0.3, shelf_zz]) power_shelf(); } }"   # the brick on the shelf vs case, lid roof and shelf
 run aim-sweep      "intersection(){ union(){ base_all(); $LID; translate([lens_x, y0, win_zc]) window_frame(); exhaust_cap_placed(); intake_cap_placed(); }
                       for (a=[[1,0],[0,1],[1,1],[1,-1]], sg=[-1,1])

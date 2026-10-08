@@ -94,8 +94,13 @@ hatch_lock = true;   // optional M3 (security) screw through the cover's bottom 
 shelf_z = 60;       // power shelf height above floor: clears the tallest sled stack (asserted)
 ledge_w = 9;        // shelf ledge on the side walls
 tie_gap = 34;       // zip-tie slot spacing across the shelf (module sits between)
-cord_x = -94;       // where the single AC cord enters the rear wall: AC side, in the rear-left corner (asserted)
-cord_dz = 20;       // gland centre above the shelf's top face: below the lid skirt (asserted)
+cord_x = -75;       // centre of the AC cord opening in the rear wall: the opening, its bosses and the clamp all have to sit inside the left wall (asserted)
+cord_dz = 30;       // opening centre above the shelf's top face: the clamp's lower screws clear the shelf, the clamp's top clears the lid skirt (asserted)
+cord_open = [40, 30];   // rear-wall opening [X, Z]: passes a molded IEC plug (a C13 body is about 28 x 21 mm) with room; the clamp covers it
+cord_d = 9;             // AC cord jacket diameter: PROVISIONAL, measure the cord you use
+clamp_t = 6;            // clamp half thickness
+clamp_flange = 10;      // each half overlaps the opening by this much all round
+cord_boss = 5;          // pilot bosses inside the wall, at the clamp's four screws (must stay <= brick_gap, or they hit the brick: checked)
 // Supply (spec 2026-10-06, rev 2): the Parts Express 24 V 5 A desktop brick lies on the shelf under a velcro strap, fed by a
 // standard cord that plugs into its AC inlet; its DC cord goes uncut into a 5.5 x 2.5 mm Y-splitter. The stock 21 V adapter is
 // retired from the case. Nothing about the brick is measured yet.
@@ -168,9 +173,6 @@ pass_x = [-40, 25];         // divider pass-through, left/right edge: spans ever
 /* [Printer] */
 bed = [250, 210, 210];   // print volume; every tile is asserted to fit (either way round)
 max_bridge = 30;         // longest unsupported bridge under the floor
-
-/* [Hardware] */
-gland_d = 15.5;    // PG9 mains-rated cord grip for the single AC cord
 
 /* [Lid] */
 lid_clr = 0.6;
@@ -262,11 +264,18 @@ lid_seam = yfl - visor_len + lid_front_len;
 seam_t = top_t + seam_rib;                // roof thickness across the scarf
 pivot = [ped_x, ped_y, z_floor + ped_top + pivot_h];
 lid_z0 = base_h + gasket - (skirt_h - top_t);
-assert(cord_dz - gland_d/2 - 4 >= 3, "raise cord_dz: the gland's locknut lands on the shelf");
+clamp_w = cord_open[0] + 2*clamp_flange;
+clamp_h = cord_open[1] + 2*clamp_flange;      // both halves together
+cord_z = shelf_zz + 3 + cord_dz;              // opening centre, from the ground
+cord_screws = [for (sx=[-1,1], sz=[-1,1]) [cord_x + sx*(cord_open[0]/2 + clamp_flange/2), cord_z + sz*(cord_open[1]/2 + clamp_flange/2)]];
+assert(cord_x - clamp_w/2 >= -out_w/2, "move cord_x right: the cord clamp hangs off the rear wall's left edge");
+assert(cord_x - cord_open[0]/2 - 4 >= -inner_w/2, "move cord_x right: the cord opening must sit inside the left wall");
+assert(cord_dz - cord_open[1]/2 - clamp_flange >= 3, "raise cord_dz: the clamp's lower screws land on the shelf");
+assert(cord_z + clamp_h/2 <= lid_z0 - 2, "lower cord_dz: the cord clamp runs into the lid skirt");
+assert(cord_d >= 5 && cord_d <= cord_open[1] - 6, "cord_d: measure the cord; it must fit the opening and the clamp channel");
 assert(brick_x0 + brick[0] + 3 <= pir_x - 6, "the brick runs into the PIR / wire slot: measure it, or shorten it");
 assert(brick_y0 >= 0 && brick[1] + brick_gap <= shelf_d, "the brick is deeper than the shelf");
 assert(shelf_zz + 3 + brick[2] + 2 <= lid_z0, "the brick hits the lid skirt: raise top_air (or lower shelf_z)");
-assert(shelf_zz + 3 + cord_dz + gland_d/2 + 6 <= lid_z0, "lower cord_dz: the gland runs into the lid skirt");
 assert(pane_top_clear >= pane_t + clearance + 2.5, "raise pane_top_clear: the rebate's 45 deg ceiling would cut through the base rim");
 
 // Every tile must fit the bed, either way round. These fire when the projector parameters grow the case.
@@ -333,8 +342,10 @@ module cuts() {
   // screen-cap pilots for the two projector banks (M2 self-tap)
   for (c=[[exh_c[0], exh_c[1], exh_open], [in_c[0], in_c[1], in_open]], sy=[-1,1])
     translate([inner_w/2+2, c[0], c[1]+sy*cap_tab(c[2])]) rotate([0, -90, 0]) cylinder(d=1.8, h=cap_h+2);
-  // single power-cord gland (rear wall, above the shelf, AC side of the barrier)
-  translate([cord_x, y_back-1, shelf_zz+3+cord_dz]) rotate([-90,0,0]) cylinder(d=gland_d, h=wall+2);
+  // AC cord opening (rear wall, above the shelf): passes a molded plug; the cord clamp covers it and grips the jacket
+  translate([cord_x - cord_open[0]/2, y_back - 1, cord_z - cord_open[1]/2]) cube([cord_open[0], wall + 2, cord_open[1]]);
+  // clamp screw pilots (M3 self-tapping) from the outside through the wall into the bosses
+  for (p = cord_screws) translate([p[0], y_back + wall + 1, p[1]]) rotate([90, 0, 0]) cylinder(d=2.6, h=wall + cord_boss + 1);
   // divider pass-through (HDMI + projector power). Open down to the sled: the Pi's HDMI edge sits about 10 mm
   // behind the divider, so the plug goes straight through and the cable loops under the projector
   translate([0, y_div+div_t+1, 0]) rotate([90,0,0]) linear_extrude(div_t+2)   // gabled top prints unsupported
@@ -383,6 +394,7 @@ module base_all(ribs=true) {
         translate([sx > 0 ? inner_w/2-collar_t : -inner_w/2, y_pi0-0.01, z_floor-0.1])
           cube([collar_t, collar_d, shelf_zz-ledge_w-3-z_floor+0.1]);
       if (stakes) for (p=stake_pts) translate([p[0], p[1], z_floor-0.1]) cylinder(d=stake_d+5, h=stake_collar+0.1);
+      for (p = cord_screws) translate([p[0], y_back - cord_boss, p[1]]) rotate([-90, 0, 0]) cylinder(d=8, h=cord_boss + 0.01);   // pilot bosses for the cord clamp
       for (x=ribs_x) translate([x-rib_t/2, y_front, 0]) cube([rib_t, out_d, foot_h+0.1]);   // feet
       translate([-inner_w/2, y_div, z_floor-0.1]) cube([inner_w, div_t, base_h-z_floor+0.1]);   // divider
       for (sx=[-1,1], sy=[-1,1]) translate([ped_x+sx*35, ped_y+sy*25, z_floor-0.1]) cylinder(d=9, h=boss_h+0.1);
@@ -538,6 +550,7 @@ module assembly() {
   tile_cut(tile, base_seam) base_all();
   translate([ped_x, ped_y, z_floor+boss_h]) pedestal();
   translate([0, y_pi0+0.3, shelf_zz]) power_shelf();
+  cord_clamp_placed();
   %translate([0, y_pi0+0.3, shelf_zz]) brick_env();
   translate([lens_x, y0, win_zc]) window_frame();
   translate([-out_w/2-cover_gasket-3, hatch_y, hatch_zz]) rotate([90,0,90]) hatch_cover();
@@ -586,7 +599,7 @@ module hot_shoe_cut(open_len=25) {
 }
 
 module fit_coupon() {
-  holes = [[insert_d, "1/4", insert_len+2], [m4_insert_d, "M4i", 10], [m3_insert_d, "M3i", 8], [gland_d, "PG9", 3], [3.4, "M3", 3], [2.6, "M3p", 8], [2.2, "M2.5p", 7], [1.8, "M2p", 6]];   // [d, label, boss height]
+  holes = [[insert_d, "1/4", insert_len+2], [m4_insert_d, "M4i", 10], [m3_insert_d, "M3i", 8], [3.4, "M3", 3], [2.6, "M3p", 8], [2.2, "M2.5p", 7], [1.8, "M2p", 6]];   // [d, label, boss height]
   difference() {
     union() {
       cube([118, 30, 2]);                                             // strip under the holes; 118 is the shrink gauge in measurements.xlsx
@@ -614,6 +627,28 @@ module ir_holder() {
     translate([0, 0, 2]) rotate([ir_angle, 0, 0]) cylinder(d=5.2, h=30);
     translate([-1.5, -9, 1]) cube([3, 9, 3]);   // lead channel out the side, clear of the taped face
   }
+}
+
+// Cord clamp: two halves split on the cord's axis, M3 into the bosses inside the rear wall. The channel is cord_d - 0.6 so the
+// halves bite the jacket (strain relief: the pull goes into the wall, not into the IEC joint). Lay a 2 mm foam gasket under it.
+// Each half prints wall-face down on the bed; the channel runs through the thickness.
+module cord_clamp_half() {
+  h = clamp_h / 2;
+  difference() {
+    cube([clamp_w, h, clamp_t]);                                                       // x across, y = the half's height, z = thickness
+    translate([clamp_w/2, 0, -1]) cylinder(d=cord_d - 0.6, h=clamp_t + 2);             // half-channel on the split edge (y = 0)
+    for (sx=[-1,1]) translate([clamp_w/2 + sx*(cord_open[0]/2 + clamp_flange/2), h - clamp_flange/2, -1]) cylinder(d=3.4, h=clamp_t + 2);   // M3 clearance
+  }
+}
+module cord_clamp() {   // both halves, side by side, as printed
+  cord_clamp_half();
+  translate([0, clamp_h/2 + 5, 0]) cord_clamp_half();
+}
+module cord_clamp_placed() {   // both halves on the rear wall's outer face (assembly, clash checks)
+  x0 = cord_x - clamp_w/2;
+  yo = y_back + wall;
+  translate([x0, yo, cord_z]) rotate([-90, 0, 0]) cord_clamp_half();                  // lower half: split edge at the cord axis, hangs down
+  translate([x0, yo, cord_z]) rotate([90, 0, 0]) mirror([0, 0, 1]) cord_clamp_half(); // upper half
 }
 
 // Pi + DigiAMP+ envelope. Every generation sits with its GPIO edge at y_gpio, so the HAT lands in the
@@ -692,6 +727,7 @@ else if (part == "pedestal") pedestal();
 else if (part == "power_shelf") power_shelf();
 else if (part == "hatch_cover") rotate([180,0,0]) hatch_cover();
 else if (part == "ir_holder") ir_holder();
+else if (part == "cord_clamp") cord_clamp();
 else if (part == "fit_coupon") fit_coupon();
 else if (part == "vent_cap") screen_cap(vent_open);
 else if (part == "exhaust_cap") screen_cap(exh_open);
