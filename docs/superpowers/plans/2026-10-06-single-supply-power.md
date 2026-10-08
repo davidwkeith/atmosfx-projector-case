@@ -82,7 +82,7 @@ brick = [150, 60, 38];   // PROVISIONAL (a typical 120 W desktop brick): length 
 brick_gap = 5;           // room between the brick and the rear wall for the strap and the cord bend
 wire_slot = [20, 14];    // shelf slot for the DigiAMP+ leg and the PIR wires: the DC barrel plug (about 11 x 16) must pass; check with the real splitter
 ```
-2. Delete the `/* [Hardware] */` line `gland_d = 15.5; ...` (the PG9 hole goes in Task 2; Task 2 removes its remaining uses).
+2. Leave `gland_d` and the PG9 hole alone: Task 2 replaces them.
 3. In the derived block, delete `plate_x0`, `plate_w`, `prong_x`, `wart_x0`, `bar_x`, `rcpt_zc`, `plate_y1`, `plate_y0` and add after `shelf_d`:
 ```openscad
 brick_x0 = -shelf_w/2 + 3;                 // the brick's left end, against the left wall side of the shelf
@@ -94,7 +94,9 @@ assert(brick_x0 + brick[0] + 3 <= pir_x - 6, "the brick runs into the PIR / wire
 assert(brick_y0 >= 0 && brick[1] + brick_gap <= shelf_d, "the brick is deeper than the shelf");
 assert(shelf_zz + 3 + brick[2] + 2 <= lid_z0, "the brick hits the lid skirt: raise top_air (or lower shelf_z)");
 ```
-Keep the `cord_dz` asserts that mention `gland_d` temporarily: change `gland_d` in them to `15.5` for now with the comment `// replaced in Task 2`. (Task 2 rewrites them.)
+Keep the two `cord_dz` asserts that mention `gland_d` as they are (Task 2 rewrites them). Delete only the assert that mentions `plate_x0`.
+
+Also in this step, because `fit_coupon()` still reads `rcpt_cut` and `rcpt_t`: in `fit_coupon()` remove the receptacle tab cube (`translate([34, 30, 0]) cube([rcpt_cut[0]+14, 32, rcpt_t]);`), the `NEMA 5-15R snap-in cutout` cube and the `5-15R` text line. Leave the `[gland_d, "PG9", 3]` entry for Task 2.
 
 - [ ] **Step 4: Rewrite `power_shelf()` and the envelope**
 
@@ -162,7 +164,7 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 - Modify: `Makefile`, `scripts/check_clash.sh`
 
 **Interfaces:**
-- Consumes: Task 1's removal of `gland_d` uses (the `15.5` stand-ins).
+- Consumes: Task 1's shelf and coupon changes (`gland_d`, the PG9 hole and its two asserts are still in place).
 - Produces: `cord_open` (`[W, H]`), `cord_d`, `cord_x`, `cord_dz`, `clamp_t`, `clamp_flange`, `cord_boss`; modules `cord_clamp_half()`, `cord_clamp()` (both halves laid out for printing), `cord_clamp_placed()` (both halves on the wall, for the assembly and clash checks); `part = "cord_clamp"`.
 
 - [ ] **Step 1: Parameters**
@@ -177,14 +179,14 @@ clamp_t = 6;            // clamp half thickness
 clamp_flange = 10;      // each half overlaps the opening by this much all round
 cord_boss = 6;          // pilot bosses inside the wall, at the clamp's four screws
 ```
-(`gland_d` is already gone.) Then, among the derived values after `y_back` is defined, add
+Delete `gland_d = 15.5; ...` from `/* [Hardware] */`. Then, among the derived values after `y_back` is defined, add
 ```openscad
 clamp_w = cord_open[0] + 2*clamp_flange;
 clamp_h = cord_open[1] + 2*clamp_flange;      // both halves together
 cord_z = shelf_zz + 3 + cord_dz;              // opening centre, from the ground
 cord_screws = [for (sx=[-1,1], sz=[-1,1]) [cord_x + sx*(cord_open[0]/2 + clamp_flange/2), cord_z + sz*(cord_open[1]/2 + clamp_flange/2)]];
 ```
-and replace the Task 1 stand-in asserts with:
+and replace the two asserts that mention `gland_d` with:
 ```openscad
 assert(cord_x - clamp_w/2 >= -out_w/2, "move cord_x right: the cord clamp hangs off the rear wall's left edge");
 assert(cord_x - cord_open[0]/2 - 4 >= -inner_w/2, "move cord_x right: the cord opening must sit inside the left wall");
@@ -247,7 +249,7 @@ $(OUT)/cord_clamp.stl: $(SCAD) | $(OUT)
 
 - [ ] **Step 4: Fit coupon**
 
-In `fit_coupon()`: remove the `[gland_d, "PG9", 3]` entry from `holes`, remove the receptacle tab cube (`translate([34, 30, 0]) cube([rcpt_cut[0]+14, 32, rcpt_t]);`), the `NEMA 5-15R snap-in cutout` cube and the `5-15R` text line. Add one hole entry for the clamp's pilot: `[2.6, "M3p", 8]` already exists, so nothing replaces them; the clamp is printed itself as the fit test.
+In `fit_coupon()`: remove the `[gland_d, "PG9", 3]` entry from `holes` (the receptacle pieces went in Task 1). Nothing replaces it: the `[2.6, "M3p", 8]` pilot entry already exists, and the clamp is printed itself as the fit test.
 
 - [ ] **Step 5: Clash pairs**
 
@@ -381,7 +383,7 @@ followed by the unchanged DigiAMP+ leg code from the old function (from `# DigiA
 
 - [ ] **Step 5: `draw_lv_signals`**
 
-Apply the same four edits as in the previous plan revision: (1) relay label `'Relay module, ONLY if CEC fails\n5 V coil, opto in\nACTIVE-LOW'` and pin text `'+ from the Y-splitter leg'`; (2) replace the "IR LED driver" block with the direct-drive branch (GPIO16 pin 36 → R1 150 R → LED → GND, no transistor, labelled `ONLY if CEC fails`, note `'3.3 V - 1.3 V over 150 R is about 13 mA, under a pin's 16 mA'`):
+Apply these four edits: (1) relay label `'Relay module, ONLY if CEC fails\n5 V coil, opto in\nACTIVE-LOW'` and pin text `'+ from the Y-splitter leg'`; (2) replace the "IR LED driver" block with the direct-drive branch (GPIO16 pin 36 → R1 150 R → LED → GND, no transistor, labelled `ONLY if CEC fails`, note `'3.3 V - 1.3 V over 150 R is about 13 mA, under a pin's 16 mA'`):
 ```python
     yb = y(11) - 5.6
     y_ir = y(39) - 1.0               # under the header
@@ -463,7 +465,7 @@ Mains is still present inside the printed box (the cord's connector and the bric
 
 - [ ] **Step 2: DC rail**
 
-Replace the `### DC rails` content (image through the table and the lever-nut paragraph; keep `**Projector cables.**`) with the same section as in revision 1 of this plan, retitled `### DC rail`, with these differences: the supply is the **Parts Express brick (24 V)**, not the wall-wart; the mermaid and image alt text say so; the projector leg carries, in order, the optional relay contact and the optional buck converter; and the table is:
+Replace the `### DC rails` content (image through the table and the lever-nut paragraph; keep `**Projector cables.**`) with the section in Appendix A1 (retitled `### DC rail`), with these differences from that text: the supply is the **Parts Express brick (24 V)**, not the wall-wart; the mermaid and image alt text say so; the projector leg carries, in order, the optional relay contact and the optional buck converter; and the table is:
 
 | Circuit | Wire | Notes |
 |---|---|---|
@@ -477,7 +479,7 @@ Keep the polarity-check paragraph ("meter each Y-splitter leg's tip: centre posi
 
 - [ ] **Step 3: Signals, fuse section, power-up list**
 
-`### Pi header signals`: apply the same replacements as in revision 1 of this plan (mermaid without the receiver, relay and IR LED marked "only if CEC fails", LED via 150 R; paragraph about no transistor and the bench-only TSOP38238).
+`### Pi header signals`: use the mermaid and paragraph in Appendix A2 (mermaid without the receiver, relay and IR LED marked "only if CEC fails", LED via 150 R; paragraph about no transistor and the bench-only TSOP38238).
 
 Replace `## AC fuse and DC protection` with:
 
@@ -532,7 +534,7 @@ In `docs/BOM.md`, in `## Power`:
 `| M3 x 10 self-tapping | 4 | Cord clamp into its bosses | Same Mikniri assortment as the pedestal |`
 - Keep: the cord/connection-box row (**the SJTW 25 ft cord is no longer needed**: change its note to `Not needed now; the brick's own cord goes to the outlet. Keep only if the outlet is far: an extension cord's joint goes in the weatherproof box`), the right-angle DC adapter row, the velcro strap row (`round the brick`), the weatherproof connection box row.
 - Wire row: `18, 20 and 24 AWG` stays only if relay fallback wiring needs 18 AWG: change to `18 AWG (relay fallback only), 24 AWG`.
-- Relay, IR LED and TSOP38238 rows as in revision 1 of this plan (Qty `0-1`, fallbacks, bench-only receiver; IR LED discrete link without the NPN).
+- Relay, IR LED and TSOP38238 rows: use the rows in Appendix A3.
 - Add under "Order status": `**Single-supply change (2026-10-06, rev 2):** the ordered second SS-6B (both are now spare), PG9 grip, uxcell fuse holders, BOJACK fuses, BAOMAIN quick-connects, generic Wago connectors and the Facmogu 24 V 3 A are not needed in the baseline build. Keep the Facmogu for the row 4a bench test if the brick is late.`
 - Remove the fuse bullet from "Still to buy" (line ~14) and the PG9/WAGO items; add `the brick, its cord, the Y-splitter`.
 - Cost table: replace the power row with `Power parts (brick, cord, Y-splitter, wire, connection box)` at `45-70`; update the total range by the same delta (lower and upper).
@@ -556,7 +558,7 @@ Row 9 "If not": `Build the fallback: relay (cut the projector leg, + line only) 
 
 - [ ] **Step 3: ASSEMBLY, PRINTING**
 
-`docs/ASSEMBLY.md` step 9: replace with `9. **Power.** Lid off, projector aside if needed. Seat the shelf on its ledges and lay the brick on it toward the rear wall, under the velcro strap. Pass the AC cord's connector in through the opening in the rear wall, plug it fully into the brick's inlet, then close the cord clamp over its foam gasket (4x M3 into the wall bosses) and pull-test it (BRINGUP row 17a). Leave a drip loop outside below the clamp. Plug the brick's DC cord into the Y-splitter and meter both legs (centre +) before connecting anything. If the relay fallback is built, cut leg 1 and splice the relay as in WIRING.md.` Step 1: remove `snap a receptacle into the 5-15R cutout,`. Steps 8 and 10 as in revision 1 of this plan (adapter plus splitter leg 1; splitter leg 2 into the DigiAMP+; fallback parts only if built). Step 3: add `cord clamp: none (screws only)` is not needed; skip.
+`docs/ASSEMBLY.md` step 9: replace with `9. **Power.** Lid off, projector aside if needed. Seat the shelf on its ledges and lay the brick on it toward the rear wall, under the velcro strap. Pass the AC cord's connector in through the opening in the rear wall, plug it fully into the brick's inlet, then close the cord clamp over its foam gasket (4x M3 into the wall bosses) and pull-test it (BRINGUP row 17a). Leave a drip loop outside below the clamp. Plug the brick's DC cord into the Y-splitter and meter both legs (centre +) before connecting anything. If the relay fallback is built, cut leg 1 and splice the relay as in WIRING.md.` Step 1: remove `snap a receptacle into the 5-15R cutout,`. Replace steps 8 and 10 with the text in Appendix A4. Step 3: add `cord clamp: none (screws only)` is not needed; skip.
 
 `docs/PRINTING.md` line 9: `mains, the two receptacles and both wall-warts live on the shelf` becomes `the mains brick and its inlet connector live on the shelf`. Add `cord_clamp` to the part table (print both halves flat, wall-face down) after slicing it with the PrusaSlicer recipe in CLAUDE.md; read the table's columns first and match them. Re-slice `power_shelf` and `base_rear`.
 
@@ -592,7 +594,7 @@ ws.cell(r, 11).value = 'Must pass the cord\'s molded connector with room (a C13 
 wb.save('docs/measurements.xlsx')
 E
 ```
-Also set the 'DC brick' group's `Output voltage` row notes to `Brick: 24 V (Parts Express). Projector label 21 V: BRINGUP row 4a`, `Output current` to `Brick: 5 A (120 W). Read the label`, and `Input current` to `Read the brick's label (no AC fuse is fitted)`; clear any wording about a second wall-wart in the 'Observations' sheet the same way as in revision 1 of this plan. Check `git diff --stat docs/measurements.xlsx` shows only that file and `python3 -c "import openpyxl; openpyxl.load_workbook('docs/measurements.xlsx')"` runs clean. If a column index differs from the inspection output, adjust before saving.
+Also set the 'DC brick' group's `Output voltage` row notes to `Brick: 24 V (Parts Express). Projector label 21 V: BRINGUP row 4a`, `Output current` to `Brick: 5 A (120 W). Read the label`, and `Input current` to `Read the brick's label (no AC fuse is fitted)`; replace the Observations-sheet answer that begins `No: 48 W covers the projector alone.` (any cell in that sheet) with the text in Appendix A5. Check `git diff --stat docs/measurements.xlsx` shows only that file and `python3 -c "import openpyxl; openpyxl.load_workbook('docs/measurements.xlsx')"` runs clean. If a column index differs from the inspection output, adjust before saving.
 
 - [ ] **Step 5: Verify and commit**
 
@@ -674,3 +676,84 @@ Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>"
 - **Placeholder scan:** provisional dimensions are named as such. The Y-splitter and AC cord links are explicit "find, verify, then add" BOM steps. Schematic offsets are starting points with a viewing step.
 - **Consistency:** `brick`, `brick_x0`, `brick_y0`, `brick_gap`, `wire_slot`, `cord_open`, `cord_d`, `cord_x`, `cord_dz`, `cord_z`, `clamp_*`, `cord_boss`, `cord_screws`, `cord_clamp_half/cord_clamp/cord_clamp_placed`, `brick_env`, BRINGUP labels 4, 4a, 4b, 17a: identical in every task.
 - **Known-fragile spots (verify, do not guess):** Task 1's provisional brick versus the PIR slot (the assert may fire; that is information); Task 2's clamp orientation transforms (`rotate`/`mirror` in `cord_clamp_placed`: check in the render); the boss and opening positions against the left wall, stake tube and lid screw block; openpyxl column indices; the exact wording of the truncated lines in CLAUDE.md, README.md and pi/README.md (read them first).
+
+---
+
+## Appendix A: texts referenced by the tasks
+
+### A1. WIRING.md `### DC rail` (Task 4 step 2)
+
+````
+### DC rail
+
+![DC rail schematic: the 24 V brick's cord into a 5.5 x 2.5 mm Y-splitter, one leg to the projector's right-angle adapter (through a relay contact and a buck converter only if needed), the other to the DigiAMP+'s barrel jack, which powers the Pi and the speakers](wiring-lv-power.svg)
+
+```mermaid
+flowchart TB
+  BR["Parts Express brick, 24 V 5 A<br/>DC cord NOT cut; tip centre + (confirm with a meter)"]
+  SPL(["5.5 x 2.5 mm Y-splitter<br/>one female in, two males out"])
+  subgraph PJ["Projector (label 21 V)"]
+    BUCK["Buck converter to 21 V, ONLY if row 4a fails"]
+    RELAY["Relay contact, ONLY if CEC fails<br/>cut this leg; + line only"]
+    ADP["Right-angle 5.5 x 2.5 adapter<br/>on the projector's DC jack"]
+  end
+  subgraph PIZ["Pi sled, below the shelf"]
+    AMP["Raspberry Pi DigiAMP+<br/>barrel jack, centre +"]
+    PI["Raspberry Pi<br/>5 V from the DigiAMP+ via the header<br/>no USB power"]
+    SPK["Speakers behind the projection<br/>16 AWG zip cord, stripe to +<br/>out through the floor chimney"]
+  end
+  BR --> SPL
+  SPL -- "leg 1" --> BUCK --> RELAY --> ADP
+  SPL -- "leg 2" --> AMP
+  AMP --> PI
+  AMP --> SPK
+  linkStyle 0,1,2,3,4,5 stroke:#c62828,stroke-width:2px
+```
+
+One rail, one return: the Y-splitter joins both loads' minuses at the supply, so there is no second rail to tie in and no ground path through the HDMI shield. Nothing on the DC side is cut or spliced in the baseline build.
+
+**Check the polarity before connecting either load.** With the brick plugged in and nothing else connected, meter each Y-splitter leg's tip: it must read 24 V with the **centre positive** (the brick's label, the projector's label symbol and the DigiAMP+'s jack all say centre +). If either leg reads negative, stop: the splitter is wired the wrong way round for this supply.
+
+The DigiAMP+ powers the Pi, so never also power the Pi by USB. The relay is only needed if the projector lacks HDMI-CEC (see `pi/README.md`, "Projector power"). It is also the only way the Pi can cut the projector's power if the Pi itself overheats: with CEC alone it can only ask for standby. **If you fit it:** cut leg 1 a hand's width from the adapter, put the relay's COM and NO in the **+** conductor only, and splice with lever nuts. Never switch the minus: the HDMI cable would carry the return. Use an **active-low** module: the Pi holds GPIO 27 high (relay open, projector off) from boot.
+````
+
+The table that follows it is the one given in Task 4 step 2. Keep the existing `**Projector cables.**` paragraph.
+
+### A2. WIRING.md `### Pi header signals` (Task 4 step 3)
+
+````
+```mermaid
+flowchart LR
+  subgraph IN["Inputs"]
+    PIR["HC-SR501 PIR, rear wall<br/>VCC 5 V pin 2, GND pin 9"]
+  end
+  PI["Raspberry Pi header<br/>(the DigiAMP+'s pass-through header;<br/>GPIO 2-4, 18-21 and 22 belong to the DigiAMP+)"]
+  subgraph OUTS["Outputs, only if CEC fails"]
+    RELAY["Relay module IN, active-low<br/>VCC 5 V pin 4, GND pin 14"]
+    IRLED["940 nm IR LED in ir_holder<br/>via 150 R to GND"]
+  end
+  PROJ["Projector HDMI input"]
+  PIR -- "OUT to GPIO17, pin 11" --> PI
+  PI -- "GPIO27, pin 13" --> RELAY
+  PI -- "GPIO16, pin 36, through 150 R" --> IRLED
+  PI -. "HDMI (CEC power control, the default)" .-> PROJ
+```
+````
+Paragraph after it: `The DigiAMP+ re-exposes the header on top, so the leads plug into its pass-through header (a Zero 2 W needs its own 40-pin header soldered first). GPIO 22 is the DigiAMP+ mute line, which is why the IR LED sits on GPIO 16. The relay and the IR LED are built only if bring-up row 9 shows the projector ignores CEC. The LED needs no transistor: from 3.3 V through 150 R it draws about 13 mA, under a pin's 16 mA, and it sits centimetres from the projector's receiver; if row 22 shows it too weak, add a BC337 and 1 k. The TSOP38238 receiver (GPIO 23) is a bench tool to learn the remote's code, not part of the case.`
+
+### A3. BOM.md relay, IR LED and receiver rows (Task 5 step 1)
+
+- Relay row: Qty `0-1`; note `Only if the projector lacks CEC (BRINGUP row 9 fails). Needs the projector leg cut: see WIRING.md.`
+- IR LED row (title `940 nm IR LED + 150 R resistor`): Qty `0-1`; note `Only if CEC fails. Driven straight from GPIO 16 (no transistor).` In the Buy cell keep the Adafruit transceiver link and the IR LEDs and resistors links; drop the NPN link.
+- TSOP38238 row: Qty `0-1`; note `Bench tool, optional: learns the remote's power code once; not fitted in the case.`
+
+### A4. ASSEMBLY.md steps 8 and 10 (Task 5 step 3)
+
+Step 8: in the existing text, replace `a right-angle power plug in the DC jack at the rear top-right corner (plug pointing back, above the intake; a right-angle plug if the stock one is straight, fitted on the cut tail per \`docs/WIRING.md\`)` with `the right-angle 5.5 x 2.5 mm adapter in the DC jack at the rear top-right corner (pointing back, above the intake), with the Y-splitter's leg 1 plugged into it (do not connect it until BRINGUP row 4a has passed)`, and start the sentence that sticks the \`ir_holder\` on with `If the IR fallback is built:`.
+
+Step 10: replace `Connect DC to the DigiAMP+` with `Plug the Y-splitter's leg 2 into the DigiAMP+'s barrel jack`, and `(PIR, IR/relay)` with `(PIR, and the relay and IR LED only if built)`.
+
+### A5. measurements.xlsx Observations sheet (Task 5 step 4)
+
+Replace the answer text `No: 48 W covers the projector alone. A second 12-24 V wall-wart (2.5-3 A) on the upper receptacle feeds the Pi and the DigiAMP+.` with `Replaced by the Parts Express 24 V 5 A (120 W) brick, which covers all three. Projector tolerance of 24 V: BRINGUP row 4a.` and the "Bench test; watch for undervoltage." note with `BRINGUP rows 4a and 4b.`
+
