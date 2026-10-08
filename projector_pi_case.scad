@@ -1,8 +1,9 @@
 // Ground-standing projector + Raspberry Pi 3 case: rain-proof (not sealed), ventilated
+// v0.10 - single supply: one desktop brick on the shelf (receptacle plate, barrier, second adapter and the PG9 gland replaced by a brick envelope, a rear-wall opening and a cord clamp).
 // v0.10 - passive airflow: the projector's own fan, exhaust and inlet louver banks on the right wall, a lip baffle between them;
 //         no case fans or sensors; photo-derived side-port keep-outs
-// v0.9 - the stock supply is a wall-wart, so the shelf grew a receptacle plate: two panel-mount NEMA 5-15R stacked,
-//        the stock 21 V wall-wart below and a second (Pi, DigiAMP+) above, hanging on their prongs; the AC gland
+// v0.9 - the stock supply is a wall adapter, so the shelf grew a receptacle plate: two panel-mount NEMA 5-15R stacked,
+//        the stock 21 V adapter below and a second (Pi, DigiAMP+) above, hanging on their prongs; the AC gland
 //        moved beside the plate, next to the left wall; Pi zone 85 deep; the fit coupon has the receptacle cutout
 // v0.8 - AC gland moved above the shelf (AC side of the barrier); barrier clears the brick; keyholes lift off;
 //        45 deg scarf joint at the lid seam; flat gasket land under the sloped roof;
@@ -73,7 +74,7 @@ side_air = 25;     // gap each side of projector: clears the +/-10 deg pan sweep
 top_air  = 25;
 front_gap = 30;      // lens-down tilt swings the top front corner forward (more so panned, now the body is 165 wide); aim-sweep and light-cone checks size this
 rear_gap  = 34;      // lens-up tilt swings the rear plugs back (port_depth) toward the divider; aim-sweep sizes this
-pi_zone_d = 85;    // Pi compartment depth: the wall-warts hang 68 off the rear wall (rcpt_back + plate + wart_t, asserted) and the shelf's low-voltage side needs wiring room
+pi_zone_d = 85;    // Pi compartment depth: the brick sits on the shelf toward the rear wall (asserted) and the shelf's low-voltage side needs wiring room
 pane_t = 2;        // pane thickness: 2 mm (typical frame glazing; measure yours, 1/8 in = 3.2 also fits)
 lap = 8;           // pane overlap past the window opening
 boss_h = 4;
@@ -93,22 +94,14 @@ hatch_lock = true;   // optional M3 (security) screw through the cover's bottom 
 shelf_z = 60;       // power shelf height above floor: clears the tallest sled stack (asserted)
 ledge_w = 9;        // shelf ledge on the side walls
 tie_gap = 34;       // zip-tie slot spacing across the shelf (module sits between)
-cord_x = -94;       // where the single AC cord enters the rear wall: AC side, in the corner between the left wall and the receptacle plate (asserted)
-cord_dz = 20;       // gland centre above the shelf's top face: level with the lower receptacle's spade terminals, below the lid skirt (asserted)
-// Stock supply (label, 2026-10-05): wall-wart MX48CC-210228US, in AC 100-240 V 1.0 A, out 21 V 2.28 A (48 W), centre +,
-// fixed 2-pin NEMA 1-15 prongs and a captive DC cord: no AC inlet. It plugs into a panel-mount NEMA 5-15R on the shelf's
-// receptacle plate and hangs on its prongs, standing on its long edge: length along X (cord end toward the barrier),
-// width = height above the shelf, thickness along Y. A second wall-wart (12-24 V rail for the Pi and DigiAMP+) plugs in above it.
-wart_l = 86;        // stock wall-wart length (X): measured 85.6
-wart_w = 47;        // width = standing height (Z): scaled off the photo against the caliper reading; confirm (the stack is asserted against the lid roof)
-wart_t = 35;        // thickness, prong face to back (Y): not measured yet
-wart_prong = 15;    // prong centre from the wart's wall end (X), centred across the width: from the photo
-wart2 = [86, 47, 35];   // second wall-wart [length, width, thickness], same orientation: measure the one you buy
-rcpt_cut = [24, 24];    // NEMA 5-15R snap-in panel cutout [X, Z]: SS-6B drawing says 24 x 24 (flange 27 x 27); check yours on the fit coupon
-rcpt_t = 1.5;           // plate thickness at the cutout: the SS-6B drawing marks 1.5 between flange and clips (range not stated)
-rcpt_hole_sp = 0;       // flanged receptacles: M3 pilot spacing across the cutout (0 = none)
-rcpt_back = 40;         // plate stand-off from the rear wall: SS-6B body 20.6 + terminals to 30.6 behind the panel, plus the spades and cord; 40 is the most the shelf depth allows (asserted)
-barrier_h = 50;         // AC/low-voltage barrier above the shelf; must exceed the lower wall-wart's height
+cord_x = -94;       // where the single AC cord enters the rear wall: AC side, in the rear-left corner (asserted)
+cord_dz = 20;       // gland centre above the shelf's top face: below the lid skirt (asserted)
+// Supply (spec 2026-10-06, rev 2): the Parts Express 24 V 5 A desktop brick lies on the shelf under a velcro strap, fed by a
+// standard cord that plugs into its AC inlet; its DC cord goes uncut into a 5.5 x 2.5 mm Y-splitter. The stock 21 V adapter is
+// retired from the case. Nothing about the brick is measured yet.
+brick = [150, 60, 38];   // PROVISIONAL (a typical 120 W desktop brick): length along X, width along Y, height. Measure the real one (Task 7)
+brick_gap = 5;           // room between the brick and the rear wall for the strap and the cord bend
+wire_slot = [20, 14];    // shelf slot for the DigiAMP+ leg and the PIR wires: the DC barrel plug (about 11 x 16) must pass; check with the real splitter
 
 /* [Audio] */
 spk_x = 58;         // speaker-wire chimney: beside the Pi's USB end, clear of the drains
@@ -258,14 +251,8 @@ function sled_hdmi_x(s) = s == "pi3" ? 32 : s == "zero2w" ? 12.4 : 26;   // HDMI
 assert(z_board + max([for (s=SLEDS) sled_stack(s)]) + 1 <= shelf_zz, "raise shelf_z: a sled stack hits the shelf");
 shelf_w = inner_w - 1;
 shelf_d = pi_zone_d - 1;
-plate_x0 = -shelf_w/2 + 27;                // receptacle plate's left edge: room for the gland's locknut between it and the left wall
-plate_w = 50;
-prong_x = plate_x0 + plate_w/2;            // receptacle centres (both stacked here)
-wart_x0 = prong_x - wart_prong;            // the wall-warts' wall end
-bar_x = wart_x0 + max(wart_l, wart2[0]) + 6;   // barrier between the AC side and the low-voltage side
-rcpt_zc = [3 + wart_w/2, 3 + wart_w + 2 + wart2[1]/2];   // receptacle centres above the shelf bottom: stock wart on the shelf, second one above it
-plate_y1 = shelf_d - rcpt_back;            // plate's rear (terminal) face, shelf coordinates
-plate_y0 = plate_y1 - 3;                   // plate's front face: the warts hang here
+brick_x0 = -shelf_w/2 + 3;                 // the brick's left end, against the left wall side of the shelf
+brick_y0 = shelf_d - brick[1] - brick_gap; // its front edge: it sits toward the rear wall
 
 lid_w = out_w + 2*(lid_clr + wall);
 lid_d = out_d + 2*(lid_clr + wall);
@@ -274,13 +261,11 @@ yfl = -lid_d/2;
 lid_seam = yfl - visor_len + lid_front_len;
 seam_t = top_t + seam_rib;                // roof thickness across the scarf
 pivot = [ped_x, ped_y, z_floor + ped_top + pivot_h];
-assert(barrier_h > wart_w, "barrier_h must exceed the lower wall-wart's height (wart_w)");
 lid_z0 = base_h + gasket - (skirt_h - top_t);
-assert(cord_x - gland_d/2 - 4 >= -shelf_w/2 && cord_x + gland_d/2 + 4 <= plate_x0, "move cord_x: the gland and its locknut must sit between the left wall and the receptacle plate");
 assert(cord_dz - gland_d/2 - 4 >= 3, "raise cord_dz: the gland's locknut lands on the shelf");
-assert(rcpt_back + 3 + max(wart_t, wart2[2]) + 6 <= shelf_d, "deepen pi_zone_d: the wall-warts hang past the divider end of the shelf");
-assert(shelf_zz + rcpt_zc[1] + wart2[1]/2 + 2 <= base_h + gasket - 1, "the wall-wart stack hits the lid roof: raise top_air (or lower shelf_z)");
-assert(bar_x + 60 <= shelf_w/2, "the shelf's low-voltage side is too narrow for the splice: shorter wall-warts or a wider case");
+assert(brick_x0 + brick[0] + 3 <= pir_x - 6, "the brick runs into the PIR / wire slot: measure it, or shorten it");
+assert(brick_y0 >= 0 && brick[1] + brick_gap <= shelf_d, "the brick is deeper than the shelf");
+assert(shelf_zz + 3 + brick[2] + 2 <= lid_z0, "the brick hits the lid skirt: raise top_air (or lower shelf_z)");
 assert(shelf_zz + 3 + cord_dz + gland_d/2 + 6 <= lid_z0, "lower cord_dz: the gland runs into the lid skirt");
 assert(pane_top_clear >= pane_t + clearance + 2.5, "raise pane_top_clear: the rebate's 45 deg ceiling would cut through the base rim");
 
@@ -431,41 +416,21 @@ module ledge(sx) {
     linear_extrude(pi_zone_d-0.05) polygon([[0,0],[-sx*ledge_w,0],[sx*0.1,-ledge_w-0.1]]);
 }
 
-// Power shelf above the Pi. AC side (left of the barrier): a plate near the rear wall carries two panel-mount NEMA 5-15R
-// receptacles, one above the other; the wall-warts plug in facing the divider and stand on their long edges, the stock one
-// on the shelf and the second on top of it. Spade terminals and the cord from the gland sit behind the plate.
-// Low-voltage side (right): each wart's DC cord comes through the barrier notch to its splice; feeds run down to the DigiAMP+.
+// Power shelf above the Pi. The desktop brick lies on it toward the rear wall, held by a velcro strap through the slots; its
+// AC cord comes in through the rear wall, its DC cord goes to the Y-splitter. Mains is only in the brick and its inlet connector.
 module power_shelf() {
-  bar = bar_x;
-  py1 = plate_y1;
-  py0 = plate_y0;
-  plate_h = rcpt_zc[1] + rcpt_cut[1]/2 + 7;
-  gus = 20;                          // 45 deg gussets behind the plate's ends
   difference() {
-    union() {
-      translate([-shelf_w/2, 0, 0]) cube([shelf_w, shelf_d, 3]);
-      translate([plate_x0, py0, 2.9]) cube([plate_w, 3, plate_h]);             // receptacle plate
-      for (x=[plate_x0, plate_x0+plate_w-3]) translate([x, py1-0.1, 2.9]) rotate([90,0,90])
-        linear_extrude(3) polygon([[0,0],[gus,0],[0,gus]]);
-      translate([bar, 0, 2.9]) cube([2.4, shelf_d, barrier_h]);                // barrier
-    }
-    for (z=rcpt_zc) {                                                          // receptacle cutouts, thinned to rcpt_t from the terminal side for the snap-in clips
-      translate([prong_x-rcpt_cut[0]/2, py0-1, z-rcpt_cut[1]/2]) cube([rcpt_cut[0], 5, rcpt_cut[1]]);
-      translate([prong_x-rcpt_cut[0]/2-4, py0+rcpt_t, z-rcpt_cut[1]/2-4]) cube([rcpt_cut[0]+8, 5, rcpt_cut[1]+8]);
-      if (rcpt_hole_sp > 0) for (sx=[-1,1]) translate([prong_x+sx*rcpt_hole_sp/2, py0-1, z]) rotate([-90,0,0]) cylinder(d=2.6, h=5);
-    }
-    translate([bar-1, shelf_d/2-10, 2.9]) cube([4.4, 20, 30]);                 // notch: both DC cords cross to the low-voltage side
-    for (x=[wart_x0+55, wart_x0+75], y=[py0-max(wart_t, wart2[2])-4, py0+1])  // velcro strap slots round the warts, past the plate's end
+    translate([-shelf_w/2, 0, 0]) cube([shelf_w, shelf_d, 3]);
+    for (x=[brick_x0 + brick[0]*0.3, brick_x0 + brick[0]*0.7], y=[brick_y0 - 4, brick_y0 + brick[1] + 1])   // velcro strap slots round the brick
       translate([x-10, y, -1]) cube([20, 3, 5]);
-    for (x=[-70:20:70], sy=[-1,1]) if (x > bar+6) translate([x-1.6, shelf_d/2+sy*tie_gap/2-3, -1]) cube([3.2, 6, 5]);   // zip-tie slots (low-voltage side)
-    translate([pir_x-6, shelf_d-7, -1]) cube([12, 8, 5]);                     // PIR / low-voltage wires down to the Pi
+    for (x=[-70:20:70], sy=[-1,1]) if (x > brick_x0 + brick[0] + 6) translate([x-1.6, shelf_d/2+sy*tie_gap/2-3, -1]) cube([3.2, 6, 5]);   // zip-tie slots (low-voltage side)
+    translate([pir_x-6, shelf_d-wire_slot[1], -1]) cube([wire_slot[0], wire_slot[1]+1, 5]);   // PIR wires and the DigiAMP+ leg (with its plug) down to the Pi
   }
 }
 
-// Wall-wart envelopes hanging on the receptacle plate (shelf coordinates): preview ghost and clash keep-out
-module warts() {
-  translate([wart_x0, plate_y0-wart_t, 3]) cube([wart_l, wart_t, wart_w]);
-  translate([wart_x0, plate_y0-wart2[2], rcpt_zc[1]-wart2[1]/2]) cube([wart2[0], wart2[2], wart2[1]]);
+// The brick's envelope on the shelf (shelf coordinates): preview ghost and clash keep-out
+module brick_env() {
+  translate([brick_x0, brick_y0, 3]) cube(brick);
 }
 
 // Lip baffle on the right wall between the exhaust and the rear inlet: exhaust that stays in the case does not creep back to the
@@ -573,7 +538,7 @@ module assembly() {
   tile_cut(tile, base_seam) base_all();
   translate([ped_x, ped_y, z_floor+boss_h]) pedestal();
   translate([0, y_pi0+0.3, shelf_zz]) power_shelf();
-  %translate([0, y_pi0+0.3, shelf_zz]) warts();
+  %translate([0, y_pi0+0.3, shelf_zz]) brick_env();
   translate([lens_x, y0, win_zc]) window_frame();
   translate([-out_w/2-cover_gasket-3, hatch_y, hatch_zz]) rotate([90,0,90]) hatch_cover();
   translate([0, 0, lid_z0 + explode]) lid_tile(tile) lid();
@@ -628,11 +593,8 @@ module fit_coupon() {
       translate([0, 30, 0]) cube([30, 32, 3]);                        // keyhole tab, cover thickness
       for (i=[0:len(holes)-1]) translate([8 + i*12.5, 15, 0]) cylinder(d=holes[i][0]+5, h=holes[i][2]);   // a boss per hole
       translate([96, -12, 0]) cube([22, 12, 10]);                     // pane slot block
-      translate([34, 30, 0]) cube([rcpt_cut[0]+14, 32, rcpt_t]);       // receptacle tab, plate thickness at the cutout
       translate([0, -31, 0]) cube([34, 31, 2 + shoe_foot_t + 0.45 + shoe_lip_t]);   // hot-shoe block: floor 2, channel, lips
     }
-    translate([41, 35, -1]) cube([rcpt_cut[0], rcpt_cut[1], 5]);        // NEMA 5-15R snap-in cutout
-    translate([41+rcpt_cut[0]/2, 35+rcpt_cut[1]+2.5, rcpt_t-0.6]) linear_extrude(1) text("5-15R", size=2.4, halign="center");
     for (i=[0:len(holes)-1]) {
       x = 8 + i*12.5;
       translate([x, 15, holes[i][2] > 3 ? 1.2 : -1]) cylinder(d=holes[i][0], h=20);   // blind (1.2 mm floor) except the through-holes
