@@ -29,7 +29,7 @@ Two Prusa i3 MK3S (bed 250 x 210 x 210 mm), Prusament PETG (or ASA, which fades 
 | `lid_front` | 1 | 9 h 45 m | 169 g | |
 | `base_rear` | 1 | 18 h 44 m | 270 g | The 0.30mm DRAFT figure (13 h 25 m, 305 g) predates the rear-wall opening and was not re-sliced |
 | `base_front` | 1 | **37 h 4 m** | 559 g | 26 h 55 m with 0.30mm DRAFT (615 g; set `layer_h = 0.3`) |
-| **Total** | | **about 84 h** | **about 1.3 kg** | Two 1 kg spools. Re-sliced for the UTEBIT 20 mm ball head (`ball_head_h` 52), which only changed the two base tiles; `power_shelf`, `cord_clamp` and `base_rear` re-sliced for the single-brick power change. |
+| **Total** | | **about 85 h** | **about 1.3 kg** | Two 1 kg spools. Re-sliced for the UTEBIT 20 mm ball head (`ball_head_h` 52), which only changed the two base tiles; `power_shelf`, `cord_clamp` and `base_rear` re-sliced for the single-brick power change. |
 
 ## Order, on two printers
 

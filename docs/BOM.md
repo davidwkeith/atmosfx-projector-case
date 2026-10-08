@@ -1,14 +1,12 @@
 # Bill of materials
 
-Quantities for one case. Printed parts and filament are in [PRINTING.md](PRINTING.md); wire gauges and the AC fuse sizing are in [WIRING.md](WIRING.md). Sizes marked "check" depend on parts you haven't bought yet.
+Quantities for one case. Printed parts and filament are in [PRINTING.md](PRINTING.md); wire gauges and the protection notes are in [WIRING.md](WIRING.md). Sizes marked "check" depend on parts you haven't bought yet.
 
 **Buy links:** Micro Center (Santa Clara store) where they stock it, otherwise Amazon; acrylic from TAP Plastics. Every link was opened on 2026-10-05; stock and prices move, so treat them as a starting point. Micro Center links carry `storeid=195` so the page shows Santa Clara stock.
 
 ## Order status (2026-10-06)
 
 Amazon cart placed or about to be: 12 SKUs, $145.32 with tax (checkout PDF). Rows below say **Ordered** or **Not ordered**.
-
-With the DC rail fuses removed, the SIM&NAT blade fuse holders in the cart ($4.49) are no longer needed; drop them from the order.
 
 **Single-supply change (2026-10-06, rev 2):** the ordered second SS-6B (both are now spare), PG9 grip, uxcell fuse holders, BOJACK fuses, BAOMAIN quick-connects, generic Wago connectors and the Facmogu 24 V 3 A are not needed in the baseline build. Keep the Facmogu for the row 4a bench test if the brick is late.
 
@@ -96,7 +94,7 @@ Printing takes 2 to 3 days on two printers and bring-up about a week, so order e
 |---|---|---|
 | Picture frame (glazing) | Same day at a craft or discount store, or a few days from Amazon | Any time |
 | Zero 2 W (if used) | 2-5 days | Now |
-| Filament (2 x 1 kg), fasteners, wire, fuse, silicone, screen | 1-3 days | Now |
+| Filament (2 x 1 kg), fasteners, wire, silicone, screen | 1-3 days | Now |
 
 Micro Center Santa Clara had the Pi boards, DigiAMP+, microSD, filament, PIR, relay, IR board, insert kit, hook-up wire, thin HDMI cable and cable ties in stock on 2026-10-05, so one trip covers those.
 
