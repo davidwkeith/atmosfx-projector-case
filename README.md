@@ -2,7 +2,7 @@
 
 Parametric [OpenSCAD](https://openscad.org) design for a ground-standing, rain-proof (not sealed), ventilated case that holds a mini projector and a Raspberry Pi 3 running an [AtmosFX](https://atmosfx.com) Halloween effect.
 
-**Status: v0.8, design only. Nothing has been printed or wired yet.** Dimensions assume a typical mini projector (about 171 x 134 x 75 mm, 0.72 kg). Measure yours and edit the parameters before printing.
+**Status: v0.10 (unreleased), design only. Nothing has been printed or wired yet.** Dimensions assume a typical mini projector (about 171 x 134 x 75 mm, 0.72 kg). Measure yours and edit the parameters before printing.
 
 ## Features
 
@@ -75,7 +75,7 @@ Full steps, aim limits and troubleshooting: [docs/AIMING.md](docs/AIMING.md).
 
 ## Power and safety
 
-Mains is inside a printed box in this design. Feed it from a GFCI outlet, fuse the AC input and the DC output, keep AC and DC wiring on separate sides of the barrier, use fully insulated quick-connects on the receptacle tabs, leave a drip loop on the cord, and use PETG or ASA. If you are not comfortable with mains wiring, have someone qualified do that part. Wiring diagrams, wire gauges, AC fuse sizing and a pre-power-up checklist: [docs/WIRING.md](docs/WIRING.md). Check each wall-wart's voltage and plug polarity before cutting its lead.
+Mains is still inside a printed box (the cord's connector and the brick's inlet), but nothing is hand-wired. Feed it from a GFCI outlet, leave a drip loop below the clamp, make sure the clamp takes the pull (BRINGUP row 17a), keep every plug joint in a weatherproof box and off the ground, and use PETG or ASA (V-0 PETG for the shelf). The brick must be UL/ETL listed: check its label. Accepted by the owner (2026-10-08): no AC fuse, no barrier, and a cord that is not outdoor-rated, for one month outside and replaced if damaged. Do not connect the projector to the 24 V brick until BRINGUP row 4a passes. If you are not comfortable with mains, have someone qualified do that part. The case is rain-shedding and ventilated, not waterproof or certified. Wiring diagrams, wire gauges and a pre-power-up checklist: [docs/WIRING.md](docs/WIRING.md).
 
 ## Roadmap
 
