@@ -2,8 +2,8 @@
 // v0.10 - single supply: one desktop brick on the shelf (receptacle plate, barrier, second adapter and the PG9 gland replaced by a brick envelope, a rear-wall opening and a cord clamp).
 // v0.10 - passive airflow: the projector's own fan, exhaust and inlet louver banks on the right wall, a lip baffle between them;
 //         no case fans or sensors; photo-derived side-port keep-outs
-// v0.9 - the stock supply is a wall adapter, so the shelf grew a receptacle plate: two panel-mount NEMA 5-15R stacked,
-//        the stock 21 V adapter below and a second (Pi, DigiAMP+) above, hanging on their prongs; the AC gland
+// v0.9 - the stock supply is a wall-wart, so the shelf grew a receptacle plate: two panel-mount NEMA 5-15R stacked,
+//        the stock 21 V wall-wart below and a second (Pi, DigiAMP+) above, hanging on their prongs; the AC gland
 //        moved beside the plate, next to the left wall; Pi zone 85 deep; the fit coupon has the receptacle cutout
 // v0.8 - AC gland moved above the shelf (AC side of the barrier); barrier clears the brick; keyholes lift off;
 //        45 deg scarf joint at the lid seam; flat gasket land under the sloped roof;
@@ -105,7 +105,7 @@ cord_boss = 5;          // pilot bosses inside the wall, at the clamp's four scr
 // standard cord that plugs into its AC inlet; its DC cord goes uncut into a 5.5 x 2.5 mm Y-splitter. The stock 21 V adapter is
 // retired from the case. Nothing about the brick is measured yet.
 brick = [150, 60, 38];   // PROVISIONAL (a typical 120 W desktop brick): length along X, width along Y, height. Measure the real one (Task 7)
-brick_gap = 5;           // room between the brick and the rear wall for the strap and the cord bend
+brick_gap = 5;           // PROVISIONAL strap gap only between the brick and the rear wall; 5 mm cannot hold the connector and its cord bend. The real cord path and placement are set in BRINGUP row 4 / plan Task 7
 wire_slot = [20, 14];    // shelf slot for the DigiAMP+ leg and the PIR wires: the DC barrel plug (about 11 x 16) must pass; check with the real splitter
 
 /* [Audio] */
@@ -119,7 +119,7 @@ zero_hat_z = 13;    // Zero 2 W: HAT underside above the Zero's board bottom (se
 
 /* [Motion sensor (rear wall)] */
 pir = true;         // HC-SR501-style PIR looking out the rear wall, toward people approaching
-pir_x = 55;         // low-voltage side, clear of the barrier and the rear lid screw block
+pir_x = 55;         // low-voltage side, clear of the rear lid screw block
 pir_dz = 45;        // dome centre above the shelf's top face
 pir_dome_d = 23.5;  // lens dome; check yours
 pir_hole_sp = 28.7; // board mounting holes (M2), check yours

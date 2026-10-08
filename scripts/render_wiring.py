@@ -91,12 +91,12 @@ def draw_hv(path):
     d.add(elm.Line().at((x_cord, yL)).to((x_wall, yL)).color(LIVE))
     d.add(elm.Line().at((x_cord, yN)).to((x_wall, yN)).color(NEUTRAL))
     d.add(elm.Line().at((x_cord, yE)).to((x_wall, yE)).color(EARTH).linestyle('--'))
-    note(d, (x_cord + 0.15, yL + 0.2), 'L  black / smooth / narrow blade', halign='left', color=LIVE)
-    note(d, (x_cord + 0.15, yN + 0.2), 'N  white / ribbed / wide blade', halign='left', color=NEUTRAL)
-    note(d, (x_cord + 0.15, yE + 0.2), 'E  green; land it anyway', halign='left', color=EARTH)
+    note(d, (x_cord + 0.15, yL + 0.2), 'L  inside the molded cord', halign='left', color=LIVE)
+    note(d, (x_cord + 0.15, yN + 0.2), 'N  inside the molded cord', halign='left', color=NEUTRAL)
+    note(d, (x_cord + 0.15, yE + 0.5), 'E  inside the molded cord\n(if the inlet has earth)', halign='left', color=EARTH)
     note(d, (x_wall - 5.0, 2.8),
          "Standard cord with the brick's molded plug, not cut. Not outdoor-rated:\n"
-         'owner accepts one month outside; inspect daily, replace if damaged.\n'
+         'owner accepts it for Halloween 2026; inspect daily, replace if damaged.\n'
          'Every plug joint in a weatherproof box, off the ground. Drip loop.')
 
     # rear wall with the cord clamp
@@ -169,7 +169,6 @@ def draw_lv_power(path):
     d.add(elm.Line().at((x_s, yp)).to((x_s, ya)).color(POS))
     d.add(elm.Dot().at((x_s, ya)).color(POS))
     d.add(elm.Line().at((x_s, ya)).to((x_load, ya)).color(POS))
-    note(d, (x_n + 0.3, ya + 0.25), '20 AWG', halign='left', fontsize=FSS - 2)
     amp = d.add(ic([pin('+', 'L', 'pos', pos=0.82), pin('-', 'L', 'neg', pos=0.62),
                     pin('5 V', 'R', 'v5', pos=0.86), pin('GND', 'R', 'gnd', pos=0.68),
                     pin('SPK+', 'R', 'spkp', pos=0.28), pin('SPK-', 'R', 'spkn', pos=0.12)],
@@ -178,7 +177,6 @@ def draw_lv_power(path):
     d.add(elm.Line().at((x_n, proj.neg[1])).to((x_n, amp.neg[1])).color(NEG))
     d.add(elm.Dot().at((x_n, amp.neg[1])).color(NEG))
     d.add(elm.Line().at((x_n, amp.neg[1])).to(amp.neg).color(NEG))
-    note(d, (x_n + 0.3, amp.neg[1] - 0.3), '20 AWG', halign='left', fontsize=FSS - 2)
     pi = d.add(ic([pin('5 V', 'L', 'v5', pos=0.72), pin('GND', 'L', 'gnd', pos=0.28)], size=(3.4, 1.6))
                .at((amp.v5[0] + 1.8, amp.v5[1])).anchor('v5')
                .label('Raspberry Pi', fontsize=FSS))

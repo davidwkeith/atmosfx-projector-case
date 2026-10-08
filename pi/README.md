@@ -279,7 +279,7 @@ Setting: **Projector power** = `cec` (default) | `relay-ir` | `relay` | `hdmi-of
   - Either way, playback then waits up to 20 s for the projector to show up on HDMI, and starts again if it appears later. mpv gives a disconnected output no picture.
 - **Relay safety:**
   - Use a relay module rated for the projector's DC current, with an opto-isolated input and a flyback diode (most modules have one).
-  - Switch the **+ line (high side) only**, in the + line of the projector leg only. Never switch the projector's ground: the HDMI shield would carry its return current.
+  - Switch the **+ line (high side) only**, and only on the projector's leg. Never switch the projector's ground: the HDMI shield would carry its return current.
   - At boot the firmware drives the relay line to "open" before Linux runs (`gpio=27=op,dh` for active-low modules; use `dl` for active-high). The service keeps it open until it decides.
   - When the service stops, for any reason, the relay opens: the service does it on a clean stop, and `videofx-relay-open` (the unit's `ExecStopPost`) does it after a crash, a kill or the watchdog. The relay never stays closed once the service is gone (the service only watches the Pi's own SoC; the projector has its own thermal cut-off).
   - The relay and IR pins are also in `config.txt`, written once with the defaults. If you change them in `/etc/default/videofx`, change `config.txt` by hand too.
@@ -310,7 +310,7 @@ If you ever need more I/O, an I2C expander (MCP23017) can share GPIO 2/3 with th
 
 - **PIR (HC-SR501):** VCC to 5 V (pin 2), GND (pin 9), OUT (3.3 V logic) to GPIO17 (pin 11). Use the retrigger jumper (H), a short hold time, and allow about a minute of warm-up after power-on.
 - **Relay module (5 V coil, opto input):** VCC 5 V (pin 4), GND (pin 14), IN to GPIO27 (pin 13). The contacts (COM/NO) go in series with the projector's DC **+** only.
-- **IR LED (940 nm), fallback only (built only if CEC fails):** GPIO16 (pin 36; GPIO22 is the DigiAMP+ mute line) drives the LED directly through 150 Ω to GND (about 14 mA at 3.3 V, inside the pin's 16 mA limit).
+- **IR LED (940 nm), fallback only (built only if CEC fails):** GPIO16 (pin 36; GPIO22 is the DigiAMP+ mute line) drives the LED directly through 150 Ω to GND (about 13 mA at 3.3 V, inside the pin's 16 mA limit). The Pi's default pad drive is 8 mA, so the LED may be dimmer than 13 mA suggests: raise the drive strength, or add the BC337 and 1 k as in WIRING.md.
 - **IR receiver (TSOP38238), bench-only (for learning the remote's codes):** VS to 3.3 V (pin 17), GND, OUT to GPIO23 (pin 16). Powering it at 3.3 V keeps its output at 3.3 V.
 
 ## Audio

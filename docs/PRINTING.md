@@ -41,6 +41,8 @@ The small parts first, so any fit problem shows up before a 37-hour print.
 | 1-2 | (after the coupon checks out) `base_front` | `sled`, caps, `power_shelf`, `lid_rear` |
 | 2-3 | `base_front` continues | `base_rear`, then `lid_front` |
 
+**Hold `power_shelf` and `base_rear` until BRINGUP row 4 has set `brick`, `cord_*` and the brick's placement; the provisional layout puts the brick across the cord opening and cannot be assembled.** The Parts table shows what the provisional model slices to, not what to print yet.
+
 About 2 to 2.5 days of printing if nothing fails. A failed `base_front` costs the most: watch its first layers, and consider the 0.30 DRAFT profile for it.
 
 ## After printing

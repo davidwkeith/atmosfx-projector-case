@@ -1,6 +1,6 @@
 # Single-supply power: design (revision 2)
 
-Status: draft for owner review, 2026-10-06. Supersedes revision 1 (stock wall-wart on a receptacle, Parts Express brick as the fallback). Nothing here is built, measured or changed in the model yet. The plan at `docs/superpowers/plans/2026-10-06-single-supply-power.md` was written against revision 1 and must be rewritten after this spec is approved.
+Status: approved 2026-10-08 (rev 2); plan: docs/superpowers/plans/2026-10-06-single-supply-power.md; Tasks 1-6 implemented, Task 7 waits for the brick. Supersedes revision 1 (stock wall-wart on a receptacle, Parts Express brick as the fallback). Nothing is printed, built or measured.
 
 ## Goal
 
@@ -23,21 +23,21 @@ brick DC cord (uncut) -> 5.5x2.5 Y-splitter -+-> right-angle adapter -> projecto
 
 ## Open design problem: getting a molded connector through the wall
 
-A round gland cannot pass a molded IEC plug. Recommendation: a keyhole-shaped opening in the rear wall (a large end for the connector, a narrow end for the cord) closed by a two-piece printed cord clamp that grips the cord jacket, seals with foam, and takes the pull so the strain never reaches the IEC joint. The shape is sized from the connector and cord you buy (`cord_d`, connector envelope), so it is a plan task that follows the arrival of the brick and cord. Drip loop outside, below the wall. Rejected: a panel-mount IEC inlet (its terminals need hand wiring, which defeats the goal), and an oversized gland (no sealing insert fits a cord that small).
+A round gland cannot pass a molded IEC plug. (As implemented, per the plan's ruling: a rectangular opening closed by a split two-piece clamp, not a keyhole.) Original recommendation: a keyhole-shaped opening in the rear wall (a large end for the connector, a narrow end for the cord) closed by a two-piece printed cord clamp that grips the cord jacket, seals with foam, and takes the pull so the strain never reaches the IEC joint. The shape is sized from the connector and cord you buy (`cord_d`, connector envelope), so it is a plan task that follows the arrival of the brick and cord. Drip loop outside, below the wall. Rejected: a panel-mount IEC inlet (its terminals need hand wiring, which defeats the goal), and an oversized gland (no sealing insert fits a cord that small).
 
 ## Stages
 
 | Stage | Change | Condition |
 |---|---|---|
-| A | Drop the stock wall-wart from the case, both receptacles and plate, the AC jumper, the AC fuse, the Wago DC rails, the PG9 gland and the barrier's AC role; add the Parts Express brick, the AC cord with its clamp and the Y-splitter | Row 4b below passes |
-| A-fallback | If the projector cannot take 24 V: a buck converter to 21 V on the projector leg only (the DigiAMP+ stays at 24 V, its maximum) | Row 4b fails |
+| A | Drop the stock wall-wart from the case, both receptacles and plate, the AC jumper, the AC fuse, the Wago DC rails, the PG9 gland and the barrier's AC role; add the Parts Express brick, the AC cord with its clamp and the Y-splitter | Row 4a below passes |
+| A-fallback | If the projector cannot take 24 V: a buck converter to 21 V on the projector leg only (the DigiAMP+ stays at 24 V, its maximum) | Row 4a fails |
 | B | Drop relay module, GPIO 27 and the IR LED + BC337 + 1 kΩ + 47 Ω; keep `ir_holder` in the model | Bring-up row 9 shows CEC works |
 | B-fallback | If CEC fails, keep the IR LED but drive it straight from GPIO 16 (about 13 mA through ~150 Ω, no transistor). The relay then needs the projector leg cut | CEC fails |
 | C | TSOP38238 out of the permanent wiring (GPIO 23); learn the remote's codes on the bench | Always |
 
 Unchanged: PIR on GPIO 17, the DigiAMP+ powering the Pi, HDMI CEC as the default power control. No Pi code changes: `cec` is already the default and `relay`/`relay-ir` remain selectable.
 
-## The gate (new BRINGUP row 4b)
+## The gate (BRINGUP row 4a; the shared-rail hum and flicker check is row 4b)
 
 Before the brick is connected to anything in the case: run the projector from the Parts Express brick on the bench for 10 minutes at full brightness, metering the brick's output voltage first. Pass: runs normally, no smell, no unusual heat, no shutdown. Fail: stage A-fallback. Also, with the Pi and the amp running at show volume, listen for hum on the loudest cue and watch for picture flicker (shared-rail noise).
 
@@ -45,10 +45,10 @@ Before the brick is connected to anything in the case: run the projector from th
 
 CLAUDE.md lists "fused AC input" and "mains-rated cord grip with drip loop" among the things not to soften, and says mains is inside a printed box. This revision changes each:
 
-1. **No AC fuse.** There is no hand-wired AC conductor left to protect; the cord and brick are listed, molded parts, the brick has its own internal protection, and the GFCI/branch breaker is upstream. Revision 1 kept a live-only inline fuse because it was wiring receptacle tabs by hand. Owner to confirm that dropping it is acceptable (an inline-fused cord can be bought if not).
-2. **No mains-rated cord grip, but a strain-relief clamp.** The printed clamp must take a firm pull without loading the connector; test it in bring-up. Drip loop stays.
+1. **No AC fuse.** There is no hand-wired AC conductor left to protect; the cord and brick are molded parts (the brick must be UL/ETL listed: check its label), the brick has its own internal protection, and the GFCI/branch breaker is upstream. Revision 1 kept a live-only inline fuse because it was wiring receptacle tabs by hand. Owner to confirm that dropping it is acceptable (an inline-fused cord can be bought if not).
+2. **No mains-rated cord grip, but a strain-relief clamp.** The printed clamp is meant to take a firm pull without loading the connector; prove it with the row 17a pull test. Drip loop stays.
 3. **Mains is still inside the printed box** (the cord's connector and the brick's inlet). The barrier, the quick-connects and the receptacle go; the GFCI, the drip loop, PETG/ASA only and the weatherproof connection box for any plug joint stay. "Flame-retardant V-0 PETG recommended for the power shelf" stays, since the brick now sits on it.
-4. **The cord is not outdoor-rated.** Owner decision (2026-10-06): the existing cord is good enough for one month outside and can be replaced cheaply if damaged. Keep every plug joint off the ground and in the weatherproof box, inspect the cord daily, and run it along edges or under a cord cover as WIRING.md already says.
+4. **The cord is not outdoor-rated.** Owner decision (2026-10-06): the existing cord is good enough for the Halloween 2026 run (about a month outside) and can be replaced cheaply if damaged. Keep every plug joint off the ground and in the weatherproof box, inspect the cord daily, and run it along edges or under a cord cover as WIRING.md already says.
 
 ## Files this touches (to confirm in the plan)
 
@@ -69,6 +69,6 @@ No DC fuses beyond what the Y-splitter's leads need (see Risks). No case fans. N
 - **Lead time.** The brick is now the baseline, not a fallback, and Halloween is about three weeks away. Order it now, then read its label on arrival (UL/ETL mark, inlet type, tip polarity, input rating) and measure its body into `brick_*`.
 - **Splitter lead rating.** A 5 A supply can overheat Y-splitter leads rated for about 3 A if a fault occurs downstream of the splitter. Buy a splitter rated for the supply's output, or add a small inline DC fuse on each leg.
 - **Brick fit.** Its size is unknown. A desktop brick of this class may not fit the shelf's low-voltage side beside the sled interface; the first plan task on arrival is the clash check.
-- **Projector tolerance of 24 V** is untested (row 4b); the buck converter is the answer if it fails.
+- **Projector tolerance of 24 V** is untested (row 4a); the buck converter is the answer if it fails.
 - **Shared-rail noise** into the amp: class D amps reject supply ripple well, but listen on bring-up.
 - **Strain relief** is a printed part holding a mains cord; prove it with a pull test before the lid goes on.

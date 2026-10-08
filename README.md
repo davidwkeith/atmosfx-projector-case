@@ -52,7 +52,7 @@ Preview in OpenSCAD: open `projector_pi_case.scad`, set `part` and `tile` in the
 | `pedestal` | Screws to the floor bosses; carries the ball head |
 | `hatch_cover` | Print ribs-up |
 | `power_shelf` | Holds the brick: strap, zip-tie and wire slots |
-| `cord_clamp` | Two halves; clamps the AC cord's jacket at the rear-wall opening (M3 into the bosses, foam gasket) |
+| `cord_clamp` | Two halves; clamps the AC cord's jacket at the rear-wall opening (M3 x 16 into the bosses, foam gasket) |
 | `exhaust_cap`, `intake_cap`, `vent_cap` (print 1 each) | Insect-screen caps for the three right-wall louver banks (exhaust, rear inlet, Pi vent). Glue screen inside the plate, then screw on with 2x M2 |
 | `ir_holder` | Only for the relay + IR projector-power fallback. Stick it near the projector's IR receiver with VHB tape |
 | `sled_pi3`, `sled_pi4`, `sled_pi5`, `sled_zero2w` | Print the one for your Pi. The name is engraved on the plate |
@@ -75,7 +75,7 @@ Full steps, aim limits and troubleshooting: [docs/AIMING.md](docs/AIMING.md).
 
 ## Power and safety
 
-Mains is still inside a printed box (the cord's connector and the brick's inlet), but nothing is hand-wired. Feed it from a GFCI outlet, leave a drip loop below the clamp, make sure the clamp takes the pull (BRINGUP row 17a), keep every plug joint in a weatherproof box and off the ground, and use PETG or ASA (V-0 PETG for the shelf). The brick must be UL/ETL listed: check its label. Accepted by the owner (2026-10-08): no AC fuse, no barrier, and a cord that is not outdoor-rated, for one month outside and replaced if damaged. Do not connect the projector to the 24 V brick until BRINGUP row 4a passes. If you are not comfortable with mains, have someone qualified do that part. The case is rain-shedding and ventilated, not waterproof or certified. Wiring diagrams, wire gauges and a pre-power-up checklist: [docs/WIRING.md](docs/WIRING.md).
+Mains is still inside a printed box (the cord's connector and the brick's inlet), but nothing is hand-wired. Feed it from a GFCI outlet, leave a drip loop below the clamp, prove the clamp takes the pull (BRINGUP row 17a) before the lid goes on, keep every plug joint in a weatherproof box and off the ground, and use PETG or ASA (V-0 PETG for the shelf). The brick must be UL/ETL listed: check its label. Accepted by the owner (2026-10-08): no AC fuse, no barrier, and a cord that is not outdoor-rated, for the Halloween 2026 run (about a month outside) and replaced if damaged. Do not connect the projector to the 24 V brick until BRINGUP row 4a passes. If you are not comfortable with mains, have someone qualified do that part. The case is rain-shedding and ventilated, not waterproof or certified. Wiring diagrams, wire gauges and a pre-power-up checklist: [docs/WIRING.md](docs/WIRING.md).
 
 ## Roadmap
 
