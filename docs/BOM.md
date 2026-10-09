@@ -1,6 +1,6 @@
 # Bill of materials
 
-Quantities for one case. Printed parts and filament are in [PRINTING.md](PRINTING.md); wire gauges and the AC fuse sizing are in [WIRING.md](WIRING.md). Sizes marked "check" depend on parts you haven't bought yet.
+Quantities for one case. Printed parts and filament are in [PRINTING.md](PRINTING.md); wire gauges and the protection notes are in [WIRING.md](WIRING.md). Sizes marked "check" depend on parts you haven't bought yet.
 
 **Buy links:** Micro Center (Santa Clara store) where they stock it, otherwise Amazon; acrylic from TAP Plastics. Every link was opened on 2026-10-05; stock and prices move, so treat them as a starting point. Micro Center links carry `storeid=195` so the page shows Santa Clara stock.
 
@@ -8,10 +8,10 @@ Quantities for one case. Printed parts and filament are in [PRINTING.md](PRINTIN
 
 Amazon cart placed or about to be: 12 SKUs, $145.32 with tax (checkout PDF). Rows below say **Ordered** or **Not ordered**.
 
-With the DC rail fuses removed, the SIM&NAT blade fuse holders in the cart ($4.49) are no longer needed; drop them from the order.
+**Single-supply change (2026-10-06, rev 2):** the ordered second SS-6B (both are now spare), PG9 grip, uxcell fuse holders, BOJACK fuses, BAOMAIN quick-connects, generic Wago connectors and the Facmogu 24 V 3 A are not needed in the baseline build. The Facmogu can run the row 4a bench test if the brick is late, but that proves nothing about the Parts Express brick: re-run row 4a briefly on the real brick, or confirm with a meter that its output is not higher than the Facmogu's.
 
 **Still to buy**
-- Safety-critical: AC fuses sized by [WIRING.md](WIRING.md): [4 A time-delay](https://www.amazon.com/BOJACK-T4AL250V-5x20mm-Fuses-Time-delay/dp/B07X3N43CH) if the Facmogu's label reads about 1.5 A in, or [3 A](https://www.amazon.com/BOJACK-T3AL250V-5x20mm-Fuses-Time-delay/dp/B07X1KC272) if it reads 0.8 A (the 1 A ones in the cart are too small either way), the SJTW outdoor cord, the PG9 cord grip, the weatherproof connection box, and real WAGO 221s for the AC jumper.
+- Safety-critical: the brick, its cord, the Y-splitter, and the weatherproof connection box.
 - Fasteners: M4 x 12 bolts, the M3 knurled thumbscrew, and (unless the hot-shoe slot works) the 1/4-20 insert and stud.
 - Everything else outside the cart: the Pi, DigiAMP+, microSD, PIR, speakers and wire, HDMI cable and right-angle adapter, the 3.5 x 5 in frame, foam tape, silicone, screen, paint, filament.
 
@@ -34,16 +34,16 @@ With the DC rail fuses removed, the SIM&NAT blade fuse holders in the cart ($4.4
 
 | Item | Qty | Notes | Buy |
 |---|---|---|---|
-| Outdoor cord, SJTW 18 AWG or better, 3-wire | 1 | Round jacket for the PG9 grip | [Amazon: PLUGTUL 16/3 SJTW 25 ft](https://www.amazon.com/dp/B0B7JH3RHL). Micro Center's Inland cords don't state a gauge or jacket type |
-| PG9 cord grip (mains-rated) | 1 | | [Amazon: uxcell PG9 IP68 nylon, 10-pack](https://www.amazon.com/dp/B01MQWU2NM) |
-| NEMA 5-15R panel-mount receptacle, snap-in (SS-6B, 15 A 125 V, 2-pack) | 2 | Chosen 2026-10-06. Drawing: 24 x 24 mm cutout, 27 x 27 mm flange, 1.5 mm panel gap, body 20.6 + terminals to 30.6 mm behind the panel (`rcpt_cut`, `rcpt_t`, `rcpt_back` 40). **Not confirmed from the listing: UL/ETL listing and the tab width** (the drawing says only "2-2.2x7", which looks like the blade slots), so check the labels and match the quick-connects to the real tabs before wiring. Check the fit on the coupon **Ordered** (SS-6B 2-pack, $18.78, seller YSYAMZ; no certification seen on the listing). | [Amazon: SS-6B 2-pack](https://www.amazon.com/dp/B0HBXKKJ35). Fallback, a listed part with the old 26 x 22 cutout: [Digi-Key: Qualtek 738W-X2/01](https://www.digikey.com/en/products/detail/qualtek/738W-X2-01/1164208) |
-| Second wall-wart, 12-24 V, 2.5-3 A, 5.5 x 2.5 mm centre-positive barrel (the DigiAMP+'s jack) | 1 | The Pi + DigiAMP+ rail (12-24 V is the DigiAMP+'s range; higher gives it more power). Up to 86 x 47 x 35 mm standing on its long edge (`wart2`); measure yours into the model **Ordered** Facmogu 24 V 3 A 72 W ($14.89). The cart photo shows a desktop brick with an AC cord, not a plug-in wart: check its size against `wart2` before it arrives; a larger brick would sit on the shelf on its cord and needs a clash re-check. | [Amazon: Facmogu 24 V 3 A, 5.5 x 2.5 mm](https://www.amazon.com/dp/B07TB3L72F) (claims UL; confirm it is UL/ETL listed with short-circuit protection, since no DC fuse backs it up, and that it is the plug-in style and fits `wart2`). Micro Center has no 24 V barrel supplies |
+| Outdoor cord, SJTW 18 AWG or better, 3-wire | 1 | **Not needed now; the brick's own cord goes to the outlet. Keep only if the outlet is far: an extension cord's joint goes in the weatherproof box** | [Amazon: PLUGTUL 16/3 SJTW 25 ft](https://www.amazon.com/dp/B0B7JH3RHL). Micro Center's Inland cords don't state a gauge or jacket type |
+| Power brick: Parts Express 24 V 5 A, 5.5 x 2.5 mm tip-positive | 1 | The one supply (120 W). Desktop brick: read the label on arrival (UL/ETL mark, AC inlet type, input current, tip polarity) and measure its body into `brick`. **Not ordered. Order now** (about three weeks to Halloween). | [Parts Express 24 V 5 A, 120-055](https://parts-express.com/24-VDC-5A-Switching-Power-Supply-with-2.5-x-5.5mm-Plug-120-055) (link unverified: 403 to the checker on 2026-10-06) |
+| AC cord for the brick's inlet, 6 ft or longer, 3-wire if the inlet is 3-pin | 1 | A standard detachable cord with the molded connector that fits the brick's inlet (the type is on its label). Not outdoor-rated; owner accepts it for the Halloween 2026 run (about a month outside) and replaces it if the jacket is damaged. **Not ordered; match it to the brick's inlet.** | Any hardware store or Amazon; choose after reading the inlet type |
+| 5.5 x 2.5 mm DC Y-splitter, 1 female to 2 male, leads rated 5 A | 1 | Feeds the projector (through the right-angle adapter) and the DigiAMP+. **Not ordered.** Find one with a stated 5 A lead rating, then open its page to confirm before adding the link; otherwise buy any splitter and fuse each leg to its lead's rating | Search "5.5 x 2.5 mm DC splitter 1 female 2 male"; add the verified link here |
+| Buck converter to 21 V, at least 3.5 A out, 30 V in or more | 0-1 | Only if BRINGUP row 4a fails (the projector cannot take 24 V). Meter its output before it meets the projector | Not chosen; pick after the test |
+| 2 mm foam gasket for the cord clamp | 1 | Same foam tape as the lid rim | See the foam tape row |
+| M3 x 16 self-tapping | 4 | Cord clamp into its bosses: the stack is 6 (clamp) + 2 (foam) + 3 (wall) = 11 mm to the inner wall face, plus the 5 mm boss, and the pilot ends at the boss end, so about 5 mm engages. Boss depth caps engagement at 5 mm; if BRINGUP row 17a fails, raise `cord_boss` once the real brick is measured | Same Mikniri assortment as the pedestal (check it has 16 mm; otherwise buy M3 x 16 separately) |
 | Right-angle DC barrel adapter, 5.5 x 2.5 mm male to 5.5 x 2.5 mm female | 1 | The projector's jack is 5.5 mm OD x 2.5 mm ID (owner, 2026-10-06), so the stock plug is the same size. The male end goes into the jack (stands out about 15 mm, `port_depth`) and the stock plug or its stub goes into the elbow's female end, so the stock cable's 45 mm bend runs along the rear face. A straight plug would need about 45 mm behind the rear face, which the rear tile can't take. Do not use the 2.1 mm variants **Ordered** (5-pack, $8.99). | [Amazon: GINTOOYUN 5.5 x 2.5 mm male-to-female, 5-pack](https://www.amazon.com/dp/B0BQGM4NBS) |
-| 4.8 mm fully insulated female quick-connects, plus piggybacks for the jumper | about 8 | 18 AWG crimp size **Ordered** (BAOMAIN 100-pack, $6.79). | [Amazon: BAOMAIN 0.187 in fully insulated spade kit, 22-16 AWG](https://www.amazon.com/dp/B01MYV3BS0) (no piggybacks: jumper with a short lead and the lever nuts instead) |
-| Velcro strap, 20 mm | 1-2 | Through the shelf slots, round both wall-warts | [Micro Center: VELCRO One-Wrap roll, 3/4 in x 4 ft](https://www.microcenter.com/product/657584/velcro-90302-one-wrap-roll-4%e2%80%99-x-075-black-%281-roll%29?storeid=195) |
-| 5 x 20 mm inline fuse holder + time-delay fuse | 1 | AC live **Ordered** uxcell holders (5-pack, $6.29) and BOJACK T1AL250V 1 A fuses ($6.99). **1 A is too small**: WIRING.md sizes the AC fuse at 1.5x the sum of both wall-warts' input currents, which is [4 A T](https://www.amazon.com/BOJACK-T4AL250V-5x20mm-Fuses-Time-delay/dp/B07X3N43CH) for a 1.5 A-input second supply or [3 A T](https://www.amazon.com/BOJACK-T3AL250V-5x20mm-Fuses-Time-delay/dp/B07X1KC272) for a 0.8 A one: read the Facmogu's label. | [Amazon: uxcell inline 5 x 20 holder, 18 AWG, 5-pack](https://www.amazon.com/dp/B07SM5KYZ7) + [BOJACK 5 x 20 time-delay fuses](https://www.amazon.com/dp/B07WPW2QBF) (pick the rating from WIRING.md, sized for both wall-warts; Micro Center only stocks fast-blow) |
-| Lever-nut connectors (Wago 221, 5-way) | 4 | DC splices: one per conductor of the stock lead and of the second wall-wart's lead (the two minuses are not joined, so there is no shared `-` rail) **Ordered** generic 5-conductor lever connectors, 25 pcs ($20.97, Yueshenglong): fine for the DC splices. The AC jumper should use real WAGO 221s (UL listed), **not ordered**. | [Amazon: WAGO 221-415, 10-pack](https://www.amazon.com/dp/B07W7W9J95) |
-| Wire: 18, 20 and 24 AWG | a few metres | | Micro Center: [18 AWG hook-up, 25 ft](https://www.microcenter.com/product/689131/leo-sales-ltd-hook-up-wire-300vhu-18-gauge-ul1007-copper-25ft?storeid=195), [22 AWG stranded, 25 ft](https://www.microcenter.com/product/689133/leo-sales-ltd-wire-stranded-22-gauge-300v-orange-25-ft?storeid=195). Amazon: [20 AWG silicone kit](https://www.amazon.com/dp/B073RDG2J6), [24 AWG silicone kit](https://www.amazon.com/dp/B073RD76QD) |
+| Velcro strap, 20 mm | 1-2 | Through the shelf slots, round the brick | [Micro Center: VELCRO One-Wrap roll, 3/4 in x 4 ft](https://www.microcenter.com/product/657584/velcro-90302-one-wrap-roll-4%e2%80%99-x-075-black-%281-roll%29?storeid=195) |
+| Wire: 18 AWG (relay fallback only), 24 AWG | a few metres | | Micro Center: [18 AWG hook-up, 25 ft](https://www.microcenter.com/product/689131/leo-sales-ltd-hook-up-wire-300vhu-18-gauge-ul1007-copper-25ft?storeid=195), [22 AWG stranded, 25 ft](https://www.microcenter.com/product/689133/leo-sales-ltd-wire-stranded-22-gauge-300v-orange-25-ft?storeid=195). Amazon: [20 AWG silicone kit](https://www.amazon.com/dp/B073RDG2J6), [24 AWG silicone kit](https://www.amazon.com/dp/B073RD76QD) |
 | 16 AWG speaker wire | to suit | | [Amazon: Amazon Basics 16 AWG, 50 ft](https://www.amazon.com/dp/B006LW0WDQ) (Micro Center sells 16 AWG only by the 500 ft spool) |
 | Weatherproof cord-connection box | 1 | For any extension-cord joint | [Amazon: Flemoon IP44 cord connection box](https://www.amazon.com/dp/B08696RNQL) |
 
@@ -52,9 +52,9 @@ With the DC rail fuses removed, the SIM&NAT blade fuse holders in the cart ($4.4
 | Item | Qty | Notes | Buy |
 |---|---|---|---|
 | HC-SR501 PIR motion sensor | 1 | | [Micro Center: Inland PIR module](https://www.microcenter.com/product/618776/inland-pir-motion-sensor-module?storeid=195) (HC-SR501 type) or [Amazon: HC-SR501 5-pack](https://www.amazon.com/dp/B07KBWVJMP) |
-| Relay module, 5 V coil, opto-isolated, active-low | 0-1 | Only if the projector lacks CEC | [Micro Center: Inland single 5 V relay module](https://www.microcenter.com/product/659887/inland-single-5v-relay-module-for-arduino?storeid=195); confirm the trigger polarity on the board before wiring |
-| 940 nm IR LED + NPN transistor + resistors | 0-1 | Only with the relay fallback | [Micro Center: Adafruit IR transceiver (940 nm emitter with driver + 38 kHz receiver)](https://www.microcenter.com/product/691617/adafruit-industries-infrared-ir-remote-transceiver-stemma-jst-ph-2mm-940nm-emitter-38khz-receiver?storeid=195) covers this row and the next. Discrete: [IR LEDs](https://www.microcenter.com/product/456455/adafruit-industries-super-bright-5mm-ir-led-940nm-25-pack?storeid=195), [NPN](https://www.microcenter.com/product/689210/leo-sales-ltd-general-purpose-transistor-npn-50v-ic-2-pack?storeid=195), [resistors](https://www.microcenter.com/product/618896/inland-1-4-watt-1-resistors-610-pack?storeid=195) |
-| TSOP38238 IR receiver | 0-1 | Optional, to learn the remote's code | The Adafruit board above, or [Amazon: TSOP38238 + TSAL6200 LEDs, 5 each](https://www.amazon.com/dp/B09D3RGSHX) |
+| Relay module, 5 V coil, opto-isolated, active-low | 0-1 | Only if the projector lacks CEC (BRINGUP row 9 fails). Needs the projector leg cut: see WIRING.md. Keep two of the ordered generic lever connectors for the relay splice. | [Micro Center: Inland single 5 V relay module](https://www.microcenter.com/product/659887/inland-single-5v-relay-module-for-arduino?storeid=195); confirm the trigger polarity on the board before wiring |
+| 940 nm IR LED + 150 R resistor | 0-1 | Only if CEC fails. Driven straight from GPIO 16 (no transistor). | [Micro Center: Adafruit IR transceiver (940 nm emitter with driver + 38 kHz receiver)](https://www.microcenter.com/product/691617/adafruit-industries-infrared-ir-remote-transceiver-stemma-jst-ph-2mm-940nm-emitter-38khz-receiver?storeid=195) covers this row and the next. Discrete: [IR LEDs](https://www.microcenter.com/product/456455/adafruit-industries-super-bright-5mm-ir-led-940nm-25-pack?storeid=195), [resistors](https://www.microcenter.com/product/618896/inland-1-4-watt-1-resistors-610-pack?storeid=195) |
+| TSOP38238 IR receiver | 0-1 | Bench tool, optional: learns the remote's power code once; not fitted in the case. | The Adafruit board above, or [Amazon: TSOP38238 + TSAL6200 LEDs, 5 each](https://www.amazon.com/dp/B09D3RGSHX) |
 
 ## Fasteners
 
@@ -78,7 +78,7 @@ With the DC rail fuses removed, the SIM&NAT blade fuse holders in the cart ($4.4
 | Item | Notes | Buy |
 |---|---|---|
 | PETG or ASA, about 1.3 kg, "Go Away Green" | Plus a little for reprints | [Micro Center: Inland ASA Army Green](https://www.microcenter.com/product/660561/inland-175mm-army-green-asa-3d-printer-filament-1kg-spool-%2822-lbs%29?storeid=195) is the closest stock colour; [Inland PETG Green](https://www.microcenter.com/product/503782/inland-175mm-petg-3d-printer-filament-1kg-%2822-lbs%29-cardboard-spool-green?storeid=195) is brighter. Match by eye |
-| Flame-retardant PETG (UL 94 V-0, e.g. Prusament PETG V0), about 0.1-0.3 kg | Recommended for `power_shelf` (and `base_rear`, if the colour works): the receptacles and both wall-warts sit there | [Prusa: Prusament PETG V0 Jet Black](https://www.prusa3d.com/product/prusament-petg-v0-jet-black-1kg/) or [Amazon](https://www.amazon.com/dp/B0GP79Z9WY). Not at Micro Center |
+| Flame-retardant PETG (UL 94 V-0, e.g. Prusament PETG V0), about 0.1-0.3 kg | Recommended for `power_shelf` (and `base_rear`, if the colour works): the brick and its cord inlet sit there | [Prusa: Prusament PETG V0 Jet Black](https://www.prusa3d.com/product/prusament-petg-v0-jet-black-1kg/) or [Amazon](https://www.amazon.com/dp/B0GP79Z9WY). Not at Micro Center |
 | Foam tape, 2 mm (lid rim) and 1.5 mm (hatch) | | [Amazon: EPDM 2 x 20 mm, 10 m](https://www.amazon.com/dp/B0DFXQS5BL); [Amazon: 1/16 in (1.5 mm) x 1 in, 33 ft](https://www.amazon.com/dp/B08HV48WQV) |
 | Neutral-cure outdoor silicone | Base seam, pane, PIR dome | [Amazon: GE Advanced Silicone 2, clear, 2.8 oz](https://www.amazon.com/dp/B001JK5R0I) |
 | Insect screen, mosquito grade (about 18 x 16 mesh) | Caps | [Amazon: fiberglass window screen, charcoal](https://www.amazon.com/dp/B0CP2PY26C) (any hardware store roll works) |
@@ -94,7 +94,7 @@ Printing takes 2 to 3 days on two printers and bring-up about a week, so order e
 |---|---|---|
 | Picture frame (glazing) | Same day at a craft or discount store, or a few days from Amazon | Any time |
 | Zero 2 W (if used) | 2-5 days | Now |
-| Filament (2 x 1 kg), fasteners, wire, fuse, silicone, screen | 1-3 days | Now |
+| Filament (2 x 1 kg), fasteners, wire, silicone, screen | 1-3 days | Now |
 
 Micro Center Santa Clara had the Pi boards, DigiAMP+, microSD, filament, PIR, relay, IR board, insert kit, hook-up wire, thin HDMI cable and cable ties in stock on 2026-10-05, so one trip covers those.
 
@@ -109,8 +109,8 @@ These are estimates from typical retail prices, not quotes; check current prices
 | Speakers (outdoor pair) + wire | 50-120 |
 | Ball head + stud | 15-35 |
 | PIR | 5-10 |
-| Power parts (cord, gland, 2 receptacles, second wall-wart, fuse, lever nuts, wire, connection box) | 55-90 |
+| Power parts (brick, cord, Y-splitter, wire, connection box) | 45-70 |
 | Acrylic pane | 10-25 |
 | Inserts, screws, foam, silicone, screen, paint | 30-50 |
 | Filament, about 1.3 kg | 30-60 |
-| **Total** | **about 270-505** |
+| **Total** | **about 260-485** |
