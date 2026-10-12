@@ -2,10 +2,10 @@
 
 In order. Parts are in [BOM.md](BOM.md); wiring is in [WIRING.md](WIRING.md) and must be followed exactly. Nothing here has been built yet, so expect to adjust.
 
-1. **Fit coupon.** Print `fit_coupon` first. Press in each heat-set insert, drive each screw into its pilot, hang the keyhole on an M4 bolt, slide the frame glazing into its slot, and slide the ball head's hot-shoe adapter into the T-slot (an experiment: if it holds, the pedestal can drop the stud and insert). Adjust `insert_d`, `m4_insert_d`, `m3_insert_d`, `clearance` and so on in the SCAD until everything fits, then export the rest.
+1. **Fit coupon.** Print `fit_coupon` first. Press in each heat-set insert, drive each screw into its pilot, hang the keyhole on an M5 bolt, slide the frame glazing into its slot, and slide the ball head's hot-shoe adapter into the T-slot (an experiment: if it holds, the pedestal can drop the stud and insert). Adjust `insert_d`, `stud_insert_d`, `m3_insert_d`, `clearance` and so on in the SCAD until everything fits, then export the rest.
 2. **Clean up the prints.** Snap out the two thin ribs in the window opening. Mask the window rebate, insert holes and screw holes, then spray the inside of both base halves and the lid matte black.
 3. **Heat-set inserts.**
-   - `base_front`: 4x M4 in the hatch studs (from outside).
+   - `base_front`: 4x M5 in the hatch studs (from outside).
    - `base_rear`: 1x M3 for the sled thumbscrew.
    - `pedestal`: 1/4-20 in the top.
 4. **Screens.** Glue insect screen inside the three caps (`exhaust_cap`, `intake_cap`, `vent_cap`). Screw them over the right-wall louver banks (front bank: exhaust, rear bank: inlet, high bank over the shelf: the Pi vent), 2x M2 each.

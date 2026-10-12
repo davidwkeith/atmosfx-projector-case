@@ -14,7 +14,7 @@ One Prusa i3 MK3S (bed 250 x 210 x 210 mm), Prusament PETG (or ASA, which fades 
 
 | Part | Qty | Time (0.20 SPEED) | PETG | Notes |
 |---|---|---|---|---|
-| `fit_coupon` | 1 | 1 h 35 m | 19 g | **Print first.** Test inserts, pilots, the keyhole on an M4 bolt, the frame glazing in its slot, the ball head's hot-shoe adapter in its T-slot |
+| `fit_coupon` | 1 | 1 h 35 m | 19 g | **Print first.** Test inserts, pilots, the keyhole on an M5 bolt, the frame glazing in its slot, the ball head's hot-shoe adapter in its T-slot |
 | `pedestal` | 1 | 1 h 42 m | 29 g | |
 | `window_frame` | 1 | 1 h 19 m | 20 g | |
 | `hatch_cover` | 1 | 2 h 33 m | 46 g | |
@@ -52,5 +52,5 @@ About 85 h of printing, so 3.5 to 4 days of machine time and a week of calendar 
 ## After printing
 
 - Snap out the two thin ribs in the window opening.
-- Heat-set inserts: 1/4-20 (pedestal), M4 (hatch studs), M3 (sled thumbscrew). Use the sizes that fit the coupon.
+- Heat-set inserts: 1/4-20 (pedestal), M5 (hatch studs), M3 (sled thumbscrew). Use the sizes that fit the coupon.
 - Spray the inside of the case matte black (masking the window rebate and screw holes) so projector light doesn't glow through the vents at night.

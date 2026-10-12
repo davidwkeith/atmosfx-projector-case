@@ -83,9 +83,11 @@ boss_h = 4;
 hatch = 108;         // diamond opening, tip to tip: reach in to loosen/aim the ball head (45 deg edges print unsupported); its hood must clear the lid skirt
 hatch_flange = 10;   // cover overlap past the diamond's tips
 hatch_zc = 56;       // opening centre height above floor: lower tip just above the floor, hood under the lid skirt (cover must lift kh_drop under the hood)
-stud_off = 56;       // M4 stud spacing from opening centre
+stud_off = 56;       // hatch stud spacing from opening centre
+stud_d = 5;          // hatch bolt thread: M5 button head (ISO 7380: head about 9.5 across); M4 also works (stud_d 4, stud_head_d 7.6, stud_insert_d 5.6)
+stud_head_d = 9.5;   // button head diameter
 kh_drop = 8;         // keyhole slide distance: cover lifts this much to come off
-m4_insert_d = 5.6;   // M4 heat-set insert hole; check your insert
+stud_insert_d = 6.4; // heat-set insert hole for the hatch bolt (M5); check your insert on the coupon
 hood_d = 10;         // rain hood depth over the hatch (must stay below the lid skirt)
 cover_gasket = 1.5;  // foam tape thickness
 hatch_lock = true;   // optional M3 (security) screw through the cover's bottom edge: stops it lifting off its keyholes
@@ -119,7 +121,7 @@ zero_hat_z = 13;    // Zero 2 W: HAT underside above the Zero's board bottom (se
 
 /* [Motion sensor (rear wall)] */
 pir = true;         // HC-SR501-style PIR looking out the rear wall, toward people approaching
-pir_x = 55;         // low-voltage side, clear of the rear lid screw block
+pir_x = 76;         // low-voltage side, clear of the rear lid screw block; sits right of the 170 mm brick (asserted)
 pir_dz = 45;        // dome centre above the shelf's top face
 pir_dome_d = 23.5;  // lens dome; check yours
 pir_hole_sp = 28.7; // board mounting holes (M2), check yours
@@ -327,10 +329,10 @@ module cuts() {
   for (sx=[-1,1], sz=[-1,1])   // frame screws on the sides, so the frame hugs the pane top and bottom
     translate([lens_x+sx*(pane_w/2+8), y0+0.1, win_zc+sz*pane_h/4])
       rotate([90,0,0]) cylinder(d=2.6, h=8.1);
-  // aim hatch opening + M4 stud inserts (from outside)
+  // aim hatch opening + hatch stud inserts (from outside)
   translate([-out_w/2-1, hatch_y, hatch_zz]) rotate([0,90,0]) linear_extrude(wall+2) rotate(45) square(hatch/sqrt(2), center=true);
   for (sy=[-1,1], sz=[-1,1])
-    translate([-out_w/2-0.1, hatch_y+sy*stud_off, hatch_zz+sz*stud_off]) rotate([0,90,0]) cylinder(d=m4_insert_d, h=8.1);
+    translate([-out_w/2-0.1, hatch_y+sy*stud_off, hatch_zz+sz*stud_off]) rotate([0,90,0]) cylinder(d=stud_insert_d, h=8.1);
   // exhaust bank (+X wall, front): the projector's own fan blows out through here
   translate([out_w/2-wall/2, exh_c[0], exh_c[1]-(air_n(exh_open[0], lv_pitch)-1)*lv_pitch/2]) louvers(exh_open[1], air_n(exh_open[0], lv_pitch), lv_pitch, 1);
   // inlet bank (+X wall, rear gap): air reaches the projector's rear intake
@@ -405,7 +407,7 @@ module base_all(ribs=true) {
       for (p=sled_pts) translate([p[0], p[1], z_floor-0.1]) cylinder(d=10, h=sled_pad+0.1);   // sled pads
       for (p=[sled_pts[0], sled_pts[1]]) translate([p[0], p[1], z_floor]) cylinder(d=4, h=sled_pad+sled_t-0.4);   // locating pins
       for (sy=[-1,1], sz=[-1,1])   // inner bosses behind the hatch studs
-        translate([-inner_w/2-0.1, hatch_y+sy*stud_off, hatch_zz+sz*stud_off]) rotate([0,90,0]) cylinder(d=10, h=6.1);
+        translate([-inner_w/2-0.1, hatch_y+sy*stud_off, hatch_zz+sz*stud_off]) rotate([0,90,0]) cylinder(d=stud_insert_d+5, h=6.1);
       hood();
       if (pir) {
         for (sx=[-1,1]) translate([pir_x+sx*pir_hole_sp/2, y_back+0.1, pir_zz]) rotate([90,0,0]) cylinder(d=5, h=pir_stand+0.1);
@@ -459,7 +461,7 @@ module hood() {
     linear_extrude(cover_s) polygon([[0.1, 3], [-hood_d, 0], [0.1, -hood_d]]);
 }
 
-// Hatch cover: hangs on four M4x12 button-head bolts through keyholes; lift kh_drop and pull off, no tools.
+// Hatch cover: hangs on four M5 button-head bolts (see stud_d) through keyholes; lift kh_drop and pull off, no tools.
 // Foam-tape gasket on the wall side. Prints ribs-up (part="hatch_cover").
 module hatch_cover() {
   difference() {
@@ -469,8 +471,8 @@ module hatch_cover() {
       translate([-1.5, -cover_s/2+4, -4]) cube([3, cover_s-8, 4.1]);
     }
     for (sx=[-1,1], sz=[-1,1]) hull() {
-      translate([sx*stud_off, sz*stud_off, -5]) cylinder(d=4.8, h=9);
-      translate([sx*stud_off, sz*stud_off-kh_drop, -5]) cylinder(d=9, h=9);   // local +Y is up when hung
+      translate([sx*stud_off, sz*stud_off, -5]) cylinder(d=stud_d+0.8, h=9);
+      translate([sx*stud_off, sz*stud_off-kh_drop, -5]) cylinder(d=stud_head_d+1.5, h=9);   // local +Y is up when hung
     }
     if (hatch_lock) translate([0, -cover_s/2+5, -5]) cylinder(d=3.4, h=9);   // lock screw, through the vertical rib
   }
@@ -599,7 +601,7 @@ module hot_shoe_cut(open_len=25) {
 }
 
 module fit_coupon() {
-  holes = [[insert_d, "1/4", insert_len+2], [m4_insert_d, "M4i", 10], [m3_insert_d, "M3i", 8], [3.4, "M3", 3], [2.6, "M3p", 8], [2.2, "M2.5p", 7], [1.8, "M2p", 6]];   // [d, label, boss height]
+  holes = [[insert_d, "1/4", insert_len+2], [stud_insert_d, "M5i", 10], [m3_insert_d, "M3i", 8], [3.4, "M3", 3], [2.6, "M3p", 8], [2.2, "M2.5p", 7], [1.8, "M2p", 6]];   // [d, label, boss height]
   difference() {
     union() {
       cube([118, 30, 2]);                                             // strip under the holes; 118 is the shrink gauge in measurements.xlsx
@@ -613,7 +615,7 @@ module fit_coupon() {
       translate([x, 15, holes[i][2] > 3 ? 1.2 : -1]) cylinder(d=holes[i][0], h=20);   // blind (1.2 mm floor) except the through-holes
       translate([x, 25, 1.4]) linear_extrude(1) text(holes[i][1], size=2.4, halign="center");
     }
-    translate([15, 52, -1]) hull() { cylinder(d=4.8, h=5); translate([0, -kh_drop, 0]) cylinder(d=9, h=5); }   // keyhole
+    translate([15, 52, -1]) hull() { cylinder(d=stud_d+0.8, h=5); translate([0, -kh_drop, 0]) cylinder(d=stud_head_d+1.5, h=5); }   // keyhole
     translate([105, -13, 3]) cube([pane_t+0.5, 14, 8]);   // acrylic slot: same width as the pane rebate
     translate([18, -15.5, 2 + shoe_foot_t + 0.45 + shoe_lip_t]) hot_shoe_cut(19);   // slide the ball head's hot-shoe adapter in from the left edge
   }

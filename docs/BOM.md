@@ -12,7 +12,7 @@ Amazon cart placed or about to be: 12 SKUs, $145.32 with tax (checkout PDF). Row
 
 **Still to buy**
 - Safety-critical: the brick, its cord, the Y-splitter, and the weatherproof connection box.
-- Fasteners: M4 x 12 bolts, the M3 knurled thumbscrew, and (unless the hot-shoe slot works) the 1/4-20 insert and stud.
+- Fasteners: M5 button-head bolts (owner has them), the M3 knurled thumbscrew, and (unless the hot-shoe slot works) the 1/4-20 insert and stud.
 - Everything else outside the cart: the Pi, DigiAMP+, microSD, PIR, speakers and wire, HDMI cable and right-angle adapter, the 3.5 x 5 in frame, foam tape, silicone, screen, paint, filament.
 
 ## Core
@@ -61,9 +61,9 @@ Amazon cart placed or about to be: 12 SKUs, $145.32 with tax (checkout PDF). Row
 | Item | Qty | Where | Buy |
 |---|---|---|---|
 | 1/4-20 heat-set insert | 1 | Pedestal **Not ordered**: the Ktehloy kit is metric only. | [Amazon: ruthex 1/4-20 heat-set inserts, 20-pack](https://www.amazon.com/dp/B09MTS6ZZQ) |
-| M4 heat-set insert | 4 | Hatch studs **Ordered** (Ktehloy 400-pc metric kit M2-M6, $15.97); check the hole sizes on the coupon. | [Micro Center: Leo Sales heat-set insert kit (M3/M4/M5)](https://www.microcenter.com/product/675642/leo-sales-ltd-heat-set-insert-kit-%28m3-m4-m5%29?storeid=195) |
+| M5 heat-set insert | 4 | Hatch studs. **Ordered** (Ktehloy 400-pc metric kit M2-M6, $15.97, has M5); the M5 hole is `stud_insert_d` 6.4: check it on the coupon against the kit's actual insert. | [Micro Center: Leo Sales heat-set insert kit (M3/M4/M5)](https://www.microcenter.com/product/675642/leo-sales-ltd-heat-set-insert-kit-%28m3-m4-m5%29?storeid=195) |
 | M3 heat-set insert | 1 | Sled thumbscrew Same Ktehloy kit. | Same kit |
-| M4 x 12 button-head | 4 | Hatch keyholes **Not ordered.** | [Amazon: M4 x 12 stainless button head, 100-pack](https://www.amazon.com/dp/B01H6EZRCS) |
+| M5 button-head (ISO 7380), 10-14 mm long | 4 | Hatch keyholes. **Owner has them.** Length: at least 10 mm (5 mm outside the wall face for the gasket, plate and head gap, plus about 5 mm in the insert) and at most about 14 mm (longer pokes through the inner boss); 12 is ideal. The keyholes are sized for a 9.5 mm head (`stud_head_d`) | Owner's stock |
 | M3 x 12 (security screw) | 0-1 | Optional hatch lock (`hatch_lock`), for public-facing setups | [Amazon: M3 x 12 pin-Torx button head, 100-pack](https://www.amazon.com/dp/B07KY69KDZ) |
 | M3 x 12 (pan head, or pin-Torx security) | 4 | Lid, through the skirt **Ordered**: 340-pc 304 stainless M3 x 5-20 mm button-head kit ($12.27, nineone). | [Amazon: M3 stainless button-head assortment, 340 pcs](https://www.amazon.com/dp/B0742D9WDV), or the pin-Torx pack above |
 | M3 x 12 | 4 | Base seam, through the divider Same M3 kit. | Same M3 assortment |

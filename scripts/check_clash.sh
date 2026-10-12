@@ -31,6 +31,8 @@ PY
 run() {  # name, openscad expression
   printf 'include <%s>\n%s\n' "$SCAD" "$2" > "$T/$1.scad"
   out=$("$OPENSCAD" -o "$T/$1.off" -D part=\"none\" "$T/$1.scad" 2>&1)
+  # A failed assert in the model also leaves an empty result, so it must be caught before "empty" counts as ok
+  if echo "$out" | grep -q "^ERROR"; then echo "ERROR $1"; echo "$out" | grep "^ERROR" | head -2; fail=1; return; fi
   if echo "$out" | grep -q "empty"; then echo "ok    $1"; return; fi
   if [ ! -s "$T/$1.off" ]; then echo "ERROR $1"; echo "$out" | tail -3; fail=1; return; fi
   if ! v=$(volume "$T/$1.off"); then echo "ERROR $1 (could not read mesh)"; fail=1; return; fi
