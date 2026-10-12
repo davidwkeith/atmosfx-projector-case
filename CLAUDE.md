@@ -29,7 +29,7 @@ Versioning: one version for the whole repo. `pi/package.json` version = the git 
 
 Docs: `docs/PRINTING.md` (sliced times, order), `docs/BOM.md` (quantities, ordering, cost), `docs/ASSEMBLY.md`, `docs/WIRING.md` (plus the `docs/wiring-*.svg` schematics: edit `scripts/render_wiring.py`, never the SVGs), `docs/AIMING.md`, `docs/BRINGUP.md` (hardware test checklist), `docs/DESIGN_LOG.md`. Keep them in step with model changes; re-slice for PRINTING.md with the PrusaSlicer CLI (`--printer-profile "Original Prusa i3 MK3S & MK3S+" --print-profile "0.20mm SPEED @MK3" --material-profile "Prusament PETG"`, datadir seeded with the bundled PrusaResearch.ini: copy `PrusaResearch.ini` and `.idx` from `/Applications/Original Prusa Drivers/PrusaSlicer.app/Contents/Resources/profiles/ (the owner's install)` into `<datadir>/vendor/` and write `<datadir>/PrusaSlicer.ini` containing `[vendor:PrusaResearch]` and `model:MK3S = 0.4`; then `<app>/Contents/MacOS/PrusaSlicer --datadir <datadir> --export-gcode ... --output x.gcode part.stl` and read the `estimated printing time` and `total filament used [g]` comments; runs inside the sandbox).
 
-Toolchain on the owner Mac: OpenSCAD snapshot (`brew install --cask openscad@snapshot`; the stable cask is an old Intel build; it aborts with "Incompatible processor" inside Claude Code's sandbox, so run it unsandboxed), PrusaSlicer, two Prusa i3 MK3S (bed 250 x 210 x 210).
+Toolchain on the owner Mac: OpenSCAD snapshot (`brew install --cask openscad@snapshot`; the stable cask is an old Intel build; it aborts with "Incompatible processor" inside Claude Code's sandbox, so run it unsandboxed), PrusaSlicer, one Prusa i3 MK3S (bed 250 x 210 x 210).
 
 ## Model layout (projector_pi_case.scad)
 

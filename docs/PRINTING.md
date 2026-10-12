@@ -1,6 +1,6 @@
 # Printing plan
 
-Two Prusa i3 MK3S (bed 250 x 210 x 210 mm), Prusament PETG (or ASA, which fades less in sun). Times and weights are PrusaSlicer's estimates from the current (v0.10, 3.5 x 5 in 2 mm pane) STLs with the stock `Original Prusa i3 MK3S & MK3S+` printer profile. Real prints run a little longer.
+One Prusa i3 MK3S (bed 250 x 210 x 210 mm), Prusament PETG (or ASA, which fades less in sun). Times and weights are PrusaSlicer's estimates from the current (v0.10, 3.5 x 5 in 2 mm pane) STLs with the stock `Original Prusa i3 MK3S & MK3S+` printer profile. Real prints run a little longer.
 
 ## Settings
 
@@ -29,21 +29,25 @@ Two Prusa i3 MK3S (bed 250 x 210 x 210 mm), Prusament PETG (or ASA, which fades 
 | `lid_front` | 1 | 9 h 45 m | 169 g | |
 | `base_rear` | 1 | 18 h 44 m | 270 g | 13 h 26 m with 0.30mm DRAFT (303 g) |
 | `base_front` | 1 | **37 h 4 m** | 559 g | 26 h 55 m with 0.30mm DRAFT (615 g; set `layer_h = 0.3`) |
-| **Total** | | **about 85 h** | **about 1.3 kg** | Two 1 kg spools. Re-sliced for the UTEBIT 20 mm ball head (`ball_head_h` 52), which only changed the two base tiles; `power_shelf`, `cord_clamp` and `base_rear` re-sliced for the single-brick power change. |
+| **Total** | | **about 85 h** | **about 1.3 kg** | Two 1 kg spools (one is not enough). Re-sliced for the UTEBIT 20 mm ball head (`ball_head_h` 52), which only changed the two base tiles; `power_shelf`, `cord_clamp` and `base_rear` re-sliced for the single-brick power change. |
 
-## Order, on two printers
+## Order, on one printer
 
-The small parts first, so any fit problem shows up before a 37-hour print.
+The small parts first, so any fit problem shows up before a 37-hour print. Everything runs back to back on the one bed, so a failure anywhere delays everything behind it.
 
-| Day | Printer A | Printer B |
-|---|---|---|
-| 1 | `fit_coupon`, then fix any tolerance in the SCAD and re-export | `pedestal`, `window_frame`, `hatch_cover` |
-| 1-2 | (after the coupon checks out) `base_front` | `sled`, caps, `power_shelf`, `lid_rear` |
-| 2-3 | `base_front` continues | `base_rear`, then `lid_front` |
+| Step | Print | Time | Why here |
+|---|---|---|---|
+| 1 | `fit_coupon`, then fix any tolerance in the SCAD and re-export | 1 h 35 m | Cheapest way to find a fit problem |
+| 2 | `pedestal`, `window_frame`, `hatch_cover` | about 5 h 30 m | Small, critical, and quick to reprint |
+| 3 | `base_front` | **37 h** | The longest print and the one that gates assembly. Start it as soon as the coupon checks out, ideally on a weekend, and watch the first layers |
+| 4 | `sled`, caps, `ir_holder` (if used), `cord_clamp` | about 3 h | Small fillers; the bed is free between the big prints |
+| 5 | `base_rear` | 18 h 44 m | |
+| 6 | `lid_front`, `lid_rear` | about 16 h 30 m | The lid is only needed at closing time, so it goes last |
+| 7 | `power_shelf` | 2 h 31 m | After BRINGUP row 4 (see below); slot it in wherever that lands |
 
 **Hold `power_shelf` and `base_rear` until BRINGUP row 4 has set `brick`, `cord_*` and the brick's placement; the provisional layout puts the brick across the cord opening and cannot be assembled.** The Parts table shows what the provisional model slices to, not what to print yet.
 
-About 2 to 2.5 days of printing if nothing fails. A failed `base_front` costs the most: watch its first layers, and consider the 0.30 DRAFT profile for it.
+About 85 h of printing, so 3.5 to 4 days of machine time and a week of calendar time with plate changes and sleep, if nothing fails. A failed `base_front` costs the most: watch its first layers, and consider the 0.30 DRAFT profile for it (about 10 h saved on `base_front`, 5 h on `base_rear`, which brings the total near 69 h).
 
 ## After printing
 

@@ -88,7 +88,7 @@ Amazon cart placed or about to be: 12 SKUs, $145.32 with tax (checkout PDF). Row
 
 ## Ordering plan (for Halloween)
 
-Printing takes 2 to 3 days on two printers and bring-up about a week, so order everything **now**: as of 2026-10-06 that leaves about three weeks to Halloween. The slow items:
+Printing takes about 4 days on one printer (a week of calendar time) and bring-up about a week, so order everything **now**: as of 2026-10-06 that leaves about three weeks to Halloween. The slow items:
 
 | Item | Typical lead time | Order |
 |---|---|---|
