@@ -14,7 +14,7 @@ Two Prusa i3 MK3S (bed 250 x 210 x 210 mm), Prusament PETG (or ASA, which fades 
 
 | Part | Qty | Time (0.20 SPEED) | PETG | Notes |
 |---|---|---|---|---|
-| `fit_coupon` | 1 | 1 h 42 m | 20 g | **Print first.** Test inserts, pilots, the keyhole on an M4 bolt, the frame glazing in its slot, the ball head's hot-shoe adapter in its T-slot |
+| `fit_coupon` | 1 | 1 h 35 m | 19 g | **Print first.** Test inserts, pilots, the keyhole on an M4 bolt, the frame glazing in its slot, the ball head's hot-shoe adapter in its T-slot |
 | `pedestal` | 1 | 1 h 42 m | 29 g | |
 | `window_frame` | 1 | 1 h 19 m | 20 g | |
 | `hatch_cover` | 1 | 2 h 33 m | 46 g | |
@@ -27,7 +27,7 @@ Two Prusa i3 MK3S (bed 250 x 210 x 210 mm), Prusament PETG (or ASA, which fades 
 | `cord_clamp` | 1 | 44 m | 11 g | Both halves in one print, flat, wall-face down. Holds the AC cord at the rear-wall opening |
 | `lid_rear` | 1 | 6 h 41 m | 112 g | |
 | `lid_front` | 1 | 9 h 45 m | 169 g | |
-| `base_rear` | 1 | 18 h 44 m | 270 g | The 0.30mm DRAFT figure (13 h 25 m, 305 g) predates the rear-wall opening and was not re-sliced |
+| `base_rear` | 1 | 18 h 44 m | 270 g | 13 h 26 m with 0.30mm DRAFT (303 g) |
 | `base_front` | 1 | **37 h 4 m** | 559 g | 26 h 55 m with 0.30mm DRAFT (615 g; set `layer_h = 0.3`) |
 | **Total** | | **about 85 h** | **about 1.3 kg** | Two 1 kg spools. Re-sliced for the UTEBIT 20 mm ball head (`ball_head_h` 52), which only changed the two base tiles; `power_shelf`, `cord_clamp` and `base_rear` re-sliced for the single-brick power change. |
 
