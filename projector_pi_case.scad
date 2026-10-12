@@ -101,10 +101,10 @@ cord_d = 9;             // AC cord jacket diameter: PROVISIONAL, measure the cor
 clamp_t = 6;            // clamp half thickness
 clamp_flange = 10;      // each half overlaps the opening by this much all round
 cord_boss = 5;          // pilot bosses inside the wall, at the clamp's four screws (must stay <= brick_gap, or they hit the brick: checked)
-// Supply (spec 2026-10-06, rev 2): the Parts Express 24 V 5 A desktop brick lies on the shelf under a velcro strap, fed by a
+// Supply (spec 2026-10-06, rev 2): the Auplf XGM-2406 24 V 6 A desktop brick lies on the shelf under a velcro strap, fed by a
 // standard cord that plugs into its AC inlet; its DC cord goes uncut into a 5.5 x 2.5 mm Y-splitter. The stock 21 V adapter is
-// retired from the case. Nothing about the brick is measured yet.
-brick = [150, 60, 38];   // PROVISIONAL (a typical 120 W desktop brick): length along X, width along Y, height. Measure the real one (Task 7)
+// retired from the case. Its size is the Amazon listing's (2026-10-12), not yet calipered.
+brick = [170, 71, 41];   // PROVISIONAL (Amazon listing: 6.7 x 2.8 x 1.6 in): length along X, width along Y, height. Caliper the real one (Task 7)
 brick_gap = 5;           // PROVISIONAL strap gap only between the brick and the rear wall; 5 mm cannot hold the connector and its cord bend. The real cord path and placement are set in BRINGUP row 4 / plan Task 7
 wire_slot = [20, 14];    // shelf slot for the DigiAMP+ leg and the PIR wires: the DC barrel plug (about 11 x 16) must pass; check with the real splitter
 

@@ -24,7 +24,7 @@ flowchart LR
     CLAMP["Cord clamp<br/>grips the jacket, foam gasket"]
   end
   subgraph SHELF["Power shelf"]
-    BRICK["Parts Express brick<br/>24 V 5 A, 120 W<br/>cord plugs into its inlet"]
+    BRICK["Auplf brick<br/>24 V 6 A, 144 W<br/>cord plugs into its inlet"]
   end
   GFCI -- "standard cord, molded plugs, not cut" --> BOX --> LOOP --> CLAMP --> BRICK
   BRICK -- "24 V DC cord, not cut" --> DC["Y-splitter (below)"]
@@ -51,7 +51,7 @@ On the shelf, and down to the Pi sled.
 
 ```mermaid
 flowchart TB
-  BR["Parts Express brick, 24 V 5 A<br/>DC cord NOT cut; tip centre + (confirm with a meter)"]
+  BR["Auplf brick, 24 V 6 A<br/>DC cord NOT cut; tip centre + (confirm with a meter)"]
   SPL(["5.5 x 2.5 mm Y-splitter<br/>one female in, two males out"])
   subgraph PJ["Projector (label 21 V)"]
     BUCK["Buck converter to 21 V, ONLY if row 4a fails"]
@@ -80,7 +80,7 @@ The DigiAMP+ powers the Pi, so never also power the Pi by USB. The relay is only
 | Circuit | Wire | Notes |
 |---|---|---|
 | Brick DC cord into the Y-splitter | the cord's own | Plug-in; the cord is not cut. Tip must read centre + |
-| Y-splitter leg 1 to the projector | the splitter's own | **Leads rated for the supply's 5 A, or a fuse in each leg sized to the lead's rating.** Ends in the right-angle 5.5 x 2.5 mm adapter on the projector's DC jack so the stock cable's bend runs along the rear face. **Do not connect it until row 4a passes.** If row 4a fails, a buck converter to 21 V goes between the splitter and the adapter on this leg only (at least 3.5 A out at 21 V, 30 V in or more; meter its output before it meets the projector) |
+| Y-splitter leg 1 to the projector | the splitter's own | **14 AWG leads (the chosen splitter), well above the supply's 6 A, so no fuse.** Ends in the right-angle 5.5 x 2.5 mm adapter on the projector's DC jack so the stock cable's bend runs along the rear face. **Do not connect it until row 4a passes.** If row 4a fails, a buck converter to 21 V goes between the splitter and the adapter on this leg only (at least 3.5 A out at 21 V, 30 V in or more; meter its output before it meets the projector) |
 | Y-splitter leg 2 to the DigiAMP+ | the splitter's own | Into the DigiAMP+'s 5.5 x 2.5 mm centre-positive barrel jack. 24 V is its stated ceiling |
 | Relay (CEC fallback only) | 18 AWG | Cut leg 1 a hand's width from the adapter and switch the **+** conductor only. Never switch the minus: the HDMI cable would carry the return. Use an **active-low** module: the Pi holds GPIO 27 high (relay open, projector off) from boot |
 | DigiAMP+ to speakers | 16 AWG zip cord | Out through the floor chimney; red/striped to + on both ends |
@@ -118,7 +118,7 @@ Trick-or-treaters walk through the yard in the dark. Run the power cord and spea
 
 ## Protection
 
-**No AC fuse and no DC fuse in the baseline.** The AC side has no hand-wired conductor to protect (see "AC supply"). The brick limits its own output and carries its own short-circuit protection. The one place a fault could heat a wire is the Y-splitter's leads: a 5 A supply can overheat leads rated for less. Buy a splitter whose leads are rated for 5 A, or put a small inline fuse in each leg sized to that leg's lead rating. Use a UL/ETL-listed brick (read its label on arrival) and keep the total load under its 120 W.
+**No AC fuse and no DC fuse in the baseline.** The AC side has no hand-wired conductor to protect (see "AC supply"). The brick limits its own output and carries its own short-circuit protection. The one place a fault could heat a wire is the Y-splitter's leads: a 6 A supply can overheat leads rated for less. The chosen splitter is 14 AWG pure copper throughout (the listing states a wire diameter of 1.63 mm and no amp rating; the barrel connectors themselves are typically good for about 5 A, and the loads are about 3 A together), so it is not the weak point. If you swap in a thinner one, it needs leads rated for 6 A or a small inline fuse in each leg sized to that leg's lead rating. The chosen brick has no UL/ETL listing (owner accepted 2026-10-12): read its label on arrival, and keep the total load under its 144 W.
 
 ## Before first power-up
 

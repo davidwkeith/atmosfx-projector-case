@@ -13,7 +13,7 @@ Three drawings, matching the sections of docs/WIRING.md:
     wiring-lv-power.svg    the one DC rail: Y-splitter, projector, DigiAMP+ (relay contact only as the CEC fallback)
     wiring-lv-signals.svg  the Pi header: every GPIO used; relay and IR LED are CEC fallbacks
 
-The supply is the Parts Express 24 V 5 A desktop brick (label values to be read on arrival). Keep this file in step with
+The supply is the Auplf XGM-2406 24 V 6 A desktop brick, ASIN B0H32DNLP3 (label values to be read on arrival). Keep this file in step with
 WIRING.md, pi/README.md ("GPIO pins and wiring") and BOM.md.
 """
 from pathlib import Path
@@ -117,7 +117,7 @@ def draw_hv(path):
                    pin('E', 'L', 'E', pos=0.5 + (yE - yN) / (H - 1)),
                    pin('+', 'R', 'pos', pos=0.7), pin('-', 'R', 'neg', pos=0.3)],
                   size=(4.4, H)).at((x_br, yN)).anchor('N')
-               .label('Parts Express brick\n24 V 5 A, 120 W\nAC inlet (type: read the label)', fontsize=FSS))
+               .label('Auplf brick\n24 V 6 A, 144 W\nAC inlet (type: read the label)', fontsize=FSS))
     d.add(elm.Line().at(br.pos).right(1.6).color(POS))
     d.add(elm.Line().at(br.neg).right(1.6).color(NEG))
     note(d, (br.pos[0] + 1.7, br.pos[1]), '24 V +', halign='left', color=POS, fontsize=FS)
@@ -137,7 +137,7 @@ def draw_lv_power(path):
 
     w1 = d.add(ic([pin('+', 'R', 'pos', pos=0.72), pin('-', 'R', 'neg', pos=0.28)],
                   size=(3.8, 2.4)).at((0, 0.6)).anchor('pos')
-               .label('Parts Express brick\n24 V 5 A', fontsize=FSS))
+               .label('Auplf brick\n24 V 6 A', fontsize=FSS))
     note(d, (w1.center[0] - 1.9, w1.center[1] - 2.2), 'DC cord NOT cut. Tip is centre +:\nmeter both Y-splitter legs before connecting', halign='left')
     yp, yn = w1.pos[1], w1.neg[1]
     x_s = 4.4            # + side of the Y-splitter
@@ -147,7 +147,7 @@ def draw_lv_power(path):
     d.add(elm.Dot().at((x_s, yp)).color(POS))
     d.add(elm.Line().at(w1.neg).to((x_n, yn)).color(NEG))
     d.add(elm.Dot().at((x_n, yn)).color(NEG))
-    note(d, (x_n + 0.4, yp - 2.0), '5.5 x 2.5 mm Y-splitter\n(leads rated 5 A, or fused to the lead)', halign='left')
+    note(d, (x_n + 0.4, yp - 2.0), '5.5 x 2.5 mm Y-splitter\n(14 AWG leads)', halign='left')
 
     # projector leg: + through the optional relay contact and the optional buck converter, - straight through
     d.add(elm.Line().at((x_s, yp)).right(1.4).color(POS))
