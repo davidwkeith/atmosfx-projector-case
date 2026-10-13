@@ -24,6 +24,11 @@ say() {
 user=${1:-$(getent passwd 1000 | cut -d: -f1)}
 home=$(getent passwd "$user" | cut -d: -f6)
 
+# cloud-init (Imager's user-data) has run by now and may have renamed or replaced
+# the image's "videofx" account: point the player at the one that exists. Before
+# the early exit below, so a re-run repairs it too.
+/usr/local/sbin/videofx-user "$user"
+
 if blkid -L videofx-data >/dev/null 2>&1 && grep -q '/srv/videofx' /etc/fstab; then
   say ok
   exit 0

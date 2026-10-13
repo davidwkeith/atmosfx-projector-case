@@ -55,7 +55,8 @@ fi
 (cd "$app" && npm ci --omit=dev --no-audit --no-fund)
 
 echo "== systemd units"
-sed -e "s/^User=.*/User=$user/" -e "s#MEDIA_DIR#$home/media#" "$src/system/videofx-player.service" >/etc/systemd/system/videofx-player.service
+install -m 755 "$src/system/videofx-user" /usr/local/sbin/videofx-user
+/usr/local/sbin/videofx-user "$user" "$src/system/videofx-player.service"
 install -m 644 "$src/system/videofx-hostname.service" /etc/systemd/system/videofx-hostname.service
 install -m 755 "$src/system/videofx-hostname" /usr/local/sbin/videofx-hostname
 # Settings may hold the web password: root-only. Keep an existing file.

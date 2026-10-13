@@ -8,7 +8,10 @@
 # here. A Pi booted without a user set up cannot be logged into (no console
 # login either), so fill in at least one user.
 #
-# The Pi names itself videofx-xxxx from its MAC; a "hostname:" here is ignored.
+# The Pi names itself videofx-xxxx from its MAC. To pick the name yourself, add a
+# line "hostname: porch" (1-32 letters, digits and hyphens); "raspberrypi" counts
+# as not set. cloud-init itself leaves the hostname alone (99-videofx.cfg): the
+# first-boot unit reads this line.
 
 # Log in as the service user (one account) ...
 users:

@@ -1,13 +1,51 @@
 #!/bin/bash
-# Name this Pi from the last 4 hex digits of eth0's MAC (wlan0 if there is no
-# eth0): hostname videofx-abcd (lowercase), shown to people as VideoFX-ABCD.
+# Name this Pi. By default from the last 4 hex digits of eth0's MAC (wlan0 if there
+# is no eth0): hostname videofx-abcd (lowercase), shown to people as VideoFX-ABCD.
+# A name of your own wins: the "hostname:" you gave Raspberry Pi Imager (read from
+# user-data on the boot partition; "raspberrypi" counts as not set), or one given
+# here. 1-32 letters, digits and hyphens, not starting or ending with a hyphen.
+#   videofx-hostname            first boot: your Imager name, else the MAC name
+#   videofx-hostname NAME       use NAME from now on
+#   videofx-hostname --auto     back to the MAC name
 # The service runs it once; /var/lib/videofx-name records the hostname. Run again
 # (videofx-storage after cloud-init, install.sh) it re-applies the recorded name.
+# With the root read-only (power-cut protection) a later change needs maintenance
+# mode: sudo videofx-maint on, reboot, run this, sudo videofx-maint off, reboot.
 set -euo pipefail
 
+valid() { [[ $1 =~ ^[a-z0-9]([a-z0-9-]{0,30}[a-z0-9])?$ ]]; }
+
+# The hostname Imager's user-data asks for, lowercased; nothing when it is unset,
+# one of the stock names, or not a valid host name.
+imager_name() {
+  local f n
+  for f in /boot/firmware/user-data /boot/user-data; do
+    [ -r "$f" ] || continue
+    # Value after "hostname:", minus a trailing comment, quotes and blanks.
+    n=$(sed -n -E 's/^hostname:[[:space:]]*([^#]*).*/\1/p' "$f" | head -n1 | tr -d "\"'[:space:]" | tr '[:upper:]' '[:lower:]')
+    case "$n" in "" | raspberrypi | videofx | localhost) return 0 ;; esac
+    if valid "$n"; then echo "$n"; else echo "ignoring hostname '$n' in $f: not a valid VideoFX host name" >&2; fi
+    return 0
+  done
+}
+
 record=/var/lib/videofx-name
-if [ -s "$record" ]; then
+want=""
+case "${1:-}" in
+  "") ;;
+  --auto) rm -f "$record" ;;
+  *)
+    want=$(tr '[:upper:]' '[:lower:]' <<<"$1")
+    valid "$want" || { echo "not a valid host name: $1 (1-32 letters, digits and hyphens)" >&2; exit 2; }
+    ;;
+esac
+
+if [ -n "$want" ]; then
+  name=$want
+elif [ -s "$record" ]; then
   name=$(cat "$record")
+elif [ "${1:-}" != --auto ] && name=$(imager_name) && [ -n "$name" ]; then
+  :
 else
   mac=""
   model=$(tr -d '\0' </proc/device-tree/model 2>/dev/null || true)
@@ -28,8 +66,12 @@ else
   hex=$(tr -d ':\n' <<<"$mac" | tr '[:upper:]' '[:lower:]')
   name="videofx-${hex: -4}"
 fi
-hex=${name#videofx-}
-display="VideoFX-$(tr '[:lower:]' '[:upper:]' <<<"$hex")"
+# videofx-abcd is shown as VideoFX-ABCD; a name of your own is shown as it is.
+if [[ $name =~ ^videofx-([0-9a-f]{4})$ ]]; then
+  display="VideoFX-$(tr '[:lower:]' '[:upper:]' <<<"${BASH_REMATCH[1]}")"
+else
+  display=$name
+fi
 
 echo "$name" > /etc/hostname
 if grep -q '^127\.0\.1\.1' /etc/hosts; then

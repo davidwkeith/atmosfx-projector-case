@@ -1,0 +1,26 @@
+#!/bin/bash
+# Render videofx-player.service for the account that exists.
+#   videofx-user [user [template]]
+# The unit names its user (User=) and the media folder under that user's home. The
+# release image bakes in "videofx", but Imager's first-boot user (cloud-init) can
+# rename or replace it, and systemd then fails the service with 217/USER. The
+# service account is the first login user, uid 1000, the same one videofx-storage
+# puts the media bind mount under and videofx-update looks up.
+# Used by setup.sh (build and install), videofx-storage (first boot, after
+# cloud-init) and videofx-update. Needs root; safe to run again.
+set -euo pipefail
+
+unit=/etc/systemd/system/videofx-player.service
+user=${1:-$(getent passwd 1000 | cut -d: -f1)}
+template=${2:-/opt/videofx/system/videofx-player.service}
+
+[ -n "$user" ] || { echo "videofx-user: no login user (uid 1000) to run the player as" >&2; exit 1; }
+home=$(getent passwd "$user" | cut -d: -f6)
+[ -n "$home" ] || { echo "videofx-user: no such user: $user" >&2; exit 1; }
+[ -f "$template" ] || { echo "videofx-user: no unit template at $template" >&2; exit 1; }
+
+sed -e "s/^User=.*/User=$user/" -e "s#MEDIA_DIR#$home/media#" "$template" >"$unit.new"
+mv "$unit.new" "$unit"
+# No systemd inside the image build's chroot.
+if [ -d /run/systemd/system ]; then systemctl daemon-reload; fi
+echo "videofx-player.service runs as $user (media folder $home/media)"

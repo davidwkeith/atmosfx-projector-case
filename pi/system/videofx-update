@@ -88,11 +88,12 @@ finish() {
 # The unit file that belongs to the version now in $APP.
 install_unit() {
   [ -f "$APP/system/videofx-player.service" ] || return 0
-  local user home
-  user=$(service_user)
-  home=$(getent passwd "$user" | cut -d: -f6)
-  sed -e "s/^User=.*/User=$user/" -e "s#MEDIA_DIR#$home/media#" "$APP/system/videofx-player.service" >/etc/systemd/system/videofx-player.service
-  systemctl daemon-reload
+  # Renders the unit for the service account and reloads systemd. Rolling back to a
+  # version older than videofx-user leaves the installed unit as it is.
+  local render=/usr/local/sbin/videofx-user
+  [ -x "$render" ] || render=$APP/system/videofx-user
+  [ -x "$render" ] || return 0
+  "$render" "$(service_user)" "$APP/system/videofx-player.service"
 }
 
 do_update() {

@@ -123,6 +123,17 @@ describe("device name", () => {
     });
     expect(deviceName("raspberrypi", { eth0: mac("b8:27:eb:12:ab:cd") })).toBe("VideoFX-ABCD");
   });
+  it("uses a hostname the owner chose, for both names", () => {
+    const eth0 = mac("b8:27:eb:12:ab:cd");
+    expect(deviceIds("porch-pumpkin", { eth0 })).toEqual({ display: "porch-pumpkin", host: "porch-pumpkin" });
+    expect(deviceIds("Porch", { eth0 })).toEqual({ display: "porch", host: "porch" });
+  });
+  it("ignores the stock hostnames and anything that is not a valid host name", () => {
+    const eth0 = mac("b8:27:eb:12:ab:cd");
+    for (const stock of ["raspberrypi", "videofx", "localhost", "", "Davids MacBook", "-x", "a".repeat(33)]) {
+      expect(deviceName(stock, { eth0 })).toBe("VideoFX-ABCD");
+    }
+  });
   it("falls back to wlan0, then to the hostname", () => {
     expect(deviceName("raspberrypi", { wlan0: mac("b8:27:eb:00:12:34") })).toBe("VideoFX-1234");
     expect(deviceName("raspberrypi", { eth0: mac("00:00:00:00:00:00") })).toBe("raspberrypi");

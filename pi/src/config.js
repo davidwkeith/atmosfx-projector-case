@@ -19,19 +19,28 @@ const RESTORE_POLICIES = ["last", "on", "off"];
 // Words, not a shell: split on whitespace. mpv is spawned without a shell.
 const words = (s) => (s ?? "").split(/\s+/).filter(Boolean);
 
+// Host names the OS or the image ships with: not a choice of the owner's.
+const STOCK_HOSTS = new Set(["", "raspberrypi", "videofx", "localhost"]);
+
 /**
- * Names from the last 4 hex digits of eth0's MAC (wlan0 as fallback): the display
- * name VideoFX-ABCD (Matter, web page, Bonjour) and the hostname videofx-abcd.
- * The first-boot unit sets the hostname the same way, so normally both agree.
+ * Names for this Pi: the display name (Matter, web page, Bonjour) and the hostname.
+ * Normally VideoFX-ABCD and videofx-abcd, from the last 4 hex digits of eth0's MAC
+ * (wlan0 as fallback); the first-boot unit sets the hostname the same way. A
+ * hostname the owner chose (Imager's hostname field, `videofx-hostname NAME`) is
+ * used as it is for both.
  */
 export function deviceIds(host = hostname(), ifaces = networkInterfaces()) {
+  const lower = host.toLowerCase();
   let hex = /^videofx-([0-9a-f]{4})$/i.exec(host)?.[1];
+  if (!hex && !STOCK_HOSTS.has(lower) && /^[a-z0-9]([a-z0-9-]{0,30}[a-z0-9])?$/.test(lower)) {
+    return { display: lower, host: lower };
+  }
   for (const name of ["eth0", "wlan0"]) {
     if (hex) break;
     const mac = ifaces[name]?.find((a) => a.mac && a.mac !== "00:00:00:00:00:00")?.mac;
     if (mac) hex = mac.replace(/:/g, "").slice(-4);
   }
-  if (!hex) return { display: host, host: host.toLowerCase() };
+  if (!hex) return { display: host, host: lower };
   return { display: `VideoFX-${hex.toUpperCase()}`, host: `videofx-${hex.toLowerCase()}` };
 }
 
