@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMediaStore } from "../src/media.js";
 import { qrTextToMatrix, qrTextToSvg } from "../src/qr.js";
+import { helpSlugs } from "../public/nav.js";
 import { createWebServer, isAllowedHost, isLanAddress, staticFile } from "../src/web.js";
 
 describe("LAN-only guard", () => {
@@ -189,6 +190,14 @@ describe("web server", () => {
   it("asks for the password before serving static files", async () => {
     password = "boo";
     expect((await call("GET", "/app.js")).status).toBe(401);
+  });
+
+  it("serves every help page as Markdown", async () => {
+    for (const slug of helpSlugs()) {
+      const res = await call("GET", `/help/${slug}.md`);
+      expect(res.status, slug).toBe(200);
+      expect(res.headers["content-type"], slug).toMatch(/^text\/markdown/);
+    }
   });
 
   it("rejects upload path traversal", async () => {
