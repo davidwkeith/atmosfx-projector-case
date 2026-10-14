@@ -730,9 +730,9 @@ const web = createWebServer({
       await server.erase();
     }),
   checkUpdate: () => askHelper({ action: "check" }),
-  upgrade: async (auth) => {
+  upgrade: async () => {
     if (!versionStatus().available) return { error: "no-update" };
-    return askHelper(auth.trusted ? { action: "upgrade", auth: "trusted" } : { action: "upgrade", password: auth.password });
+    return askHelper({ action: "upgrade" });
   },
   restart: async () => {
     console.warn("Restart requested from the web UI");
