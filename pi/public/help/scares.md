@@ -22,4 +22,4 @@ The **Scare** switch in your Home app, the motion sensor, a DMX signal, and **Sc
 
 Scares only fire when playback is on and the mode is scare. The sensor also shows up in Matter as an occupancy sensor. Choose the pin it is wired to under **PIR GPIO**; the default is GPIO17 (physical pin 11).
 
-Read more: [Videos, playlist, scare mode](https://github.com/davidwkeith/atmosfx-projector-case/blob/main/pi/README.md#videos-playlist-scare-mode)
+Read more: [Videos, playlist, scare mode](../../docs/videos.md)

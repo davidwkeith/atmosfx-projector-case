@@ -24,4 +24,4 @@ Tick **Projector needs two power presses** if the projector ignores a single pre
 
 **Relay settle time** is how long to wait after power-up before sending IR and starting playback. **CEC device** is `/dev/cec0`, the only HDMI port on a Pi 3 or Zero 2 W.
 
-Read more: [Projector power](https://github.com/davidwkeith/atmosfx-projector-case/blob/main/pi/README.md#projector-power)
+Read more: [Projector power](../../docs/projector.md)

@@ -14,6 +14,7 @@ import { HttpError } from "./media.js";
 const here = (p) => fileURLToPath(new URL(p, import.meta.url));
 
 const PUBLIC = here("../public");
+const DOCS = here("../docs");
 const TYPES = {
   js: "text/javascript; charset=utf-8",
   css: "text/css; charset=utf-8",
@@ -22,25 +23,26 @@ const TYPES = {
 };
 
 /**
- * The only files served from disk: public/**.{js,css,html}, public/help/<slug>.md and
- * the shared playlist module from src/. Names are lower-case letters, digits and hyphens
+ * The only files served from disk: public/**.{js,css,html}, public/help/<slug>.md, the
+ * user guides docs/<slug>.md (served as /docs/<slug>.md) and the shared playlist module from src/. Names are lower-case letters, digits and hyphens
  * with exactly one dot, so "..", dotfiles and %-escapes never match. The real path must
  * also stay under the real public folder (a symlink cannot lead out). Media files are never served.
  * @returns {Promise<[string, string] | null>} [file, content type]
  */
-export async function staticFile(path, root = PUBLIC) {
+export async function staticFile(path, root = PUBLIC, docsRoot = DOCS) {
   if (path === "/") path = "/index.html";
   if (path === "/playlist-core.js") return [here("./playlist-core.js"), TYPES.js];
   const m = /^\/((?:[a-z][a-z0-9-]*\/)*[a-z][a-z0-9-]*)\.(js|css|html|md)$/.exec(path);
   if (!m) return null;
   const [, name, ext] = m;
   const isHelp = /^help\/[a-z][a-z0-9-]{0,40}$/.test(name);
-  if ((ext === "md") !== isHelp) return null; // .md only under help/, and help/ only holds .md
+  const isDoc = /^docs\/[a-z][a-z0-9-]{0,40}$/.test(name);
+  if ((ext === "md") !== (isHelp || isDoc)) return null; // .md only under help/ and docs/, and those hold only .md
   let real;
   let base;
   try {
-    base = await realpath(root);
-    real = await realpath(resolve(root, `${name}.${ext}`));
+    base = await realpath(isDoc ? docsRoot : root);
+    real = await realpath(isDoc ? resolve(docsRoot, `${name.slice(5)}.md`) : resolve(root, `${name}.${ext}`));
   } catch {
     return null;
   }

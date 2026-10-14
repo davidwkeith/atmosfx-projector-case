@@ -67,6 +67,10 @@ describe("staticFile", () => {
     await writeFile(join(root, "public", "index.html"), "<html>");
     await writeFile(join(root, "public", "views", "a-view.js"), "export {}");
     await writeFile(join(root, "public", "help", "dashboard.md"), "# Hi");
+    await mkdir(join(root, "docs"));
+    await writeFile(join(root, "docs", "dmx.md"), "# DMX");
+    await writeFile(join(root, "docs", "notes.txt"), "no");
+    await writeFile(join(root, "public", "docs-helper.js"), "export {}");
     await writeFile(join(root, "outside.js"), "secret");
     await symlink(join(root, "outside.js"), join(root, "public", "link.js"));
   });
@@ -77,6 +81,18 @@ describe("staticFile", () => {
     expect((await staticFile("/", pub))[1]).toMatch(/text\/html/);
     expect((await staticFile("/views/a-view.js", pub))[1]).toMatch(/text\/javascript/);
     expect((await staticFile("/help/dashboard.md", pub))[1]).toMatch(/text\/markdown/);
+  });
+
+  it("serves the user guides from docs/ as Markdown, and only those", async () => {
+    const pub = join(root, "public");
+    const docs = join(root, "docs");
+    expect((await staticFile("/docs/dmx.md", pub, docs))[1]).toMatch(/text\/markdown/);
+    expect(await staticFile("/docs/missing.md", pub, docs)).toBeNull();
+    expect(await staticFile("/docs/notes.txt", pub, docs)).toBeNull();
+    expect(await staticFile("/docs/dmx.js", pub, docs)).toBeNull();
+    expect(await staticFile("/docs/../dmx.md", pub, docs)).toBeNull();
+    expect(await staticFile("/docs/%2e%2e/dmx.md", pub, docs)).toBeNull();
+    expect(await staticFile("/dmx.md", pub, docs)).toBeNull(); // .md only under help/ and docs/
   });
 
   it("does not follow a symlink out of the root", async () => {

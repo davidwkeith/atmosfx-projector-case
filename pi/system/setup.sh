@@ -3,7 +3,7 @@
 # Used by install.sh on a running Pi and by the pi-gen stage inside the image
 # chroot, so it must not rely on systemd running (no start/restart here).
 #
-# usage: setup.sh <user> <source dir containing src/, public/, system/, package*.json>
+# usage: setup.sh <user> <source dir containing src/, public/, docs/, system/, package*.json>
 set -euo pipefail
 
 user=${1:?usage: setup.sh <user> <source dir>}
@@ -40,10 +40,10 @@ fi
 node --version
 
 echo "== app -> $app"
-rm -rf "$app/src" "$app/public" "$app/system"
+rm -rf "$app/src" "$app/public" "$app/docs" "$app/system"
 install -d "$app"
 # system/ too, so videofx-update --rollback can restore the matching unit files.
-cp -r "$src/src" "$src/public" "$src/system" "$src/package.json" "$src/package-lock.json" "$app/"
+cp -r "$src/src" "$src/public" "$src/docs" "$src/system" "$src/package.json" "$src/package-lock.json" "$app/"
 # version.json (package version + git sha) comes with releases and images; from a
 # git checkout, bake the sha here.
 if [ -f "$src/version.json" ]; then

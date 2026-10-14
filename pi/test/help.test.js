@@ -4,7 +4,7 @@ import { helpSlugs } from "../public/nav.js";
 import { parseMarkdown } from "../public/markdown.js";
 
 const dir = new URL("../public/help/", import.meta.url);
-const README = "https://github.com/davidwkeith/atmosfx-projector-case/blob/main/pi/README.md";
+const docsDir = new URL("../docs/", import.meta.url);
 const githubSlug = (heading) => heading.toLowerCase().replace(/[^a-z0-9 -]/g, "").trim().replace(/ /g, "-");
 
 describe("help pages", () => {
@@ -13,15 +13,19 @@ describe("help pages", () => {
     expect(files.sort()).toEqual(helpSlugs().sort());
   });
 
-  it("each starts with a heading and links to a README heading that exists", async () => {
-    const readme = await readFile(new URL("../README.md", import.meta.url), "utf8");
-    const anchors = new Set([...readme.matchAll(/^#{1,6} +(.+?) *$/gm)].map((m) => githubSlug(m[1])));
+  it("each starts with a heading and links to a guide page and heading that exist", async () => {
     for (const slug of helpSlugs()) {
       const text = await readFile(new URL(`${slug}.md`, dir), "utf8");
       expect(parseMarkdown(text)[0], slug).toMatchObject({ type: "heading", level: 1 });
-      const links = [...text.matchAll(new RegExp(`\\]\\(${README.replace(/[.]/g, "\\.")}#([a-z0-9-]+)\\)`, "g"))];
-      expect(links.length, `${slug} links to the README`).toBeGreaterThan(0);
-      for (const [, anchor] of links) expect(anchors.has(anchor), `${slug}: #${anchor} is not a README heading`).toBe(true);
+      const links = [...text.matchAll(/\]\(\.\.\/\.\.\/docs\/([a-z0-9-]+)\.md(?:#([a-z0-9-]+))?\)/g)];
+      expect(links.length, `${slug} links to a guide`).toBeGreaterThan(0);
+      for (const [, page, anchor] of links) {
+        const doc = await readFile(new URL(`${page}.md`, docsDir), "utf8");
+        if (anchor) {
+          const anchors = new Set([...doc.matchAll(/^#{1,6} +(.+?) *$/gm)].map((m) => githubSlug(m[1])));
+          expect(anchors.has(anchor), `${slug}: ${page}.md has no heading #${anchor}`).toBe(true);
+        }
+      }
     }
   });
 });
