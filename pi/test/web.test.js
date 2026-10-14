@@ -111,6 +111,8 @@ describe("web server", () => {
   let power;
   let playlistChanged;
   let resetMatter;
+  let upgradeResult;
+  let upgradeCalls;
   let password;
 
   beforeEach(async () => {
@@ -119,6 +121,8 @@ describe("web server", () => {
     playlistChanged = vi.fn();
     resetMatter = vi.fn(async () => {});
     password = "";
+    upgradeResult = null;
+    upgradeCalls = 0;
     const media = createMediaStore({ dir, playlist: join(dir, "playlist.m3u"), maxUploadBytes: 1000 });
     server = createWebServer({
       media,
@@ -138,6 +142,8 @@ describe("web server", () => {
       playlistChanged,
       pairingSvg: () => "<svg/>",
       resetMatter,
+      upgrade: async () => ((upgradeCalls += 1), upgradeResult),
+      checkUpdate: async () => upgradeResult,
       log: { error: () => {} },
     });
     await new Promise((resolve, reject) => {
@@ -172,6 +178,33 @@ describe("web server", () => {
       req.end(body);
     });
   }
+
+  it("with no page password, refuses to upgrade and never asks for the Pi login password", async () => {
+    const res = await call("POST", "/api/update/upgrade", { body: '{"password":"right"}' });
+    expect(res.status).toBe(403);
+    expect(res.json.error).toMatch(/page password/);
+    expect(upgradeCalls).toBe(0);
+  });
+
+  it("with a page password set, that login is the authorization", async () => {
+    password = "boo";
+    const post = (headers) => call("POST", "/api/update/upgrade", { body: "{}", headers });
+    expect((await post()).status).toBe(401);
+    const auth = { authorization: `Basic ${Buffer.from("x:boo").toString("base64")}` };
+    expect((await post({ ...auth, "x-videofx": "" })).status).toBe(403);
+    upgradeResult = { ok: true };
+    const ok = await post(auth);
+    expect(ok.status).toBe(202);
+    expect(ok.json).toEqual({ upgrading: true });
+    expect(upgradeCalls).toBe(1);
+  });
+
+  it("maps helper failures and runs Check now", async () => {
+    upgradeResult = { error: "unavailable" };
+    expect((await call("POST", "/api/update/check", { body: "{}" })).status).toBe(503);
+    upgradeResult = { ok: true };
+    expect((await call("POST", "/api/update/check", { body: "{}" })).json).toEqual({ checked: true });
+  });
 
   it("serves the page and the shared module", async () => {
     expect((await call("GET", "/")).text).toMatch(/<title>VideoFX<\/title>/);

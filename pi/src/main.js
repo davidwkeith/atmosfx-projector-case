@@ -43,6 +43,7 @@ import { TIMESYNC_FLAG, parseIwLink, parseNmcliDevices, signalVerdict, storageSt
 import { Watchdog } from "./watchdog.js";
 import { capVolume, quietNow, scareBlocked } from "./quiet.js";
 import { readVersion, updateStatus } from "./update.js";
+import { askHelper } from "./upgrade.js";
 import { OverTempGuard, SocWatch, parseMilli } from "./thermal.js";
 import { Volume, amixerArgs } from "./volume.js";
 import { createWebServer } from "./web.js";
@@ -630,6 +631,10 @@ function restartService(before = async () => {}) {
   }, 200);
 }
 
+// What the last `videofx-update --check` found (the page never reaches the network itself).
+const versionStatus = () =>
+  updateStatus(currentVersion, (() => { try { return readFileSync(join(stateDir, "update-check.json"), "utf8"); } catch { return ""; } })());
+
 const web = createWebServer({
   media,
   settings,
@@ -656,7 +661,7 @@ const web = createWebServer({
       schedule: { enabled: get("schedule").enabled, waitingForClock: scheduler.waitingForClock, next: next && { at: new Date(next.at).toISOString(), on: next.on, label: next.label } },
       clock: { synced: clockSynced(), now: new Date().toISOString() },
       quiet: { active: quietNow(get("quietHours"), new Date(), { clockOk: clockSynced() }), cap: get("quietHours").volumeCap, noScares: get("quietHours").disableScares },
-      version: updateStatus(currentVersion, (() => { try { return readFileSync(join(stateDir, "update-check.json"), "utf8"); } catch { return ""; } })()),
+      version: versionStatus(),
       web: { passwordSet: settings.passwordSet },
       network,
       storage,
@@ -724,6 +729,11 @@ const web = createWebServer({
       console.warn("Resetting Matter pairing");
       await server.erase();
     }),
+  checkUpdate: () => askHelper({ action: "check" }),
+  upgrade: async () => {
+    if (!versionStatus().available) return { error: "no-update" };
+    return askHelper({ action: "upgrade" });
+  },
   restart: async () => {
     console.warn("Restart requested from the web UI");
     restartService();

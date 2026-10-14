@@ -1,0 +1,15 @@
+# Lets the web page ask for an upgrade without the service ever being root.
+# Private to the service account: videofx-user writes SocketUser= to match the
+# player unit, so no other local user can reach the helper.
+[Unit]
+Description=VideoFX upgrade helper socket
+
+[Socket]
+ListenStream=/run/videofx-upgrade.sock
+SocketUser=pi
+SocketMode=0600
+Accept=yes
+MaxConnections=2
+
+[Install]
+WantedBy=sockets.target

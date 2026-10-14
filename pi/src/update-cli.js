@@ -6,7 +6,8 @@
 // The repo is private for now: a GitHub token with read access to its contents
 // goes in the token file (root only).
 
-import { readFileSync, writeFileSync } from "node:fs";
+import { randomBytes } from "node:crypto";
+import { readFileSync, renameSync, writeFileSync } from "node:fs";
 import { parseArgs } from "node:util";
 import { RELEASE_REPO, pickAsset } from "./update.js";
 
@@ -55,7 +56,12 @@ try {
     } catch (err) {
       result = { latest: null, error: err.message, checkedAt: new Date().toISOString() };
     }
-    writeFileSync(o.out, JSON.stringify(result) + "\n", { mode: 0o644 });
+    // Root writes into a folder the unprivileged service owns: never follow a
+    // symlink it planted. Create a fresh file (wx fails on any existing path,
+    // links included), then rename over the target, which replaces a link.
+    const tmp = `${o.out}.${randomBytes(6).toString("hex")}.tmp`;
+    writeFileSync(tmp, JSON.stringify(result) + "\n", { mode: 0o644, flag: "wx" });
+    renameSync(tmp, o.out);
     console.log(JSON.stringify(result));
   } else {
     console.error("usage: update-cli.js latest|download|check ...");

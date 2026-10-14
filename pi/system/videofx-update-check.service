@@ -1,0 +1,8 @@
+[Unit]
+Description=VideoFX: look for a newer release on GitHub
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/videofx-update --check

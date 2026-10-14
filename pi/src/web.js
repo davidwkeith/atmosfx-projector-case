@@ -153,6 +153,8 @@ async function readJson(req, limit = JSON_LIMIT) {
  * @param {import("./settings.js").Settings} o.settings
  * @param {(key: string) => Promise<string|undefined>} [o.afterSettingChange]  applies a change, may return a note
  * @param {() => Promise<void>} o.restart
+ * @param {() => Promise<{ok: true}|{error: string, message?: string}>} [o.upgrade]  asks the root helper to start videofx-update
+ * @param {() => Promise<{ok: true}|{error: string, message?: string}>} [o.checkUpdate]  asks the root helper to look at GitHub now
  * @param {() => object} o.scare                     fire a scare; returns the player's result
  * @param {() => Promise<string|null>} o.irLearn     wait for one remote press
  * @param {(code?: string) => Promise<void>} o.irTest
@@ -160,6 +162,18 @@ async function readJson(req, limit = JSON_LIMIT) {
  */
 export function createWebServer(o) {
   const log = o.log ?? console;
+
+  const HELPER_ERRORS = {
+    "no-update": [409, "No newer version is known. Press Check now first."],
+    busy: [409, "An upgrade is already running."],
+    unavailable: [503, "The upgrade helper is not running on this Pi."],
+  };
+  /** Maps the root helper's answer to a response. */
+  function helperResult(res, okStatus, r, okBody) {
+    if (r?.ok) return send(res, okStatus, okBody);
+    const [status, text] = HELPER_ERRORS[r?.error] ?? [502, "The upgrade helper failed."];
+    throw new HttpError(status, r?.message && !HELPER_ERRORS[r?.error] ? `${text} ${r.message}` : text);
+  }
 
   function guard(req, res) {
     if (!isLanAddress(req.socket.remoteAddress)) return send(res, 403, { error: "LAN only" }), false;
@@ -284,6 +298,18 @@ export function createWebServer(o) {
         method === "PUT" ? o.settings.set(key, body.value, auth) : o.settings.reset(key, auth);
       const note = await o.afterSettingChange?.(key);
       return send(res, 200, { setting: result, note: note ?? null, restartNeeded: o.settings.restartNeeded });
+    }
+    if (method === "POST" && path === "/api/update/check") {
+      await readJson(req);
+      return helperResult(res, 200, o.checkUpdate ? await o.checkUpdate() : { error: "unavailable" }, { checked: true });
+    }
+    if (method === "POST" && path === "/api/update/upgrade") {
+      await readJson(req);
+      // Installing software is gated by the page password, which guard() has already
+      // checked on this request. With none set, anyone on the LAN could press it, and
+      // asking for the Pi's login password instead would send it over plain HTTP.
+      if (!o.auth.passwordSet) throw new HttpError(403, "Set a page password first (Settings > Web page) to upgrade from here.");
+      return helperResult(res, 202, o.upgrade ? await o.upgrade() : { error: "unavailable" }, { upgrading: true });
     }
     if (method === "POST" && path === "/api/restart") {
       await o.restart();
