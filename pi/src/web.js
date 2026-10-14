@@ -3,7 +3,8 @@
 // Host header (DNS-rebinding guard), optional basic auth, and a custom header on
 // writes so other web sites cannot post to it from a browser (CSRF).
 
-import { readFile } from "node:fs/promises";
+import { readFile, realpath } from "node:fs/promises";
+import { resolve, sep } from "node:path";
 import { createServer } from "node:http";
 import { BlockList, isIP } from "node:net";
 import { networkInterfaces } from "node:os";
@@ -12,13 +13,39 @@ import { HttpError } from "./media.js";
 
 const here = (p) => fileURLToPath(new URL(p, import.meta.url));
 
-// The only files served from disk. Media files are never served.
-const STATIC = {
-  "/": [here("../public/index.html"), "text/html; charset=utf-8"],
-  "/app.js": [here("../public/app.js"), "text/javascript; charset=utf-8"],
-  "/app.css": [here("../public/app.css"), "text/css; charset=utf-8"],
-  "/playlist-core.js": [here("./playlist-core.js"), "text/javascript; charset=utf-8"],
+const PUBLIC = here("../public");
+const TYPES = {
+  js: "text/javascript; charset=utf-8",
+  css: "text/css; charset=utf-8",
+  html: "text/html; charset=utf-8",
+  md: "text/markdown; charset=utf-8",
 };
+
+/**
+ * The only files served from disk: public/**.{js,css,html}, public/help/<slug>.md and
+ * the shared playlist module from src/. Names are lower-case letters, digits and hyphens
+ * with exactly one dot, so "..", dotfiles and %-escapes never match. The real path must
+ * also stay under the real public folder (a symlink cannot lead out). Media files are never served.
+ * @returns {Promise<[string, string] | null>} [file, content type]
+ */
+export async function staticFile(path, root = PUBLIC) {
+  if (path === "/") path = "/index.html";
+  if (path === "/playlist-core.js") return [here("./playlist-core.js"), TYPES.js];
+  const m = /^\/((?:[a-z][a-z0-9-]*\/)*[a-z][a-z0-9-]*)\.(js|css|html|md)$/.exec(path);
+  if (!m) return null;
+  const [, name, ext] = m;
+  const isHelp = /^help\/[a-z][a-z0-9-]{0,40}$/.test(name);
+  if ((ext === "md") !== isHelp) return null; // .md only under help/, and help/ only holds .md
+  let real;
+  let base;
+  try {
+    base = await realpath(root);
+    real = await realpath(resolve(root, `${name}.${ext}`));
+  } catch {
+    return null;
+  }
+  return real.startsWith(base + sep) ? [real, TYPES[ext]] : null;
+}
 
 const JSON_LIMIT = 256 * 1024;
 export const WRITE_HEADER = "x-videofx";
@@ -150,9 +177,9 @@ export function createWebServer(o) {
     const path = url.pathname;
     const method = req.method;
 
-    if (method === "GET" && STATIC[path]) {
-      const [file, type] = STATIC[path];
-      return send(res, 200, await readFile(file), type);
+    if (method === "GET") {
+      const hit = await staticFile(path);
+      if (hit) return send(res, 200, await readFile(hit[0]), hit[1]);
     }
     if (method === "GET" && path === "/api/status") return send(res, 200, o.status());
     if (method === "GET" && path === "/api/pairing.svg") {

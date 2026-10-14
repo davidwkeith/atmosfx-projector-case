@@ -1,11 +1,11 @@
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from "node:fs/promises";
 import { request } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMediaStore } from "../src/media.js";
 import { qrTextToMatrix, qrTextToSvg } from "../src/qr.js";
-import { createWebServer, isAllowedHost, isLanAddress } from "../src/web.js";
+import { createWebServer, isAllowedHost, isLanAddress, staticFile } from "../src/web.js";
 
 describe("LAN-only guard", () => {
   it.each(["127.0.0.1", "10.1.2.3", "172.16.0.1", "172.31.255.255", "192.168.1.20", "169.254.3.4", "::1", "fe80::1%eth0", "fd12::1", "::ffff:192.168.1.5"])(
@@ -54,6 +54,36 @@ describe("QR code", () => {
   });
   it("renders an SVG with a quiet zone", () => {
     expect(qrTextToSvg(text)).toMatch(/^<svg [^>]*viewBox="-4 -4 11 11"/);
+  });
+});
+
+describe("staticFile", () => {
+  let root;
+  beforeEach(async () => {
+    root = await mkdtemp(join(tmpdir(), "videofx-static-"));
+    await mkdir(join(root, "public", "help"), { recursive: true });
+    await mkdir(join(root, "public", "views"), { recursive: true });
+    await writeFile(join(root, "public", "index.html"), "<html>");
+    await writeFile(join(root, "public", "views", "a-view.js"), "export {}");
+    await writeFile(join(root, "public", "help", "dashboard.md"), "# Hi");
+    await writeFile(join(root, "outside.js"), "secret");
+    await symlink(join(root, "outside.js"), join(root, "public", "link.js"));
+  });
+  afterEach(() => rm(root, { recursive: true, force: true }));
+
+  it("maps paths inside the root, including nested modules and help pages", async () => {
+    const pub = join(root, "public");
+    expect((await staticFile("/", pub))[1]).toMatch(/text\/html/);
+    expect((await staticFile("/views/a-view.js", pub))[1]).toMatch(/text\/javascript/);
+    expect((await staticFile("/help/dashboard.md", pub))[1]).toMatch(/text\/markdown/);
+  });
+
+  it("does not follow a symlink out of the root", async () => {
+    expect(await staticFile("/link.js", join(root, "public"))).toBeNull();
+  });
+
+  it("returns null for a missing file", async () => {
+    expect(await staticFile("/views/missing.js", join(root, "public"))).toBeNull();
   });
 });
 
@@ -137,6 +167,28 @@ describe("web server", () => {
       expect(res.status, path).toBe(404);
       expect(res.text).not.toMatch(/"dependencies"/);
     }
+  });
+
+  it("serves the allow-listed static files with the right types", async () => {
+    for (const path of ["/", "/index.html", "/app.js", "/app.css", "/playlist-core.js"]) {
+      expect((await call("GET", path)).status, path).toBe(200);
+    }
+    expect((await call("GET", "/app.css")).headers["content-type"]).toMatch(/^text\/css/);
+    expect((await call("GET", "/app.js")).headers["content-type"]).toMatch(/^text\/javascript/);
+  });
+
+  it("refuses everything else under public/ and outside it", async () => {
+    const paths = [
+      "/.env", "/app.js.map", "/app.md", "/index.html.bak", "/package.json", "/src/web.js",
+      "/help/Dashboard.md", "/HELP/dashboard.md", "/help/dashboard.js", "/help/nope.md", "/help/a.b.md",
+      "/help/..%2fapp.md", "/views/..%2fapp.js", "/%2e%2e/package.json", `/help/${"a".repeat(60)}.md`,
+    ];
+    for (const path of paths) expect((await call("GET", path)).status, path).toBe(404);
+  });
+
+  it("asks for the password before serving static files", async () => {
+    password = "boo";
+    expect((await call("GET", "/app.js")).status).toBe(401);
   });
 
   it("rejects upload path traversal", async () => {

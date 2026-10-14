@@ -92,13 +92,14 @@ them only while `projectorPower` is `relay-ir`.
 Every view header has a "?" button opening a side sheet: a `<dialog>` on phones, a
 right-hand panel on desktop. Settings opens the help for the current group.
 
-Source files: `pi/docs/help/<slug>.md`, one per view (`dashboard`, `media`,
+Source files: `pi/public/help/<slug>.md`, one per view (`dashboard`, `media`,
 `scares`, `schedule`, `system`) and one per settings group (`device`, `playback`,
 `projector`, `audio`, `display`, `dmx`, `cooling`, `web-page`, `advanced`,
 `hardware`). Written for the page reader: what the screen does, common mistakes,
 and the few things the README explains at length (sunset needs latitude and
 longitude, CEC against relay against IR, the two-Pi Matter pairing warning). Each
 ends with a link to the matching README section on GitHub.
+The folder is under public/ because setup.sh and the image build copy only src/, public/ and system/.
 
 Delivery: `GET /help/<slug>.md` in `web.js`, slug pattern `^[a-z][a-z0-9-]{0,40}$`,
 served only if the file exists, `cache-control: no-store` like everything else.
@@ -108,7 +109,7 @@ links with `http(s):` or relative targets. Raw HTML is escaped. Other link schem
 render as plain text. A failed fetch shows "Help not available" inside the sheet.
 
 The README's web page section shrinks to a pointer to the "?" buttons. CLAUDE.md's
-docs list gains `pi/docs/help/`.
+docs list gains `pi/public/help/`.
 
 ## 4. Code structure and server changes
 
@@ -143,7 +144,7 @@ rename. `describe()` already exposes `group`, `label`, `help`, `apply`,
 - `pi/test/web.test.js`: the static route serves each view module and a help
   file; refuses `..`, dotfiles and unknown extensions; 404s an unknown help slug.
   Every slug the UI references (a list exported from `app.js` or a small
-  `help-index.js`) has a file in `pi/docs/help/`.
+  `help-index.js`) has a file in `pi/public/help/`.
 - New `pi/test/markdown.test.js`: each supported construct, raw HTML escaped,
   `javascript:` links rendered as text.
 - New `pi/test/settings-form.test.js`: the pending-changes store in isolation:
