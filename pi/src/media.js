@@ -3,9 +3,9 @@
 // the media folder.
 
 import { createWriteStream, lstatSync, readFileSync } from "node:fs";
-import { lstat, mkdir, readFile, readdir, statfs, unlink } from "node:fs/promises";
+import { access, copyFile, lstat, mkdir, readFile, readdir, statfs, unlink } from "node:fs/promises";
 import { randomBytes } from "node:crypto";
-import { dirname, join, resolve as resolvePath, sep } from "node:path";
+import { basename, dirname, join, resolve as resolvePath, sep } from "node:path";
 import { Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { commitFile, writeFileAtomic } from "./fsutil.js";
@@ -125,6 +125,31 @@ export function createMediaStore({ dir, playlist, maxUploadBytes: limit = 4 * 10
       }
       files.sort((a, b) => a.name.localeCompare(b.name));
       return { files, freeBytes: await freeBytes(), maxUploadBytes: maxUpload() };
+    },
+
+    /**
+     * First boot: with no playlist file at all, copy the bundled clip into the
+     * media folder and make it the playlist, so the projector shows something
+     * (and the web page has an entry to build on). An existing playlist, even an
+     * empty one, is left alone, so deleting the clip later sticks.
+     */
+    async seedDefault(source) {
+      if (await access(playlistPath).then(() => true, () => false)) return false;
+      await mkdir(root, { recursive: true });
+      const name = basename(source);
+      const target = resolve(name);
+      if (!(await access(target).then(() => true, () => false))) {
+        const tmp = join(root, `.upload-${randomBytes(6).toString("hex")}`);
+        try {
+          await copyFile(source, tmp);
+          await commitFile(tmp, target);
+        } catch (err) {
+          await unlink(tmp).catch(() => {});
+          throw err;
+        }
+      }
+      await writePlaylist([{ file: name, enabled: true }]);
+      return true;
     },
 
     /** Remove uploads a crash or power cut left half-written. Call once at startup. */
