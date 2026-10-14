@@ -1,22 +1,33 @@
 # First boot only: data partition + read-only root, then one reboot.
-# After Pi OS's own first-boot jobs: this unit reboots when it is done, and
-# anything it cuts short would run again on every boot under the read-only root
-# (new SSH host keys each time, for one). cloud-final: on the release image
-# cloud-init applies Imager's user, Wi-Fi and locale on this boot; they must be
-# on disk before the root goes read-only. Units that don't exist (no cloud-init
-# on an image built from pi/config) make the ordering a no-op.
+#
+# No ordering on cloud-init, and not Type=oneshot, on purpose. cloud-final.service
+# is After=multi-user.target, and a target waits for the units it wants, so a
+# oneshot wanted by multi-user.target yet After=cloud-final made an ordering
+# cycle: systemd dropped the job and neither this unit nor the player (which was
+# After= this one) was ever started. Type=exec ends the start job as soon as the
+# command is running, so nothing here is waited on by multi-user.target; the
+# command waits for cloud-init itself (Imager's user, Wi-Fi and locale must be on
+# disk before the root goes read-only). The player is therefore not ordered after
+# this unit: on the first boot it may start (and fail, if its account does not
+# exist yet) before the setup finishes, and Restart=always covers that until the
+# reboot below.
 [Unit]
 Description=VideoFX power-cut protection (data partition, read-only root)
-After=local-fs.target videofx-hostname.service regenerate_ssh_host_keys.service ssh.service userconfig.service cloud-final.service
-Before=videofx-player.service
+# After Pi OS's own first-boot jobs: this unit reboots when it is done, and
+# anything it cuts short would run again on every boot under the read-only root
+# (new SSH host keys each time, for one). All of these finish before
+# multi-user.target, so they cannot make a cycle.
+After=local-fs.target videofx-hostname.service regenerate_ssh_host_keys.service ssh.service userconfig.service
 ConditionPathExists=!/var/lib/videofx-storage.state
 
 [Service]
-Type=oneshot
-ExecStart=/usr/local/sbin/videofx-storage
-# Reboot so the overlay and the data mounts take effect (only if it succeeded).
-ExecStartPost=/bin/sh -c 'grep -qx ok /var/lib/videofx-storage.state && systemctl reboot --no-block || true'
+Type=exec
 RemainAfterExit=yes
+# 1. Wait for cloud-init to finish, if this image has it and it is still going
+#    ("status --wait" returns at once when it is disabled or absent).
+# 2. Run the setup. Its exit status is the unit's.
+# 3. Reboot so the overlay and the data mounts take effect (only if it succeeded).
+ExecStart=/bin/sh -c 'if command -v cloud-init >/dev/null 2>&1; then cloud-init status --wait >/dev/null 2>&1 || true; fi; /usr/local/sbin/videofx-storage || exit $?; if grep -qx ok /var/lib/videofx-storage.state; then systemctl reboot --no-block; fi'
 
 [Install]
 WantedBy=multi-user.target

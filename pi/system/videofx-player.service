@@ -2,7 +2,9 @@
 [Unit]
 Description=VideoFX player (Matter device driving mpv, projector power, web UI)
 Wants=network-online.target
-After=network-online.target sound.target videofx-hostname.service videofx-storage.service
+# Not After=videofx-storage.service: that unit waits for cloud-init, which runs after
+# multi-user.target, so ordering the player behind it makes an ordering cycle.
+After=network-online.target sound.target videofx-hostname.service
 # Settings, pairing and videos live on the data partition (bind mounts).
 RequiresMountsFor=/var/lib/videofx MEDIA_DIR
 
