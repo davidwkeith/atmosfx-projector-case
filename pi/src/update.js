@@ -36,11 +36,17 @@ export function compareVersions(a, b) {
   return x.pre < y.pre ? -1 : 1;
 }
 
-/** The pi/ tarball among a GitHub release's assets. */
+/**
+ * The pi/ tarball among a GitHub release's assets, with its detached signature
+ * (<tarball>.sig, made by tools/sign-release.sh) or sigUrl null if not signed yet.
+ */
 export function pickAsset(release) {
-  for (const a of release?.assets ?? []) {
+  const assets = release?.assets ?? [];
+  for (const a of assets) {
     const m = ASSET.exec(a.name ?? "");
-    if (m) return { name: a.name, version: m[1], url: a.url, tag: release.tag_name, draft: !!release.draft, prerelease: !!release.prerelease };
+    if (!m) continue;
+    const sig = assets.find((s) => s.name === `${a.name}.sig`);
+    return { name: a.name, version: m[1], url: a.url, sigUrl: sig?.url ?? null, tag: release.tag_name, draft: !!release.draft, prerelease: !!release.prerelease };
   }
   return null;
 }

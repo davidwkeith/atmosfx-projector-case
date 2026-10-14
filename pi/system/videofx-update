@@ -3,8 +3,10 @@
 #
 #   sudo videofx-update                        latest GitHub release of pi/
 #   sudo videofx-update --tag v0.3.0           a given release
-#   sudo videofx-update --tarball FILE         a videofx-pi-X.Y.Z.tar.gz copied over SSH (no GitHub access
-#                                              needed; packages still come from apt and npm)
+#   sudo videofx-update --tarball FILE         a videofx-pi-X.Y.Z.tar.gz copied over SSH, with FILE.sig next
+#                                              to it (no GitHub access needed; packages still come from apt and npm)
+#   sudo videofx-update --tarball FILE --sig S  the signature somewhere else
+#   sudo videofx-update --tarball FILE --no-verify   your own unsigned build (only with --tarball)
 #   sudo videofx-update --os                   also apt full-upgrade
 #   sudo videofx-update --rollback             back to the previous version (/opt/videofx.prev)
 #   sudo videofx-update --check                only check GitHub; the web page then shows "update available"
@@ -14,6 +16,9 @@
 # carries on after the reboot, then switches protection back on and reboots again.
 # If installing the new version fails (no network for apt or npm, say), the
 # previous version is put back and protection is still switched back on.
+# Every tarball must carry a valid signature by the release key in the installed
+# version's system/allowed_signers (videofx-verify-release), checked before it is
+# unpacked. GitHub releases without a .sig are not offered.
 # The repo is private for now: put a GitHub token (read access to the repo's
 # contents) in /srv/videofx/update/github-token, mode 600.
 set -euo pipefail
@@ -34,16 +39,18 @@ protected() { [ "$(findmnt -no FSTYPE /)" = overlay ]; }
 service_user() { stat -c %U /var/lib/videofx 2>/dev/null || getent passwd 1000 | cut -d: -f1; }
 current_version() { node -e 'console.log(require(process.argv[1]).version)' "$APP/package.json" 2>/dev/null || echo 0.0.0; }
 
-MODE=update TAG="" TARBALL="" OS=0 FAILED=0
+MODE=update TAG="" TARBALL="" SIG="" VERIFY=1 OS=0 FAILED=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --tag) TAG=$2; shift ;;
     --tarball) TARBALL=$2; shift ;;
+    --sig) SIG=$2; shift ;;
+    --no-verify) VERIFY=0 ;;
     --os) OS=1 ;;
     --rollback) MODE=rollback ;;
     --check) MODE=check ;;
     --resume) MODE=resume ;;
-    -h | --help) sed -n '2,18p' "$0"; exit 0 ;;
+    -h | --help) sed -n '2,24p' "$0"; exit 0 ;;
     *) die "unknown option $1" ;;
   esac
   shift
@@ -54,13 +61,14 @@ if [ "$MODE" = check ]; then
   exit 0
 fi
 
+[ "$VERIFY" = 1 ] || [ -n "$TARBALL" ] || die "--no-verify only goes with --tarball (GitHub releases are always checked)"
 [ "$(id -u)" -eq 0 ] || die "run with sudo"
 install -d -m 700 "$WORK"
 
 # Protected root: park the job on the data partition, reboot writable, resume.
 park_and_reboot() {
   {
-    printf 'MODE=%q\nTAG=%q\nOS=%q\nRESTORE_PROTECTION=1\n' "$MODE" "$TAG" "$OS"
+    printf 'MODE=%q\nTAG=%q\nOS=%q\nVERIFY=%q\nRESTORE_PROTECTION=1\n' "$MODE" "$TAG" "$OS" "$VERIFY"
   } >"$PENDING"
   sync
   /usr/local/sbin/videofx-maint on
@@ -100,10 +108,24 @@ do_update() {
   local tarball=$WORK/release.tar.gz src
   if [ ! -s "$tarball" ]; then
     echo "== fetching the release from GitHub"
-    local meta url
+    local meta url sig_url
     meta=$(node "$APP/src/update-cli.js" latest --token-file "$TOKEN" ${TAG:+--tag "$TAG"})
     url=$(node -e 'console.log(JSON.parse(process.argv[1]).url)' "$meta")
+    sig_url=$(node -e 'console.log(JSON.parse(process.argv[1]).sigUrl)' "$meta")
     node "$APP/src/update-cli.js" download --token-file "$TOKEN" --url "$url" --out "$tarball"
+    node "$APP/src/update-cli.js" download --token-file "$TOKEN" --url "$sig_url" --out "$tarball.sig"
+  fi
+  if [ "$VERIFY" = 1 ]; then
+    # The installed version's key and verifier, never anything from the new tarball.
+    local verify=$APP/system/videofx-verify-release
+    [ -f "$verify" ] || die "this version has no videofx-verify-release; update with --tarball FILE --no-verify once"
+    if ! bash "$verify" "$tarball" "$tarball.sig" "$APP/system/allowed_signers"; then
+      rm -f "$tarball" "$tarball.sig"
+      die "the release's signature does not check out; nothing was installed"
+    fi
+    echo "== signature OK"
+  else
+    echo "== WARNING: --no-verify, installing an unsigned tarball"
   fi
   rm -rf "$WORK/new"
   mkdir -p "$WORK/new"
@@ -130,7 +152,7 @@ do_update() {
     apt-get update
     DEBIAN_FRONTEND=noninteractive apt-get -y full-upgrade
   fi
-  rm -rf "$WORK/new" "$tarball"
+  rm -rf "$WORK/new" "$tarball" "$tarball.sig"
 }
 
 do_rollback() {
@@ -154,7 +176,14 @@ case "$MODE" in
     finish
     ;;
   update)
-    [ -z "$TARBALL" ] || install -m 600 "$TARBALL" "$WORK/release.tar.gz"
+    rm -f "$WORK/release.tar.gz" "$WORK/release.tar.gz.sig"
+    if [ -n "$TARBALL" ]; then
+      install -m 600 "$TARBALL" "$WORK/release.tar.gz"
+      if [ "$VERIFY" = 1 ]; then
+        [ -f "${SIG:-$TARBALL.sig}" ] || die "no signature: expected ${SIG:-$TARBALL.sig} (or --sig FILE)"
+        install -m 600 "${SIG:-$TARBALL.sig}" "$WORK/release.tar.gz.sig"
+      fi
+    fi
     protected && park_and_reboot
     do_update
     finish

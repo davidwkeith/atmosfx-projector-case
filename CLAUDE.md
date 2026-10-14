@@ -18,6 +18,7 @@ scripts/render_previews.sh    # regenerate preview/*.png (needs a GL context; xv
 uv run scripts/render_wiring.py  # regenerate docs/wiring-*.svg (Schemdraw schematics; deps come from the script header)
 scripts/publish.sh            # create the GitHub repo with gh and push (one-time bootstrap)
 cd pi && npx vitest run       # Pi tests; they bind 127.0.0.1 and a Unix socket, so run them outside Claude Code's sandbox
+pi/tools/sign-release.sh vX.Y.Z  # after CI publishes a release: sign its Pi tarball with the owner's release key (never in CI); Pis install only signed tarballs
 pi/image/build.sh [--generic]  # Pi image via pi-gen in Docker (about 10 min on CI's arm64 runner). --generic = the public, secret-free image CI attaches to releases
 ```
 

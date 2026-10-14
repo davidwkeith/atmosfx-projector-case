@@ -41,7 +41,7 @@ Everything below has only been tested in software. Work through it on the bench 
 | 14b | Schedule catch-up: with "on at 18:00" set, pull the Pi's power at 17:55 and restore it at 18:05 | It switches on within a minute of boot (once the clock is set) | Set "After a power cut" to on for the night |
 | 14c | Open `http://videofx-xxxx.local/` from an iPhone on the same Wi-Fi | The page loads (not "LAN only") | Report the phone's and the Pi's addresses |
 | 15 | DMX: send from QLC+/xLights/FPP (unicast) to the Pi's universe | Page shows the source; power, clip and volume follow | Check universe/address and UniFi multicast settings |
-| 16 | Update and rollback: `videofx-update --tarball` with the release tarball, then `--rollback` | Both complete and the page shows the right version | Report it |
+| 16 | Update and rollback: `videofx-update --tarball` with the release tarball and its `.sig`, then `--rollback`; then once with a tampered tarball | Both complete and the page shows the right version; the tampered one stops at "signature does not check out" with nothing installed | Report it |
 
 ## In the case
 

@@ -35,6 +35,8 @@ async function latest() {
   if (!res.ok) throw new Error(`GitHub ${res.status} ${res.statusText}${res.status === 404 ? " (private repo? check the token file)" : ""}`);
   const asset = pickAsset(await res.json());
   if (!asset) throw new Error("the release has no videofx-pi-<version>.tar.gz asset");
+  // Unsigned releases are not offered: videofx-update would refuse them anyway.
+  if (!asset.sigUrl) throw new Error(`${asset.tag} is not signed yet (no ${asset.name}.sig; run tools/sign-release.sh)`);
   return asset;
 }
 
