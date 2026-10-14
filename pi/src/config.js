@@ -159,6 +159,7 @@ export const SETTINGS = [
   },
   {
     key: "webHosts",
+    advanced: true,
     env: "VIDEOFX_WEB_HOSTS",
     group: "Web page",
     label: "Extra host names",
@@ -207,6 +208,7 @@ export const SETTINGS = [
   },
   {
     key: "audioCard",
+    advanced: true,
     env: "VIDEOFX_AUDIO_CARD",
     group: "Audio",
     label: "ALSA card name",
@@ -217,6 +219,7 @@ export const SETTINGS = [
   },
   {
     key: "mixerControl",
+    advanced: true,
     env: "VIDEOFX_MIXER_CONTROL",
     group: "Audio",
     label: "Mixer control",
@@ -253,6 +256,7 @@ export const SETTINGS = [
   },
   {
     key: "relaySettleSec",
+    advanced: true,
     env: "VIDEOFX_RELAY_SETTLE_SEC",
     group: "Projector",
     label: "Relay settle time (s)",
@@ -284,6 +288,7 @@ export const SETTINGS = [
   },
   {
     key: "cecDevice",
+    advanced: true,
     env: "VIDEOFX_CEC_DEVICE",
     group: "Projector",
     label: "CEC device",
@@ -418,6 +423,7 @@ export const SETTINGS = [
   },
   {
     key: "pirDebounceMs",
+    advanced: true,
     env: "VIDEOFX_PIR_DEBOUNCE_MS",
     group: "Motion sensor",
     label: "PIR debounce (ms)",
@@ -489,6 +495,7 @@ export const SETTINGS = [
   },
   {
     key: "tempHysteresisC",
+    advanced: true,
     env: "VIDEOFX_TEMP_HYSTERESIS_C",
     group: "Cooling",
     label: "Cool-down before resuming (°C below critical)",
@@ -527,6 +534,7 @@ export const SETTINGS = [
   },
   {
     key: "dmxHoldSec",
+    advanced: true,
     env: "VIDEOFX_DMX_HOLD_SEC",
     group: "DMX",
     label: "Hold after the signal stops (s)",
@@ -537,6 +545,7 @@ export const SETTINGS = [
   },
   {
     key: "dmxMulticast",
+    advanced: true,
     env: "VIDEOFX_DMX_MULTICAST",
     group: "DMX",
     label: "Accept multicast",
@@ -568,6 +577,7 @@ export const SETTINGS = [
   },
   {
     key: "console",
+    advanced: true,
     env: "VIDEOFX_CONSOLE",
     group: "Display",
     label: "Console for the black / pairing screen",
@@ -581,22 +591,22 @@ export const SETTINGS = [
       return v;
     },
   },
-  // Fixed: ports need root to change (port 80 capability, avahi service file);
+  // Hardware (file only): ports need root to change (port 80 capability, avahi service file);
   // paths and the player binary would let the web page point the service anywhere.
   // GPIO pins wired to the header. The relay and IR pins are also set in
   // config.txt (boot level, IR overlays), which needs root, so they are file-only.
-  { key: "relayPin", env: "VIDEOFX_RELAY_GPIO", group: "Fixed", label: "Relay GPIO (BCM)", apply: "fixed", default: () => 27, parse: gpioPin },
-  { key: "relayActiveLow", env: "VIDEOFX_RELAY_ACTIVE_LOW", group: "Fixed", label: "Relay input is active-low", apply: "fixed", default: () => true, parse: bool },
-  { key: "irTxPin", env: "VIDEOFX_IR_TX_GPIO", group: "Fixed", label: "IR LED GPIO (BCM)", apply: "fixed", default: () => 16, parse: gpioPin },
-  { key: "irTxDriver", env: "VIDEOFX_IR_TX_DRIVER", group: "Fixed", label: "IR LED driver", apply: "fixed", options: ["gpio-ir-tx", "pwm-ir-tx"], default: () => "gpio-ir-tx", parse: oneOf(["gpio-ir-tx", "pwm-ir-tx"]) },
-  { key: "irRxPin", env: "VIDEOFX_IR_RX_GPIO", group: "Fixed", label: "IR receiver GPIO (BCM)", apply: "fixed", default: () => 23, parse: gpioPin },
-  { key: "httpPort", env: "VIDEOFX_HTTP_PORT", group: "Fixed", label: "Web page port", apply: "fixed", default: () => 80, parse: int(1, 65535) },
-  { key: "matterPort", env: "VIDEOFX_MATTER_PORT", group: "Fixed", label: "Matter port", apply: "fixed", default: () => 5540, parse: int(1, 65535) },
-  { key: "mediaDir", env: "VIDEOFX_MEDIA_DIR", group: "Fixed", label: "Media folder", apply: "fixed", default: (_, ctx) => join(ctx.home, "media"), parse: absPath },
-  { key: "playlist", env: "VIDEOFX_PLAYLIST", group: "Fixed", label: "Playlist file", apply: "fixed", default: (v) => join(v.mediaDir, "playlist.m3u"), parse: absPath },
-  { key: "mpv", env: "VIDEOFX_MPV", group: "Fixed", label: "mpv command", apply: "fixed", default: () => "mpv", parse: text(/^\S+$/, "must be one word", 256) },
+  { key: "relayPin", env: "VIDEOFX_RELAY_GPIO", group: "Hardware", label: "Relay GPIO (BCM)", apply: "fixed", default: () => 27, parse: gpioPin },
+  { key: "relayActiveLow", env: "VIDEOFX_RELAY_ACTIVE_LOW", group: "Hardware", label: "Relay input is active-low", apply: "fixed", default: () => true, parse: bool },
+  { key: "irTxPin", env: "VIDEOFX_IR_TX_GPIO", group: "Hardware", label: "IR LED GPIO (BCM)", apply: "fixed", default: () => 16, parse: gpioPin },
+  { key: "irTxDriver", env: "VIDEOFX_IR_TX_DRIVER", group: "Hardware", label: "IR LED driver", apply: "fixed", options: ["gpio-ir-tx", "pwm-ir-tx"], default: () => "gpio-ir-tx", parse: oneOf(["gpio-ir-tx", "pwm-ir-tx"]) },
+  { key: "irRxPin", env: "VIDEOFX_IR_RX_GPIO", group: "Hardware", label: "IR receiver GPIO (BCM)", apply: "fixed", default: () => 23, parse: gpioPin },
+  { key: "httpPort", env: "VIDEOFX_HTTP_PORT", group: "Hardware", label: "Web page port", apply: "fixed", default: () => 80, parse: int(1, 65535) },
+  { key: "matterPort", env: "VIDEOFX_MATTER_PORT", group: "Hardware", label: "Matter port", apply: "fixed", default: () => 5540, parse: int(1, 65535) },
+  { key: "mediaDir", env: "VIDEOFX_MEDIA_DIR", group: "Hardware", label: "Media folder", apply: "fixed", default: (_, ctx) => join(ctx.home, "media"), parse: absPath },
+  { key: "playlist", env: "VIDEOFX_PLAYLIST", group: "Hardware", label: "Playlist file", apply: "fixed", default: (v) => join(v.mediaDir, "playlist.m3u"), parse: absPath },
+  { key: "mpv", env: "VIDEOFX_MPV", group: "Hardware", label: "mpv command", apply: "fixed", default: () => "mpv", parse: text(/^\S+$/, "must be one word", 256) },
   // systemd sets STATE_DIRECTORY from StateDirectory=videofx (/var/lib/videofx).
-  { key: "stateDir", env: ["STATE_DIRECTORY", "VIDEOFX_STATE_DIR"], group: "Fixed", label: "State folder", apply: "fixed", default: (_, ctx) => join(ctx.home, ".videofx"), parse: absPath },
+  { key: "stateDir", env: ["STATE_DIRECTORY", "VIDEOFX_STATE_DIR"], group: "Hardware", label: "State folder", apply: "fixed", default: (_, ctx) => join(ctx.home, ".videofx"), parse: absPath },
 ];
 
 export const SETTING = Object.fromEntries(SETTINGS.map((s) => [s.key, s]));
