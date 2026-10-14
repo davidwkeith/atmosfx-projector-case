@@ -18,4 +18,4 @@ The page shows the installed version. The Pi looks for a newer release on GitHub
 
 **Restart service** stops playback for a few seconds. It comes back by itself and restores the last state.
 
-Read more: [Pair with Apple Home](https://github.com/davidwkeith/atmosfx-projector-case/blob/main/pi/README.md#pair-with-apple-home), [Backup and restore](https://github.com/davidwkeith/atmosfx-projector-case/blob/main/pi/README.md#backup-and-restore), [Updates](https://github.com/davidwkeith/atmosfx-projector-case/blob/main/pi/README.md#updates)
+Read more: [Pair with Apple Home](../../docs/apple-home.md), [Backup and restore](../../docs/updates.md#backup-and-restore), [Updates](../../docs/updates.md#updates)

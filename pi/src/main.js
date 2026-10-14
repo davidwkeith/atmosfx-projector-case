@@ -89,6 +89,9 @@ const media = createMediaStore({
   maxUploadBytes: () => get("maxUploadMb") * 1024 * 1024,
 });
 // Uploads cut short by a crash or power cut would otherwise fill the card over time.
+media
+  .seedDefault(join(appDir, "src", "default", "videofx-default.mp4"))
+  .then((seeded) => seeded && console.info("No playlist yet: added the built-in VideoFX test clip"), (err) => console.warn(`Could not add the built-in clip: ${err.message}`));
 media.cleanTemp().then((n) => n && console.info(`Removed ${n} unfinished upload(s)`), () => {});
 
 // --- GPIO tools (libgpiod 1 on bookworm, 2 on trixie)

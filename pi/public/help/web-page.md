@@ -18,4 +18,4 @@ The page answers only private network addresses. It also checks the host name us
 
 **Hide the Matter pairing code once paired** keeps the QR code off this page after pairing.
 
-Read more: [Web page security](https://github.com/davidwkeith/atmosfx-projector-case/blob/main/pi/README.md#web-page-security)
+Read more: [Web page security](../../docs/security.md#web-page-security)

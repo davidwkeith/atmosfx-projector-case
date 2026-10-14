@@ -15,4 +15,4 @@ The warning must be below the critical limit, or Apply is refused.
 
 **Cool-down before resuming** is how far below the critical temperature the Pi must fall before it switches back on by itself.
 
-Read more: [Cooling](https://github.com/davidwkeith/atmosfx-projector-case/blob/main/pi/README.md#cooling)
+Read more: [Cooling](../../docs/cooling.md)

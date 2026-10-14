@@ -64,4 +64,28 @@ describe("parseMarkdown", () => {
   it("normalises Windows line endings", () => {
     expect(parseMarkdown("# A\r\n\r\ntext\r\n")).toHaveLength(2);
   });
+
+  it("nests deeper-indented lists inside the item above", () => {
+    const [ul] = parseMarkdown("- a\n  - a1\n  - a2\n- b\n1. x\n   - y");
+    expect(ul.items).toHaveLength(2);
+    expect(ul.items[0].at(-1)).toMatchObject({ type: "ul", items: [[text("a1")], [text("a2")]] });
+    expect(ul.items[1]).toEqual([text("b")]);
+  });
+
+  it("parses tables with inline formatting and ragged rows", () => {
+    const [t] = parseMarkdown("| Ch | Function |\n|---|:--|\n| 1 | **Power** |\n| 2 |\n\nafter");
+    expect(t).toMatchObject({ type: "table", head: [[text("Ch")], [text("Function")]] });
+    expect(t.rows).toEqual([[[text("1")], [{ type: "strong", children: [text("Power")] }]], [[text("2")], []]]);
+  });
+
+  it("does not take a lone pipe line for a table", () => {
+    expect(parseMarkdown("| not | a table |")[0].type).toBe("p");
+  });
+
+  it("allows links to other guide files", () => {
+    for (const href of ["dmx.md", "dmx.md#addressing", "../../docs/WIRING.md"]) {
+      expect(parseMarkdown(`[t](${href})`)[0].children[0]).toMatchObject({ type: "link", href });
+    }
+    expect(parseMarkdown("[t](evil.exe)")[0].children).toEqual([text("t")]);
+  });
 });

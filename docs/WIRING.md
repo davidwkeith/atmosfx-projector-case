@@ -6,7 +6,7 @@ This case is rain-shedding and ventilated, not waterproof, and not certified for
 
 ## Overview
 
-One diagram per side of the power shelf: [AC supply](#ac-supply) (the cord, the clamp and the 24 V brick) and [low voltage](#low-voltage-side) (on the shelf and down to the sled, drawn as the one DC rail and then the Pi's signals). Each comes twice: a schematic (`docs/wiring-*.svg`, drawn by `scripts/render_wiring.py` with [Schemdraw](https://schemdraw.readthedocs.io/); click one for full size) and a flowchart of the same connections. Red is live or +, grey is neutral or -, green is earth, blue is a signal. Pin numbers are the Pi header's physical pins; GPIO assignments and the reasoning behind them are in `pi/README.md` ("GPIO pins and wiring").
+One diagram per side of the power shelf: [AC supply](#ac-supply) (the cord, the clamp and the 24 V brick) and [low voltage](#low-voltage-side) (on the shelf and down to the sled, drawn as the one DC rail and then the Pi's signals). Each comes twice: a schematic (`docs/wiring-*.svg`, drawn by `scripts/render_wiring.py` with [Schemdraw](https://schemdraw.readthedocs.io/); click one for full size) and a flowchart of the same connections. Red is live or +, grey is neutral or -, green is earth, blue is a signal. Pin numbers are the Pi header's physical pins; GPIO assignments and the reasoning behind them are in [pi/docs/wiring.md](../pi/docs/wiring.md).
 
 ## AC supply
 
@@ -75,7 +75,7 @@ One rail, one return: the Y-splitter joins both loads' minuses at the supply, so
 
 **Check the polarity before connecting either load.** With the brick plugged in and nothing else connected, meter each Y-splitter leg's tip: it must read 24 V with the **centre positive** (the brick's label, the projector's label symbol and the DigiAMP+'s jack all say centre +). If either leg reads negative, stop: the splitter is wired the wrong way round for this supply.
 
-The DigiAMP+ powers the Pi, so never also power the Pi by USB. The relay is only needed if the projector lacks HDMI-CEC (see `pi/README.md`, "Projector power"). It is also the only way the Pi can cut the projector's power if the Pi itself overheats: with CEC alone it can only ask for standby. **If you fit it:** cut leg 1 a hand's width from the adapter, put the relay's COM and NO in the **+** conductor only, and splice with the lever connectors (BOM relay row). Never switch the minus: the HDMI cable would carry the return. Use an **active-low** module: the Pi holds GPIO 27 high (relay open, projector off) from boot.
+The DigiAMP+ powers the Pi, so never also power the Pi by USB. The relay is only needed if the projector lacks HDMI-CEC (see [pi/docs/projector.md](../pi/docs/projector.md)). It is also the only way the Pi can cut the projector's power if the Pi itself overheats: with CEC alone it can only ask for standby. **If you fit it:** cut leg 1 a hand's width from the adapter, put the relay's COM and NO in the **+** conductor only, and splice with the lever connectors (BOM relay row). Never switch the minus: the HDMI cable would carry the return. Use an **active-low** module: the Pi holds GPIO 27 high (relay open, projector off) from boot.
 
 | Circuit | Wire | Notes |
 |---|---|---|

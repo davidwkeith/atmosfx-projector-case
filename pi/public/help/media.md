@@ -12,6 +12,6 @@ These are the files on the Pi. **Add** puts one on the playlist (you can add the
 
 Choose one or more video or audio files, or an `.m3u` playlist. The page shows how much space is free and the largest file it accepts; the limit is **Largest upload** under Settings > Web page. Uploaded files are not on the playlist until you add them and save.
 
-Your purchased videos are not included with VideoFX. Upload them here, or copy them to the media folder over SSH.
+Your purchased videos are not included with VideoFX. Upload them here, or copy them to the media folder over SSH. A new Pi starts with a built-in "VideoFX" test clip (bouncing over an alignment grid); delete it once you have your own.
 
-Read more: [Videos, playlist, scare mode](https://github.com/davidwkeith/atmosfx-projector-case/blob/main/pi/README.md#videos-playlist-scare-mode)
+Read more: [Videos, playlist, scare mode](../../docs/videos.md)

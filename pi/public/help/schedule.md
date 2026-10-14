@@ -20,4 +20,4 @@ Quiet hours cap the volume (0 mutes) and can turn scares off during a window eac
 
 Changes wait in the Apply bar until you press **Apply**.
 
-Read more: [Schedule](https://github.com/davidwkeith/atmosfx-projector-case/blob/main/pi/README.md#schedule), [Quiet hours](https://github.com/davidwkeith/atmosfx-projector-case/blob/main/pi/README.md#quiet-hours)
+Read more: [Schedule](../../docs/schedule.md), [Quiet hours](../../docs/schedule.md#quiet-hours)

@@ -10,6 +10,10 @@ While a source is sending, DMX overrides Matter, this page and the schedule. The
 
 Set **Universe** and **Start address**. VideoFX reads eight channels from the start address: Power, Mode, Clip, Trigger, Volume, Mute, Dimmer and a reserved one.
 
+## Show software
+
+Anything that outputs sACN works: QLC+, xLights, Falcon Player and Light-O-Rama (use LOR's E1.31 output, not its native RS-485 network). The README lists the setup for each.
+
 ## Wi-Fi
 
 **Accept multicast** off means unicast only: send to this Pi's IP address. That is the better choice on Wi-Fi.
@@ -18,4 +22,4 @@ Set **Universe** and **Start address**. VideoFX reads eight channels from the st
 
 Below the settings, the live block shows whether a signal is present, who is sending, and the eight values being received.
 
-Read more: [DMX (sACN)](https://github.com/davidwkeith/atmosfx-projector-case/blob/main/pi/README.md#dmx-sacn)
+Read more: [DMX (sACN)](../../docs/dmx.md)

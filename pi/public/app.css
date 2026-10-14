@@ -191,6 +191,8 @@ header.top { display: flex; align-items: center; justify-content: space-between;
 h1 { font-size: 1.5rem; margin: 0; }
 .titlebar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 12px 0 0; }
 .titlebar h2 { font-size: 1.25rem; margin: 0; }
+.titlebar .tools { display: flex; align-items: center; gap: 12px; }
+#docs-link { color: var(--accent); }
 h3 { font-size: 1.05rem; margin: 0 0 8px; }
 main:focus { outline: none; }
 
@@ -255,3 +257,8 @@ dialog#help::backdrop { background: rgb(0 0 0 / 0.5); }
 .md pre { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; overflow-x: auto; }
 .md code { font-size: 0.95rem; letter-spacing: 0; }
 .md a { color: var(--accent); }
+.md ul ul, .md ol ul, .md ul ol, .md ol ol { margin: 0 0 4px; }
+.md .table-wrap { overflow-x: auto; margin: 8px 0 12px; }
+.md table { border-collapse: collapse; font-size: 0.9rem; }
+.md th, .md td { border: 1px solid var(--line); padding: 4px 8px; text-align: left; vertical-align: top; }
+.md th { background: var(--bg); }

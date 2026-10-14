@@ -16,4 +16,4 @@ A value can come from three places, strongest first: set on this page, set in `/
 
 **Show advanced settings** reveals rarely needed rows. The search box finds any setting by name or description, advanced or not.
 
-Read more: [Settings](https://github.com/davidwkeith/atmosfx-projector-case/blob/main/pi/README.md#settings)
+Read more: [Settings](../../docs/settings.md)

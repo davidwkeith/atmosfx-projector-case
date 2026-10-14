@@ -12,4 +12,4 @@ Flips the picture left to right, for rear projection onto window material. The f
 
 The console used for the black screen and the pairing screen. This is an advanced row; leave it alone unless the screen stays blank.
 
-Read more: [Videos, playlist, scare mode](https://github.com/davidwkeith/atmosfx-projector-case/blob/main/pi/README.md#videos-playlist-scare-mode)
+Read more: [Videos, playlist, scare mode](../../docs/videos.md)

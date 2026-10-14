@@ -34,7 +34,7 @@ Preview in OpenSCAD: open `projector_pi_case.scad`, set `part` and `tile` in the
 ## Repository layout
 
 - `projector_pi_case.scad` - the model (all parts via `part` / `tile`)
-- STLs and the Pi image: download them from the repository's Releases (CI builds and attaches them for each version tag), or run `make parts` to write the STLs to `stl/`. Flashing the image: `pi/README.md`, Install.
+- STLs and the Pi image: download them from the repository's Releases (CI builds and attaches them for each version tag), or run `make parts` to write the STLs to `stl/`. Flashing the image: [pi/docs/install.md](pi/docs/install.md).
 - `docs/` - design log, [printing plan](docs/PRINTING.md), [bill of materials](docs/BOM.md), [assembly](docs/ASSEMBLY.md), [wiring](docs/WIRING.md), [aiming](docs/AIMING.md)
 - `preview/` - renders of the assembly, interior, aim hatch and power shelf
 - `scripts/` - `check_clash.sh`, `render_previews.sh`, `publish.sh`

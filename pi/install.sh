@@ -30,7 +30,7 @@ cat <<MSG
 
 Installed. This Pi is now $name.
 Power-cut protection: $storage
-  (no-space means Pi OS already grew / over the whole card: see README, Power-cut safety)
+  (no-space means Pi OS already grew / over the whole card: see docs/reliability.md, Power-cut safety)
 Next:
   1. Reboot once (sudo reboot) so the new hostname reaches DHCP and the console
      settings in cmdline.txt take effect.

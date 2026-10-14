@@ -1,7 +1,7 @@
 import { el, icon, restartService, run } from "./api.js";
 import { renderMarkdown } from "./markdown.js";
 import { mountApplyBar } from "./settings-form.js";
-import { VIEWS, parseHash } from "./nav.js";
+import { DOCS_VIEW, VIEWS, docHref, parseHash } from "./nav.js";
 import { badgesOf } from "./notes.js";
 import { ensureLoaded, isDirty, refreshMedia, refreshSettings, refreshStatus, state, subscribe } from "./state.js";
 
@@ -14,6 +14,7 @@ const LOADERS = {
   schedule: () => import("./views/schedule.js"),
   settings: () => import("./views/settings.js"),
   system: () => import("./views/system.js"),
+  [DOCS_VIEW]: () => import("./views/docs.js"),
 };
 
 // --- navigation
@@ -42,7 +43,8 @@ async function show() {
   current?.unmount?.();
   $("view").replaceChildren();
   current = mod.mount($("view"), { sub });
-  $("view-title").textContent = VIEWS.find((v) => v.id === view).title;
+  $("view-title").textContent = VIEWS.find((v) => v.id === view)?.title ?? "Docs";
+  $("help-btn").hidden = !current.helpSlug?.();
   for (const a of $("nav").children) {
     if (a.id === `nav-${view}`) a.setAttribute("aria-current", "page");
     else a.removeAttribute("aria-current");
@@ -72,14 +74,15 @@ function renderChrome({ status: st }) {
 // --- help sheet
 
 async function openHelp() {
-  const slug = current?.helpSlug() ?? "dashboard";
+  const slug = current?.helpSlug?.();
+  if (!slug) return;
   const body = $("help-body");
   body.replaceChildren(el("p", { className: "hint" }, "Loading…"));
   $("help").showModal();
   try {
     const res = await fetch(`/help/${slug}.md`);
     if (!res.ok) throw new Error(res.statusText);
-    body.replaceChildren(renderMarkdown(await res.text()));
+    body.replaceChildren(renderMarkdown(await res.text(), document, { rewriteHref: (h) => docHref(h, "pi/public/help") }));
   } catch {
     body.replaceChildren(el("p", { className: "hint" }, "Help not available."));
   }
