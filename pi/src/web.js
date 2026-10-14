@@ -166,8 +166,13 @@ export function createWebServer(o) {
   // Wrong Pi-login guesses per client address: 5 in 5 minutes, then 429. Per address
   // (as Home Assistant's ip_ban does), so one client cannot lock out the others.
   const wrongGuesses = new Map();
-  const throttled = (ip) => (wrongGuesses.get(ip) ?? []).filter((t) => Date.now() - t < 300_000).length >= 5;
-  const noteWrong = (ip) => wrongGuesses.set(ip, [...(wrongGuesses.get(ip) ?? []).filter((t) => Date.now() - t < 300_000), Date.now()]);
+  const recent = (ip) => (wrongGuesses.get(ip) ?? []).filter((t) => Date.now() - t < 300_000);
+  const throttled = (ip) => recent(ip).length >= 5;
+  const noteWrong = (ip) => {
+    // Drop addresses whose guesses have all expired, so the table cannot grow without bound.
+    for (const [addr, times] of wrongGuesses) if (times.every((t) => Date.now() - t >= 300_000)) wrongGuesses.delete(addr);
+    wrongGuesses.set(ip, [...recent(ip), Date.now()]);
+  };
 
   const HELPER_ERRORS = {
     "wrong-password": [403, "That is not the Pi's login password."],
