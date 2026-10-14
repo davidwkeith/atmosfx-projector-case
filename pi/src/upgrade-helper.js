@@ -12,10 +12,16 @@
 // the answer, and the socket accepts only a couple of connections at once.
 
 import { execFile, spawn } from "node:child_process";
+import { readFileSync, writeFileSync } from "node:fs";
 import { createInterface } from "node:readline";
 import { pathToFileURL } from "node:url";
 
 export const FAIL_DELAY_MS = 2000;
+// Wrong guesses are counted across connections (the socket is open to every local
+// user): after MAX_FAILS inside LOCK_MS the helper refuses without checking.
+export const MAX_FAILS = 5;
+export const LOCK_MS = 5 * 60_000;
+const FAILS_FILE = "/run/videofx-upgrade.fails"; // root-only, tmpfs: a reboot clears it
 const MAX_PASSWORD = 256;
 
 /** The service account: the first login user (uid 1000), as in videofx-user. */
@@ -42,7 +48,26 @@ function runCommand(cmd, args, timeoutMs) {
   });
 }
 
+/** Timestamps (ms) of recent wrong guesses. */
+function readFails(now) {
+  try {
+    return JSON.parse(readFileSync(FAILS_FILE, "utf8")).filter((t) => now - t < LOCK_MS);
+  } catch {
+    return [];
+  }
+}
+function writeFails(list) {
+  try {
+    writeFileSync(FAILS_FILE, JSON.stringify(list), { mode: 0o600 });
+  } catch {
+    // /run not writable: the 2 s delay still applies
+  }
+}
+
 export const defaults = {
+  now: () => Date.now(),
+  fails: readFails,
+  setFails: writeFails,
   user: loginUser,
   verify: verifyPassword,
   check: () => runCommand("/usr/local/sbin/videofx-update", ["--check"], 60_000),
@@ -66,10 +91,17 @@ export async function handle(line, deps = defaults) {
   }
   if (req?.action !== "upgrade") return { error: "failed", message: "unknown action" };
 
+  const now = deps.now();
+  const fails = deps.fails(now);
+  if (fails.length >= MAX_FAILS) {
+    deps.log("videofx-upgrade: locked after repeated wrong passwords");
+    return { error: "throttled" };
+  }
   const pw = req.password;
   const user = await deps.user();
   if (!user) return { error: "failed", message: "no login user (uid 1000)" };
   if (typeof pw !== "string" || pw === "" || pw.length > MAX_PASSWORD || pw.includes("\0") || !(await deps.verify(pw, user))) {
+    deps.setFails([...fails, now]);
     deps.log("videofx-upgrade: wrong password");
     await deps.sleep(FAIL_DELAY_MS);
     return { error: "wrong-password" };

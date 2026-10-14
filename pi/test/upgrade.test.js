@@ -12,6 +12,9 @@ const deps = (over = {}) => ({
   check: vi.fn(async () => ({ ok: true })),
   start: vi.fn(async () => ({ ok: true })),
   sleep: vi.fn(async () => {}),
+  now: () => 1_000_000,
+  fails: vi.fn(() => []),
+  setFails: vi.fn(),
   log: vi.fn(),
   ...over,
 });
@@ -32,6 +35,15 @@ describe("upgrade helper", () => {
       expect(d.sleep).toHaveBeenCalled();
       expect(JSON.stringify(d.log.mock.calls)).not.toContain("hunter2");
     }
+  });
+
+  it("locks after repeated wrong passwords, even for the right one", async () => {
+    const d = deps({ fails: () => [1, 2, 3, 4, 5].map((n) => 1_000_000 - n) });
+    expect(await handle('{"action":"upgrade","password":"right"}', d)).toEqual({ error: "throttled" });
+    expect(d.verify).not.toHaveBeenCalled();
+    const e = deps();
+    await handle('{"action":"upgrade","password":"bad"}', e);
+    expect(e.setFails).toHaveBeenCalledWith([1_000_000]);
   });
 
   it("reports an upgrade already running", async () => {
