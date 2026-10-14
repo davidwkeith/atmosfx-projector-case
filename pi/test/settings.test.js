@@ -207,6 +207,24 @@ describe("password rules", () => {
     expect(s.verifyPassword("pumpkin-42")).toBe(false); // the old one, against the new hash
   });
 
+  it("limits guesses per client: one device guessing does not lock out another", () => {
+    // Plain password from the env file: a quick compare, so the many guesses below run fast.
+    const s = new Settings({ dir, env: { VIDEOFX_WEB_PASSWORD: "file-secret" }, ctx, log, now: () => 1_000_000 });
+    for (let i = 0; i < 10; i++) s.verifyPassword(`guess-${i}`, "192.168.1.66");
+    expect(s.verifyPassword("file-secret", "192.168.1.66")).toBe(false); // that client is out of tokens
+    expect(s.verifyPassword("file-secret", "192.168.1.20")).toBe(true); // another one is not
+  });
+
+  it("keeps a bounded number of guess buckets", () => {
+    const s = new Settings({ dir, env: { VIDEOFX_WEB_PASSWORD: "file-secret" }, ctx, log, now: () => 1_000_000 });
+    for (let i = 0; i < 10; i++) s.verifyPassword(`guess-${i}`, "192.168.1.66");
+    expect(s.verifyPassword("file-secret", "192.168.1.66")).toBe(false);
+    // Many addresses (IPv6 rotation) evict the least recently used buckets instead of
+    // growing without limit; an evicted client starts with a full bucket again.
+    for (let i = 0; i < 300; i++) s.verifyPassword(`rot-${i}`, `fd00::${i.toString(16)}`);
+    expect(s.verifyPassword("file-secret", "192.168.1.66")).toBe(true);
+  });
+
   it("changing it needs the current password", () => {
     const s = make();
     s.set("password", "pumpkin-42");
