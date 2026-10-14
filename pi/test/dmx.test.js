@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DmxControl, PowerArbiter, SacnReceiver, fixtureValues, interpret, multicastGroup, parseSacn, sequenceOk, InternalWrites } from "../src/dmx.js";
 import { buildPacket } from "../tools/sacn-packet.mjs";
+import { isLanAddress } from "../src/web.js";
 
 const cidA = Buffer.alloc(16, 0xaa);
 const cidB = Buffer.alloc(16, 0xbb);
@@ -67,6 +68,17 @@ describe("receiver: sources, merge, timeout", () => {
   beforeEach(() => {
     now = 0;
     rx = new SacnReceiver({ universe: 1, now: () => now });
+  });
+
+  it("drops every packet from a sender that accept() refuses, even a stream terminate", () => {
+    rx = new SacnReceiver({ universe: 1, now: () => now, accept: isLanAddress });
+    expect(send({ cid: cidA, levels: [255] }, "203.0.113.7")).toBe("not on the LAN");
+    expect(send({ cid: cidA, levels: [255] }, "::ffff:8.8.8.8")).toBe("not on the LAN");
+    expect(rx.live).toBe(false);
+    expect(send({ cid: cidA, levels: [9] }, "192.168.1.20")).toBe("ok");
+    expect(send({ cid: cidA, sequence: 1, terminated: true }, "203.0.113.7")).toBe("not on the LAN");
+    expect(rx.live).toBe(true);
+    expect(rx.status().rejected).toBe(3);
   });
 
   it("ignores other universes, preview data and non-zero start codes", () => {

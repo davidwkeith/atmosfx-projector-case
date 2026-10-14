@@ -6,6 +6,10 @@ VideoFX can be driven by a lighting desk over the network (sACN, also called E1.
 
 While a source is sending, DMX overrides Matter, this page and the schedule. The Dashboard shows "DMX in control" and locks power and volume. When the signal stops, control goes back after the data-loss timeout plus **Hold after the signal stops**.
 
+## Who can send
+
+sACN has no password, and DMX overrides this page's password too. With DMX on, any device on your network can control VideoFX; senders from outside it (not a private, link-local or on-link address) are ignored. Turn DMX on only on a network you trust.
+
 ## Addressing
 
 Set **Universe** and **Start address**. VideoFX reads eight channels from the start address: Power, Mode, Clip, Trigger, Volume, Mute, Dimmer and a reserved one.

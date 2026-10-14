@@ -46,7 +46,7 @@ import { readVersion, updateStatus } from "./update.js";
 import { askHelper } from "./upgrade.js";
 import { OverTempGuard, SocWatch, parseMilli } from "./thermal.js";
 import { Volume, amixerArgs } from "./volume.js";
-import { createWebServer } from "./web.js";
+import { createWebServer, isLanAddress } from "./web.js";
 
 const run = promisify(execFile);
 // No RTC on the Pi 3/4/Zero 2 W: time-based rules wait for NTP (see schedule.js, quiet.js).
@@ -421,7 +421,7 @@ const dmx = new DmxControl({
     setDimmer: (v) => player.setDimmer(v),
   },
 });
-const receiver = new SacnReceiver({ universe: get("dmxUniverse") });
+const receiver = new SacnReceiver({ universe: get("dmxUniverse"), accept: isLanAddress });
 receiver.on("live", (live) => dmx.live(live));
 receiver.on("frame", (levels) => dmx.frame(fixtureValues(levels, get("dmxAddress"))));
 setInterval(() => receiver.tick(), 250).unref();

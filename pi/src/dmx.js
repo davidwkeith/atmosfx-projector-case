@@ -79,11 +79,17 @@ export class SacnReceiver extends EventEmitter {
   #sources = new Map(); // cid -> { cid, name, ip, priority, seq, lastSeen, slots, packets }
   #live = false;
   #rejected = 0;
+  #accept;
 
-  constructor({ universe, now = Date.now }) {
+  /**
+   * accept(ip): whether a sender may be heard at all. sACN has no authentication and
+   * DMX overrides the web page's password, so main.js limits it to the LAN, like the page.
+   */
+  constructor({ universe, now = Date.now, accept = () => true }) {
     super();
     this.#universe = universe;
     this.#now = now;
+    this.#accept = accept;
   }
 
   get live() {
@@ -98,6 +104,7 @@ export class SacnReceiver extends EventEmitter {
 
   /** Feed one UDP datagram. Returns why it was dropped, or "ok". */
   handle(buf, ip = "") {
+    if (!this.#accept(ip)) return this.#reject("not on the LAN");
     const p = parseSacn(buf);
     if (!p.ok) return this.#reject(p.reason);
     if (p.universe !== this.#universe) return "other universe";
