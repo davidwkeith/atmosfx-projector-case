@@ -72,7 +72,8 @@ install -m 755 "$src/system/videofx-update" /usr/local/sbin/videofx-update
 install -m 644 "$src/system/videofx-update-resume.service" /etc/systemd/system/videofx-update-resume.service
 systemctl enable videofx-update-resume.service
 # The web page's Upgrade / Check now buttons (root helper on a socket) and the daily check.
-for u in videofx-upgrade.socket videofx-upgrade@.service videofx-update-check.service videofx-update-check.timer; do
+# (videofx-upgrade.socket is rendered for the service account by videofx-user, above.)
+for u in videofx-upgrade@.service videofx-update-check.service videofx-update-check.timer; do
   install -m 644 "$src/system/$u" "/etc/systemd/system/$u"
 done
 systemctl enable videofx-upgrade.socket videofx-update-check.timer

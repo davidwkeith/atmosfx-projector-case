@@ -96,6 +96,7 @@ describe("web server", () => {
   let playlistChanged;
   let resetMatter;
   let upgradeResult;
+  let upgradeArg;
   let password;
 
   beforeEach(async () => {
@@ -124,7 +125,7 @@ describe("web server", () => {
       playlistChanged,
       pairingSvg: () => "<svg/>",
       resetMatter,
-      upgrade: async (pw) => (upgradeResult = pw === "right" ? { ok: true } : { error: "wrong-password" }),
+      upgrade: async (auth) => ((upgradeArg = auth), (upgradeResult = auth.trusted || auth.password === "right" ? { ok: true } : { error: "wrong-password" })),
       checkUpdate: async () => upgradeResult,
       log: { error: () => {} },
     });
@@ -161,7 +162,7 @@ describe("web server", () => {
     });
   }
 
-  it("upgrades only with the login password, behind the write header and the page password", async () => {
+  it("with no page password, upgrades only with the Pi login password, and limits wrong guesses per client", async () => {
     const post = (body, headers) => call("POST", "/api/update/upgrade", { body, headers });
     expect((await post('{"password":"right"}', { "x-videofx": "" })).status).toBe(403);
     expect((await post("{}")).status).toBe(400);
@@ -171,8 +172,17 @@ describe("web server", () => {
     const ok = await post('{"password":"right"}');
     expect(ok.status).toBe(202);
     expect(ok.json).toEqual({ upgrading: true });
+    for (let i = 0; i < 4; i++) await post('{"password":"nope"}');
+    expect((await post('{"password":"right"}')).status).toBe(429);
+  });
+
+  it("with a page password set, that login is the authorization and no Pi password is needed", async () => {
     password = "boo";
-    expect((await post('{"password":"right"}')).status).toBe(401);
+    const post = (headers) => call("POST", "/api/update/upgrade", { body: "{}", headers });
+    expect((await post()).status).toBe(401);
+    const auth = { authorization: `Basic ${Buffer.from("x:boo").toString("base64")}` };
+    expect((await post(auth)).status).toBe(202);
+    expect(upgradeArg).toEqual({ trusted: true });
   });
 
   it("maps helper failures and runs Check now", async () => {

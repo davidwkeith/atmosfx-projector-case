@@ -4,24 +4,21 @@
 // stdin and stdout. Reads one JSON line, writes one JSON line.
 //
 //   {"action":"check"}                      runs `videofx-update --check` (no password: it only reads GitHub)
-//   {"action":"upgrade","password":"..."}   verifies the login user's password, then starts
-//                                           `videofx-update` as a transient unit (it reboots the Pi)
+//   {"action":"upgrade","auth":"trusted"}  the web page already authenticated the caller (its own
+//                                           password); starts `videofx-update` as a transient unit
+//   {"action":"upgrade","password":"..."}   no page password is set: verifies the login user's
+//                                           password first. Either way the Pi reboots
 //
 // The password is checked with unix_chkpwd (PAM's own helper), never parsed out of
 // /etc/shadow here, and is never logged. A wrong guess waits FAIL_DELAY_MS before
-// the answer, and the socket accepts only a couple of connections at once.
+// the answer. The socket is private to the service user (see videofx-user), so
+// the web service is the only caller; it limits wrong guesses per client address.
 
 import { execFile, spawn } from "node:child_process";
-import { readFileSync, writeFileSync } from "node:fs";
 import { createInterface } from "node:readline";
 import { pathToFileURL } from "node:url";
 
 export const FAIL_DELAY_MS = 2000;
-// Wrong guesses are counted across connections (the socket is open to every local
-// user): after MAX_FAILS inside LOCK_MS the helper refuses without checking.
-export const MAX_FAILS = 5;
-export const LOCK_MS = 5 * 60_000;
-const FAILS_FILE = "/run/videofx-upgrade.fails"; // root-only, tmpfs: a reboot clears it
 const MAX_PASSWORD = 256;
 
 /** The service account: the first login user (uid 1000), as in videofx-user. */
@@ -48,26 +45,7 @@ function runCommand(cmd, args, timeoutMs) {
   });
 }
 
-/** Timestamps (ms) of recent wrong guesses. */
-function readFails(now) {
-  try {
-    return JSON.parse(readFileSync(FAILS_FILE, "utf8")).filter((t) => now - t < LOCK_MS);
-  } catch {
-    return [];
-  }
-}
-function writeFails(list) {
-  try {
-    writeFileSync(FAILS_FILE, JSON.stringify(list), { mode: 0o600 });
-  } catch {
-    // /run not writable: the 2 s delay still applies
-  }
-}
-
 export const defaults = {
-  now: () => Date.now(),
-  fails: readFails,
-  setFails: writeFails,
   user: loginUser,
   verify: verifyPassword,
   check: () => runCommand("/usr/local/sbin/videofx-update", ["--check"], 60_000),
@@ -91,17 +69,17 @@ export async function handle(line, deps = defaults) {
   }
   if (req?.action !== "upgrade") return { error: "failed", message: "unknown action" };
 
-  const now = deps.now();
-  const fails = deps.fails(now);
-  if (fails.length >= MAX_FAILS) {
-    deps.log("videofx-upgrade: locked after repeated wrong passwords");
-    return { error: "throttled" };
+  if (req.auth === "trusted") {
+    // The web service has already authorized this (page login). The socket is
+    // private to the service user, so only the web service can send it.
+    deps.log("videofx-upgrade: authorized by the web page, starting videofx-update");
+    const r = await deps.start();
+    return r.ok ? { ok: true } : { error: "busy", message: r.message };
   }
   const pw = req.password;
   const user = await deps.user();
   if (!user) return { error: "failed", message: "no login user (uid 1000)" };
   if (typeof pw !== "string" || pw === "" || pw.length > MAX_PASSWORD || pw.includes("\0") || !(await deps.verify(pw, user))) {
-    deps.setFails([...fails, now]);
     deps.log("videofx-upgrade: wrong password");
     await deps.sleep(FAIL_DELAY_MS);
     return { error: "wrong-password" };

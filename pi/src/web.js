@@ -151,7 +151,7 @@ async function readJson(req, limit = JSON_LIMIT) {
  * @param {import("./settings.js").Settings} o.settings
  * @param {(key: string) => Promise<string|undefined>} [o.afterSettingChange]  applies a change, may return a note
  * @param {() => Promise<void>} o.restart
- * @param {(password: string) => Promise<{ok: true}|{error: string, message?: string}>} [o.upgrade]  checks the Pi login password in the root helper, then starts videofx-update
+ * @param {(auth: {trusted: true} | {password: string}) => Promise<{ok: true}|{error: string, message?: string}>} [o.upgrade]  checks the Pi login password in the root helper, then starts videofx-update
  * @param {() => Promise<{ok: true}|{error: string, message?: string}>} [o.checkUpdate]  asks the root helper to look at GitHub now
  * @param {() => object} o.scare                     fire a scare; returns the player's result
  * @param {() => Promise<string|null>} o.irLearn     wait for one remote press
@@ -160,6 +160,12 @@ async function readJson(req, limit = JSON_LIMIT) {
  */
 export function createWebServer(o) {
   const log = o.log ?? console;
+
+  // Wrong Pi-login guesses per client address: 5 in 5 minutes, then 429. Per address
+  // (as Home Assistant's ip_ban does), so one client cannot lock out the others.
+  const wrongGuesses = new Map();
+  const throttled = (ip) => (wrongGuesses.get(ip) ?? []).filter((t) => Date.now() - t < 300_000).length >= 5;
+  const noteWrong = (ip) => wrongGuesses.set(ip, [...(wrongGuesses.get(ip) ?? []).filter((t) => Date.now() - t < 300_000), Date.now()]);
 
   const HELPER_ERRORS = {
     "wrong-password": [403, "That is not the Pi's login password."],
@@ -305,8 +311,18 @@ export function createWebServer(o) {
     }
     if (method === "POST" && path === "/api/update/upgrade") {
       const { password } = await readJson(req);
-      if (typeof password !== "string" || password === "") throw new HttpError(400, "enter the Pi's login password");
-      return helperResult(res, 202, o.upgrade ? await o.upgrade(password) : { error: "unavailable" }, { upgrading: true });
+      // A page password is set: guard() already checked it on this request, and
+      // that login is the authorization (like an admin in Home Assistant). Without
+      // one, anyone on the LAN could press the button, so ask for the Pi's login password.
+      const trusted = o.auth.passwordSet;
+      const ip = req.socket.remoteAddress;
+      if (!trusted) {
+        if (typeof password !== "string" || password === "") throw new HttpError(400, "enter the Pi's login password");
+        if (throttled(ip)) throw new HttpError(429, HELPER_ERRORS.throttled[1]);
+      }
+      const r = o.upgrade ? await o.upgrade(trusted ? { trusted: true } : { password }) : { error: "unavailable" };
+      if (r?.error === "wrong-password") noteWrong(ip);
+      return helperResult(res, 202, r, { upgrading: true });
     }
     if (method === "POST" && path === "/api/restart") {
       await o.restart();

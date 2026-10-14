@@ -21,6 +21,15 @@ home=$(getent passwd "$user" | cut -d: -f6)
 
 sed -e "s/^User=.*/User=$user/" -e "s#MEDIA_DIR#$home/media#" "$template" >"$unit.new"
 mv "$unit.new" "$unit"
+# The upgrade socket belongs to the same account (older releases have no socket unit).
+sock_template=$(dirname "$template")/videofx-upgrade.socket
+if [ -f "$sock_template" ]; then
+  sed -e "s/^SocketUser=.*/SocketUser=$user/" "$sock_template" >/etc/systemd/system/videofx-upgrade.socket.new
+  mv /etc/systemd/system/videofx-upgrade.socket.new /etc/systemd/system/videofx-upgrade.socket
+fi
 # No systemd inside the image build's chroot.
-if [ -d /run/systemd/system ]; then systemctl daemon-reload; fi
+if [ -d /run/systemd/system ]; then
+  systemctl daemon-reload
+  systemctl try-restart videofx-upgrade.socket 2>/dev/null || true
+fi
 echo "videofx-player.service runs as $user (media folder $home/media)"
