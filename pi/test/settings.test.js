@@ -215,13 +215,24 @@ describe("password rules", () => {
     expect(s.verifyPassword("file-secret", "192.168.1.20")).toBe(true); // another one is not
   });
 
+  it("caps guessing over all clients, however many addresses a guesser rotates through", () => {
+    let now = 1_000_000;
+    const s = new Settings({ dir, env: { VIDEOFX_WEB_PASSWORD: "file-secret" }, ctx, log, now: () => now });
+    for (let i = 0; i < 40; i++) s.verifyPassword(`rot-${i}`, `fd00::${i.toString(16)}`); // one guess each
+    expect(s.verifyPassword("file-secret", "fd00::ffff")).toBe(false); // shared ceiling spent, even for a fresh address
+    now += 500; // refills at two a second
+    expect(s.verifyPassword("file-secret", "fd00::ffff")).toBe(true);
+  });
+
   it("keeps a bounded number of guess buckets", () => {
-    const s = new Settings({ dir, env: { VIDEOFX_WEB_PASSWORD: "file-secret" }, ctx, log, now: () => 1_000_000 });
+    let now = 1_000_000;
+    const s = new Settings({ dir, env: { VIDEOFX_WEB_PASSWORD: "file-secret" }, ctx, log, now: () => now });
     for (let i = 0; i < 10; i++) s.verifyPassword(`guess-${i}`, "192.168.1.66");
     expect(s.verifyPassword("file-secret", "192.168.1.66")).toBe(false);
     // Many addresses (IPv6 rotation) evict the least recently used buckets instead of
     // growing without limit; an evicted client starts with a full bucket again.
     for (let i = 0; i < 300; i++) s.verifyPassword(`rot-${i}`, `fd00::${i.toString(16)}`);
+    now += 500; // one shared token back; not evicted, .66 would still be empty (0.5 of a token)
     expect(s.verifyPassword("file-secret", "192.168.1.66")).toBe(true);
   });
 

@@ -25,8 +25,12 @@ function matchesHash(password, stored) {
   return got.length === hash.length && timingSafeEqual(got, hash);
 }
 
-const GUESS_BURST = 5;
+const GUESS_BURST = 5; // per client address, refilled at one a second
 const GUESS_CLIENTS = 256; // buckets kept; past that, the least recently used goes (it starts full again)
+// All clients together: caps guessing (and scrypt load) however many addresses a guesser
+// rotates through, e.g. IPv6 addresses in the Pi's own subnet.
+const GUESS_ALL_BURST = 20;
+const GUESS_ALL_RATE = 2; // per second
 
 const isHash = (v) => typeof v === "object" && v !== null && typeof v.scrypt === "string" && v.scrypt.includes(":");
 
@@ -47,6 +51,7 @@ export class Settings extends EventEmitter {
   #verified = null; // sha256 of the last password that matched, and what it matched
   #rejected = []; // sha256 of the last few wrong passwords: refused again without the work
   #guesses = new Map(); // client address -> { tokens, at }: token bucket for passwords not seen before
+  #allGuesses = { tokens: GUESS_ALL_BURST, at: 0 }; // shared ceiling over every client
   #now;
 
   constructor({ dir, env = process.env, ctx = defaultContext(), log = console, now = Date.now }) {
@@ -216,15 +221,21 @@ export class Settings extends EventEmitter {
     if (problem) throw new HttpError(400, problem);
   }
 
-  /** Spend one token from this client's bucket (a burst of GUESS_BURST, then one a second). */
+  /**
+   * Spend one token from this client's bucket (a burst of GUESS_BURST, then one a
+   * second) and one from the shared bucket, or neither if either is empty.
+   */
   #takeGuess(client) {
     const now = this.#now();
-    const b = this.#guesses.get(client);
-    const tokens = b ? Math.min(GUESS_BURST, b.tokens + Math.max(0, now - b.at) / 1000) : GUESS_BURST;
+    const refill = (b, burst, rate) => (b ? Math.min(burst, b.tokens + (Math.max(0, now - b.at) / 1000) * rate) : burst);
+    const mine = refill(this.#guesses.get(client), GUESS_BURST, 1);
+    const all = refill(this.#allGuesses, GUESS_ALL_BURST, GUESS_ALL_RATE);
+    const ok = mine >= 1 && all >= 1;
     this.#guesses.delete(client); // re-inserted below: Map order is least recently used first
     if (this.#guesses.size >= GUESS_CLIENTS) this.#guesses.delete(this.#guesses.keys().next().value);
-    this.#guesses.set(client, { tokens: tokens >= 1 ? tokens - 1 : tokens, at: now });
-    return tokens >= 1;
+    this.#guesses.set(client, { tokens: ok ? mine - 1 : mine, at: now });
+    this.#allGuesses = { tokens: ok ? all - 1 : all, at: now };
+    return ok;
   }
 
   #checkCurrentPassword({ currentPassword, client }) {

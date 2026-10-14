@@ -39,7 +39,7 @@ protected() { [ "$(findmnt -no FSTYPE /)" = overlay ]; }
 service_user() { stat -c %U /var/lib/videofx 2>/dev/null || getent passwd 1000 | cut -d: -f1; }
 current_version() { node -e 'console.log(require(process.argv[1]).version)' "$APP/package.json" 2>/dev/null || echo 0.0.0; }
 
-MODE=update TAG="" TARBALL="" SIG="" VERIFY=1 OS=0 FAILED=0
+MODE=update TAG="" TARBALL="" SIG="" VERIFY=1 EXPLICIT=0 OS=0 FAILED=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --tag) TAG=$2; shift ;;
@@ -61,6 +61,9 @@ if [ "$MODE" = check ]; then
   exit 0
 fi
 
+# A named release or tarball may be older than what is installed (on purpose); a plain
+# update (the web page's Upgrade button) only ever moves forward.
+[ -z "$TAG$TARBALL" ] || EXPLICIT=1
 [ "$VERIFY" = 1 ] || [ -n "$TARBALL" ] || die "--no-verify only goes with --tarball (GitHub releases are always checked)"
 [ "$(id -u)" -eq 0 ] || die "run with sudo"
 install -d -m 700 "$WORK"
@@ -68,7 +71,7 @@ install -d -m 700 "$WORK"
 # Protected root: park the job on the data partition, reboot writable, resume.
 park_and_reboot() {
   {
-    printf 'MODE=%q\nTAG=%q\nOS=%q\nVERIFY=%q\nRESTORE_PROTECTION=1\n' "$MODE" "$TAG" "$OS" "$VERIFY"
+    printf 'MODE=%q\nTAG=%q\nOS=%q\nVERIFY=%q\nEXPLICIT=%q\nRESTORE_PROTECTION=1\n' "$MODE" "$TAG" "$OS" "$VERIFY" "$EXPLICIT"
   } >"$PENDING"
   sync
   /usr/local/sbin/videofx-maint on
@@ -78,6 +81,7 @@ park_and_reboot() {
 }
 
 finish() {
+  FINISHED=1
   local what=Done
   [ "$FAILED" = 0 ] || what="The update FAILED and the previous version was put back"
   rm -f "$PENDING"
@@ -105,13 +109,14 @@ install_unit() {
 }
 
 do_update() {
-  local tarball=$WORK/release.tar.gz src
+  local tarball=$WORK/release.tar.gz src advertised="" newv
   if [ ! -s "$tarball" ]; then
     echo "== fetching the release from GitHub"
     local meta url sig_url
     meta=$(node "$APP/src/update-cli.js" latest --token-file "$TOKEN" ${TAG:+--tag "$TAG"})
     url=$(node -e 'console.log(JSON.parse(process.argv[1]).url)' "$meta")
     sig_url=$(node -e 'console.log(JSON.parse(process.argv[1]).sigUrl)' "$meta")
+    advertised=$(node -e 'console.log(JSON.parse(process.argv[1]).version)' "$meta")
     node "$APP/src/update-cli.js" download --token-file "$TOKEN" --url "$url" --out "$tarball"
     node "$APP/src/update-cli.js" download --token-file "$TOKEN" --url "$sig_url" --out "$tarball.sig"
   fi
@@ -133,6 +138,15 @@ do_update() {
   src=$(dirname "$(find "$WORK/new" -maxdepth 2 -name package.json | head -1)")
   [ -f "$src/package.json" ] && [ -f "$src/system/setup.sh" ] || die "not a VideoFX release tarball"
   [ "$(node -e 'console.log(require(process.argv[1]).name)' "$src/package.json")" = videofx ] || die "tarball is not VideoFX"
+  # The signature covers the bytes, not the version: an old signed tarball attached to a
+  # new release would otherwise install a known-vulnerable version. Bind the two, and
+  # never go backwards unless a release or tarball was named on the command line.
+  newv=$(node -e 'console.log(require(process.argv[1]).version)' "$src/package.json")
+  [ -z "$advertised" ] || [ "$newv" = "$advertised" ] || die "the release says $advertised but its tarball holds $newv; nothing was installed"
+  if ! node -e 'import(process.argv[1]).then((m) => process.exit(m.compareVersions(process.argv[2], process.argv[3]) > 0 ? 0 : 1))' "$APP/src/update.js" "$newv" "$(current_version)"; then
+    [ "$EXPLICIT" = 1 ] || die "$newv is not newer than the installed $(current_version); name it with --tag or --tarball to go back on purpose"
+    echo "== WARNING: $newv is not newer than the installed $(current_version) (asked for by name)"
+  fi
   echo "== $(current_version) -> $(node -e 'console.log(require(process.argv[1]).version)' "$src/package.json")"
 
   systemctl stop videofx-player.service || true
@@ -164,6 +178,19 @@ do_rollback() {
   install_unit
   echo "== rolled back to $(current_version) (the other version is now in $PREV)"
 }
+
+# A resumed job that stops early (a refused signature or version, a failed download:
+# die or set -e) must not leave the Pi in maintenance mode with a writable root.
+on_exit() {
+  local code=$?
+  [ "$code" -ne 0 ] && [ "${FINISHED:-0}" = 0 ] && [ "${RESTORE_PROTECTION:-0}" = 1 ] || return 0
+  echo "videofx-update: stopped (exit $code); switching protection back on and rebooting" >&2
+  rm -f "$PENDING" "$WORK/release.tar.gz" "$WORK/release.tar.gz.sig"
+  sync
+  /usr/local/sbin/videofx-maint off || true
+  systemctl reboot || true
+}
+trap on_exit EXIT
 
 case "$MODE" in
   resume)
