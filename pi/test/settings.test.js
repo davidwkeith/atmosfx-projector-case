@@ -207,6 +207,35 @@ describe("password rules", () => {
     expect(s.verifyPassword("pumpkin-42")).toBe(false); // the old one, against the new hash
   });
 
+  it("limits guesses per client: one device guessing does not lock out another", () => {
+    // Plain password from the env file: a quick compare, so the many guesses below run fast.
+    const s = new Settings({ dir, env: { VIDEOFX_WEB_PASSWORD: "file-secret" }, ctx, log, now: () => 1_000_000 });
+    for (let i = 0; i < 10; i++) s.verifyPassword(`guess-${i}`, "192.168.1.66");
+    expect(s.verifyPassword("file-secret", "192.168.1.66")).toBe(false); // that client is out of tokens
+    expect(s.verifyPassword("file-secret", "192.168.1.20")).toBe(true); // another one is not
+  });
+
+  it("caps guessing over all clients, however many addresses a guesser rotates through", () => {
+    let now = 1_000_000;
+    const s = new Settings({ dir, env: { VIDEOFX_WEB_PASSWORD: "file-secret" }, ctx, log, now: () => now });
+    for (let i = 0; i < 40; i++) s.verifyPassword(`rot-${i}`, `fd00::${i.toString(16)}`); // one guess each
+    expect(s.verifyPassword("file-secret", "fd00::ffff")).toBe(false); // shared ceiling spent, even for a fresh address
+    now += 500; // refills at two a second
+    expect(s.verifyPassword("file-secret", "fd00::ffff")).toBe(true);
+  });
+
+  it("keeps a bounded number of guess buckets", () => {
+    let now = 1_000_000;
+    const s = new Settings({ dir, env: { VIDEOFX_WEB_PASSWORD: "file-secret" }, ctx, log, now: () => now });
+    for (let i = 0; i < 10; i++) s.verifyPassword(`guess-${i}`, "192.168.1.66");
+    expect(s.verifyPassword("file-secret", "192.168.1.66")).toBe(false);
+    // Many addresses (IPv6 rotation) evict the least recently used buckets instead of
+    // growing without limit; an evicted client starts with a full bucket again.
+    for (let i = 0; i < 300; i++) s.verifyPassword(`rot-${i}`, `fd00::${i.toString(16)}`);
+    now += 500; // one shared token back; not evicted, .66 would still be empty (0.5 of a token)
+    expect(s.verifyPassword("file-secret", "192.168.1.66")).toBe(true);
+  });
+
   it("changing it needs the current password", () => {
     const s = make();
     s.set("password", "pumpkin-42");

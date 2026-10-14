@@ -1,0 +1,16 @@
+#!/bin/bash
+# Check a release tarball's detached signature against the release signing key.
+#   videofx-verify-release TARBALL SIG ALLOWED_SIGNERS
+# Exit 0 only if SIG is a valid "videofx-release" signature of TARBALL by a key in
+# ALLOWED_SIGNERS. videofx-update passes the allowed_signers of the version already
+# installed, never the one inside the tarball being checked.
+set -euo pipefail
+NS=videofx-release
+[ $# -eq 3 ] || { echo "usage: videofx-verify-release TARBALL SIG ALLOWED_SIGNERS" >&2; exit 2; }
+tarball=$1 sig=$2 signers=$3
+[ -s "$sig" ] || { echo "no signature at $sig" >&2; exit 1; }
+grep -qE "^$NS[[:space:]]" "$signers" 2>/dev/null || {
+  echo "no release signing key in $signers (see docs/updates.md, 'Signed releases')" >&2
+  exit 1
+}
+ssh-keygen -Y verify -f "$signers" -I "$NS" -n "$NS" -s "$sig" <"$tarball" >/dev/null

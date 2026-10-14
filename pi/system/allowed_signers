@@ -1,0 +1,6 @@
+# Release signing key for videofx-update (OpenSSH allowed_signers format).
+# videofx-update refuses any release tarball not signed by a key listed here.
+# One-time setup on your own machine (never in CI), then commit this file:
+#   ssh-keygen -t ed25519 -f ~/.ssh/videofx-release -C videofx-release
+#   echo "videofx-release namespaces=\"videofx-release\" $(cat ~/.ssh/videofx-release.pub)" >> pi/system/allowed_signers
+# Each release: pi/tools/sign-release.sh vX.Y.Z  (see docs/updates.md)

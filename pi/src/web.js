@@ -148,7 +148,7 @@ async function readJson(req, limit = JSON_LIMIT) {
  * @param {() => void} o.playlistChanged   restarts playback if playing
  * @param {() => string|undefined} o.pairingSvg
  * @param {() => Promise<void>} o.resetMatter
- * @param {{ passwordSet: boolean, verifyPassword: (p?: string) => boolean }} o.auth
+ * @param {{ passwordSet: boolean, verifyPassword: (p?: string, client?: string) => boolean }} o.auth
  * @param {() => string[]} o.hostNames   evaluated per request (settings can change them)
  * @param {import("./settings.js").Settings} o.settings
  * @param {(key: string) => Promise<string|undefined>} [o.afterSettingChange]  applies a change, may return a note
@@ -178,7 +178,7 @@ export function createWebServer(o) {
   function guard(req, res) {
     if (!isLanAddress(req.socket.remoteAddress)) return send(res, 403, { error: "LAN only" }), false;
     if (!isAllowedHost(req.headers.host, o.hostNames())) return send(res, 421, { error: "unknown host name" }), false;
-    if (o.auth.passwordSet && !o.auth.verifyPassword(basicPassword(req.headers.authorization))) {
+    if (o.auth.passwordSet && !o.auth.verifyPassword(basicPassword(req.headers.authorization), req.socket.remoteAddress)) {
       res.setHeader("www-authenticate", 'Basic realm="VideoFX", charset="UTF-8"');
       return send(res, 401, { error: "password required" }), false;
     }
@@ -292,7 +292,7 @@ export function createWebServer(o) {
     const setting = /^\/api\/settings\/([A-Za-z]+)$/.exec(path);
     if (setting && (method === "PUT" || method === "DELETE")) {
       const body = await readJson(req);
-      const auth = { currentPassword: body.currentPassword, confirm: body.confirm };
+      const auth = { currentPassword: body.currentPassword, confirm: body.confirm, client: req.socket.remoteAddress };
       const key = setting[1];
       const result =
         method === "PUT" ? o.settings.set(key, body.value, auth) : o.settings.reset(key, auth);

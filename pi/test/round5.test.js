@@ -88,7 +88,9 @@ describe("versions and releases", () => {
 
   it("finds the pi/ tarball among release assets", () => {
     const release = { tag_name: "v0.3.0", assets: [{ name: "case-stl.zip", url: "u1" }, { name: "videofx-pi-0.3.0.tar.gz", url: "u2" }] };
-    expect(pickAsset(release)).toMatchObject({ name: "videofx-pi-0.3.0.tar.gz", version: "0.3.0", url: "u2", tag: "v0.3.0" });
+    expect(pickAsset(release)).toMatchObject({ name: "videofx-pi-0.3.0.tar.gz", version: "0.3.0", url: "u2", sigUrl: null, tag: "v0.3.0" });
+    release.assets.push({ name: "videofx-pi-0.3.0.tar.gz.sig", url: "u3" });
+    expect(pickAsset(release)).toMatchObject({ name: "videofx-pi-0.3.0.tar.gz", url: "u2", sigUrl: "u3" });
     expect(pickAsset({ assets: [{ name: "evil.tar.gz" }] })).toBeNull();
   });
 
