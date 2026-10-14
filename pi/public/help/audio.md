@@ -8,4 +8,4 @@ The starting volume and whether the speakers start muted. The Dashboard slider c
 
 With the Raspberry Pi DigiAMP+, the card name is `RPiDigiAMP` and the mixer control is `Digital`. Use the card's name, never its number: numbers can change between restarts. `aplay -l` on the Pi shows the names. Both rows are advanced.
 
-Read more: [Audio](https://github.com/davidwkeith/atmosfx-projector-case/blob/main/pi/README.md#audio)
+Read more: [Audio](../../docs/audio.md)

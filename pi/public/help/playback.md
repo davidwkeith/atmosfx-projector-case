@@ -7,4 +7,4 @@
 
 Changing the mode takes effect the next time playback starts.
 
-Read more: [Videos, playlist, scare mode](https://github.com/davidwkeith/atmosfx-projector-case/blob/main/pi/README.md#videos-playlist-scare-mode)
+Read more: [Videos, playlist, scare mode](../../docs/videos.md)

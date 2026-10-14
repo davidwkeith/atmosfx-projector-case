@@ -26,4 +26,4 @@ The slider and **Mute** control the speakers. During quiet hours the volume is c
 - **DMX in control**: a lighting desk is sending signal, so power and volume are locked until it stops.
 - A red banner lists alarms (heat, projector) and system problems (no password, clock not synced, storage).
 
-Read more: [How it works](https://github.com/davidwkeith/atmosfx-projector-case/blob/main/pi/README.md#how-it-works)
+Read more: [How it works](../../docs/how-it-works.md)
