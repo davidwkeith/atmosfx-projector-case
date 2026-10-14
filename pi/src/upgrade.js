@@ -1,16 +1,15 @@
 // Client for the root-side upgrade helper (upgrade-helper.js). The web service is
-// unprivileged and sandboxed (NoNewPrivileges), so it cannot check the Pi's login
-// password or run videofx-update itself. It sends one JSON line to a root-owned
-// Unix socket and reads one JSON line back. The password only travels over that
-// socket and is never stored or logged.
+// unprivileged and sandboxed (NoNewPrivileges), so it cannot run videofx-update
+// itself. It sends one JSON line to a root-owned Unix socket and reads one JSON
+// line back.
 
 import { connect } from "node:net";
 
 export const SOCKET_PATH = "/run/videofx-upgrade.sock";
 
 /**
- * @param {{action: "upgrade", password: string} | {action: "check"}} request
- * @returns {Promise<{ok: true} | {error: "wrong-password"|"throttled"|"busy"|"unavailable"|"failed", message?: string}>}
+ * @param {{action: "upgrade" | "check"}} request
+ * @returns {Promise<{ok: true} | {error: "busy"|"unavailable"|"failed", message?: string}>}
  */
 export function askHelper(request, { socketPath = SOCKET_PATH, timeoutMs = 90_000 } = {}) {
   return new Promise((resolve) => {

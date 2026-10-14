@@ -73,8 +73,7 @@ export function mount(root) {
   const notes = el("div", {});
   const restart = el("button", { type: "button" }, "Restart now");
   const checkNow = el("button", { type: "button" }, "Check now");
-  const password = el("input", { type: "password", autocomplete: "current-password", placeholder: "Pi login password" });
-  const passwordLabel = el("label", {}, "Pi login password (the one you use for SSH)", password);
+  const needsPassword = el("p", { className: "warn" }, "Set a page password (Settings > Web page) to upgrade from here, or run \"sudo videofx-update\" on the Pi.");
   const upgradeGo = el("button", { type: "button", className: "primary" }, "Upgrade now");
   const upgradeTitle = el("summary", {}, "Upgrade");
   const upgradePanel = el(
@@ -82,7 +81,7 @@ export function mount(root) {
     { className: "upgrade", hidden: true },
     upgradeTitle,
     el("p", {}, "Playback stops while the Pi installs the new version and reboots (twice when the power-cut protection is on). This page reconnects by itself. The old version is kept for a rollback."),
-    passwordLabel,
+    needsPassword,
     upgradeGo,
   );
 
@@ -133,16 +132,13 @@ export function mount(root) {
   );
   upgradeGo.addEventListener("click", () =>
     run(async () => {
-      if (!passwordLabel.hidden && !password.value) throw new Error("Enter the Pi's login password.");
       upgradeGo.disabled = true;
       try {
-        await api("/api/update/upgrade", json("POST", { password: passwordLabel.hidden ? undefined : password.value }));
+        await api("/api/update/upgrade", json("POST", {}));
       } catch (err) {
         upgradeGo.disabled = false;
-        password.value = "";
         throw err;
       }
-      password.value = "";
       toast("Upgrading. The Pi restarts; this page reloads when it is back.");
       waitForReturn();
     }),
@@ -187,8 +183,9 @@ export function mount(root) {
           : `VideoFX ${v.version}${v.sha ? ` (${v.sha})` : ""}${v.checkedAt ? ` · up to date as of ${new Date(v.checkedAt).toLocaleDateString()}` : ""}`
         : "";
       upgradePanel.hidden = !v?.available;
-      // With a page password set, you are already logged in with it; without one, ask for the Pi's.
-      passwordLabel.hidden = Boolean(st.web?.passwordSet);
+      // Upgrading is gated by the page password: without one, anyone on the LAN could press it.
+      needsPassword.hidden = Boolean(st.web?.passwordSet);
+      upgradeGo.hidden = !st.web?.passwordSet;
       upgradeTitle.textContent = v?.available ? `Upgrade to ${v.latest}` : "Upgrade";
       if (v?.error) version.textContent += ` · last check failed: ${v.error}`;
       const list = systemNotesOf(st);

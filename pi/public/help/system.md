@@ -14,7 +14,7 @@ When restoring, leave **Also restore the Matter pairing** off unless this is the
 
 ## Software
 
-The page shows the installed version. The Pi looks for a newer release on GitHub once a day; **Check now** asks right away. When one exists an **Upgrade to X.Y.Z** panel appears. If you have set a page password, you are already signed in with it and just confirm. If you have not, it asks for the Pi's login password (the one you use for SSH), because otherwise anyone on your network could press the button. Then it installs the release and reboots. The old version is kept, so `sudo videofx-update --rollback` undoes it.
+The page shows the installed version. The Pi looks for a newer release on GitHub once a day; **Check now** asks right away. When one exists an **Upgrade to X.Y.Z** panel appears. Upgrading from the page needs a page password (Settings > Web page), because otherwise anyone on your network could press the button; without one, run `sudo videofx-update` on the Pi instead. You are already signed in with it, so you just confirm. Then it installs the release and reboots. The old version is kept, so `sudo videofx-update --rollback` undoes it.
 
 **Restart service** stops playback for a few seconds. It comes back by itself and restores the last state.
 

@@ -112,7 +112,7 @@ describe("web server", () => {
   let playlistChanged;
   let resetMatter;
   let upgradeResult;
-  let upgradeArg;
+  let upgradeCalls;
   let password;
 
   beforeEach(async () => {
@@ -122,6 +122,7 @@ describe("web server", () => {
     resetMatter = vi.fn(async () => {});
     password = "";
     upgradeResult = null;
+    upgradeCalls = 0;
     const media = createMediaStore({ dir, playlist: join(dir, "playlist.m3u"), maxUploadBytes: 1000 });
     server = createWebServer({
       media,
@@ -141,7 +142,7 @@ describe("web server", () => {
       playlistChanged,
       pairingSvg: () => "<svg/>",
       resetMatter,
-      upgrade: async (auth) => ((upgradeArg = auth), (upgradeResult = auth.trusted || auth.password === "right" ? { ok: true } : { error: "wrong-password" })),
+      upgrade: async () => ((upgradeCalls += 1), upgradeResult),
       checkUpdate: async () => upgradeResult,
       log: { error: () => {} },
     });
@@ -178,27 +179,24 @@ describe("web server", () => {
     });
   }
 
-  it("with no page password, upgrades only with the Pi login password, and limits wrong guesses per client", async () => {
-    const post = (body, headers) => call("POST", "/api/update/upgrade", { body, headers });
-    expect((await post('{"password":"right"}', { "x-videofx": "" })).status).toBe(403);
-    expect((await post("{}")).status).toBe(400);
-    const wrong = await post('{"password":"nope"}');
-    expect(wrong.status).toBe(403);
-    expect(wrong.json.error).toMatch(/login password/);
-    const ok = await post('{"password":"right"}');
-    expect(ok.status).toBe(202);
-    expect(ok.json).toEqual({ upgrading: true });
-    for (let i = 0; i < 4; i++) await post('{"password":"nope"}');
-    expect((await post('{"password":"right"}')).status).toBe(429);
+  it("with no page password, refuses to upgrade and never asks for the Pi login password", async () => {
+    const res = await call("POST", "/api/update/upgrade", { body: '{"password":"right"}' });
+    expect(res.status).toBe(403);
+    expect(res.json.error).toMatch(/page password/);
+    expect(upgradeCalls).toBe(0);
   });
 
-  it("with a page password set, that login is the authorization and no Pi password is needed", async () => {
+  it("with a page password set, that login is the authorization", async () => {
     password = "boo";
     const post = (headers) => call("POST", "/api/update/upgrade", { body: "{}", headers });
     expect((await post()).status).toBe(401);
     const auth = { authorization: `Basic ${Buffer.from("x:boo").toString("base64")}` };
-    expect((await post(auth)).status).toBe(202);
-    expect(upgradeArg).toEqual({ trusted: true });
+    expect((await post({ ...auth, "x-videofx": "" })).status).toBe(403);
+    upgradeResult = { ok: true };
+    const ok = await post(auth);
+    expect(ok.status).toBe(202);
+    expect(ok.json).toEqual({ upgrading: true });
+    expect(upgradeCalls).toBe(1);
   });
 
   it("maps helper failures and runs Check now", async () => {
