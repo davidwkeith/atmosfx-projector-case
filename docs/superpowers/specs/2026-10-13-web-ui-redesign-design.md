@@ -56,7 +56,7 @@ the title on phones, a second column on desktop.
 
 Row layout: bold label; the schema `help` string as a muted one-liner beneath it;
 the control (text, number, select, checkbox) to the right or below on narrow
-screens. An (i) button after the label opens a popover with: source (set here /
+screens. An (i) button after the label opens an inline detail panel under the row with: source (set here /
 from `/etc/default/videofx` / default), the default value, when the change applies
 (at once / next play / after a restart), the env var name, and a "Reset to file
 value or default" action when the source is `web`.
@@ -68,7 +68,7 @@ hides rows with `advanced: true`. The schema gains that flag on: `mpvExtraArgs`
 A group with no visible rows (Advanced, in Simple mode) drops out of the
 secondary nav.
 
-Search box above the nav filters rows across all groups by label and help text and
+Search box above the nav filters every non-custom row (including those on the Scares and Schedule screens) by label and help text and
 ignores the Simple filter. Results show the group name next to each row.
 
 Saving: edits are held in a pending-changes store. A sticky bar at the bottom
@@ -118,12 +118,15 @@ docs list gains `pi/public/help/`.
 | File | Role |
 |---|---|
 | `index.html` | Shell: header with name and state pill, nav, empty `<main>`, help dialog, toast |
-| `app.js` | Boot: hash router, 3 s status poll, shared state store, nav badges |
+| `app.js` | Boot: hash router, 3 s status poll, chrome, help sheet |
+| `state.js` | Shared store, refreshers, subscriptions, dirty registry |
+| `nav.js` | Views, group-to-view map, hash parsing, help slugs (pure) |
+| `notes.js` | Alarms, system notes and nav badges from /api/status (pure) |
 | `api.js` | `api()`, `json()`, `toast()`, `run()`, `el()`, `bytes()`, moved unchanged |
 | `views/dashboard.js`, `media.js`, `scares.js`, `schedule.js`, `settings.js`, `system.js` | One module per view exporting `render(root, state)` and `update(state)` |
-| `settings-form.js` | Schema-driven row renderer, (i) popover, pending-changes store, Apply bar |
+| `settings-form.js` | Schema-driven row renderer, (i) detail panel, pending-changes store, Apply bar |
 | `markdown.js` | Markdown subset renderer |
-| `app.css` | Tokens, layout, nav, rows, popover, dialog, light and dark |
+| `app.css` | Tokens, layout, nav, rows, detail panel, dialog, light and dark |
 
 State: one object (`status`, `media`, `settings`) refreshed by the existing three
 fetches. Views re-render only live parts and keep today's guard against replacing
@@ -143,8 +146,8 @@ rename. `describe()` already exposes `group`, `label`, `help`, `apply`,
 
 - `pi/test/web.test.js`: the static route serves each view module and a help
   file; refuses `..`, dotfiles and unknown extensions; 404s an unknown help slug.
-  Every slug the UI references (a list exported from `app.js` or a small
-  `help-index.js`) has a file in `pi/public/help/`.
+  Every slug the UI references (a list exported from
+  `nav.js`) has a file in `pi/public/help/`.
 - New `pi/test/markdown.test.js`: each supported construct, raw HTML escaped,
   `javascript:` links rendered as text.
 - New `pi/test/settings-form.test.js`: the pending-changes store in isolation:

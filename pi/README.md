@@ -12,7 +12,7 @@ It also:
 - takes DMX over sACN from show software;
 - watches the Pi's own temperature and switches the projector off if it overheats (the projector's fan does the case cooling).
 
-A web page on your LAN (`http://videofx-xxxx.local/`) handles videos, the playlist, scare clips, the schedule and every setting.
+A web page on your LAN (`http://videofx-xxxx.local/`) handles videos, the playlist, scare clips, the schedule and every setting. It has six screens (Dashboard, Media, Scares, Schedule, Settings, System), and every screen has a **?** button with help for that screen.
 
 **Status: untested on hardware.** The logic is unit tested (464 tests). The whole service was run on a Mac against a fake mpv, with real UDP sACN. Nothing has run on a Pi, the image has not been built, and nothing has been paired with Apple Home. See [What is verified](#what-is-verified).
 
@@ -42,7 +42,7 @@ One arm64 image and one `install.sh` cover all four sleds. pi-gen installs both 
 Sources: Raspberry Pi's [video playback page](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/os/playing-audio-and-video.adoc) (connector names), its [BCM2712 page](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/processors/bcm2712.adoc) (Pi 5 decoding) and [power supply page](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/raspberry-pi/power-supplies.adoc); Raspberry Pi's [DigiAMP+ product brief](<https://pip-assets.raspberrypi.com/categories/765-raspberry-pi-digiamp/documents/RP-008138-DS-1-digiamp-plus-hat-product-brief.pdf>) (power, dimensions, 0-50 °C operating range), [product page](https://www.raspberrypi.com/products/digiamp-plus/) and [audio HAT docs](https://www.raspberrypi.com/documentation/accessories/audio.html) (Pi model notes, mute GPIO, overlay parameters).
 
 - mpv is pinned to `--drm-connector=HDMI-A-1` (the **Video output** setting), so on a Pi 4B or 5 use **HDMI0**. The option name was checked against the mpv 0.40 manual.
-- mpv runs with `--vo=gpu --gpu-context=drm --hwdec=auto-safe`. mpv's docs don't list the Pi's V4L2 decoder in `auto`'s whitelist. If a Pi 3 or Zero 2 W struggles, add `--hwdec=v4l2m2m-copy` under Settings > Advanced (not verified).
+- mpv runs with `--vo=gpu --gpu-context=drm --hwdec=auto-safe`. mpv's docs don't list the Pi's V4L2 decoder in `auto`'s whitelist. If a Pi 3 or Zero 2 W struggles, add `--hwdec=v4l2m2m-copy` under Settings > Advanced (switch on **Show advanced settings** first; not verified).
 - **Pi 5 power is a hardware decision for you.** A Pi 5 wants 5 V/5 A over USB-C PD. The GPIO header can't negotiate PD, and the DigiAMP+ supplies 5.1 V at 2.5 A. If `vcgencmd get_throttled` isn't `0x0` or it reboots under load, use a Pi 4B sled; don't add a second 5 V supply, Raspberry Pi says not to power the Pi's own input while the DigiAMP+ is fitted. The software doesn't work around it.
 - **config.txt:** the audio, IR and relay lines are the same on every board and go in `[all]`. Older installs also had overlays for the since-removed fans and temperature sensors; `setup.sh` removes that block.
 
@@ -70,7 +70,7 @@ pi/
   src/backup.js        backup / staged restore
   src/update.js, update-cli.js   version, release lookup and download for videofx-update
   src/media.js, playlist-core.js, web.js, qr.js, screen.js, volume.js
-  public/              web page (plain HTML/CSS/JS)
+  public/              web page (plain HTML/CSS/JS); public/help/ holds the in-page help, one Markdown file per screen and settings group
   system/              systemd units, udev rules, avahi service, asound.conf, videofx.default, setup.sh,
                        videofx-storage (+ .service), videofx-maint, videofx-update (+ resume service),
                        NetworkManager/timesyncd/watchdog config
@@ -203,7 +203,7 @@ sudo videofx-update --rollback                # back to the previous version
 
 ### Backup and restore
 
-Web page > **Backup** > **Download backup**. That's one JSON file with the settings, schedule, quiet hours, playlist, and the Matter storage (fabrics, keys). Videos aren't included; copy those yourself. The file holds the pairing keys and the password hash, so keep it private. When a password is set, downloading needs it.
+System > **Backup** > **Download backup**. That's one JSON file with the settings, schedule, quiet hours, playlist, and the Matter storage (fabrics, keys). Videos aren't included; copy those yourself. The file holds the pairing keys and the password hash, so keep it private. When a password is set, downloading needs it.
 
 **Restore:** pick the file, choose whether to include the Matter pairing, confirm. Settings and playlist apply straight away and the service restarts. A restored pairing is swapped in at that restart, and the previous one is kept as `matter.before-restore`.
 
@@ -222,7 +222,7 @@ With no password set, the page shows a warning: anyone on your network can contr
 
 ### Quiet hours
 
-Web page > **Quiet hours**: per weekday, a window (an end earlier than the start runs past midnight; start = end means all day) during which:
+Schedule > **Quiet hours**: per weekday, a window (an end earlier than the start runs past midnight; start = end means all day) during which:
 
 - **the volume is capped** at a percentage (0 mutes). The cap applies to the web slider, the saved level at start-up, and DMX (unless **DMX ignores quiet hours** is on). The mixer is re-set when a window starts or ends;
 - **scares are off** (optional), whatever the trigger: Home's Scare switch, the motion sensor, the web button, and DMX unless it bypasses.
@@ -255,7 +255,7 @@ Your purchased videos are not included or downloaded. Upload them on the web pag
 
 On the page: an on time and an off time per weekday. The on time can be **At sunset**, plus or minus an offset. An off time earlier than the on time means after midnight.
 
-- Sunset is computed on the Pi from Settings > Schedule > Latitude/Longitude, using NOAA's general solar position equations (tested within 5 minutes of published times). Days with no sunset (polar summer or winter) get no on event.
+- Sunset is computed on the Pi from Schedule > Latitude/Longitude, using NOAA's general solar position equations (tested within 5 minutes of published times). Days with no sunset (polar summer or winter) get no on event.
 - Times use the Pi's time zone (`sudo raspi-config` > Localisation). Tested across both DST changes: a time in the spring-forward gap fires once, at 03:30; a time in the fall-back hour fires once.
 - **The schedule only acts at its event times.** Switching on or off by hand (Home, the page) holds until the next scheduled event. The page shows the next event.
 - **After a power cut** the "After a power cut" setting applies first. Then, once the clock is set, an event that passed while the power was out is caught up: a cut across "on at sunset" still gets you a show. A change you made by hand after the last event is left alone.
@@ -285,7 +285,7 @@ Setting: **Projector power** = `cec` (default) | `relay-ir` | `relay` | `hdmi-of
   - The relay and IR pins are also in `config.txt`, written once with the defaults. If you change them in `/etc/default/videofx`, change `config.txt` by hand too.
   - Cutting power suits LED mini projectors; don't do it to a lamp projector that needs a cool-down.
 - **IR** uses the `gpio-ir-tx` overlay for the LED and `gpio-ir` for a TSOP38238-style receiver, driven with `ir-ctl`.
-  - On the page: **Learn power button**, then press the remote's power button at the receiver. The capture is decoded as NEC (`nec`, `necx` or `nec32`, the same scancode forms the kernel's encoder sends) or kept as raw pulse/space data.
+  - On the page (Settings > Projector, with **Projector power** set to `relay-ir`): **Learn power button**, then press the remote's power button at the receiver. The capture is decoded as NEC (`nec`, `necx` or `nec32`, the same scancode forms the kernel's encoder sends) or kept as raw pulse/space data.
   - Or paste a code (`nec:0x40bf`, `rc5:0x1e01`, `raw:+9000 -4500 ...`). **Send test** fires it.
   - `pwm-ir-tx` is allowed (set `VIDEOFX_IR_TX_DRIVER` and use its overlay in `config.txt`): the case has no fans, so hardware PWM0 is free.
 
@@ -392,11 +392,11 @@ VideoFX is a **receive-only 8-channel fixture** over **E1.31 (sACN)**, on Wi-Fi 
 3. Choose **Add Anyway** at the not-certified warning (test vendor ID 0xFFF1).
 4. You get the Projector and Scare switches, a Motion sensor and a Temperature sensor. Name them, and automate, for example: sunset → Projector on; doorbell → Scare on.
 
-To unpair: web page > Matter > **Reset Matter pairing**. Videos and settings are kept.
+To unpair: System > Matter > **Reset Matter pairing**. Videos and settings are kept.
 
 ## Settings
 
-Everything is on the web page under **Settings**. Each setting shows its value, where it comes from (*set here* / *from /etc/default/videofx* / *default*), its default, when it takes effect (at once / next play / after a restart), and a **Reset**.
+Settings are on the web page: the **Settings** screen holds most of them, and the Scares and Schedule screens hold their own. Each row shows its label and a one-line description; the (i) button shows its value's source (*set here* / *from /etc/default/videofx* / *default*), its default, when it takes effect (at once / next play / after a restart), and a **Reset**. Edits are collected in a bar at the bottom and saved together with **Apply**. **Show advanced settings** reveals rarely needed rows, and the search box finds any setting.
 
 - **Precedence:** web page (`/var/lib/videofx/settings.json`, written atomically, mode 600) > `/etc/default/videofx` > default. A corrupt settings.json is backed up to `settings.json.corrupt` and ignored, with a warning.
 - **Password:** stored as a scrypt hash and never sent back. Changing it needs the current password; removing it needs the current password and a confirmation.
