@@ -1,5 +1,6 @@
 import { el, icon, restartService, run } from "./api.js";
 import { renderMarkdown } from "./markdown.js";
+import { mountApplyBar } from "./settings-form.js";
 import { VIEWS, parseHash } from "./nav.js";
 import { badgesOf } from "./notes.js";
 import { isDirty, refreshMedia, refreshSettings, refreshStatus, state, subscribe } from "./state.js";
@@ -22,6 +23,7 @@ $("nav").replaceChildren(
 );
 $("help-btn").append(icon("help"));
 $("help-close").append(icon("close"));
+mountApplyBar($("apply-bar"));
 
 let current = null;
 let token = 0; // a slow import must not replace a view the user has already left
