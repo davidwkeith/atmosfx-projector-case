@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { checkPins, deviceIds, deviceName, loadConfig, resolveSettings } from "../src/config.js";
+import { SETTINGS, checkPins, deviceIds, deviceName, loadConfig, resolveSettings } from "../src/config.js";
 import { mpvArgs } from "../src/mpv.js";
 
 const ctx = { home: "/home/pi", deviceName: "VideoFX-BEEF", hostName: "videofx-beef" };
@@ -146,5 +146,20 @@ describe("system/videofx.default", () => {
     const { SETTINGS } = await import("../src/config.js");
     const text = await readFile(new URL("../system/videofx.default", import.meta.url), "utf8");
     for (const s of SETTINGS.filter((x) => x.env)) expect(text, s.key).toContain(`#${[s.env].flat().at(-1)}=`);
+  });
+});
+
+describe("settings schema for the web page", () => {
+  it("flags exactly the rows hidden in Simple mode", () => {
+    const advanced = SETTINGS.filter((s) => s.advanced).map((s) => s.key).sort();
+    expect(advanced).toEqual(
+      ["audioCard", "cecDevice", "console", "dmxHoldSec", "dmxMulticast", "mixerControl", "mpvExtraArgs", "pirDebounceMs", "relaySettleSec", "tempHysteresisC", "webHosts"].sort(),
+    );
+  });
+
+  it("calls the read-only group Hardware, never Fixed", () => {
+    expect(SETTINGS.some((s) => s.group === "Fixed")).toBe(false);
+    expect(SETTINGS.filter((s) => s.group === "Hardware").every((s) => s.apply === "fixed")).toBe(true);
+    expect(SETTINGS.filter((s) => s.apply === "fixed").every((s) => s.group === "Hardware")).toBe(true);
   });
 });
