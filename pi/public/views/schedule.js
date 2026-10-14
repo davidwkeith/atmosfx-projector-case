@@ -1,5 +1,5 @@
-import { editing, el } from "../api.js";
-import { advancedShown, effective, pending, rowOf, visibleItems } from "../settings-form.js";
+import { el } from "../api.js";
+import { advancedShown, effective, pending, rowOf, safeToRebuild, visibleItems } from "../settings-form.js";
 import { setting, state } from "../state.js";
 
 const DAY_NAMES = { mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun" };
@@ -135,7 +135,7 @@ export function mount(root) {
     helpSlug: () => "schedule",
     unmount: offPending,
     update(s) {
-      if (s.settings === lastSettings || editing(root)) return; // not under someone who is typing
+      if (s.settings === lastSettings || !safeToRebuild(root)) return; // not under someone who is typing
       lastSettings = s.settings;
       drawSchedule();
       drawQuiet();

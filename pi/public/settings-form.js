@@ -1,4 +1,4 @@
-import { api, el, icon, json, run, toast } from "./api.js";
+import { api, editing, el, icon, json, run, toast } from "./api.js";
 import { onDirtyCheck, refreshSettings, refreshStatus, remount, setting, state } from "./state.js";
 // Edits waiting for "Apply", shared by every view that shows settings.
 // This top part has no DOM access so the tests can import it.
@@ -82,6 +82,12 @@ export function visibleItems(items, { advanced, query }) {
 
 export const pending = createPending();
 onDirtyCheck(() => pending.count > 0);
+
+/**
+ * May a view rebuild its rows now? Not while someone is typing with edits waiting. Once nothing is pending (Apply
+ * succeeded, or Discard), yes even if a tapped control still has focus: phones do not move focus to a tapped button.
+ */
+export const safeToRebuild = (root) => !editing(root) || pending.count === 0;
 
 /** What the person would see right now: their pending edit, else the saved value. */
 export const effective = (key) => pending.get(key)?.value ?? setting(key);
@@ -179,7 +185,7 @@ export function settingRow(s) {
 
   row.append(
     el("div", { className: "setting-head" }, el("label", { className: "title", htmlFor: id }, s.label), infoButton(s, pop)),
-    s.help ? el("p", { className: "hint" }, s.help) : null,
+    ...(s.help ? [el("p", { className: "hint" }, s.help)] : []), // native append(): a null child would print "null"
     el("div", { className: "control" }, input),
     note,
     pop,

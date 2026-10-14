@@ -1,6 +1,6 @@
-import { api, editing, el, json, run, toast } from "../api.js";
+import { api, el, json, run, toast } from "../api.js";
 import { SETTINGS_GROUPS, groupSlug } from "../nav.js";
-import { advancedShown, advancedToggle, effective, fixedRow, pending, pinTable, rowOf, visibleItems } from "../settings-form.js";
+import { advancedShown, advancedToggle, effective, fixedRow, pending, pinTable, rowOf, safeToRebuild, visibleItems } from "../settings-form.js";
 import { setting, state } from "../state.js";
 
 function renderDmx(box, dmx) {
@@ -116,6 +116,7 @@ export function mount(root, { sub }) {
   }
 
   search.addEventListener("input", draw);
+  draw(); // shows "Loading…" until the settings arrive
 
   return {
     helpSlug: () => (group ? groupSlug(group) : "device"),
@@ -123,7 +124,7 @@ export function mount(root, { sub }) {
     update(s) {
       if (s.status) renderDmx(dmxBox, s.status.dmx ?? {});
       // Never rebuild rows under someone who is typing; the next update tries again.
-      if (s.settings !== lastSettings && !editing(root)) {
+      if (s.settings !== lastSettings && safeToRebuild(root)) {
         lastSettings = s.settings;
         draw();
       }

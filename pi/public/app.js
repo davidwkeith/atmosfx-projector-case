@@ -3,7 +3,7 @@ import { renderMarkdown } from "./markdown.js";
 import { mountApplyBar } from "./settings-form.js";
 import { VIEWS, parseHash } from "./nav.js";
 import { badgesOf } from "./notes.js";
-import { isDirty, refreshMedia, refreshSettings, refreshStatus, state, subscribe } from "./state.js";
+import { ensureLoaded, isDirty, refreshMedia, refreshSettings, refreshStatus, state, subscribe } from "./state.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -102,6 +102,7 @@ window.addEventListener("beforeunload", (e) => isDirty() && e.preventDefault());
 // Poll status while the page is visible; it changes from Apple Home too.
 async function poll() {
   await run(refreshStatus);
+  ensureLoaded();
   setTimeout(() => {
     if (document.visibilityState === "visible") poll();
     else document.addEventListener("visibilitychange", poll, { once: true });

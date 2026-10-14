@@ -1,6 +1,6 @@
 import { suggestScarePairs } from "/playlist-core.js";
-import { editing, el, toast } from "../api.js";
-import { advancedShown, advancedToggle, effective, pending, rowOf, visibleItems } from "../settings-form.js";
+import { el, toast } from "../api.js";
+import { advancedShown, advancedToggle, effective, pending, rowOf, safeToRebuild, visibleItems } from "../settings-form.js";
 import { setting, state } from "../state.js";
 
 const names = () => (state.media?.files ?? []).map((f) => f.name);
@@ -94,7 +94,7 @@ export function mount(root) {
     helpSlug: () => "scares",
     update(s) {
       // Not while someone is typing or choosing; the next update tries again.
-      if (editing(root)) return;
+      if (!safeToRebuild(root)) return;
       if (s.settings !== lastSettings) {
         lastSettings = s.settings;
         drawRows();

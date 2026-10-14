@@ -28,6 +28,14 @@ export async function refreshSettings() {
   emit();
 }
 
+/** Retry what the first load missed (a Pi that was slow or briefly unreachable). Quiet: the status poll already reports an unreachable Pi. */
+export async function ensureLoaded() {
+  const missing = [];
+  if (!state.settings) missing.push(refreshSettings());
+  if (!state.media) missing.push(refreshMedia());
+  await Promise.allSettled(missing);
+}
+
 export const setting = (key) => state.settings?.settings.find((s) => s.key === key)?.value;
 
 // Anything holding unsaved edits registers here; the page warns before it is closed.

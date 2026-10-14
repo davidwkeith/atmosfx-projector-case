@@ -115,7 +115,8 @@ details summary { cursor: pointer; color: var(--muted); padding: 8px 0; }
   position: fixed;
   left: 16px;
   right: 16px;
-  bottom: 16px;
+  top: 16px;
+  z-index: 30;
   max-width: 608px;
   margin: 0 auto;
   background: var(--text);
