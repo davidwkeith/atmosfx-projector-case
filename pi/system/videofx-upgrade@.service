@@ -1,0 +1,9 @@
+[Unit]
+Description=VideoFX upgrade helper (one connection)
+
+[Service]
+ExecStart=/usr/bin/node /opt/videofx/src/upgrade-helper.js
+StandardInput=socket
+StandardOutput=socket
+StandardError=journal
+TimeoutStartSec=90

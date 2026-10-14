@@ -1,0 +1,14 @@
+# Lets the web page ask for an upgrade without the service ever being root.
+# Anyone on the Pi can connect, but the helper only acts on the login user's
+# password (wrong guesses wait 2 s each, two connections at a time).
+[Unit]
+Description=VideoFX upgrade helper socket
+
+[Socket]
+ListenStream=/run/videofx-upgrade.sock
+SocketMode=0666
+Accept=yes
+MaxConnections=2
+
+[Install]
+WantedBy=sockets.target

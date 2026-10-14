@@ -14,7 +14,7 @@ When restoring, leave **Also restore the Matter pairing** off unless this is the
 
 ## Software
 
-The page shows the installed version. VideoFX never updates itself: when an update is available, run `sudo videofx-update` on the Pi.
+The page shows the installed version. The Pi looks for a newer release on GitHub once a day; **Check now** asks right away. When one exists an **Upgrade to X.Y.Z** panel appears. It asks for the Pi's login password (the one you use for SSH, not the page password), then installs the release and reboots. The old version is kept, so `sudo videofx-update --rollback` undoes it.
 
 **Restart service** stops playback for a few seconds. It comes back by itself and restores the last state.
 

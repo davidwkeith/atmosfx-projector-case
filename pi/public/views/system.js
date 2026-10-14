@@ -1,5 +1,6 @@
 import { api, el, json, restartService, run, toast } from "../api.js";
 import { systemNotesOf } from "../notes.js";
+import { refreshStatus } from "../state.js";
 
 export function mount(root) {
   // --- Matter
@@ -71,6 +72,18 @@ export function mount(root) {
   const version = el("p", {});
   const notes = el("div", {});
   const restart = el("button", { type: "button" }, "Restart now");
+  const checkNow = el("button", { type: "button" }, "Check now");
+  const password = el("input", { type: "password", autocomplete: "current-password", placeholder: "Pi login password" });
+  const upgradeGo = el("button", { type: "button", className: "primary" }, "Upgrade now");
+  const upgradeTitle = el("summary", {}, "Upgrade");
+  const upgradePanel = el(
+    "details",
+    { className: "upgrade", hidden: true },
+    upgradeTitle,
+    el("p", {}, "Playback stops while the Pi installs the new version and reboots (twice when the power-cut protection is on). This page reconnects by itself. The old version is kept for a rollback."),
+    el("label", {}, "Pi login password (the one you use for SSH)", password),
+    upgradeGo,
+  );
 
   root.append(
     el("section", {}, el("h3", {}, "Matter"), unpaired, paired),
@@ -89,6 +102,8 @@ export function mount(root) {
       el("h3", {}, "Software"),
       version,
       notes,
+      upgradePanel,
+      el("div", { className: "actions" }, checkNow),
       el("details", { className: "restart" }, el("summary", {}, "Restart service"), el("p", {}, "Stops playback for a few seconds; the service comes back by itself and restores the last state."), restart),
     ),
   );
@@ -103,6 +118,50 @@ export function mount(root) {
   restoreFile.addEventListener("change", () => run(() => pickRestore(restoreFile.files[0])));
   restoreGo.addEventListener("click", () => run(doRestore));
   restart.addEventListener("click", () => run(restartService));
+  checkNow.addEventListener("click", () =>
+    run(async () => {
+      checkNow.disabled = true;
+      try {
+        await api("/api/update/check", json("POST", {}));
+        toast("Checked GitHub.");
+        await refreshStatus();
+      } finally {
+        checkNow.disabled = false;
+      }
+    }),
+  );
+  upgradeGo.addEventListener("click", () =>
+    run(async () => {
+      if (!password.value) throw new Error("Enter the Pi's login password.");
+      upgradeGo.disabled = true;
+      try {
+        await api("/api/update/upgrade", json("POST", { password: password.value }));
+      } catch (err) {
+        upgradeGo.disabled = false;
+        password.value = "";
+        throw err;
+      }
+      password.value = "";
+      toast("Upgrading. The Pi restarts; this page reloads when it is back.");
+      waitForReturn();
+    }),
+  );
+
+  /** The Pi goes away while it installs: reload once it answers again after a gap. */
+  function waitForReturn() {
+    let wasDown = false;
+    const timer = setInterval(async () => {
+      try {
+        const res = await fetch("/api/status", { cache: "no-store" });
+        if (res.ok && wasDown) {
+          clearInterval(timer);
+          location.reload();
+        }
+      } catch {
+        wasDown = true;
+      }
+    }, 5000);
+  }
 
   return {
     helpSlug: () => "system",
@@ -123,9 +182,12 @@ export function mount(root) {
       const v = st.version;
       version.textContent = v
         ? v.available
-          ? `VideoFX ${v.version}${v.sha ? ` (${v.sha})` : ""} · update available: ${v.latest}. Run "sudo videofx-update" on the Pi.`
+          ? `VideoFX ${v.version}${v.sha ? ` (${v.sha})` : ""} · update available: ${v.latest}.`
           : `VideoFX ${v.version}${v.sha ? ` (${v.sha})` : ""}${v.checkedAt ? ` · up to date as of ${new Date(v.checkedAt).toLocaleDateString()}` : ""}`
         : "";
+      upgradePanel.hidden = !v?.available;
+      upgradeTitle.textContent = v?.available ? `Upgrade to ${v.latest}` : "Upgrade";
+      if (v?.error) version.textContent += ` · last check failed: ${v.error}`;
       const list = systemNotesOf(st);
       notes.replaceChildren(...(list.length ? list.map((n) => el("p", { className: "warn" }, n.text)) : [el("p", { className: "hint" }, "No storage, clock or password problems.")]));
     },

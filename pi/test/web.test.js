@@ -95,6 +95,7 @@ describe("web server", () => {
   let power;
   let playlistChanged;
   let resetMatter;
+  let upgradeResult;
   let password;
 
   beforeEach(async () => {
@@ -103,6 +104,7 @@ describe("web server", () => {
     playlistChanged = vi.fn();
     resetMatter = vi.fn(async () => {});
     password = "";
+    upgradeResult = null;
     const media = createMediaStore({ dir, playlist: join(dir, "playlist.m3u"), maxUploadBytes: 1000 });
     server = createWebServer({
       media,
@@ -122,6 +124,8 @@ describe("web server", () => {
       playlistChanged,
       pairingSvg: () => "<svg/>",
       resetMatter,
+      upgrade: async (pw) => (upgradeResult = pw === "right" ? { ok: true } : { error: "wrong-password" }),
+      checkUpdate: async () => upgradeResult,
       log: { error: () => {} },
     });
     await new Promise((resolve, reject) => {
@@ -156,6 +160,27 @@ describe("web server", () => {
       req.end(body);
     });
   }
+
+  it("upgrades only with the login password, behind the write header and the page password", async () => {
+    const post = (body, headers) => call("POST", "/api/update/upgrade", { body, headers });
+    expect((await post('{"password":"right"}', { "x-videofx": "" })).status).toBe(403);
+    expect((await post("{}")).status).toBe(400);
+    const wrong = await post('{"password":"nope"}');
+    expect(wrong.status).toBe(403);
+    expect(wrong.json.error).toMatch(/login password/);
+    const ok = await post('{"password":"right"}');
+    expect(ok.status).toBe(202);
+    expect(ok.json).toEqual({ upgrading: true });
+    password = "boo";
+    expect((await post('{"password":"right"}')).status).toBe(401);
+  });
+
+  it("maps helper failures and runs Check now", async () => {
+    upgradeResult = { error: "unavailable" };
+    expect((await call("POST", "/api/update/check", { body: "{}" })).status).toBe(503);
+    upgradeResult = { ok: true };
+    expect((await call("POST", "/api/update/check", { body: "{}" })).json).toEqual({ checked: true });
+  });
 
   it("serves the page and the shared module", async () => {
     expect((await call("GET", "/")).text).toMatch(/<title>VideoFX<\/title>/);

@@ -180,7 +180,7 @@ The Pi 3, 4 and Zero 2 W have no real-time clock, so after a power cut the clock
 
 ### Updates
 
-VideoFX never updates itself, and the web page never touches the network. With the read-only root, updates go through maintenance mode, which `videofx-update` handles:
+VideoFX never updates itself without being asked, and the web page never touches the network. A timer (`videofx-update-check.timer`, daily) runs `videofx-update --check` as root; the System page then shows **Upgrade to X.Y.Z**, and **Check now** asks right away. **Upgrade** needs the Pi's login password (the SSH one, not the page password). The unprivileged, sandboxed service cannot check that itself, so it sends it over `/run/videofx-upgrade.sock` to a small root helper (`src/upgrade-helper.js`, started per connection by `videofx-upgrade.socket`). The helper verifies it with PAM's `unix_chkpwd` (a wrong guess waits 2 s; two connections at a time), then starts `videofx-update` as a transient unit. The password is never stored or logged. With the read-only root, updates go through maintenance mode, which `videofx-update` handles:
 
 ```sh
 sudo videofx-update --check                   # asks GitHub; the page then shows "update available"
