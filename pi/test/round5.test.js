@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { applyStagedRestore, createBackup, safeRelPath, stageRestore, validateBackup } from "../src/backup.js";
 import { DEFAULT_QUIET, capVolume, inQuietHours, parseQuiet, quietNow, scareBlocked } from "../src/quiet.js";
-import { compareVersions, pickAsset, readVersion, updateStatus } from "../src/update.js";
+import { checkResult, compareVersions, pickAsset, readVersion, updateStatus } from "../src/update.js";
 
 const q = (days, over = {}) => parseQuiet({ enabled: true, volumeCap: 10, days, ...over });
 const at = (y, m, d, h, min = 0) => new Date(y, m - 1, d, h, min); // 2026-10-30 is a Friday
@@ -92,6 +92,18 @@ describe("versions and releases", () => {
     release.assets.push({ name: "videofx-pi-0.3.0.tar.gz.sig", url: "u3" });
     expect(pickAsset(release)).toMatchObject({ name: "videofx-pi-0.3.0.tar.gz", url: "u2", sigUrl: "u3" });
     expect(pickAsset({ assets: [{ name: "evil.tar.gz" }] })).toBeNull();
+  });
+
+  it("check: an unsigned release counts only when it is newer than what is installed", () => {
+    const now = new Date("2026-10-14T00:00:00Z");
+    const asset = (version, sigUrl = null) => ({ name: `videofx-pi-${version}.tar.gz`, version, tag: `v${version}`, sigUrl });
+    // v0.9.0 was published before releases became drafts: unsigned, and not an error on 0.9.0.
+    expect(checkResult(asset("0.9.0"), "0.9.0", now)).toEqual({ latest: "0.9.0", tag: "v0.9.0", checkedAt: now.toISOString() });
+    expect(checkResult(asset("0.9.1"), "0.9.0", now)).toMatchObject({ latest: null, error: expect.stringMatching(/not signed yet/) });
+    expect(checkResult(asset("0.9.1", "u"), "0.9.0", now)).toMatchObject({ latest: "0.9.1", tag: "v0.9.1" });
+    expect(checkResult(null, "0.9.0", now)).toMatchObject({ latest: null, error: expect.stringMatching(/no videofx-pi/) });
+    // Up to date and unsigned: the page shows no update and no error.
+    expect(updateStatus({ version: "0.9.0" }, JSON.stringify(checkResult(asset("0.9.0"), "0.9.0", now)))).toMatchObject({ available: false, error: null });
   });
 
   it("reads the version with the baked git sha", () => {

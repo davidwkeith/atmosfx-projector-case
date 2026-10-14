@@ -51,6 +51,20 @@ export function pickAsset(release) {
   return null;
 }
 
+/**
+ * What `videofx-update --check` records for the latest release's asset. An unsigned
+ * release that is not newer than what is installed is simply "up to date" (an old
+ * release from before signing); only a newer unsigned one is an error.
+ */
+export function checkResult(asset, current, now = new Date()) {
+  const checkedAt = now.toISOString();
+  if (!asset) return { latest: null, error: "the release has no videofx-pi-<version>.tar.gz asset", checkedAt };
+  if (!asset.sigUrl && compareVersions(asset.version, current) > 0) {
+    return { latest: null, error: `${asset.tag} is not signed yet (no ${asset.name}.sig; run tools/sign-release.sh)`, checkedAt };
+  }
+  return { latest: asset.version, tag: asset.tag, checkedAt };
+}
+
 /** For the page: current version, and whether the last check found a newer one. */
 export function updateStatus(current, checkText) {
   let check = null;
