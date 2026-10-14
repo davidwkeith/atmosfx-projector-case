@@ -33,8 +33,34 @@ export const groupSlug = (group) => group.toLowerCase().replace(/[^a-z0-9]+/g, "
 /** One help page per view, except Settings, which has one per group. */
 export const helpSlugs = () => [...VIEWS.filter((v) => v.id !== "settings").map((v) => v.id), ...SETTINGS_GROUPS.map(groupSlug)];
 
+export const DOCS_VIEW = "docs";
+export const REPO_BLOB = "https://github.com/davidwkeith/atmosfx-projector-case/blob/main/";
+
+/** A doc page name: lower-case words and hyphens. "index" is the contents page. */
+export const isDocSlug = (slug) => /^[a-z][a-z0-9-]{0,40}$/.test(slug);
+
+/**
+ * Where a Markdown link goes inside the web page. The files are written for GitHub, so links
+ * are relative paths from the file ("dmx.md", "../../docs/WIRING.md"): a page of pi/docs becomes
+ * the Docs route, any other repository file opens on GitHub, absolute and anchor-only links stay.
+ * `dir` is the repository folder holding the file that has the link.
+ */
+export function docHref(href, dir = "pi/docs") {
+  if (/^([a-z][a-z0-9+.-]*:|#|\/)/i.test(href)) return href;
+  const [path, frag = ""] = href.split("#");
+  const parts = [];
+  for (const seg of `${dir}/${path}`.split("/")) {
+    if (seg === "..") parts.pop();
+    else if (seg && seg !== ".") parts.push(seg);
+  }
+  const target = parts.join("/");
+  const page = /^pi\/docs\/([a-z][a-z0-9-]*)\.md$/.exec(target);
+  if (page) return `#/${DOCS_VIEW}/${page[1]}`;
+  return REPO_BLOB + target + (frag ? `#${frag}` : "");
+}
+
 /** "#/settings/web-page" -> { view: "settings", sub: "web-page" }. Unknown views fall back to the dashboard. */
 export function parseHash(hash = "") {
   const [name = "", sub = ""] = hash.replace(/^#\/?/, "").split("/");
-  return { view: VIEWS.some((v) => v.id === name) ? name : "dashboard", sub };
+  return { view: name === DOCS_VIEW || VIEWS.some((v) => v.id === name) ? name : "dashboard", sub };
 }

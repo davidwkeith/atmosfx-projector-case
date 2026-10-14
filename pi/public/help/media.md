@@ -14,4 +14,4 @@ Choose one or more video or audio files, or an `.m3u` playlist. The page shows h
 
 Your purchased videos are not included with VideoFX. Upload them here, or copy them to the media folder over SSH.
 
-Read more: [Videos, playlist, scare mode](https://github.com/davidwkeith/atmosfx-projector-case/blob/main/pi/README.md#videos-playlist-scare-mode)
+Read more: [Videos, playlist, scare mode](../../docs/videos.md)

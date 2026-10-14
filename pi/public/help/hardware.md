@@ -10,4 +10,4 @@ These values cannot be changed here. Ports need root, and paths would let this p
 
 Each row's (i) panel names the variable to set.
 
-Read more: [GPIO pins and wiring](https://github.com/davidwkeith/atmosfx-projector-case/blob/main/pi/README.md#gpio-pins-and-wiring)
+Read more: [GPIO pins and wiring](../../docs/wiring.md)

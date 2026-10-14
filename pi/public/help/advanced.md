@@ -8,4 +8,4 @@ Only decoding, DRM output, scaling, sync, cache, audio-timing and a few filter o
 
 This group is only listed when **Show advanced settings** is on. Other advanced rows live in their own groups.
 
-Read more: [Settings](https://github.com/davidwkeith/atmosfx-projector-case/blob/main/pi/README.md#settings)
+Read more: [Settings](../../docs/settings.md)
