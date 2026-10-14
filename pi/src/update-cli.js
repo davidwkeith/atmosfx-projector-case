@@ -9,7 +9,7 @@
 import { randomBytes } from "node:crypto";
 import { readFileSync, renameSync, writeFileSync } from "node:fs";
 import { parseArgs } from "node:util";
-import { RELEASE_REPO, pickAsset } from "./update.js";
+import { RELEASE_REPO, checkResult, pickAsset } from "./update.js";
 
 const { positionals, values: o } = parseArgs({
   allowPositionals: true,
@@ -29,11 +29,15 @@ function headers(accept) {
   return h;
 }
 
-async function latest() {
+async function release() {
   const path = o.tag ? `releases/tags/${encodeURIComponent(o.tag)}` : "releases/latest";
   const res = await fetch(`https://api.github.com/repos/${o.repo}/${path}`, { headers: headers("application/vnd.github+json") });
   if (!res.ok) throw new Error(`GitHub ${res.status} ${res.statusText}${res.status === 404 ? " (private repo? check the token file)" : ""}`);
-  const asset = pickAsset(await res.json());
+  return pickAsset(await res.json());
+}
+
+async function latest() {
+  const asset = await release();
   if (!asset) throw new Error("the release has no videofx-pi-<version>.tar.gz asset");
   // Unsigned releases are not offered: videofx-update would refuse them anyway.
   if (!asset.sigUrl) throw new Error(`${asset.tag} is not signed yet (no ${asset.name}.sig; run tools/sign-release.sh)`);
@@ -53,8 +57,7 @@ try {
   } else if (cmd === "check") {
     let result;
     try {
-      const a = await latest();
-      result = { latest: a.version, tag: a.tag, checkedAt: new Date().toISOString() };
+      result = checkResult(await release(), o.current);
     } catch (err) {
       result = { latest: null, error: err.message, checkedAt: new Date().toISOString() };
     }
