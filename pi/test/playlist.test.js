@@ -129,6 +129,19 @@ describe("media store", () => {
     expect(await store.cleanTemp()).toBe(0);
   });
 
+  it("seeds the bundled clip only when there is no playlist at all", async () => {
+    const clip = join(dir, "..", "videofx-default.mp4");
+    await writeFile(clip, "clip");
+    expect(await store.seedDefault(clip)).toBe(true);
+    expect(await store.readPlaylist()).toEqual([{ file: "videofx-default.mp4", enabled: true }]);
+    expect(store.problem()).toBeUndefined();
+    // The owner deletes it: the empty playlist stays, nothing comes back.
+    await store.remove("videofx-default.mp4");
+    expect(await store.seedDefault(clip)).toBe(false);
+    expect(await store.readPlaylist()).toEqual([]);
+    expect(await readdir(dir)).toEqual(["playlist.m3u"]);
+  });
+
   it("reports a missing playlist, then an empty one, then none", async () => {
     expect(store.problem()).toMatch(/not found/);
     await store.writePlaylist([{ file: "a.mp4", enabled: false }]);

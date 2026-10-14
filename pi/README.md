@@ -233,6 +233,8 @@ Power on/off (Home, the schedule) isn't affected. Until the clock is synchronise
 
 Your purchased videos are not included or downloaded. Upload them on the web page, or `scp` them to `~/media/` on the Pi.
 
+Until then, a fresh Pi plays a built-in test clip: "VideoFX" bouncing over a light alignment grid (also handy for focus and aiming). It is copied into the media folder as `videofx-default.mp4` and made the playlist only when no playlist file exists, so deleting it sticks. Regenerate it with `tools/make-default-video.sh`.
+
 - **Loop mode:** build the playlist on the page (order, enable/disable, save). Saving while playing reloads it in mpv.
 - **Scare mode:**
   1. Upload the calm clip and the scare clips. Files named like `Ghost_Buffer.mp4` and `Ghost_Scare1.mp4` get paired by **Suggest from file names**.
