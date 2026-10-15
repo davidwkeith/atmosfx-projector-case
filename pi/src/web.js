@@ -142,6 +142,8 @@ async function readJson(req, limit = JSON_LIMIT) {
  * @param {object} o
  * @param {ReturnType<import("./media.js").createMediaStore>} o.media
  * @param {() => object} o.status          device state for the UI
+ * @param {() => Promise<object|null>} [o.nowPlaying]  the clip on screen and how far in (added to the status as `now`)
+ * @param {(name: string) => Promise<{body: Buffer, type: string}|null>} [o.poster]  a clip's poster frame
  * @param {() => string|undefined} [o.problem]  why playback cannot start in the current mode
  * @param {(on: boolean) => Promise<void>} o.setPower  goes through Matter so controllers stay in sync
  * @param {(v: {level?: number, muted?: boolean}) => Promise<object>} o.setVolume
@@ -197,7 +199,21 @@ export function createWebServer(o) {
       const hit = await staticFile(path);
       if (hit) return send(res, 200, await readFile(hit[0]), hit[1]);
     }
-    if (method === "GET" && path === "/api/status") return send(res, 200, o.status());
+    if (method === "GET" && path === "/api/status") {
+      const now = (await o.nowPlaying?.().catch(() => null)) ?? null;
+      return send(res, 200, { ...o.status(), now });
+    }
+    const poster = /^\/api\/poster\/([^/]+)$/.exec(path);
+    if (method === "GET" && poster) {
+      let name;
+      try {
+        name = decodeURIComponent(poster[1]);
+      } catch {
+        throw new HttpError(400, "invalid file name");
+      }
+      const img = await o.poster?.(name);
+      return img ? send(res, 200, img.body, img.type) : send(res, 404, { error: "no poster" });
+    }
     if (method === "GET" && path === "/api/pairing.svg") {
       const svg = o.pairingSvg();
       return svg ? send(res, 200, svg, "image/svg+xml") : send(res, 404, { error: "already paired" });

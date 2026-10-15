@@ -109,6 +109,30 @@ export class Player extends EventEmitter {
     };
   }
 
+  /**
+   * What mpv is showing right now, for the web page's now-playing header:
+   * { file (name only), position, duration (seconds or null), at (ms, when read) }, or null
+   * when nothing plays. Bounded, so a busy mpv never holds up the status poll.
+   */
+  async nowPlaying({ timeoutMs = 500 } = {}) {
+    if (!this.isPlaying) return null;
+    const get = (name) => this.#mpv.command("get_property", name).catch(() => null);
+    const read = Promise.all([get("path"), get("time-pos"), get("duration")]);
+    const timeout = new Promise((r) => {
+      const t = this.#setTimer(() => r(null), timeoutMs);
+      t?.unref?.();
+    });
+    const got = await Promise.race([read, timeout]);
+    if (!got || typeof got[0] !== "string") return null;
+    const [path, position, duration] = got;
+    return {
+      file: path.split("/").pop(),
+      position: Number.isFinite(position) ? position : 0,
+      duration: Number.isFinite(duration) && duration > 0 ? duration : null,
+      at: this.#now(),
+    };
+  }
+
   /** The state to apply at boot for a restore policy ("last" | "on" | "off"). */
   initialState(policy) {
     if (policy === "on") return true;

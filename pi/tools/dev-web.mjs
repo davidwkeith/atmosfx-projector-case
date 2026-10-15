@@ -29,6 +29,13 @@ if (process.env.DEV_PASSWORD) writeFileSync(join(dir, "settings.json"), JSON.str
 const settings = new Settings({ dir, env: {}, log: console });
 
 let on = false;
+let onSince = 0;
+const clips = { "zombie.mp4": 312, "ghost-buffer.mp4": 95 };
+// A made-up poster per clip, so the header has something to show without mpv.
+const posterSvg = (name) => {
+  const hue = [...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 0);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 90"><rect width="160" height="90" fill="hsl(${hue} 45% 22%)"/><circle cx="80" cy="42" r="20" fill="hsl(${hue} 60% 70%)"/><text x="80" y="82" font-size="10" text-anchor="middle" fill="#fff" font-family="sans-serif">${name}</text></svg>`;
+};
 let volume = { level: 30, muted: false };
 const status = () => ({
   name: "VideoFX-DEV",
@@ -57,7 +64,14 @@ const server = createWebServer({
   auth: settings,
   hostNames: () => ["localhost"],
   status,
-  setPower: async (v) => void (on = v),
+  setPower: async (v) => void ((on = v), (onSince = Date.now())),
+  nowPlaying: async () => {
+    if (!on) return null;
+    const t = (Date.now() - onSince) / 1000;
+    const [file, duration] = t % 407 < 312 ? ["zombie.mp4", clips["zombie.mp4"]] : ["ghost-buffer.mp4", clips["ghost-buffer.mp4"]];
+    return { file, position: file === "zombie.mp4" ? t % 407 : (t % 407) - 312, duration, at: Date.now() };
+  },
+  poster: async (name) => (name in clips ? { body: posterSvg(name), type: "image/svg+xml" } : null),
   setVolume: async (v) => (volume = { level: v.level ?? volume.level, muted: v.muted ?? volume.muted }),
   playlistChanged: () => {},
   pairingSvg: () => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10" fill="#fff"/><rect x="1" y="1" width="3" height="3"/><rect x="6" y="1" width="3" height="3"/><rect x="1" y="6" width="3" height="3"/></svg>',

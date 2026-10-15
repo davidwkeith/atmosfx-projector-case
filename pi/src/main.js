@@ -34,6 +34,7 @@ import { isShuffled, parsePlaylist } from "./playlist-core.js";
 import { MpvSupervisor, mpvArgs } from "./mpv.js";
 import { Pir, gpiomonMajor, pirArgs } from "./pir.js";
 import { Player } from "./player.js";
+import { createPosterCache } from "./poster.js";
 import { Projector } from "./projector.js";
 import { qrTextToSvg } from "./qr.js";
 import { Scheduler, missedEvent } from "./schedule.js";
@@ -646,8 +647,12 @@ function restartService(before = async () => {}) {
 const versionStatus = () =>
   updateStatus(currentVersion, (() => { try { return readFileSync(join(stateDir, "update-check.json"), "utf8"); } catch { return ""; } })());
 
+const posters = createPosterCache({ dir: join(stateDir, "posters"), resolve: media.resolve, mpv: get("mpv") });
+
 const web = createWebServer({
   media,
+  nowPlaying: () => player.nowPlaying(),
+  poster: (name) => posters.poster(name),
   settings,
   auth: settings,
   hostNames: () => {

@@ -61,6 +61,9 @@ const ICONS = {
   help: ["M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z", "M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7", "M12 17h.01"],
   info: ["M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z", "M12 11v5", "M12 8h.01"],
   close: ["M6 6l12 12", "M18 6 6 18"],
+  play: ["M7 4v16l13-8z"],
+  stop: ["M6 6h12v12H6z"],
+  chevron: ["M9 6l6 6-6 6"],
 };
 
 export function icon(name) {
