@@ -218,6 +218,7 @@ describe("media store", () => {
     expect(files).toEqual([expect.objectContaining({ name: "a.mp4", duration: 42 })]);
     await store.writePlaylist([{ file: "a.mp4", enabled: true }], { shuffle: false });
     expect(store.shuffleClips()).toBeNull();
+    expect(store.enabledClips()).toEqual([join(dir, "a.mp4")]); // in order or shuffled
     await expect(store.writePlaylist([], { shuffle: "yes" })).rejects.toMatchObject({ status: 400 });
   });
 
