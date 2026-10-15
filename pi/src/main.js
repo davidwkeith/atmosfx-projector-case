@@ -180,6 +180,7 @@ const player = new Player({
   content: () => ({
     mode: dmxOverride.mode ?? get("mode"),
     playlist: get("playlist"),
+    loopClips: () => media.enabledClips(),
     shuffleClips: () => media.shuffleClips(),
     buffer: clipPath(get("scareBuffer")),
     scares: scareNames().map(clipPath),

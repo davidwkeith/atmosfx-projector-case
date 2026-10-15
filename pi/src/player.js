@@ -1,6 +1,7 @@
 // Playback controller on top of one long-lived mpv (see mpv.js).
 //
 // Power on:  loop mode  -> loadlist playlist, loop-playlist=inf
+//            one clip   -> loadfile it with loop-file=inf (seamless: no reopen)
 //            shuffled   -> one clip at a time: each time a clip loads, the next is
 //                          queued behind it; the order is reshuffled every round.
 //            scare mode -> buffer clip with loop-file=inf; the next scare clip and
@@ -48,7 +49,7 @@ export class Player extends EventEmitter {
   /**
    * @param {object} o
    * @param {import("./mpv.js").MpvSupervisor} o.mpv   anything with ready, command(), and ready/down/event/failed events
-   * @param {() => {mode: string, playlist: string, shuffleClips?: () => string[]|null, buffer: string, scares: string[], order: string,
+   * @param {() => {mode: string, playlist: string, loopClips?: () => string[]|null, shuffleClips?: () => string[]|null, buffer: string, scares: string[], order: string,
    *   cooldownMs: number, duringScare: string, mirror: boolean}} o.content  current settings, absolute paths
    * @param {{load: () => boolean|undefined, save: (on: boolean) => void}} [o.store]
    * @param {() => void} [o.blank]
@@ -282,8 +283,18 @@ export class Player extends EventEmitter {
       );
     } else {
       this.#phase = "loop";
+      const all = c.loopClips?.();
       const clips = c.shuffleClips?.();
-      if (clips?.length) {
+      if (all?.length === 1) {
+        // One clip: loop the file itself. loop-playlist would close and reopen it
+        // every pass, and on DRM mpv lets go of the screen for that moment, so the
+        // console shows between loops. loop-file seeks back without reopening.
+        this.#run(
+          ["set_property", "loop-playlist", "no"],
+          ["set_property", "loop-file", "inf"],
+          ["loadfile", all[0], "replace"],
+        );
+      } else if (clips?.length) {
         this.#shuffle = { clips, order: [], pos: 0, last };
         this.#run(
           ["set_property", "loop-file", "no"],

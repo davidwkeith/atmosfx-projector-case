@@ -100,6 +100,20 @@ export function createMediaStore({ dir, playlist, maxUploadBytes: limit = 4 * 10
     }
   }
 
+  function enabledPaths(text) {
+    const paths = [];
+    for (const e of parsePlaylist(text, prefix)) {
+      if (!e.enabled) continue;
+      try {
+        const path = resolve(e.file);
+        if (lstatSync(path).isFile()) paths.push(path);
+      } catch {
+        // missing or not a plain name: skip, as mpv would
+      }
+    }
+    return paths;
+  }
+
   return {
     root,
     playlistPath,
@@ -107,6 +121,20 @@ export function createMediaStore({ dir, playlist, maxUploadBytes: limit = 4 * 10
     readPlaylist,
     readShuffle,
     writePlaylist,
+
+    /**
+     * The enabled clips that exist (absolute paths), in playlist order, or null
+     * when there is no playlist. Sync: read by the player when it starts.
+     */
+    enabledClips() {
+      let text;
+      try {
+        text = readFileSync(playlistPath, "utf8");
+      } catch {
+        return null;
+      }
+      return enabledPaths(text);
+    },
 
     /**
      * Shuffled play: the enabled clips that exist (absolute paths), or null when
@@ -119,18 +147,7 @@ export function createMediaStore({ dir, playlist, maxUploadBytes: limit = 4 * 10
       } catch {
         return null;
       }
-      if (!isShuffled(text)) return null;
-      const paths = [];
-      for (const e of parsePlaylist(text, prefix)) {
-        if (!e.enabled) continue;
-        try {
-          const path = resolve(e.file);
-          if (lstatSync(path).isFile()) paths.push(path);
-        } catch {
-          // missing or not a plain name: skip, as mpv would
-        }
-      }
-      return paths;
+      return isShuffled(text) ? enabledPaths(text) : null;
     },
 
     /**

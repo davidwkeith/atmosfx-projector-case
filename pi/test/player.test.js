@@ -72,6 +72,34 @@ describe("power (loop mode)", () => {
     expect(player.isPlaying).toBe(true);
   });
 
+  it("loops a single clip with loop-file, so mpv never reopens it between passes", async () => {
+    const { mpv, player, cmds } = setup({ loopClips: () => ["/m/videofx-default.mp4"] });
+    mpv.up();
+    player.setOn(true);
+    await flush();
+    expect(cmds()).toEqual(["set_property loop-playlist no", "set_property loop-file inf", "loadfile /m/videofx-default.mp4 replace"]);
+  });
+
+  it("loops a single clip with loop-file even when the playlist is shuffled", async () => {
+    const { mpv, player, cmds, clear } = setup({ loopClips: () => ["/m/a.mp4"], shuffleClips: () => ["/m/a.mp4"] });
+    mpv.up();
+    player.setOn(true);
+    await flush();
+    expect(cmds()).toContain("set_property loop-file inf");
+    clear();
+    mpv.event({ event: "file-loaded" }); // each pass: nothing queued behind it
+    await flush();
+    expect(cmds()).toEqual([]);
+  });
+
+  it("uses mpv's playlist loop for two or more clips", async () => {
+    const { mpv, player, cmds } = setup({ loopClips: () => ["/m/a.mp4", "/m/b.mp4"] });
+    mpv.up();
+    player.setOn(true);
+    await flush();
+    expect(cmds()).toEqual(["set_property loop-file no", "set_property loop-playlist inf", "loadlist /m/playlist.m3u replace"]);
+  });
+
   it("waits for mpv if it is not up yet, then plays", async () => {
     const { mpv, player, cmds } = setup();
     player.setOn(true);
