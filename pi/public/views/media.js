@@ -1,15 +1,18 @@
-import { enabledCount, isMediaFile, moveEntry } from "/playlist-core.js";
+import { enabledCount, formatDuration, isMediaFile, moveEntry, playlistDuration } from "/playlist-core.js";
 import { api, bytes, el, json, run, toast } from "../api.js";
 import { onDirtyCheck, refreshMedia, refreshStatus } from "../state.js";
 
 // Module-level on purpose: unsaved playlist edits survive leaving this screen and coming back.
-let files = []; // [{ name, size }]
-let saved = []; // playlist as on disk
+let files = []; // [{ name, size, duration? }]
+let saved = { entries: [], shuffle: false }; // playlist as on disk
 let entries = []; // playlist being edited
+let shuffle = false;
 let maxUploadBytes = Infinity;
 let freeText = "";
 let seen = null; // the state.media object last copied in
-const dirty = () => JSON.stringify(entries) !== JSON.stringify(saved);
+const dirty = () => shuffle !== saved.shuffle || JSON.stringify(entries) !== JSON.stringify(saved.entries);
+const undo = () => ((entries = structuredClone(saved.entries)), (shuffle = saved.shuffle));
+const lengthText = (seconds) => (seconds === undefined ? "" : formatDuration(seconds));
 onDirtyCheck(dirty);
 
 // XMLHttpRequest because fetch() cannot report upload progress.
@@ -38,6 +41,9 @@ export function mount(root) {
   const save = el("button", { type: "button", className: "primary", disabled: true }, "Save playlist");
   const revert = el("button", { type: "button", disabled: true }, "Undo changes");
   const unsaved = el("span", { className: "hint", hidden: true }, "Unsaved changes");
+  const howHint = el("p", { className: "hint" });
+  const shuffleBox = el("input", { type: "checkbox" });
+  const total = el("p", { className: "total" });
   const list = el("ul", { className: "rows" });
   const empty = el("p", { className: "hint", hidden: true }, "No videos yet.");
   const input = el("input", { type: "file", multiple: true, accept: "video/*,audio/*,.m3u,.m3u8" });
@@ -49,9 +55,11 @@ export function mount(root) {
       "section",
       {},
       el("h3", {}, "Playlist"),
-      el("p", { className: "hint" }, "Plays top to bottom and loops. Unchecked items are skipped. Saving restarts playback if it is running."),
+      howHint,
+      el("label", { className: "check" }, shuffleBox, el("span", {}, "Shuffle")),
       playlist,
       playlistEmpty,
+      total,
       el("div", { className: "actions" }, save, revert, unsaved),
     ),
     el("section", {}, el("h3", {}, "Videos"), list, empty, el("label", { className: "upload" }, el("span", {}, "Upload videos"), input), progress, space),
@@ -59,6 +67,7 @@ export function mount(root) {
 
   function render() {
     const names = new Set(files.map((f) => f.name));
+    const durations = Object.fromEntries(files.filter((f) => f.duration !== undefined).map((f) => [f.name, f.duration]));
     playlist.replaceChildren(
       ...entries.map((entry, i) => {
         const check = el("input", { type: "checkbox", checked: entry.enabled, title: "Play this item" });
@@ -75,6 +84,7 @@ export function mount(root) {
           { className: [entry.enabled ? "" : "off", missing ? "missing" : ""].join(" ").trim() },
           check,
           el("span", { className: "name" }, entry.file + (missing ? " (missing)" : "")),
+          el("span", { className: "size" }, lengthText(durations[entry.file])),
           up,
           down,
           remove,
@@ -82,6 +92,15 @@ export function mount(root) {
       }),
     );
     playlistEmpty.hidden = entries.length > 0;
+    shuffleBox.checked = shuffle;
+    howHint.textContent =
+      (shuffle ? "Plays in random order, reshuffled every round, and loops." : "Plays top to bottom and loops.") +
+      " Unchecked items are skipped. Saving restarts playback if it is running.";
+    const t = playlistDuration(entries, durations);
+    total.hidden = t.clips === 0;
+    total.textContent =
+      `Total ${formatDuration(t.seconds)} for ${t.clips} clip${t.clips === 1 ? "" : "s"}` +
+      (t.unknown ? ` (plus ${t.unknown} of unknown length)` : "");
 
     const inList = new Set(entries.map((e) => e.file));
     list.replaceChildren(
@@ -90,7 +109,14 @@ export function mount(root) {
         add.addEventListener("click", () => (entries.push({ file: f.name, enabled: true }), render()));
         const del = el("button", { type: "button", className: "icon danger", title: `Delete ${f.name}` }, "🗑");
         del.addEventListener("click", () => run(() => deleteFile(f.name)));
-        return el("li", {}, el("span", { className: "name" }, f.name), el("span", { className: "size" }, bytes(f.size)), add, del);
+        return el(
+          "li",
+          {},
+          el("span", { className: "name" }, f.name),
+          el("span", { className: "size" }, [lengthText(f.duration), bytes(f.size)].filter(Boolean).join(" · ")),
+          add,
+          del,
+        );
       }),
     );
     empty.hidden = files.length > 0;
@@ -100,11 +126,11 @@ export function mount(root) {
   }
 
   async function savePlaylist() {
-    const data = await api("/api/playlist", json("PUT", { entries }));
-    saved = data.playlist;
-    entries = structuredClone(saved);
+    const data = await api("/api/playlist", json("PUT", { entries, shuffle }));
+    saved = { entries: data.playlist, shuffle: data.shuffle };
+    undo();
     render();
-    toast(enabledCount(saved) ? "Playlist saved." : "Saved, but nothing is checked, so nothing will play.");
+    toast(enabledCount(saved.entries) ? "Playlist saved." : "Saved, but nothing is checked, so nothing will play.");
     await refreshStatus();
   }
 
@@ -141,7 +167,8 @@ export function mount(root) {
   }
 
   save.addEventListener("click", () => run(savePlaylist));
-  revert.addEventListener("click", () => ((entries = structuredClone(saved)), render()));
+  revert.addEventListener("click", () => (undo(), render()));
+  shuffleBox.addEventListener("change", () => ((shuffle = shuffleBox.checked), render()));
   input.addEventListener("change", () => run(() => upload(input.files)));
 
   render(); // module state from an earlier visit, if any
@@ -153,10 +180,10 @@ export function mount(root) {
       const edited = dirty(); // keep unsaved edits across refreshes
       seen = media;
       files = media.files;
-      saved = media.playlist;
+      saved = { entries: media.playlist, shuffle: media.shuffle === true };
       maxUploadBytes = media.maxUploadBytes ?? Infinity;
       freeText = `${bytes(media.freeBytes)} free` + (media.maxUploadBytes ? ` · max ${bytes(media.maxUploadBytes)} per file` : "");
-      if (!edited) entries = structuredClone(saved);
+      if (!edited) undo();
       render();
     },
   };

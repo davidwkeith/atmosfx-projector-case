@@ -30,7 +30,7 @@ import { writeFileAtomicSync } from "./fsutil.js";
 import { GpioOut, gpiosetArgs } from "./gpio.js";
 import { Ir, lircFeatures } from "./ir.js";
 import { HttpError, createMediaStore } from "./media.js";
-import { parsePlaylist } from "./playlist-core.js";
+import { isShuffled, parsePlaylist } from "./playlist-core.js";
 import { MpvSupervisor, mpvArgs } from "./mpv.js";
 import { Pir, gpiomonMajor, pirArgs } from "./pir.js";
 import { Player } from "./player.js";
@@ -180,6 +180,7 @@ const player = new Player({
   content: () => ({
     mode: dmxOverride.mode ?? get("mode"),
     playlist: get("playlist"),
+    shuffleClips: () => media.shuffleClips(),
     buffer: clipPath(get("scareBuffer")),
     scares: scareNames().map(clipPath),
     order: get("scareOrder"),
@@ -702,7 +703,7 @@ const web = createWebServer({
     }
     // Entries may carry the other Pi's absolute paths: keep the file names.
     const entries = parsePlaylist(v.playlist, "").map((e) => ({ ...e, file: e.file.split("/").pop() }));
-    if (entries.length) await media.writePlaylist(entries);
+    if (entries.length) await media.writePlaylist(entries, { shuffle: isShuffled(v.playlist) });
     const r = await stageRestore(v, { settingsFile: settings.file, stateDir, includeMatter: body.includeMatter === true });
     restartService();
     return { restored: { settings: true, playlist: entries.length, matter: r.matter }, restarting: true };
