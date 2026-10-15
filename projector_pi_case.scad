@@ -28,7 +28,7 @@ aim = [0, 0];      // [pan, tilt] deg of the ghost projector in the assembly pre
 // generic STK "S2-TEK TV" block (product 0x531A, dated 2014), HDMI input with CEC physical address 2.0.0.0,
 // native 1080p60 (VIC 16), 8-bit only, TMDS <= 150 MHz, 2-ch LPCM audio, DPMS standby/active-off flagged.
 // CEC itself is NOT proven (the address field is mandatory for any HDMI sink): see BRINGUP row 9.
-// The EDID says nothing about size, lens or ports: those come from docs/measurements.xlsx (see below).
+// The EDID says nothing about size, lens or ports: those come from docs/measurements.yaml (see below).
 proj_w = 165;   // width (X): Tkisko TO2 manual says 6.5 x 5 x 2.6 in, lens on the 6.5 in face; confirm with calipers
 proj_d = 130;   // depth (Y), lens faces front: measured 130.0 with calipers
 proj_h = 66;    // height (Z)
@@ -604,7 +604,7 @@ module fit_coupon() {
   holes = [[insert_d, "1/4", insert_len+2], [stud_insert_d, "M5i", 10], [m3_insert_d, "M3i", 8], [3.4, "M3", 3], [2.6, "M3p", 8], [2.2, "M2.5p", 7], [1.8, "M2p", 6]];   // [d, label, boss height]
   difference() {
     union() {
-      cube([118, 30, 2]);                                             // strip under the holes; 118 is the shrink gauge in measurements.xlsx
+      cube([118, 30, 2]);                                             // strip under the holes; 118 is the shrink gauge (coupon.strip_len in docs/measurements.yaml)
       translate([0, 30, 0]) cube([30, 32, 3]);                        // keyhole tab, cover thickness
       for (i=[0:len(holes)-1]) translate([8 + i*12.5, 15, 0]) cylinder(d=holes[i][0]+5, h=holes[i][2]);   // a boss per hole
       translate([96, -12, 0]) cube([22, 12, 10]);                     // pane slot block
