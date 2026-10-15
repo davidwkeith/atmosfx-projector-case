@@ -103,14 +103,20 @@ flowchart LR
     RELAY["Relay module IN, active-low<br/>VCC 5 V pin 4, GND pin 14"]
     IRLED["940 nm IR LED in ir_holder<br/>via 150 R to GND"]
   end
+  FAN["30 mm 5 V fan on the sled<br/>+ to 5 V pin 4, - to BC337 collector<br/>1N5819 across it"]
+  Q1["BC337: base via 1 k,<br/>emitter to GND pin 39"]
   PROJ["Projector HDMI input"]
   PIR -- "OUT to GPIO17, pin 11" --> PI
   PI -- "GPIO27, pin 13" --> RELAY
   PI -- "GPIO16, pin 36, through 150 R" --> IRLED
+  PI -- "GPIO26, pin 37 (kernel gpio-fan)" --> Q1
+  Q1 --> FAN
   PI -. "HDMI (CEC power control, the default)" .-> PROJ
 ```
 
 The DigiAMP+ re-exposes the header on top, so the leads plug into its pass-through header (a Zero 2 W needs its own 40-pin header soldered first). GPIO 22 is the DigiAMP+ mute line, which is why the IR LED sits on GPIO 16. The relay and the IR LED are built only if bring-up row 9 shows the projector ignores CEC. The LED needs no transistor: from 3.3 V through 150 R it draws about 13 mA, under a pin's 16 mA, and it sits centimetres from the projector's receiver; if row 22 shows it too weak, add a BC337 and 1 k. The TSOP38238 receiver (GPIO 23) is a bench tool to learn the remote's code, not part of the case.
+
+The Pi fan (Pi 3/4 sleds) is the one signal that is always built. A fan draws up to 0.2 A, far past a GPIO's 16 mA, so a BC337 switches its minus side; the 1N5819 across the fan catches the motor's kick at switch-off, stripe to 5 V. The kernel's `gpio-fan` overlay drives GPIO 26 (on at 60 °C, off at 50 °C), not the VideoFX service. Solder R2 and the diode inline in the fan's leads and sleeve them in heat-shrink; a fan leg on a Dupont shell plugs into the pass-through header.
 
 ## Cords outdoors
 
@@ -125,5 +131,5 @@ Trick-or-treaters walk through the yard in the dark. Run the power cord and spea
 1. With nothing plugged in, check the cord's continuity end to end and that the connector seats fully in the brick.
 2. Brick plugged in, loads unplugged: meter each Y-splitter leg's tip (24 V, centre +).
 3. Projector tested on the brick on the bench (BRINGUP row 4a) before leg 1 is connected.
-4. Connect the DigiAMP+ (the Pi should boot), then the projector.
+4. Connect the DigiAMP+ (the Pi should boot), then the projector. On the bench, check the Pi fan once: `pinctrl set 26 op dh` runs it, `pinctrl set 26 op dl` stops it (the kernel takes it back at the next temperature change).
 5. Close the lid, then test the GFCI outlet's trip button with the case running: everything must go dark.

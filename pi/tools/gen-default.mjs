@@ -31,12 +31,12 @@ for (const s of SETTINGS) {
   if (!s.env) continue;
   if (s.group !== group) {
     group = s.group;
-    out.push("", group === "Fixed" ? "# --- File only (needs root, or would let the page point the service anywhere)" : `# --- ${group}`);
-    if (group === "Fixed") {
+    out.push("", group === "Hardware" ? "# --- File only (needs root, or would let the page point the service anywhere)" : `# --- ${group}`);
+    if (group === "Hardware") {
       out.push(
-        "# The relay and IR pins are also in /boot/firmware/config.txt (the relay's",
-        "# boot level, and the IR overlays), written once by setup.sh with the",
-        "# defaults. Change them there too, or the new pins won't work.",
+        "# The relay, IR and fan pins are also in /boot/firmware/config.txt (the relay's",
+        "# boot level, the IR overlays, the gpio-fan overlay and its temperature), written",
+        "# once by setup.sh with the defaults. Change them there too, or the new values won't work.",
       );
     }
   }
