@@ -59,7 +59,7 @@ Preview in OpenSCAD: open `projector_pi_case.scad`, set `part` and `tile` in the
 
 Everything prints without slicer supports. The window opening has two thin snap-out ribs that hold up its top edge while printing; break them out afterwards.
 
-Material, not PLA: **ASA in camo green** for the parts seen from outside (`base` and `lid` tiles, `hatch_cover`, `cord_clamp`), because it holds its colour and strength in sun and rain; **black PETG** for the parts inside (`pedestal`, `window_frame`, the sled, the screen caps, `ir_holder`, and `power_shelf` in flame-retardant V-0 PETG), where black also keeps light from glowing through. The green is in the spirit of Disney's ["Go Away Green"](https://en.wikipedia.org/wiki/Go_Away_Green): a muted shade that makes the box disappear, so check it by eye against where the case will sit. Details: [docs/PRINTING.md](docs/PRINTING.md). Test first: print `pedestal` and `window_frame`, then `hatch_cover`, before the big tiles.
+Material, not PLA: **ASA in camo green** (Inland ASA Army Green) for the parts seen from outside (`base` and `lid` tiles, `hatch_cover`, `cord_clamp`), because it holds its colour and strength in sun and rain; **black PETG** (Inland PETG Black) for the parts inside (`pedestal`, `window_frame`, the sled, the screen caps, `ir_holder`, and `power_shelf` in flame-retardant V-0 PETG), where black also keeps light from glowing through. The green is in the spirit of Disney's ["Go Away Green"](https://en.wikipedia.org/wiki/Go_Away_Green): a muted shade that makes the box disappear, so check it by eye against where the case will sit. Details: [docs/PRINTING.md](docs/PRINTING.md). Test first: print `pedestal` and `window_frame`, then `hatch_cover`, before the big tiles.
 
 ## Bill of materials
 

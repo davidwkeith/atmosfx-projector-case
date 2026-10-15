@@ -1,13 +1,13 @@
 # Printing plan
 
-One Prusa i3 MK3S (bed 250 x 210 x 210 mm). Two materials: **ASA in camo green** for every part seen from outside (it holds its colour and strength in sun and rain), **black PETG** for every part inside (black also stops light glowing through). Times and weights are PrusaSlicer's estimates from the current (v0.10, 3.5 x 5 in 2 mm pane) STLs with the stock `Original Prusa i3 MK3S & MK3S+` printer profile and the `Prusament ASA` or `Prusament PETG` material profile. Real prints run a little longer.
+One Prusa i3 MK3S (bed 250 x 210 x 210 mm). Two materials: **Inland ASA Army Green** for every part seen from outside (it holds its colour and strength in sun and rain), **Inland PETG Black** for every part inside (black also stops light glowing through), and black V-0 PETG for `power_shelf`. Times and weights are PrusaSlicer's estimates from the current (v0.10, 3.5 x 5 in 2 mm pane) STLs with the stock `Original Prusa i3 MK3S & MK3S+` printer profile and the `Prusament ASA` or `Prusament PETG` material profile. PrusaSlicer has no Inland profiles: start from `Generic ASA` and `Generic PETG` and set the temperatures printed on each spool. Real prints run a little longer.
 
 ## Settings
 
 - Print profile **0.20mm SPEED @MK3** for everything. The window's snap-out ribs leave a gap of one layer (`layer_h` = 0.2 in the model). If you print the base at another layer height, set `layer_h` to match and re-export.
 - **No supports** anywhere: every part is designed support-free.
-- Print `power_shelf` in flame-retardant black PETG (UL 94 V-0, e.g. Prusament PETG V0 Jet Black, which has a stock profile): the mains brick and its inlet connector live on it. One V-0 spool can print all the inside parts.
-- ASA on an open MK3S: it warps more than PETG and gives off styrene. Print in a ventilated room away from drafts (an enclosure, even a cardboard box over the printer, helps most on `base_front` and `base_rear`), keep the profile's bed temperature (105 C first layer, 110 C after), and clean the sheet so the first layer holds.
+- Print `power_shelf` in flame-retardant black PETG (UL 94 V-0, e.g. Prusament PETG V0 Jet Black, which has a stock profile): the mains brick and its inlet connector live on it. Inland PETG is not flame-retardant, so not for this part.
+- ASA on an open MK3S: it warps more than PETG and gives off styrene. Print in a ventilated room away from drafts (an enclosure, even a cardboard box over the printer, helps most on `base_front` and `base_rear`), keep the bed hot (Prusa's ASA profile uses 105 C first layer, 110 C after), and clean the sheet so the first layer holds.
 - `fit_coupon` is ASA because most of what it tests (keyholes, inserts in the base, the pane slot) lands in ASA parts. PETG shrinks less, so a fit that is tight in ASA is a little looser in PETG.
 - The front tiles lie flat as exported: `base_front` is 231 x 207 mm and `lid_front` 228 x 204 mm, wide side along the bed's 250 mm axis. 207 mm on the 210 mm axis leaves no room for a skirt: turn it off or keep it tight to the part.
 - The STLs are already in print orientation (lid roof-down, hatch cover ribs-up, window frame flat, caps plate-down).
