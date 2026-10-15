@@ -18,7 +18,7 @@ scripts/render_previews.sh    # regenerate preview/*.png (needs a GL context; xv
 uv run scripts/render_wiring.py  # regenerate docs/wiring-*.svg (Schemdraw schematics; deps come from the script header)
 scripts/publish.sh            # create the GitHub repo with gh and push (one-time bootstrap)
 cd pi && npx vitest run       # Pi tests; they bind 127.0.0.1 and a Unix socket, so run them outside Claude Code's sandbox
-pi/tools/sign-release.sh vX.Y.Z  # after CI makes the draft release: sign its Pi tarball with the owner's release key (never in CI), attach the .sig, publish. Releases are immutable once published, so CI must keep creating drafts; Pis install only signed tarballs
+gh attestation verify FILE -R davidwkeith/atmosfx-projector-case  # check any release file. CI attests every release file (actions/attest-build-provenance) and publishes; Pis install only a tarball whose .sigstore.json shows this repo's build.yml on its v* tag (pi/src/verify-release.js). Releases are immutable, so everything is uploaded before publishing
 pi/image/build.sh [--generic]  # Pi image via pi-gen in Docker (about 10 min on CI's arm64 runner). --generic = the public, secret-free image CI attaches to releases
 ```
 
@@ -84,7 +84,7 @@ Print orientation is baked into the `part` dispatch at the bottom (lid flipped r
 6. Fit of hatch keyholes, acrylic rebate (sized for a 3.5 x 5 in, about 2 mm frame-glazing pane; `pane_w`/`pane_h` drive the window), heat-set insert holes (`insert_d` 8.2 for 1/4-20, `stud_insert_d` 6.4 for the M5 hatch inserts) are untested. The hot-shoe receiver (`hot_shoe_cut()`, `shoe_*`, ISO 518 numbers) is on the coupon only: adapter foot size and retention are untested; if it fits it could replace the pedestal's stud and insert.
 7. Base seam collars and screws, the lid scarf joint, the gasket land and the cord clamp are unprinted.
 8. Pi software lives in `pi/` (Matter switch, mpv player, scares, schedule, web UI, audio to the DigiAMP+); untested on hardware. Device-facing names use `VideoFX-XXXX` (hostname `videofx-xxxx`, last 4 of the MAC; system paths and units `videofx`), not the AtmosFX trademark.
-9. The public image's first boot is untested: cloud-init from Imager's user-data (user `videofx` locked at build, unlocked by cloud-init; `preserve_hostname` and `growpart off` in `pi/system/99-videofx-cloud-init.cfg`; `videofx-storage` after `cloud-final`, then `cloud-init.disabled`), the Imager repository JSON (`init_format` cloudinit-rpi, device tags) and the arm64 CI build itself.
+9. Release attestations are untested until the first tag after 0.9.1: CI's `actions/attest-build-provenance` step and the Pi's check of the bundle (`pi/src/verify-release.js`, tested only with a stubbed Sigstore and by hand against a cli/cli attestation). The public image's first boot is untested: cloud-init from Imager's user-data (user `videofx` locked at build, unlocked by cloud-init; `preserve_hostname` and `growpart off` in `pi/system/99-videofx-cloud-init.cfg`; `videofx-storage` after `cloud-final`, then `cloud-init.disabled`), the Imager repository JSON (`init_format` cloudinit-rpi, device tags) and the arm64 CI build itself.
 
 ## Next steps
 

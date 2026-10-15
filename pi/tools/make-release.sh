@@ -1,7 +1,8 @@
 #!/bin/bash
 # Build dist/videofx-pi-<version>.tar.gz from pi/ (no node_modules, no secrets),
 # with version.json carrying the git sha. Attach it to a GitHub release:
-#   pi/tools/make-release.sh && gh release create v$(node -p "require('./pi/package.json').version") pi/dist/videofx-pi-*.tar.gz
+#   CI does this for each v* tag and attests it; a tarball released by hand has no
+#   attestation, so Pis install it only with videofx-update --tarball FILE --no-verify.
 set -euo pipefail
 pi=$(cd "$(dirname "$0")/.." && pwd)
 version=$(node -p "require('$pi/package.json').version")
