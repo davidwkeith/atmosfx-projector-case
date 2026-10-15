@@ -1,5 +1,5 @@
 // Speaker volume on the amplifier's hardware mixer (Raspberry Pi DigiAMP+: ALSA card
-// "RPiDigiAMP", simple control "Digital"). Persisted in settings.json so it
+// "DigiAMP", simple control "Digital"). Persisted in settings.json so it
 // survives reboots; first boot starts low because outdoor speakers can be loud.
 
 export const DEFAULT_VOLUME = { level: 30, muted: false };
@@ -72,7 +72,7 @@ export function amixerArgs(card, control, { level, muted }) {
   return ["-q", "-c", card, "-M", "sset", control, `${level}%`, muted ? "mute" : "unmute"];
 }
 
-/** Card ids from /proc/asound/cards (" 0 [RPiDigiAMP     ]: ..."). */
+/** Card ids from /proc/asound/cards (" 0 [DigiAMP     ]: ..."). */
 export function alsaCardIds(cardsText) {
   return [...String(cardsText ?? "").matchAll(/^\s*\d+\s+\[([^\]\s]+)\s*\]/gm)].map((m) => m[1]);
 }

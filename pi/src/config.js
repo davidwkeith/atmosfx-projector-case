@@ -212,10 +212,14 @@ export const SETTINGS = [
     env: "VIDEOFX_AUDIO_CARD",
     group: "Audio",
     label: "ALSA card name",
-    help: "Card by name, never by number. Raspberry Pi DigiAMP+: RPiDigiAMP (aplay -l shows it as \"RPi DigiAMP+\").",
+    help: "Card by name, never by number. Raspberry Pi DigiAMP+: DigiAMP (aplay -l shows \"card 0: DigiAMP [RPi DigiAMP+]\").",
     apply: "play",
-    default: () => "RPiDigiAMP",
-    parse: text(/^[A-Za-z0-9_-]{1,32}$/, "must be 1-32 letters, digits, _ or -", 32),
+    default: () => "DigiAMP",
+    // Before 0.10.2 the default was "RPiDigiAMP", which no Pi has: ALSA keeps only the last word of "RPi DigiAMP+".
+    parse: (v) => {
+      const card = text(/^[A-Za-z0-9_-]{1,32}$/, "must be 1-32 letters, digits, _ or -", 32)(v);
+      return card === "RPiDigiAMP" ? "DigiAMP" : card;
+    },
   },
   {
     key: "mixerControl",

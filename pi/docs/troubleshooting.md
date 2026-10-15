@@ -6,7 +6,7 @@ cat /var/lib/videofx-name
 kmsprint | grep Connector              # HDMI connectors (Pi 5: first card only)
 cec-ctl -d /dev/cec0 --playback -S     # is there CEC?
 ir-ctl -f -d /dev/lirc0                # IR devices (TX and RX may swap numbers)
-aplay -l; amixer -c RPiDigiAMP sget Digital
+aplay -l; amixer -c DigiAMP sget Digital
 vcgencmd get_throttled                 # under-voltage (Pi 5 on the DigiAMP+)
 ```
 
