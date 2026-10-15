@@ -13,7 +13,7 @@ describe("config", () => {
     expect(c.httpPort).toBe(80);
     expect(c.password).toBe("");
     expect(c.name).toBe("VideoFX-BEEF");
-    expect([c.audioCard, c.mixerControl, c.volume]).toEqual(["RPiDigiAMP", "Digital", 30]);
+    expect([c.audioCard, c.mixerControl, c.volume]).toEqual(["DigiAMP", "Digital", 30]);
     expect([c.scareCooldown, c.scareDuringScare, c.scareOrder]).toEqual([20, "ignore", "sequential"]);
     expect([c.pirEnabled, c.pirPin, c.relayPin, c.irTxPin, c.irRxPin]).toEqual([false, 17, 27, 16, 23]);
     expect(c.projectorPower).toBe("cec");
@@ -21,12 +21,17 @@ describe("config", () => {
     expect([c.thermalEnabled, c.tempWarnC, c.tempCritC, c.tempHysteresisC]).toEqual([true, 70, 80, 5]);
   });
 
+  it("moves the old, wrong DigiAMP+ card id to the one ALSA really uses", () => {
+    expect(loadConfig({ VIDEOFX_AUDIO_CARD: "RPiDigiAMP" }, ctx).audioCard).toBe("DigiAMP");
+    expect(loadConfig({ VIDEOFX_AUDIO_CARD: "IQaudIODAC" }, ctx).audioCard).toBe("IQaudIODAC");
+  });
+
   it("builds mpv arguments: DRM connector, DigiAMP+ by card name, IPC socket, idle", () => {
     const args = mpvArgs(loadConfig({}, ctx), "/run/videofx/mpv.sock");
     expect(args).toContain("--input-ipc-server=/run/videofx/mpv.sock");
     expect(args).toContain("--idle=yes");
     expect(args).toContain("--drm-connector=HDMI-A-1");
-    expect(args).toContain("--audio-device=alsa/plughw:CARD=RPiDigiAMP,DEV=0");
+    expect(args).toContain("--audio-device=alsa/plughw:CARD=DigiAMP,DEV=0");
     expect(args).toContain("--gpu-context=drm");
     expect(args).toContain("--osd-level=0");
     expect(args).toContain("--no-config");

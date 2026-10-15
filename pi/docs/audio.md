@@ -8,5 +8,5 @@ A **Raspberry Pi DigiAMP+** (TAS5756M, 2 channels) drives 4-8 Ω speakers behind
   - `dtoverlay=rpi-digiampplus,unmute_amp` (Raspberry Pi's overlay; the HAT EEPROM identifies the board, but the amp starts **muted** until `unmute_amp` or `auto_mute_amp` is set. `iqaudio-digiampplus` is the same overlay for the older black IQaudIO board);
   - `dtparam=audio=off` and `vc4-kms-v3d,noaudio`;
   - ALSA default pinned by card name in `/etc/asound.conf`;
-  - mpv uses `--audio-device=alsa/plughw:CARD=RPiDigiAMP,DEV=0` (the card id ALSA derives from the overlay's "RPi DigiAMP+" name; check with `aplay -l`).
+  - mpv uses `--audio-device=alsa/plughw:CARD=DigiAMP,DEV=0` (ALSA makes the card id from the last word of the overlay's "RPi DigiAMP+" name; `aplay -l` shows it as `card 0: DigiAMP [RPi DigiAMP+]`).
 - **Volume:** hardware mixer `Digital` via `amixer -M`, saved in settings.json. The first boot starts at 30%.

@@ -1,5 +1,5 @@
 // Speaker volume on the amplifier's hardware mixer (Raspberry Pi DigiAMP+: ALSA card
-// "RPiDigiAMP", simple control "Digital"). Persisted in settings.json so it
+// "DigiAMP", simple control "Digital"). Persisted in settings.json so it
 // survives reboots; first boot starts low because outdoor speakers can be loud.
 
 export const DEFAULT_VOLUME = { level: 30, muted: false };
@@ -70,4 +70,25 @@ export class Volume {
 /** amixer arguments for a state. -M: perceptual (mapped) volume scale. */
 export function amixerArgs(card, control, { level, muted }) {
   return ["-q", "-c", card, "-M", "sset", control, `${level}%`, muted ? "mute" : "unmute"];
+}
+
+/** Card ids from /proc/asound/cards (" 0 [DigiAMP     ]: ..."). */
+export function alsaCardIds(cardsText) {
+  return [...String(cardsText ?? "").matchAll(/^\s*\d+\s+\[([^\]\s]+)\s*\]/gm)].map((m) => m[1]);
+}
+
+/**
+ * Why `card` cannot be used, or null when it is there. amixer only says
+ * "Invalid card number", which hides the real cause: the amp never showed up.
+ */
+export function missingCardMessage(card, cardsText) {
+  const ids = alsaCardIds(cardsText);
+  if (ids.includes(card)) return null;
+  const have = ids.length ? `the Pi has: ${ids.join(", ")}` : "the Pi has no sound cards at all";
+  return (
+    `Sound card "${card}" not found (${have}). ` +
+    "Check that the DigiAMP+ is seated on the header and powered from its own barrel jack, " +
+    "and that /boot/firmware/config.txt has dtoverlay=rpi-digiampplus,unmute_amp; then reboot. " +
+    "If the card shows up under another name, set it as the ALSA card name in Settings > Audio (advanced)."
+  );
 }
