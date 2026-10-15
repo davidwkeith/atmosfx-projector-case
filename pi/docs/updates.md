@@ -13,7 +13,7 @@ sudo videofx-update --rollback                # back to the previous version
 ```
 
 - **What it does:**
-  1. If the root is protected, it records the job and any tarball on the data partition, switches maintenance mode on and reboots. `videofx-update-resume.service` picks the job up after the reboot.
+  1. A plain update (no `--tag`, `--tarball` or `--os`) first asks GitHub for the latest release and stops with "Already up to date" if it isn't newer, before anything reboots. If the root is protected, it then records the job and any tarball on the data partition, switches maintenance mode on and reboots. `videofx-update-resume.service` picks the job up after the reboot.
   2. Downloads the release asset `videofx-pi-X.Y.Z.tar.gz` and its `.sigstore.json`, checks the attestation (see below) before unpacking anything, and checks it's VideoFX.
   3. Copies the running version to `/opt/videofx.prev` (with its `node_modules`, so a rollback works offline).
   4. Runs the new release's `system/setup.sh`, which does `apt-get install`, `npm ci --omit=dev`, units and config. Both need the internet, with `--tarball` too.

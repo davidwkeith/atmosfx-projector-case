@@ -205,6 +205,17 @@ case "$MODE" in
     ;;
   update)
     rm -f "$WORK/release.tar.gz" "$WORK/release.tar.gz.sigstore.json"
+    # A plain update only moves forward: ask GitHub first, so an up-to-date Pi is not
+    # rebooted twice for nothing (and a network failure changes nothing).
+    if [ -z "$TAG$TARBALL" ] && [ "$OS" = 0 ]; then
+      latest=$(node "$APP/src/update-cli.js" latest --token-file "$TOKEN" | node -e 'let s = ""; process.stdin.on("data", (c) => (s += c)).on("end", () => console.log(JSON.parse(s).version))') ||
+        die "could not ask GitHub for the latest release; nothing was changed"
+      if ! node -e 'import(process.argv[1]).then((m) => process.exit(m.compareVersions(process.argv[2], process.argv[3]) > 0 ? 0 : 1))' "$APP/src/update.js" "$latest" "$(current_version)"; then
+        echo "Already up to date ($(current_version); the latest release is $latest). Nothing to do."
+        exit 0
+      fi
+      echo "== $(current_version) -> $latest"
+    fi
     if [ -n "$TARBALL" ]; then
       install -m 600 "$TARBALL" "$WORK/release.tar.gz"
       if [ "$VERIFY" = 1 ]; then
