@@ -9,7 +9,7 @@
 import { randomBytes } from "node:crypto";
 import { readFileSync, renameSync, writeFileSync } from "node:fs";
 import { parseArgs } from "node:util";
-import { RELEASE_REPO, checkResult, pickAsset } from "./update.js";
+import { RELEASE_REPO, checkResult, pickAsset, unattested } from "./update.js";
 
 const { positionals, values: o } = parseArgs({
   allowPositionals: true,
@@ -39,8 +39,8 @@ async function release() {
 async function latest() {
   const asset = await release();
   if (!asset) throw new Error("the release has no videofx-pi-<version>.tar.gz asset");
-  // Unsigned releases are not offered: videofx-update would refuse them anyway.
-  if (!asset.sigUrl) throw new Error(`${asset.tag} is not signed yet (no ${asset.name}.sig; run tools/sign-release.sh)`);
+  // Releases without an attestation are not offered: videofx-update would refuse them anyway.
+  if (!asset.bundleUrl) throw new Error(unattested(asset));
   return asset;
 }
 

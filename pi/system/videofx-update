@@ -3,9 +3,9 @@
 #
 #   sudo videofx-update                        latest GitHub release of pi/
 #   sudo videofx-update --tag v0.3.0           a given release
-#   sudo videofx-update --tarball FILE         a videofx-pi-X.Y.Z.tar.gz copied over SSH, with FILE.sig next
-#                                              to it (no GitHub access needed; packages still come from apt and npm)
-#   sudo videofx-update --tarball FILE --sig S  the signature somewhere else
+#   sudo videofx-update --tarball FILE         a videofx-pi-X.Y.Z.tar.gz copied over SSH, with FILE.sigstore.json
+#                                              next to it (no GitHub API needed; Sigstore, apt and npm still are)
+#   sudo videofx-update --tarball FILE --bundle B  the attestation bundle somewhere else
 #   sudo videofx-update --tarball FILE --no-verify   your own unsigned build (only with --tarball)
 #   sudo videofx-update --os                   also apt full-upgrade
 #   sudo videofx-update --rollback             back to the previous version (/opt/videofx.prev)
@@ -16,9 +16,9 @@
 # carries on after the reboot, then switches protection back on and reboots again.
 # If installing the new version fails (no network for apt or npm, say), the
 # previous version is put back and protection is still switched back on.
-# Every tarball must carry a valid signature by the release key in the installed
-# version's system/allowed_signers (videofx-verify-release), checked before it is
-# unpacked. GitHub releases without a .sig are not offered.
+# Every tarball must carry a GitHub build attestation (<tarball>.sigstore.json, made by
+# this repo's CI on a release tag), checked with the installed version's
+# videofx-verify-release before it is unpacked. Releases without one are not offered.
 # The repo is private for now: put a GitHub token (read access to the repo's
 # contents) in /srv/videofx/update/github-token, mode 600.
 set -euo pipefail
@@ -39,12 +39,12 @@ protected() { [ "$(findmnt -no FSTYPE /)" = overlay ]; }
 service_user() { stat -c %U /var/lib/videofx 2>/dev/null || getent passwd 1000 | cut -d: -f1; }
 current_version() { node -e 'console.log(require(process.argv[1]).version)' "$APP/package.json" 2>/dev/null || echo 0.0.0; }
 
-MODE=update TAG="" TARBALL="" SIG="" VERIFY=1 EXPLICIT=0 OS=0 FAILED=0
+MODE=update TAG="" TARBALL="" BUNDLE="" VERIFY=1 EXPLICIT=0 OS=0 FAILED=0
 while [ $# -gt 0 ]; do
   case "$1" in
     --tag) TAG=$2; shift ;;
     --tarball) TARBALL=$2; shift ;;
-    --sig) SIG=$2; shift ;;
+    --bundle) BUNDLE=$2; shift ;;
     --no-verify) VERIFY=0 ;;
     --os) OS=1 ;;
     --rollback) MODE=rollback ;;
@@ -109,26 +109,25 @@ install_unit() {
 }
 
 do_update() {
-  local tarball=$WORK/release.tar.gz src advertised="" newv
+  local tarball=$WORK/release.tar.gz src advertised="" newv attested=""
   if [ ! -s "$tarball" ]; then
     echo "== fetching the release from GitHub"
-    local meta url sig_url
+    local meta url bundle_url
     meta=$(node "$APP/src/update-cli.js" latest --token-file "$TOKEN" ${TAG:+--tag "$TAG"})
     url=$(node -e 'console.log(JSON.parse(process.argv[1]).url)' "$meta")
-    sig_url=$(node -e 'console.log(JSON.parse(process.argv[1]).sigUrl)' "$meta")
+    bundle_url=$(node -e 'console.log(JSON.parse(process.argv[1]).bundleUrl)' "$meta")
     advertised=$(node -e 'console.log(JSON.parse(process.argv[1]).version)' "$meta")
     node "$APP/src/update-cli.js" download --token-file "$TOKEN" --url "$url" --out "$tarball"
-    node "$APP/src/update-cli.js" download --token-file "$TOKEN" --url "$sig_url" --out "$tarball.sig"
+    node "$APP/src/update-cli.js" download --token-file "$TOKEN" --url "$bundle_url" --out "$tarball.sigstore.json"
   fi
   if [ "$VERIFY" = 1 ]; then
-    # The installed version's key and verifier, never anything from the new tarball.
-    local verify=$APP/system/videofx-verify-release
-    [ -f "$verify" ] || die "this version has no videofx-verify-release; update with --tarball FILE --no-verify once"
-    if ! bash "$verify" "$tarball" "$tarball.sig" "$APP/system/allowed_signers"; then
-      rm -f "$tarball" "$tarball.sig"
-      die "the release's signature does not check out; nothing was installed"
+    # The installed version's verifier, never anything from the new tarball.
+    [ -f "$APP/src/verify-release.js" ] || die "the installed version has no src/verify-release.js; update with --tarball FILE --no-verify once"
+    if ! attested=$(bash "$APP/system/videofx-verify-release" "$tarball" "$tarball.sigstore.json" "$WORK/sigstore-tuf"); then
+      rm -f "$tarball" "$tarball.sigstore.json"
+      die "the release's GitHub attestation does not check out; nothing was installed"
     fi
-    echo "== signature OK"
+    echo "== attestation OK: built by GitHub Actions for $attested"
   else
     echo "== WARNING: --no-verify, installing an unsigned tarball"
   fi
@@ -138,10 +137,12 @@ do_update() {
   src=$(dirname "$(find "$WORK/new" -maxdepth 2 -name package.json | head -1)")
   [ -f "$src/package.json" ] && [ -f "$src/system/setup.sh" ] || die "not a VideoFX release tarball"
   [ "$(node -e 'console.log(require(process.argv[1]).name)' "$src/package.json")" = videofx ] || die "tarball is not VideoFX"
-  # The signature covers the bytes, not the version: an old signed tarball attached to a
-  # new release would otherwise install a known-vulnerable version. Bind the two, and
-  # never go backwards unless a release or tarball was named on the command line.
+  # The attestation covers the bytes: an old attested tarball attached to a new release
+  # would otherwise install a known-vulnerable version. Bind it to the tag CI built it
+  # for and to the release, and never go backwards unless a release or tarball was
+  # named on the command line.
   newv=$(node -e 'console.log(require(process.argv[1]).version)' "$src/package.json")
+  [ -z "${attested:-}" ] || [ "$attested" = "v$newv" ] || die "the tarball holds $newv but was built for $attested; nothing was installed"
   [ -z "$advertised" ] || [ "$newv" = "$advertised" ] || die "the release says $advertised but its tarball holds $newv; nothing was installed"
   if ! node -e 'import(process.argv[1]).then((m) => process.exit(m.compareVersions(process.argv[2], process.argv[3]) > 0 ? 0 : 1))' "$APP/src/update.js" "$newv" "$(current_version)"; then
     [ "$EXPLICIT" = 1 ] || die "$newv is not newer than the installed $(current_version); name it with --tag or --tarball to go back on purpose"
@@ -166,7 +167,7 @@ do_update() {
     apt-get update
     DEBIAN_FRONTEND=noninteractive apt-get -y full-upgrade
   fi
-  rm -rf "$WORK/new" "$tarball" "$tarball.sig"
+  rm -rf "$WORK/new" "$tarball" "$tarball.sigstore.json"
 }
 
 do_rollback() {
@@ -185,7 +186,7 @@ on_exit() {
   local code=$?
   [ "$code" -ne 0 ] && [ "${FINISHED:-0}" = 0 ] && [ "${RESTORE_PROTECTION:-0}" = 1 ] || return 0
   echo "videofx-update: stopped (exit $code); switching protection back on and rebooting" >&2
-  rm -f "$PENDING" "$WORK/release.tar.gz" "$WORK/release.tar.gz.sig"
+  rm -f "$PENDING" "$WORK/release.tar.gz" "$WORK/release.tar.gz.sigstore.json"
   sync
   /usr/local/sbin/videofx-maint off || true
   systemctl reboot || true
@@ -203,12 +204,12 @@ case "$MODE" in
     finish
     ;;
   update)
-    rm -f "$WORK/release.tar.gz" "$WORK/release.tar.gz.sig"
+    rm -f "$WORK/release.tar.gz" "$WORK/release.tar.gz.sigstore.json"
     if [ -n "$TARBALL" ]; then
       install -m 600 "$TARBALL" "$WORK/release.tar.gz"
       if [ "$VERIFY" = 1 ]; then
-        [ -f "${SIG:-$TARBALL.sig}" ] || die "no signature: expected ${SIG:-$TARBALL.sig} (or --sig FILE)"
-        install -m 600 "${SIG:-$TARBALL.sig}" "$WORK/release.tar.gz.sig"
+        [ -f "${BUNDLE:-$TARBALL.sigstore.json}" ] || die "no attestation: expected ${BUNDLE:-$TARBALL.sigstore.json} (or --bundle FILE)"
+        install -m 600 "${BUNDLE:-$TARBALL.sigstore.json}" "$WORK/release.tar.gz.sigstore.json"
       fi
     fi
     protected && park_and_reboot

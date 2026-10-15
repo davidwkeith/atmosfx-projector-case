@@ -88,21 +88,21 @@ describe("versions and releases", () => {
 
   it("finds the pi/ tarball among release assets", () => {
     const release = { tag_name: "v0.3.0", assets: [{ name: "case-stl.zip", url: "u1" }, { name: "videofx-pi-0.3.0.tar.gz", url: "u2" }] };
-    expect(pickAsset(release)).toMatchObject({ name: "videofx-pi-0.3.0.tar.gz", version: "0.3.0", url: "u2", sigUrl: null, tag: "v0.3.0" });
-    release.assets.push({ name: "videofx-pi-0.3.0.tar.gz.sig", url: "u3" });
-    expect(pickAsset(release)).toMatchObject({ name: "videofx-pi-0.3.0.tar.gz", url: "u2", sigUrl: "u3" });
+    expect(pickAsset(release)).toMatchObject({ name: "videofx-pi-0.3.0.tar.gz", version: "0.3.0", url: "u2", bundleUrl: null, tag: "v0.3.0" });
+    release.assets.push({ name: "videofx-pi-0.3.0.tar.gz.sig", url: "u3" }, { name: "videofx-pi-0.3.0.tar.gz.sigstore.json", url: "u4" });
+    expect(pickAsset(release)).toMatchObject({ name: "videofx-pi-0.3.0.tar.gz", url: "u2", bundleUrl: "u4" });
     expect(pickAsset({ assets: [{ name: "evil.tar.gz" }] })).toBeNull();
   });
 
-  it("check: an unsigned release counts only when it is newer than what is installed", () => {
+  it("check: a release with no attestation counts only when it is newer than what is installed", () => {
     const now = new Date("2026-10-14T00:00:00Z");
-    const asset = (version, sigUrl = null) => ({ name: `videofx-pi-${version}.tar.gz`, version, tag: `v${version}`, sigUrl });
-    // v0.9.0 was published before releases became drafts: unsigned, and not an error on 0.9.0.
+    const asset = (version, bundleUrl = null) => ({ name: `videofx-pi-${version}.tar.gz`, version, tag: `v${version}`, bundleUrl });
+    // v0.9.x predate attestations: not an error on a Pi already at that version.
     expect(checkResult(asset("0.9.0"), "0.9.0", now)).toEqual({ latest: "0.9.0", tag: "v0.9.0", checkedAt: now.toISOString() });
-    expect(checkResult(asset("0.9.1"), "0.9.0", now)).toMatchObject({ latest: null, error: expect.stringMatching(/not signed yet/) });
+    expect(checkResult(asset("0.9.1"), "0.9.0", now)).toMatchObject({ latest: null, error: expect.stringMatching(/no GitHub attestation/) });
     expect(checkResult(asset("0.9.1", "u"), "0.9.0", now)).toMatchObject({ latest: "0.9.1", tag: "v0.9.1" });
     expect(checkResult(null, "0.9.0", now)).toMatchObject({ latest: null, error: expect.stringMatching(/no videofx-pi/) });
-    // Up to date and unsigned: the page shows no update and no error.
+    // Up to date and unattested: the page shows no update and no error.
     expect(updateStatus({ version: "0.9.0" }, JSON.stringify(checkResult(asset("0.9.0"), "0.9.0", now)))).toMatchObject({ available: false, error: null });
   });
 

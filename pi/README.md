@@ -53,10 +53,9 @@ pi/
   public/              web page (plain HTML/CSS/JS); public/help/ holds the in-page help, one Markdown file per screen and settings group
   system/              systemd units, udev rules, avahi service, asound.conf, videofx.default, setup.sh,
                        videofx-storage (+ .service), videofx-maint, videofx-update (+ resume service),
-                       videofx-verify-release and allowed_signers (the release key),
+                       videofx-verify-release (checks a release's GitHub attestation, src/verify-release.js),
                        NetworkManager/timesyncd/watchdog config
   tools/make-release.sh  release tarball for GitHub Releases
-  tools/sign-release.sh  sign a release's tarball with the release key (your machine, never CI)
   image/               pi-gen build (build.sh, stage-videofx/)
   dmx/DIY-VideoFX-Player.qxf   QLC+ fixture
   tools/sacn-send.mjs  tiny sACN sender for testing; gen-default.mjs regenerates videofx.default

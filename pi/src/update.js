@@ -37,30 +37,32 @@ export function compareVersions(a, b) {
 }
 
 /**
- * The pi/ tarball among a GitHub release's assets, with its detached signature
- * (<tarball>.sig, made by tools/sign-release.sh) or sigUrl null if not signed yet.
+ * The pi/ tarball among a GitHub release's assets, with its GitHub build attestation
+ * (<tarball>.sigstore.json, attached by CI) or bundleUrl null if it has none.
  */
 export function pickAsset(release) {
   const assets = release?.assets ?? [];
   for (const a of assets) {
     const m = ASSET.exec(a.name ?? "");
     if (!m) continue;
-    const sig = assets.find((s) => s.name === `${a.name}.sig`);
-    return { name: a.name, version: m[1], url: a.url, sigUrl: sig?.url ?? null, tag: release.tag_name, draft: !!release.draft, prerelease: !!release.prerelease };
+    const bundle = assets.find((s) => s.name === `${a.name}.sigstore.json`);
+    return { name: a.name, version: m[1], url: a.url, bundleUrl: bundle?.url ?? null, tag: release.tag_name, draft: !!release.draft, prerelease: !!release.prerelease };
   }
   return null;
 }
 
+export const unattested = (asset) => `${asset.tag} has no GitHub attestation (no ${asset.name}.sigstore.json), so it can't be installed`;
+
 /**
- * What `videofx-update --check` records for the latest release's asset. An unsigned
- * release that is not newer than what is installed is simply "up to date" (an old
- * release from before signing); only a newer unsigned one is an error.
+ * What `videofx-update --check` records for the latest release's asset. A release
+ * with no attestation that is not newer than what is installed is simply "up to date"
+ * (an old release from before attestations); only a newer one is an error.
  */
 export function checkResult(asset, current, now = new Date()) {
   const checkedAt = now.toISOString();
   if (!asset) return { latest: null, error: "the release has no videofx-pi-<version>.tar.gz asset", checkedAt };
-  if (!asset.sigUrl && compareVersions(asset.version, current) > 0) {
-    return { latest: null, error: `${asset.tag} is not signed yet (no ${asset.name}.sig; run tools/sign-release.sh)`, checkedAt };
+  if (!asset.bundleUrl && compareVersions(asset.version, current) > 0) {
+    return { latest: null, error: unattested(asset), checkedAt };
   }
   return { latest: asset.version, tag: asset.tag, checkedAt };
 }
