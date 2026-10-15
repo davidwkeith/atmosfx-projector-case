@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { DEFAULT_VOLUME, Volume, amixerArgs, clampLevel } from "../src/volume.js";
+import { DEFAULT_VOLUME, Volume, alsaCardIds, amixerArgs, clampLevel, missingCardMessage } from "../src/volume.js";
 
 function setup(saved, opts = {}) {
   let disk = saved;
@@ -92,5 +92,27 @@ describe("amixerArgs", () => {
       "-q", "-c", "RPiDigiAMP", "-M", "sset", "Digital", "30%", "unmute",
     ]);
     expect(amixerArgs("RPiDigiAMP", "Digital", { level: 0, muted: true }).at(-1)).toBe("mute");
+  });
+});
+
+describe("missing sound card", () => {
+  const digiamp = " 0 [RPiDigiAMP     ]: RPi-DigiAMP - RPi DigiAMP+\n                      RPi DigiAMP+\n";
+  const hdmi = " 0 [vc4hdmi        ]: vc4-hdmi - vc4-hdmi\n                      vc4-hdmi\n";
+
+  it("reads card ids from /proc/asound/cards", () => {
+    expect(alsaCardIds(digiamp + hdmi.replace(" 0 ", " 1 "))).toEqual(["RPiDigiAMP", "vc4hdmi"]);
+    expect(alsaCardIds("--- no soundcards ---\n")).toEqual([]);
+  });
+
+  it("is silent when the card is there", () => {
+    expect(missingCardMessage("RPiDigiAMP", digiamp)).toBeNull();
+  });
+
+  it("names the cards the Pi does have and what to check", () => {
+    const msg = missingCardMessage("RPiDigiAMP", hdmi);
+    expect(msg).toContain('"RPiDigiAMP" not found');
+    expect(msg).toContain("the Pi has: vc4hdmi");
+    expect(msg).toContain("dtoverlay=rpi-digiampplus");
+    expect(missingCardMessage("RPiDigiAMP", "--- no soundcards ---\n")).toContain("no sound cards at all");
   });
 });

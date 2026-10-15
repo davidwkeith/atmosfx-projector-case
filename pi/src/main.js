@@ -45,7 +45,7 @@ import { capVolume, quietNow, scareBlocked } from "./quiet.js";
 import { readVersion, updateStatus } from "./update.js";
 import { askHelper } from "./upgrade.js";
 import { OverTempGuard, SocWatch, parseMilli } from "./thermal.js";
-import { Volume, amixerArgs } from "./volume.js";
+import { Volume, amixerArgs, missingCardMessage } from "./volume.js";
 import { createWebServer, isLanAddress } from "./web.js";
 
 const run = promisify(execFile);
@@ -71,12 +71,21 @@ const currentVersion = readVersion(appDir);
 
 // --- audio, screen, media
 
+/** Set the amp's mixer. A missing card gets a useful message instead of amixer's "Invalid card number". */
+async function setMixer(v, capOpts) {
+  const card = get("audioCard");
+  const cards = await readFile("/proc/asound/cards", "utf8").catch(() => null);
+  const missing = cards === null ? null : missingCardMessage(card, cards);
+  if (missing) throw new Error(missing);
+  return run("amixer", amixerArgs(card, get("mixerControl"), capVolume(v, get("quietHours"), new Date(), { ...capOpts, clockOk: clockSynced() })));
+}
+
 const volume = new Volume({
   store: {
     load: () => ({ level: get("volume"), muted: get("muted") }),
     save: ({ level, muted }) => settings.update({ volume: level, muted }),
   },
-  apply: (v) => run("amixer", amixerArgs(get("audioCard"), get("mixerControl"), capVolume(v, get("quietHours"), new Date(), { clockOk: clockSynced() }))),
+  apply: (v) => setMixer(v),
 });
 // First boot: the safe default; later: the saved level. A missing card is logged, not fatal.
 volume.applyCurrent().catch(() => {});
@@ -418,7 +427,7 @@ const dmx = new DmxControl({
     trigger: () => player.trigger("DMX"),
     setVolume: (v) => {
       dmxVolume = v;
-      return run("amixer", amixerArgs(get("audioCard"), get("mixerControl"), capVolume(v, get("quietHours"), new Date(), { source: "dmx", clockOk: clockSynced() }))).catch(() => {});
+      return setMixer(v, { source: "dmx" }).catch(() => {});
     },
     setDimmer: (v) => player.setDimmer(v),
   },
@@ -502,7 +511,7 @@ setInterval(() => {
   const now = quietNow(get("quietHours"), new Date(), { clockOk: clockSynced() });
   if (now === quietActive) return;
   quietActive = now;
-  if (dmx.inControl && dmxVolume) run("amixer", amixerArgs(get("audioCard"), get("mixerControl"), capVolume(dmxVolume, get("quietHours"), new Date(), { source: "dmx", clockOk: clockSynced() }))).catch(() => {});
+  if (dmx.inControl && dmxVolume) setMixer(dmxVolume, { source: "dmx" }).catch(() => {});
   else volume.applyCurrent().catch(() => {});
 }, 30_000).unref();
 
