@@ -1,53 +1,54 @@
 # Printing plan
 
-One Prusa i3 MK3S (bed 250 x 210 x 210 mm), Prusament PETG (or ASA, which fades less in sun). Times and weights are PrusaSlicer's estimates from the current (v0.10, 3.5 x 5 in 2 mm pane) STLs with the stock `Original Prusa i3 MK3S & MK3S+` printer profile. Real prints run a little longer.
+One Prusa i3 MK3S (bed 250 x 210 x 210 mm). Two materials: **Inland ASA Army Green** for every part seen from outside (it holds its colour and strength in sun and rain), **Inland PETG Black** for every part inside (black also stops light glowing through) (including `power_shelf`). Times and weights are PrusaSlicer's estimates from the current (v0.10, 3.5 x 5 in 2 mm pane) STLs with the stock `Original Prusa i3 MK3S & MK3S+` printer profile and the `Prusament ASA` or `Prusament PETG` material profile. PrusaSlicer has no Inland profiles: start from `Generic ASA` and `Generic PETG` and set the temperatures printed on each spool. Real prints run a little longer.
 
 ## Settings
 
 - Print profile **0.20mm SPEED @MK3** for everything. The window's snap-out ribs leave a gap of one layer (`layer_h` = 0.2 in the model). If you print the base at another layer height, set `layer_h` to match and re-export.
 - **No supports** anywhere: every part is designed support-free.
-- Print `power_shelf` in flame-retardant PETG (UL 94 V-0, e.g. Prusament PETG V0, which has a stock profile), and `base_rear` too if you can live with its colour: the mains brick and its inlet connector live on the shelf in the rear compartment.
+- ASA on an open MK3S: it warps more than PETG and gives off styrene. Print in a ventilated room away from drafts (an enclosure, even a cardboard box over the printer, helps most on `base_front` and `base_rear`), keep the bed hot (Prusa's ASA profile uses 105 C first layer, 110 C after), and clean the sheet so the first layer holds.
+- `fit_coupon` is ASA because most of what it tests (keyholes, inserts in the base, the pane slot) lands in ASA parts. PETG shrinks less, so a fit that is tight in ASA is a little looser in PETG.
 - The front tiles lie flat as exported: `base_front` is 231 x 207 mm and `lid_front` 228 x 204 mm, wide side along the bed's 250 mm axis. 207 mm on the 210 mm axis leaves no room for a skirt: turn it off or keep it tight to the part.
 - The STLs are already in print orientation (lid roof-down, hatch cover ribs-up, window frame flat, caps plate-down).
 
 ## Parts
 
-| Part | Qty | Time (0.20 SPEED) | PETG | Notes |
+| Part | Qty | Time (0.20 SPEED) | Material, weight | Notes |
 |---|---|---|---|---|
-| `fit_coupon` | 1 | 1 h 35 m | 19 g | **Print first.** Test inserts, pilots, the keyhole on an M5 bolt, the frame glazing in its slot, the ball head's hot-shoe adapter in its T-slot |
-| `pedestal` | 1 | 1 h 42 m | 29 g | |
-| `window_frame` | 1 | 1 h 19 m | 20 g | |
-| `hatch_cover` | 1 | 2 h 33 m | 46 g | |
-| `sled_pi3` / `pi4` / `pi5` / `zero2w` | 1 | 1 h 8 m to 1 h 20 m | 18-19 g | The one for your Pi |
-| `vent_cap` | 1 | 13 m | 2 g | Pi-zone louver |
-| `intake_cap` | 1 | 15 m | 3 g | Rear inlet bank, wall-mounted |
-| `exhaust_cap` | 1 | 22 m | 4 g | Front exhaust bank; the opening is about 74 x 58 mm, the biggest of the three caps |
-| `ir_holder` | 0-1 | 11 m | 1 g | Only for the relay + IR fallback |
-| `power_shelf` | 1 | 2 h 31 m | 47 g | Prints flat. Carries the brick (provisional envelope) |
-| `cord_clamp` | 1 | 44 m | 11 g | Both halves in one print, flat, wall-face down. Holds the AC cord at the rear-wall opening |
-| `lid_rear` | 1 | 6 h 41 m | 112 g | |
-| `lid_front` | 1 | 9 h 45 m | 169 g | |
-| `base_rear` | 1 | 18 h 44 m | 270 g | 13 h 26 m with 0.30mm DRAFT (303 g) |
-| `base_front` | 1 | **37 h 4 m** | 559 g | 26 h 55 m with 0.30mm DRAFT (615 g; set `layer_h = 0.3`) |
-| **Total** | | **about 85 h** | **about 1.3 kg** | Two 1 kg spools (one is not enough). Re-sliced for the UTEBIT 20 mm ball head (`ball_head_h` 52), which only changed the two base tiles; `power_shelf`, `cord_clamp` and `base_rear` re-sliced for the single-brick power change. |
+| `fit_coupon` | 1 | 1 h 34 m | ASA 16 g | **Print first.** Test inserts, pilots, the keyhole on an M5 bolt, the frame glazing in its slot, the ball head's hot-shoe adapter in its T-slot |
+| `pedestal` | 1 | 1 h 42 m | PETG 29 g | |
+| `window_frame` | 1 | 1 h 19 m | PETG 20 g | |
+| `hatch_cover` | 1 | 2 h 23 m | ASA 38 g | |
+| `sled_pi3` / `pi4` / `pi5` / `zero2w` | 1 | 1 h 8 m to 1 h 20 m | PETG 18-19 g | The one for your Pi |
+| `vent_cap` | 1 | 13 m | PETG 2 g | Pi-zone louver |
+| `intake_cap` | 1 | 15 m | PETG 3 g | Rear inlet bank, wall-mounted |
+| `exhaust_cap` | 1 | 22 m | PETG 4 g | Front exhaust bank; the opening is about 74 x 58 mm, the biggest of the three caps |
+| `ir_holder` | 0-1 | 11 m | PETG 1 g | Only for the relay + IR fallback |
+| `power_shelf` | 1 | 2 h 31 m | PETG 47 g | Prints flat. Carries the brick (provisional envelope) |
+| `cord_clamp` | 1 | 44 m | ASA 9 g | Both halves in one print, flat, wall-face down. Holds the AC cord at the rear-wall opening |
+| `lid_rear` | 1 | 6 h 21 m | ASA 95 g | |
+| `lid_front` | 1 | 9 h 14 m | ASA 143 g | |
+| `base_rear` | 1 | 18 h 32 m | ASA 228 g | 13 h 10 m with 0.30mm DRAFT (255 g) |
+| `base_front` | 1 | **36 h 32 m** | ASA 471 g | 26 h 12 m with 0.30mm DRAFT (518 g; set `layer_h = 0.3`) |
+| **Total** | | **about 83 h** | **ASA about 1.0 kg, PETG about 0.13 kg** | Two 1 kg ASA spools (one leaves nothing for a failed print) and one black PETG spool. ASA parts re-sliced 2026-10-15 with the `Prusament ASA` profile; ASA is less dense than PETG, so the same parts weigh about 15% less. |
 
 ## Order, on one printer
 
-The small parts first, so any fit problem shows up before a 37-hour print. Everything runs back to back on the one bed, so a failure anywhere delays everything behind it.
+The small parts first, so any fit problem shows up before a 36-hour print. Everything runs back to back on the one bed, so a failure anywhere delays everything behind it.
 
 | Step | Print | Time | Why here |
 |---|---|---|---|
-| 1 | `fit_coupon`, then fix any tolerance in the SCAD and re-export | 1 h 35 m | Cheapest way to find a fit problem |
-| 2 | `pedestal`, `window_frame`, `hatch_cover` | about 5 h 30 m | Small, critical, and quick to reprint |
-| 3 | `base_front` | **37 h** | The longest print and the one that gates assembly. Start it as soon as the coupon checks out, ideally on a weekend, and watch the first layers |
+| 1 | `fit_coupon`, then fix any tolerance in the SCAD and re-export | 1 h 34 m | Cheapest way to find a fit problem |
+| 2 | `pedestal`, `window_frame` (PETG), `hatch_cover` (ASA) | about 5 h 30 m | Small, critical, and quick to reprint |
+| 3 | `base_front` | **36 h 30 m** | The longest print and the one that gates assembly. Start it as soon as the coupon checks out, ideally on a weekend, and watch the first layers |
 | 4 | `sled`, caps, `ir_holder` (if used), `cord_clamp` | about 3 h | Small fillers; the bed is free between the big prints |
-| 5 | `base_rear` | 18 h 44 m | |
-| 6 | `lid_front`, `lid_rear` | about 16 h 30 m | The lid is only needed at closing time, so it goes last |
+| 5 | `base_rear` | 18 h 32 m | |
+| 6 | `lid_front`, `lid_rear` | about 15 h 30 m | The lid is only needed at closing time, so it goes last |
 | 7 | `power_shelf` | 2 h 31 m | After BRINGUP row 4 (see below); slot it in wherever that lands |
 
 **Hold `power_shelf` and `base_rear` until BRINGUP row 4 has set `brick`, `cord_*` and the brick's placement; the provisional layout puts the brick across the cord opening and cannot be assembled.** The Parts table shows what the provisional model slices to, not what to print yet.
 
-About 85 h of printing, so 3.5 to 4 days of machine time and a week of calendar time with plate changes and sleep, if nothing fails. A failed `base_front` costs the most: watch its first layers, and consider the 0.30 DRAFT profile for it (about 10 h saved on `base_front`, 5 h on `base_rear`, which brings the total near 69 h).
+About 83 h of printing, so 3.5 to 4 days of machine time and a week of calendar time with plate changes and sleep, if nothing fails. A failed `base_front` costs the most: watch its first layers, and consider the 0.30 DRAFT profile for it (about 10 h saved on `base_front`, 5 h on `base_rear`, which brings the total near 67 h).
 
 ## After printing
 

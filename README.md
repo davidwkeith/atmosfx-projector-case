@@ -59,7 +59,7 @@ Preview in OpenSCAD: open `projector_pi_case.scad`, set `part` and `tile` in the
 
 Everything prints without slicer supports. The window opening has two thin snap-out ribs that hold up its top edge while printing; break them out afterwards.
 
-Material: PETG or ASA, not PLA. Colour: Disney's ["Go Away Green"](https://en.wikipedia.org/wiki/Go_Away_Green), the muted grey-green the parks use to make infrastructure disappear. It's a family of shades with no published spec, so choose a matte sage or olive grey-green by eye against the spot where the case will sit. ASA holds its colour better in sun than PETG. Test first: print `pedestal` and `window_frame`, then `hatch_cover`, before the big tiles.
+Material, not PLA: **ASA in camo green** (Inland ASA Army Green) for the parts seen from outside (`base` and `lid` tiles, `hatch_cover`, `cord_clamp`), because it holds its colour and strength in sun and rain; **black PETG** (Inland PETG Black) for the parts inside (`pedestal`, `window_frame`, the sled, the screen caps, `ir_holder`, `power_shelf`), where black also keeps light from glowing through. The green is in the spirit of Disney's ["Go Away Green"](https://en.wikipedia.org/wiki/Go_Away_Green): a muted shade that makes the box disappear, so check it by eye against where the case will sit. Details: [docs/PRINTING.md](docs/PRINTING.md). Test first: print `pedestal` and `window_frame`, then `hatch_cover`, before the big tiles.
 
 ## Bill of materials
 
@@ -75,7 +75,7 @@ Full steps, aim limits and troubleshooting: [docs/AIMING.md](docs/AIMING.md).
 
 ## Power and safety
 
-Mains is still inside a printed box (the cord's connector and the brick's inlet), but nothing is hand-wired. Feed it from a GFCI outlet, leave a drip loop below the clamp, prove the clamp takes the pull (BRINGUP row 17a) before the lid goes on, keep every plug joint in a weatherproof box and off the ground, and use PETG or ASA (V-0 PETG for the shelf). The brick must be UL/ETL listed: check its label. Accepted by the owner (2026-10-08): no AC fuse, no barrier, and a cord that is not outdoor-rated, for the Halloween 2026 run (about a month outside) and replaced if damaged. Do not connect the projector to the 24 V brick until BRINGUP row 4a passes. If you are not comfortable with mains, have someone qualified do that part. The case is rain-shedding and ventilated, not waterproof or certified. Wiring diagrams, wire gauges and a pre-power-up checklist: [docs/WIRING.md](docs/WIRING.md).
+Mains is still inside a printed box (the cord's connector and the brick's inlet), but nothing is hand-wired. Feed it from a GFCI outlet, leave a drip loop below the clamp, prove the clamp takes the pull (BRINGUP row 17a) before the lid goes on, keep every plug joint in a weatherproof box and off the ground, and print in ASA outside and PETG inside. The brick must be UL/ETL listed: check its label. Accepted by the owner (2026-10-08): no AC fuse, no barrier, and a cord that is not outdoor-rated, for the Halloween 2026 run (about a month outside) and replaced if damaged. Do not connect the projector to the 24 V brick until BRINGUP row 4a passes. If you are not comfortable with mains, have someone qualified do that part. The case is rain-shedding and ventilated, not waterproof or certified. Wiring diagrams, wire gauges and a pre-power-up checklist: [docs/WIRING.md](docs/WIRING.md).
 
 ## Roadmap
 

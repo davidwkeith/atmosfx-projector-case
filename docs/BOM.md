@@ -77,8 +77,8 @@ Amazon cart placed or about to be: 12 SKUs, $145.32 with tax (checkout PDF). Row
 
 | Item | Notes | Buy |
 |---|---|---|
-| PETG or ASA, about 1.3 kg, "Go Away Green" | Plus a little for reprints | [Micro Center: Inland ASA Army Green](https://www.microcenter.com/product/660561/inland-175mm-army-green-asa-3d-printer-filament-1kg-spool-%2822-lbs%29?storeid=195) is the closest stock colour; [Inland PETG Green](https://www.microcenter.com/product/503782/inland-175mm-petg-3d-printer-filament-1kg-%2822-lbs%29-cardboard-spool-green?storeid=195) is brighter. Match by eye |
-| Flame-retardant PETG (UL 94 V-0, e.g. Prusament PETG V0), about 0.1-0.3 kg | Recommended for `power_shelf` (and `base_rear`, if the colour works): the brick and its cord inlet sit there | [Prusa: Prusament PETG V0 Jet Black](https://www.prusa3d.com/product/prusament-petg-v0-jet-black-1kg/) or [Amazon](https://www.amazon.com/dp/B0GP79Z9WY). Not at Micro Center |
+| Inland ASA Army Green, 2 x 1 kg | **Chosen (2026-10-15).** Outside parts: base and lid tiles, `hatch_cover`, `cord_clamp`, `fit_coupon`. They slice to about 1.0 kg, so one spool leaves nothing for a failed print | [Micro Center: Inland ASA Army Green](https://www.microcenter.com/product/660561/inland-175mm-army-green-asa-3d-printer-filament-1kg-spool-%2822-lbs%29?storeid=195) |
+| Inland PETG Black, 1 kg | **Chosen (2026-10-15).** Inside parts: `pedestal`, `window_frame`, sled, screen caps, `ir_holder`, `power_shelf` (about 125 g) | [Micro Center: Inland PETG Black](https://www.microcenter.com/product/503745/inland-175mm-petg-3d-printer-filament-1kg-carboard-spool-(22-lbs)-black?storeid=195) |
 | Foam tape, 2 mm (lid rim) and 1.5 mm (hatch) | | [Amazon: EPDM 2 x 20 mm, 10 m](https://www.amazon.com/dp/B0DFXQS5BL); [Amazon: 1/16 in (1.5 mm) x 1 in, 33 ft](https://www.amazon.com/dp/B08HV48WQV) |
 | Neutral-cure outdoor silicone | Base seam, pane, PIR dome | [Amazon: GE Advanced Silicone 2, clear, 2.8 oz](https://www.amazon.com/dp/B001JK5R0I) |
 | Insect screen, mosquito grade (about 18 x 16 mesh) | Caps | [Amazon: fiberglass window screen, charcoal](https://www.amazon.com/dp/B0CP2PY26C) (any hardware store roll works) |
@@ -94,7 +94,7 @@ Printing takes about 4 days on one printer (a week of calendar time) and bring-u
 |---|---|---|
 | Picture frame (glazing) | Same day at a craft or discount store, or a few days from Amazon | Any time |
 | Zero 2 W (if used) | 2-5 days | Now |
-| Filament (2 x 1 kg), fasteners, wire, silicone, screen | 1-3 days | Now |
+| Filament (2 x 1 kg Inland ASA Army Green, 1 kg Inland PETG Black), fasteners, wire, silicone, screen | 1-3 days | Now |
 
 Micro Center Santa Clara had the Pi boards, DigiAMP+, microSD, filament, PIR, relay, IR board, insert kit, hook-up wire, thin HDMI cable and cable ties in stock on 2026-10-05, so one trip covers those.
 
@@ -112,5 +112,5 @@ These are estimates from typical retail prices, not quotes; check current prices
 | Power parts (brick, cord, Y-splitter, wire, connection box) | 45-70 |
 | Acrylic pane | 10-25 |
 | Inserts, screws, foam, silicone, screen, paint | 30-50 |
-| Filament, about 1.3 kg | 30-60 |
-| **Total** | **about 260-485** |
+| Filament: 2 kg ASA, 1 kg PETG | 45-60 |
+| **Total** | **about 275-485** |

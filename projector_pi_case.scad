@@ -14,7 +14,7 @@
 //        a wire splice feeds the projector's barrel plug and the DigiAMP+ HAT (which powers the Pi).
 // v0.4 - quick-aim hatch on the left (-X) wall: reach the ball head with the lid on, tool-free
 // sized for a ~171x134x75 mm mini projector (0.72 kg) on an internal ball head
-// Print PETG/ASA. Lid prints roof-down. Base+lid split front/rear (MK3S bed 250x210x210); front pieces lie flat with X along the 250 mm axis.
+// Print ASA (camo green) for outside parts, PETG (black) for inside parts. Lid prints roof-down. Base+lid split front/rear (MK3S bed 250x210x210); front pieces lie flat with X along the 250 mm axis.
 
 /* [Part] */
 part = "assembly"; // [assembly, base, lid, window_frame, pedestal, hatch_cover, power_shelf, sled, ir_holder, vent_cap, exhaust_cap, intake_cap, fit_coupon]
