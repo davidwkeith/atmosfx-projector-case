@@ -225,13 +225,13 @@ export function createWebServer(o) {
       return send(res, 200, state);
     }
     if (method === "GET" && path === "/api/media") {
-      return send(res, 200, { ...(await o.media.list()), playlist: await o.media.readPlaylist() });
+      return send(res, 200, { ...(await o.media.list()), playlist: await o.media.readPlaylist(), shuffle: await o.media.readShuffle() });
     }
     if (method === "PUT" && path === "/api/playlist") {
-      const { entries } = await readJson(req);
-      const saved = await o.media.writePlaylist(entries);
+      const { entries, shuffle } = await readJson(req);
+      const saved = await o.media.writePlaylist(entries, { shuffle });
       o.playlistChanged();
-      return send(res, 200, { playlist: saved });
+      return send(res, 200, { playlist: saved, shuffle: await o.media.readShuffle() });
     }
     const file = /^\/api\/media\/([^/]+)$/.exec(path);
     if (file) {

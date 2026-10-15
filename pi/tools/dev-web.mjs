@@ -9,7 +9,20 @@ import { Settings, hashPassword } from "../src/settings.js";
 import { createWebServer } from "../src/web.js";
 
 const dir = mkdtempSync(join(tmpdir(), "videofx-dev-"));
-for (const n of ["ghost-buffer.mp4", "ghost-scare-1.mp4", "ghost-scare-2.mp4", "zombie.mp4"]) writeFileSync(join(dir, n), "x".repeat(2048));
+// Just enough MP4 (ftyp + moov/mvhd) for the clip lengths to show.
+function box(type, body) {
+  const head = Buffer.alloc(8);
+  head.writeUInt32BE(8 + body.length, 0);
+  head.write(type, 4, "latin1");
+  return Buffer.concat([head, body]);
+}
+const fakeMp4 = (seconds) => {
+  const mvhd = Buffer.alloc(100);
+  mvhd.writeUInt32BE(1000, 12);
+  mvhd.writeUInt32BE(Math.round(seconds * 1000), 16);
+  return Buffer.concat([box("ftyp", Buffer.from("isom")), box("moov", box("mvhd", mvhd)), Buffer.alloc(2048)]);
+};
+for (const [n, s] of [["ghost-buffer.mp4", 95], ["ghost-scare-1.mp4", 12.4], ["ghost-scare-2.mp4", 9], ["zombie.mp4", 312]]) writeFileSync(join(dir, n), fakeMp4(s));
 writeFileSync(join(dir, "playlist.m3u"), "zombie.mp4\nghost-buffer.mp4\n");
 const media = createMediaStore({ dir, playlist: join(dir, "playlist.m3u"), maxUploadBytes: 500 * 1024 * 1024 });
 if (process.env.DEV_PASSWORD) writeFileSync(join(dir, "settings.json"), JSON.stringify({ password: hashPassword("pumpkin") }));

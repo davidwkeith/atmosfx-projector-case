@@ -4,7 +4,7 @@ Your purchased videos are not included or downloaded. Upload them on the web pag
 
 Until then, a fresh Pi plays a built-in test clip: "VideoFX" bouncing over a light alignment grid (also handy for focus and aiming). It is copied into the media folder as `videofx-default.mp4` and made the playlist only when no playlist file exists, so deleting it sticks. Regenerate it with `tools/make-default-video.sh`.
 
-- **Loop mode:** build the playlist on the page (order, enable/disable, save). Saving while playing reloads it in mpv.
+- **Loop mode:** build the playlist on the page (order, enable/disable, shuffle, save). Saving while playing reloads it in mpv. **Shuffle** plays the enabled clips in random order, each once per round, reshuffled every round and never the same clip twice in a row; it is saved in the playlist file as a `#VIDEOFX-SHUFFLE` line, which mpv ignores. The page shows each clip's length and the total for one pass through the enabled clips. Lengths are read from the file header of MP4, M4V and MOV files; other formats show no length.
 - **Scare mode:**
   1. Upload the calm clip and the scare clips. Files named like `Ghost_Buffer.mp4` and `Ghost_Scare1.mp4` get paired by **Suggest from file names**.
   2. Pick the calm clip and the scare clips in **Scare mode**, and save.

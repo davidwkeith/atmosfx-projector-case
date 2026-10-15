@@ -6,13 +6,45 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createMediaStore } from "../src/media.js";
 import {
   enabledCount,
+  formatDuration,
   isMediaFile,
   isSafeName,
+  isShuffled,
   moveEntry,
   parsePlaylist,
+  playlistDuration,
   serializePlaylist,
   validateEntries,
 } from "../src/playlist-core.js";
+import { fakeMp4 } from "./mp4.js";
+
+describe("shuffle flag and lengths", () => {
+  it("stores shuffle as a comment line mpv ignores", () => {
+    const entries = [{ file: "a.mp4", enabled: true }];
+    const text = serializePlaylist(entries, "", { shuffle: true });
+    expect(text).toBe("#EXTM3U\n#VIDEOFX-SHUFFLE\na.mp4\n");
+    expect(isShuffled(text)).toBe(true);
+    expect(parsePlaylist(text)).toEqual(entries);
+    expect(isShuffled(serializePlaylist(entries))).toBe(false);
+  });
+
+  it("formats lengths", () => {
+    expect(formatDuration(5)).toBe("0:05");
+    expect(formatDuration(59.6)).toBe("1:00");
+    expect(formatDuration(725)).toBe("12:05");
+    expect(formatDuration(3723)).toBe("1:02:03");
+  });
+
+  it("totals the enabled entries, repeats included, and counts unknown lengths", () => {
+    const entries = [
+      { file: "a.mp4", enabled: true },
+      { file: "b.mp4", enabled: false },
+      { file: "a.mp4", enabled: true },
+      { file: "c.mkv", enabled: true },
+    ];
+    expect(playlistDuration(entries, { "a.mp4": 30, "b.mp4": 100 })).toEqual({ seconds: 60, clips: 3, unknown: 1 });
+  });
+});
 
 describe("playlist format", () => {
   it("parses entries, skips comments and blank lines, keeps disabled entries", () => {
@@ -172,6 +204,28 @@ describe("media store", () => {
     await store.remove("ghost.mp4");
     expect(await store.readPlaylist()).toEqual([{ file: "bats.mp4", enabled: true }]);
     expect((await store.list()).files.map((f) => f.name)).toEqual(["bats.mp4"]);
+  });
+
+  it("keeps the shuffle flag unless told otherwise, and lists clip lengths", async () => {
+    await writeFile(join(dir, "a.mp4"), fakeMp4(42));
+    await writeFile(join(dir, "b.mp4"), "x");
+    await store.writePlaylist([{ file: "a.mp4", enabled: true }, { file: "b.mp4", enabled: true }, { file: "gone.mp4", enabled: true }], { shuffle: true });
+    expect(await store.readShuffle()).toBe(true);
+    expect(store.shuffleClips()).toEqual([join(dir, "a.mp4"), join(dir, "b.mp4")]); // missing files skipped
+    await store.remove("b.mp4");
+    expect(await store.readShuffle()).toBe(true);
+    const { files } = await store.list();
+    expect(files).toEqual([expect.objectContaining({ name: "a.mp4", duration: 42 })]);
+    await store.writePlaylist([{ file: "a.mp4", enabled: true }], { shuffle: false });
+    expect(store.shuffleClips()).toBeNull();
+    await expect(store.writePlaylist([], { shuffle: "yes" })).rejects.toMatchObject({ status: 400 });
+  });
+
+  it("an uploaded .m3u brings its own shuffle flag", async () => {
+    await upload("mine.m3u", "#EXTM3U\n#VIDEOFX-SHUFFLE\nx.mp4\n");
+    expect(await store.readShuffle()).toBe(true);
+    await upload("plain.m3u", "x.mp4\n");
+    expect(await store.readShuffle()).toBe(false);
   });
 
   it("an uploaded .m3u replaces the playlist after validation", async () => {

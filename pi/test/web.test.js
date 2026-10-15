@@ -269,6 +269,16 @@ describe("web server", () => {
     expect(save.status).toBe(200);
     expect(playlistChanged).toHaveBeenCalledTimes(1);
     expect(await readFile(join(dir, "playlist.m3u"), "utf8")).toBe("#EXTM3U\nghost ship.mp4\n");
+    expect(save.json.shuffle).toBe(false);
+  });
+
+  it("saves and reports the shuffle flag", async () => {
+    const save = await call("PUT", "/api/playlist", {
+      body: JSON.stringify({ entries: [{ file: "a.mp4", enabled: true }], shuffle: true }),
+      headers: { "content-type": "application/json" },
+    });
+    expect(save.json).toEqual({ playlist: [{ file: "a.mp4", enabled: true }], shuffle: true });
+    expect((await call("GET", "/api/media")).json.shuffle).toBe(true);
   });
 
   it("rejects oversized uploads with 413", async () => {

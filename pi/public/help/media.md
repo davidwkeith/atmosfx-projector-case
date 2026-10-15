@@ -2,7 +2,9 @@
 
 ## Playlist
 
-The playlist plays top to bottom and loops. Untick an item to skip it without removing it. Use the arrows to reorder. Nothing changes on the Pi until you press **Save playlist**, and saving restarts playback if it is running. Your unsaved edits stay while you look at other screens.
+The playlist plays top to bottom and loops. Tick **Shuffle** to play the clips in random order instead: each plays once per round, then the order is reshuffled. Untick an item to skip it without removing it. Use the arrows to reorder.
+
+Each clip shows its length, and the line under the list gives the total for one pass through the ticked clips. Lengths are known for MP4, M4V and MOV files only. Nothing changes on the Pi until you press **Save playlist**, and saving restarts playback if it is running. Your unsaved edits stay while you look at other screens.
 
 ## Videos
 

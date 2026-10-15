@@ -1,6 +1,8 @@
 // Playback controller on top of one long-lived mpv (see mpv.js).
 //
 // Power on:  loop mode  -> loadlist playlist, loop-playlist=inf
+//            shuffled   -> one clip at a time: each time a clip loads, the next is
+//                          queued behind it; the order is reshuffled every round.
 //            scare mode -> buffer clip with loop-file=inf; the next scare clip and
 //                          the buffer again are queued behind it so mpv prefetches them.
 // Trigger:   loop-file=no + playlist-next -> the scare plays once, then mpv moves
@@ -31,6 +33,7 @@ export class Player extends EventEmitter {
   #order = []; // scare clips in play order
   #orderPos = 0;
   #nextScare = null;
+  #shuffle = null; // shuffled loop: { clips, order, pos, last }
   #queued = false;
   #queueTimer = null;
   #cooldownUntil = 0;
@@ -45,7 +48,7 @@ export class Player extends EventEmitter {
   /**
    * @param {object} o
    * @param {import("./mpv.js").MpvSupervisor} o.mpv   anything with ready, command(), and ready/down/event/failed events
-   * @param {() => {mode: string, playlist: string, buffer: string, scares: string[], order: string,
+   * @param {() => {mode: string, playlist: string, shuffleClips?: () => string[]|null, buffer: string, scares: string[], order: string,
    *   cooldownMs: number, duringScare: string, mirror: boolean}} o.content  current settings, absolute paths
    * @param {{load: () => boolean|undefined, save: (on: boolean) => void}} [o.store]
    * @param {() => void} [o.blank]
@@ -263,6 +266,8 @@ export class Player extends EventEmitter {
   #play() {
     const c = this.#content();
     this.#clearQueue();
+    const last = this.#shuffle?.last ?? null;
+    this.#shuffle = null;
     if (this.#clip) {
       this.#phase = "clip";
       this.#run(["set_property", "loop-playlist", "no"], ["set_property", "loop-file", "inf"], ["loadfile", this.#clip, "replace"]);
@@ -277,12 +282,44 @@ export class Player extends EventEmitter {
       );
     } else {
       this.#phase = "loop";
-      this.#run(
-        ["set_property", "loop-file", "no"],
-        ["set_property", "loop-playlist", "inf"],
-        ["loadlist", c.playlist, "replace"],
-      );
+      const clips = c.shuffleClips?.();
+      if (clips?.length) {
+        this.#shuffle = { clips, order: [], pos: 0, last };
+        this.#run(
+          ["set_property", "loop-file", "no"],
+          ["set_property", "loop-playlist", "no"],
+          ["loadfile", this.#nextShuffled(), "replace"],
+        );
+      } else {
+        this.#run(
+          ["set_property", "loop-file", "no"],
+          ["set_property", "loop-playlist", "inf"],
+          ["loadlist", c.playlist, "replace"],
+        );
+      }
     }
+  }
+
+  // Fisher-Yates with the injected random source.
+  #shuffled(list) {
+    const out = [...list];
+    for (let i = out.length - 1; i > 0; i--) {
+      const j = Math.floor(this.#random() * (i + 1));
+      [out[i], out[j]] = [out[j], out[i]];
+    }
+    return out;
+  }
+
+  #nextShuffled() {
+    const s = this.#shuffle;
+    if (s.pos >= s.order.length) {
+      s.order = this.#shuffled(s.clips);
+      s.pos = 0;
+      // Don't play the same clip twice in a row across rounds.
+      if (s.order.length > 1 && s.order[0] === s.last) s.order.push(s.order.shift());
+    }
+    s.last = s.order[s.pos++];
+    return s.last;
   }
 
   // Queue the next scare and the buffer after it, so mpv can prefetch both.
@@ -295,12 +332,9 @@ export class Player extends EventEmitter {
   }
 
   #pickOrder(c) {
-    const clips = [...(c.scares ?? [])];
+    let clips = [...(c.scares ?? [])];
     if (c.order === "random") {
-      for (let i = clips.length - 1; i > 0; i--) {
-        const j = Math.floor(this.#random() * (i + 1));
-        [clips[i], clips[j]] = [clips[j], clips[i]];
-      }
+      clips = this.#shuffled(clips);
       // Don't repeat the clip that just played at the start of a new round.
       if (clips.length > 1 && clips[0] === this.#nextScare) clips.push(clips.shift());
     }
@@ -314,6 +348,11 @@ export class Player extends EventEmitter {
   }
 
   #onEvent(e) {
+    if (e.event === "file-loaded" && this.#phase === "loop" && this.#shuffle) {
+      // Drop what has played and queue the next clip so mpv can prefetch it.
+      this.#run(["playlist-clear"], ["loadfile", this.#nextShuffled(), "append"]);
+      return;
+    }
     if (e.event === "playback-restart" && this.#mark) {
       const ms = this.#now() - this.#mark.at;
       this.#seam[this.#mark.kind] = ms;

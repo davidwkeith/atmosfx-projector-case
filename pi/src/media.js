@@ -8,12 +8,14 @@ import { randomBytes } from "node:crypto";
 import { basename, dirname, join, resolve as resolvePath, sep } from "node:path";
 import { Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
+import { mediaDuration } from "./duration.js";
 import { commitFile, writeFileAtomic } from "./fsutil.js";
 import {
   enabledCount,
   isMediaFile,
   isPlaylistFile,
   isSafeName,
+  isShuffled,
   parsePlaylist,
   serializePlaylist,
   validateEntries,
@@ -49,24 +51,41 @@ export function createMediaStore({ dir, playlist, maxUploadBytes: limit = 4 * 10
     return path;
   }
 
-  async function readPlaylist() {
+  async function readText() {
     try {
-      return parsePlaylist(await readFile(playlistPath, "utf8"), prefix);
+      return await readFile(playlistPath, "utf8");
     } catch (err) {
-      if (err.code === "ENOENT") return [];
+      if (err.code === "ENOENT") return "";
       throw err;
     }
   }
 
-  async function writePlaylist(entries) {
+  const readPlaylist = async () => parsePlaylist(await readText(), prefix);
+  const readShuffle = async () => isShuffled(await readText());
+
+  /** shuffle: true/false, or undefined to keep what the file has. */
+  async function writePlaylist(entries, { shuffle } = {}) {
     let valid;
     try {
       valid = validateEntries(entries);
     } catch (err) {
       throw new HttpError(400, err.message);
     }
-    await atomicWrite(playlistPath, serializePlaylist(valid, prefix));
+    if (shuffle !== undefined && typeof shuffle !== "boolean") throw new HttpError(400, "shuffle must be true or false");
+    shuffle ??= await readShuffle();
+    await atomicWrite(playlistPath, serializePlaylist(valid, prefix, { shuffle }));
     return valid;
+  }
+
+  // Clip lengths by name, kept while the file's size and time are unchanged.
+  const durations = new Map(); // name -> { key, seconds }
+  async function durationOf(name, s) {
+    const key = `${s.size}:${s.mtimeMs}`;
+    const hit = durations.get(name);
+    if (hit?.key === key) return hit.seconds;
+    const seconds = await mediaDuration(join(root, name));
+    durations.set(name, { key, seconds });
+    return seconds;
   }
 
   // Durable: temp file, fsync, rename, fsync of the folder (power cuts).
@@ -86,7 +105,33 @@ export function createMediaStore({ dir, playlist, maxUploadBytes: limit = 4 * 10
     playlistPath,
     resolve,
     readPlaylist,
+    readShuffle,
     writePlaylist,
+
+    /**
+     * Shuffled play: the enabled clips that exist (absolute paths), or null when
+     * the playlist plays in order. Sync: read by the player when it starts.
+     */
+    shuffleClips() {
+      let text;
+      try {
+        text = readFileSync(playlistPath, "utf8");
+      } catch {
+        return null;
+      }
+      if (!isShuffled(text)) return null;
+      const paths = [];
+      for (const e of parsePlaylist(text, prefix)) {
+        if (!e.enabled) continue;
+        try {
+          const path = resolve(e.file);
+          if (lstatSync(path).isFile()) paths.push(path);
+        } catch {
+          // missing or not a plain name: skip, as mpv would
+        }
+      }
+      return paths;
+    },
 
     /**
      * Why playback cannot start, or undefined. Sync: used as the player's preflight.
@@ -121,8 +166,10 @@ export function createMediaStore({ dir, playlist, maxUploadBytes: limit = 4 * 10
       for (const d of await readdir(root, { withFileTypes: true })) {
         if (!d.isFile() || !isMediaFile(d.name)) continue; // skips symlinks and hidden temp files
         const s = await lstat(join(root, d.name));
-        files.push({ name: d.name, size: s.size, modified: s.mtime.toISOString() });
+        const duration = await durationOf(d.name, s);
+        files.push({ name: d.name, size: s.size, modified: s.mtime.toISOString(), ...(duration === undefined ? {} : { duration }) });
       }
+      for (const name of durations.keys()) if (!files.some((f) => f.name === name)) durations.delete(name);
       files.sort((a, b) => a.name.localeCompare(b.name));
       return { files, freeBytes: await freeBytes(), maxUploadBytes: maxUpload() };
     },
@@ -148,7 +195,7 @@ export function createMediaStore({ dir, playlist, maxUploadBytes: limit = 4 * 10
           throw err;
         }
       }
-      await writePlaylist([{ file: name, enabled: true }]);
+      await writePlaylist([{ file: name, enabled: true }], { shuffle: false });
       return true;
     },
 
@@ -170,7 +217,7 @@ export function createMediaStore({ dir, playlist, maxUploadBytes: limit = 4 * 10
       const path = resolve(name);
       if (isPlaylistFile(name)) {
         const text = await readLimited(stream, MAX_PLAYLIST_BYTES);
-        return { playlist: await writePlaylist(parsePlaylist(text, prefix)) };
+        return { playlist: await writePlaylist(parsePlaylist(text, prefix), { shuffle: isShuffled(text) }) };
       }
       if (!isMediaFile(name)) throw new HttpError(415, "only video, audio and .m3u files are allowed");
       const maxUploadBytes = maxUpload();

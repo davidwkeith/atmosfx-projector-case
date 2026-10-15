@@ -156,6 +156,54 @@ describe("power (loop mode)", () => {
   });
 });
 
+describe("shuffled loop", () => {
+  const clips = ["/m/a.mp4", "/m/b.mp4", "/m/c.mp4"];
+  const loaded = (cmds) => cmds().filter((c) => c.startsWith("loadfile")).map((c) => c.split(" ")[1]);
+
+  it("plays one clip and queues the next each time one loads, without mpv's playlist loop", async () => {
+    const { mpv, player, cmds } = setup({ shuffleClips: () => clips });
+    mpv.up();
+    player.setOn(true);
+    await flush();
+    expect(cmds()).toEqual(["set_property loop-file no", "set_property loop-playlist no", "loadfile /m/b.mp4 replace"]);
+    mpv.event({ event: "file-loaded" });
+    await flush();
+    expect(cmds().slice(3)).toEqual(["playlist-clear", "loadfile /m/c.mp4 append"]);
+  });
+
+  it("plays every clip once per round, reshuffles, and never repeats one back to back", async () => {
+    let r = 0.99;
+    const { mpv, player, cmds } = setup({ shuffleClips: () => clips }, { random: () => (r = (r * 7.3) % 1) });
+    mpv.up();
+    player.setOn(true);
+    await flush();
+    for (let i = 0; i < 8; i++) {
+      mpv.event({ event: "file-loaded" });
+      await flush();
+    }
+    const order = loaded(cmds);
+    expect(new Set(order.slice(0, 3)).size).toBe(3);
+    expect(new Set(order.slice(3, 6)).size).toBe(3);
+    for (let i = 1; i < order.length; i++) expect(order[i]).not.toBe(order[i - 1]);
+  });
+
+  it("falls back to the playlist loop when not shuffling, and ignores loads in other modes", async () => {
+    const { mpv, player, cmds, content, clear } = setup({ shuffleClips: () => null });
+    mpv.up();
+    player.setOn(true);
+    await flush();
+    expect(cmds()).toContain("loadlist /m/playlist.m3u replace");
+    clear();
+    mpv.event({ event: "file-loaded" });
+    await flush();
+    expect(cmds()).toEqual([]);
+    content.shuffleClips = () => clips;
+    player.reload();
+    await flush();
+    expect(loaded(cmds)).toHaveLength(1);
+  });
+});
+
 describe("restore", () => {
   it("persists every change and restores per policy", () => {
     const { player, store, setSaved } = setup();

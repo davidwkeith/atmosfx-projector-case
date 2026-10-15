@@ -7,6 +7,8 @@ export const PLAYLIST_EXTS = [".m3u", ".m3u8"];
 
 // Disabled entries stay in the .m3u as comments, which mpv skips.
 const DISABLED = "#VIDEOFX-DISABLED:";
+// Play order flag, also a comment mpv ignores: the player shuffles itself.
+const SHUFFLE = "#VIDEOFX-SHUFFLE";
 
 export function extOf(name) {
   const i = name.lastIndexOf(".");
@@ -54,9 +56,12 @@ export function parsePlaylist(text, prefix = "") {
   return entries;
 }
 
-export function serializePlaylist(entries, prefix = "") {
+/** True if the .m3u text asks for shuffled play. */
+export const isShuffled = (text) => text.split(/\r?\n/).some((line) => line.trim() === SHUFFLE);
+
+export function serializePlaylist(entries, prefix = "", { shuffle = false } = {}) {
   const lines = entries.map(({ file, enabled }) => (enabled ? "" : DISABLED) + prefix + file);
-  return ["#EXTM3U", ...lines, ""].join("\n");
+  return ["#EXTM3U", ...(shuffle ? [SHUFFLE] : []), ...lines, ""].join("\n");
 }
 
 /** Throws unless entries is a list of { file: media file name, enabled: boolean }. */
@@ -80,6 +85,33 @@ export function moveEntry(entries, from, to) {
 }
 
 export const enabledCount = (entries) => entries.filter((e) => e.enabled).length;
+
+/** "0:45", "12:05", "1:02:03". */
+export function formatDuration(seconds) {
+  const t = Math.round(seconds);
+  const h = Math.floor(t / 3600);
+  const m = Math.floor((t % 3600) / 60);
+  const s = String(t % 60).padStart(2, "0");
+  return h ? `${h}:${String(m).padStart(2, "0")}:${s}` : `${m}:${s}`;
+}
+
+/**
+ * Length of one pass through the enabled entries. durations: { name: seconds }.
+ * Returns { seconds, clips, unknown } (unknown = enabled entries with no known length).
+ */
+export function playlistDuration(entries, durations) {
+  let seconds = 0;
+  let clips = 0;
+  let unknown = 0;
+  for (const e of entries) {
+    if (!e.enabled) continue;
+    clips++;
+    const d = durations[e.file];
+    if (typeof d === "number") seconds += d;
+    else unknown++;
+  }
+  return { seconds, clips, unknown };
+}
 
 const stem = (name) => name.slice(0, name.length - extOf(name).length).toLowerCase();
 const tokens = (name) => stem(name).split(/[^a-z0-9]+/).filter(Boolean);
