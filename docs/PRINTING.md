@@ -13,7 +13,7 @@ One Prusa i3 MK3S (bed 250 x 210 x 210 mm). Two materials: **Inland ASA Army Gre
 
 ## Fit coupon
 
-`fit_coupon` tests every fit the case depends on in a 1.5-hour print, so a wrong tolerance shows up before a 36-hour one. Print it in ASA, let it cool for an hour, then work through the table. Results go in [BRINGUP.md](BRINGUP.md) row 1 and the Fit coupon rows of [measurements.xlsx](measurements.xlsx).
+`fit_coupon` tests every fit the case depends on in a 1.5-hour print, so a wrong tolerance shows up before a 36-hour one. Print it in ASA, let it cool for an hour, then work through the table. Results go in [BRINGUP.md](BRINGUP.md) row 1 and the `coupon` and `inserts` entries of [measurements.yaml](measurements.yaml).
 
 What is on it:
 
@@ -29,7 +29,7 @@ What is on it:
 | Keyhole | Push an M5 button-head bolt's head through the round end, slide it 8 mm to the narrow end | Head passes freely, the shank slides without catching, and the tab doesn't wobble on the bolt at the narrow end | Narrow end too tight or loose: change `stud_d` (slot = `stud_d` + 0.8). Head won't pass: raise `stud_head_d` (opening = `stud_head_d` + 1.5). The same numbers cut the hatch cover |
 | Pane slot | Slide the frame glazing into the slot | Goes in by hand without forcing and doesn't rattle much | The slot is `pane_t` + 0.5, the same as the base's rebate. Measure your pane and set `pane_t` |
 | Hot-shoe T-slot | Slide the ball head's hot-shoe adapter in from the left edge and tighten its ring on the lips | Can't wobble or slide out once the ring is tight | Change `shoe_clr` (clearance per side), or measure the adapter and set `shoe_ch_w`, `shoe_open`, `shoe_lip_t`, `shoe_foot_l`, `shoe_neck_d`. If it holds, the pedestal could use it instead of its stud and insert (a design change) |
-| Shrink | Measure the strip's length with calipers once it is fully cool | Enter it in the sheet's coupon strip row (Measured column); the "Pane clearance after shrink" row says ok | TIGHT: scale `window_frame` and `base_front` by 118 / your length in the slicer, or add the shortfall to `pane_w` and `pane_h` |
+| Shrink | Measure the strip's length with calipers once it is fully cool | Enter it as `coupon.strip_len` in measurements.yaml; `uv run scripts/check_measurements.py` says the pane clearance after shrink is ok | TIGHT: scale `window_frame` and `base_front` by 118 / your length in the slicer, or add the shortfall to `pane_w` and `pane_h` |
 
 After any change: `make parts`, then `scripts/check_clash.sh`. If you changed a size by more than 0.2 mm, reprint the coupon and test that feature again before the big prints. None of the coupon's features use `clearance`. It sets the pane rebate's width and height (`pane_w`/`pane_h` + 2 x `clearance`), which only the shrink row checks.
 

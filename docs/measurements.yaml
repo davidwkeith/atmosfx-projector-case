@@ -1,0 +1,552 @@
+# Hardware measurements for the AtmosFX projector case (Tkisko TO2, model C11).
+#
+# Type what you measure after `measured:` and leave the rest alone. Then run
+#
+#   uv run scripts/check_measurements.py
+#
+# It reads each parameter's current value straight from projector_pi_case.scad,
+# prints UPDATE where a measurement is off by more than `tol` (UPDATE (spec) when
+# only the manual disagrees), works out the computed rows (throw ratio, lens
+# offset, shrink, pane clearance, the site tilt) and counts what is still blank.
+# After changing a flagged parameter: scripts/check_clash.sh, then make parts.
+#
+# Fields: measured = yours. spec = what the TO2 manual (manuals.plus, Oct 2022),
+# its label, photos or a vendor listing says; measured overrides it. tol = how far
+# off before it matters. param = the SCAD parameter (when it differs from the key).
+# default = the value to compare against, for rows with no SCAD parameter.
+# Units are mm unless the key or a `unit:` says otherwise.
+
+date_measured:
+
+projector:
+  proj_w:
+    # Width (X, across the front, the lens face). Manual: 6.5 in.
+    measured:
+    spec: 165
+    tol: 1
+  proj_d:
+    # Depth (Y, lens face to rear face). Measured 130.0 with calipers.
+    measured: 130
+    tol: 1
+  proj_h:
+    # Height (Z, underside to top). Manual: 2.6 in.
+    measured:
+    spec: 66
+    tol: 1
+  lens_z:
+    # Lens centre height above the underside. Scaled off photos.
+    measured:
+    tol: 1
+  lens_x:
+    # Lens offset from the body centre, X (+ = right, viewed from the front). Scaled off photos.
+    measured:
+    tol: 1
+  mount_x:
+    # 1/4-20 socket offset from centre, X (+ = right). Underside photo: brass insert in the right lobe.
+    measured:
+    tol: 1
+  mount_y:
+    # 1/4-20 socket offset from centre, Y (+ = toward the rear).
+    measured:
+    tol: 1
+  socket_depth:
+    # 1/4-20 socket recess depth: how far the stud must reach. Compare with the ball head's stud length.
+    measured:
+  dc_jack_inset:
+    # DC jack centre, inset from the right edge (rear face, top-right corner). Photo-derived 2026-10-06.
+    param: dc_jack[0]
+    measured:
+    spec: 15
+    tol: 2
+  dc_jack_drop:
+    # DC jack centre, below the projector's top. Sets the DC plug keep-out: the plug points back and
+    # stays above the intake patch.
+    param: dc_jack[1]
+    measured:
+    spec: 13
+    tol: 2
+  port_depth:
+    # Right-angle DC plug standing out of the rear face, cable bent the way it will run. Sizes rear_gap.
+    measured:
+    tol: 3
+  hdmi_y:
+    # HDMI port centre behind the front face (right-face I/O strip, about 41-118 mm behind the front).
+    # Photo-derived. Sets the plug keep-out (side_port_*) and where the baffle stands.
+    measured:
+    spec: 56
+    tol: 3
+  side_port_h:
+    # Right-face I/O strip height from the top (HDMI, USB, AV). Sets baffle_gap and the HDMI cable keep-out.
+    measured:
+    spec: 18
+    tol: 2
+  barrel_plug_d:
+    # Barrel plug outer diameter. 5.5 x 2.5 mm per the owner (2026-10-12).
+    measured:
+  barrel_plug_len:
+    # Barrel plug length, body plus strain relief, straight out of the rear face. If it is longer than
+    # the right-angle plug's protrusion, it sets port_depth.
+    measured:
+    tol: 3
+  lens_protrusion:
+    # Lens barrel past the front face. 0 if flush. Anything proud eats into front_gap (30) on downward tilt.
+    measured:
+    tol: 1
+  lens_bezel_d:
+    # Lens bezel diameter. Context only: the clear window is the pane minus the lap, 111 x 72.9 mm, and
+    # the clash check sweeps the light cone, not the bezel.
+    measured:
+  focus_wheel_z:
+    # Focus wheel height above the underside (which face: see observations). The underside is 82 above
+    # the floor and the hatch diamond reaches 110, so only the lower 28 mm of the left face can be
+    # reached with the lid on.
+    measured:
+    tol: 5
+  keystone_z:
+    # Keystone control height above the underside. Same reach limit as the focus wheel.
+    measured:
+    tol: 5
+  ir_z:
+    # IR receiver window height above the underside (front face, above the logo). Photo-derived.
+    # ir_holder sticks on the front face here and fires at the receiver from inside the front gap.
+    measured:
+    spec: 50
+    tol: 3
+  ir_x:
+    # IR receiver position along the front face, X from the body centre (+ = right). Photo-derived.
+    measured:
+    spec: 35
+    tol: 3
+  in_size:
+    # Rear intake grille, size (square). The second rear grille is a speaker, not an air path.
+    measured:
+    spec: 40
+    tol: 2
+  in_top:
+    # Rear intake grille, inset from the projector's top. Sets the inlet bank's height.
+    measured:
+    spec: 15
+    tol: 2
+  exh_start:
+    # Exhaust grille start behind the front face (right face). Slots measured 10-42 mm; the owner says
+    # the first 40. Sets the exhaust bank's position.
+    param: exh_y[0]
+    measured:
+    spec: 0
+    tol: 3
+  exh_end:
+    # Exhaust grille end behind the front face. Sets the opening length (plus air_margin each end).
+    param: exh_y[1]
+    measured:
+    spec: 42
+    tol: 3
+  feet_h:
+    # Feet on the projector's underside. If the feet, not the body, rest on the ball head's platform,
+    # add this to ball_head_h.
+    measured:
+    tol: 0.5
+  flat_d:
+    # Flat area around the 1/4-20 socket, diameter. Must take the ball head's platform; feet or ribs
+    # inside it rock the mount.
+    measured:
+    tol: 2
+  weight_g:
+    # Kitchen scale. Manual: 1 lb (its spec table says 25 lb, a typo). 720 g is the design log's figure.
+    measured:
+    default: 720
+    spec: 454
+    tol: 100
+  aspect:
+    # Width / height. Manual: native 1280 x 720, so 16:9.
+    measured:
+    spec: 1.778
+    tol: 0.01
+  power_w:
+    # Power draw. Manual: 50 W. The brick is 144 W.
+    measured:
+    spec: 50
+
+# Throw ratio and lens offset: project onto a wall, projector level, and fill these in.
+# The script works out throw_ratio and lens_offset from them (BRINGUP row 3).
+throw:
+  distance:
+    # Lens face to the wall.
+    measured:
+  image_w:
+    # Image width at that distance.
+    measured:
+  image_h:
+    # Image height at that distance.
+    measured:
+  bottom_above_axis:
+    # Image bottom edge above the lens axis (negative if below). Lens axis = lens centre height on the wall.
+    measured:
+  throw_ratio:
+    # Computed: distance / image_w. Spec from the manual's image sizes (36 in at 2.5 ft ... 150 in at 10 ft:
+    # 0.92 to 0.96; 250 in at 16 ft gives 0.88).
+    computed: true
+    spec: 0.95
+    tol: 0.1
+  lens_offset:
+    # Computed: 2 x bottom_above_axis / image_h + 1 (0 = centred on the axis, 1 = bottom edge on the axis).
+    computed: true
+    tol: 0.1
+
+ball_head:
+  # UTEBIT 20 mm mini head. Both heights are scaled off the vendor drawing (BRINGUP row 5).
+  ball_head_h:
+    # Base to the platform the projector sits on, head level.
+    measured:
+    tol: 2
+  pivot_h:
+    # Ball centre above the head's base (the aim pivot).
+    measured:
+    tol: 2
+  base_d:
+    # Base diameter. Must sit on the 40 mm pedestal top.
+    measured:
+  knob_z:
+    # Lock knob height above the head's base. The pedestal top is 30 above the floor and the hatch
+    # diamond spans 2 to 110 (centre 56), so the knob must land in that.
+    measured:
+  stud_len:
+    # Stud thread length. Too long bottoms out in the socket before it clamps; too short strips it.
+    measured:
+    tol: 0.5
+  platform_d:
+    # Platform diameter under the stud. Has to sit inside the projector's flat area.
+    measured:
+    tol: 1
+  base_thread_d:
+    # Base thread diameter (1/4-20 = 6.35, 3/8-16 = 9.5). The pedestal takes a 1/4-20 insert; a 3/8-16
+    # base needs a reducer bushing.
+    measured:
+    tol: 0.3
+  knob_d:
+    # Lock knob diameter. Knob plus fingers must fit the 108 mm diamond.
+    measured:
+    tol: 2
+  knob_reach:
+    # Ball centre to knob tip, horizontal. The ball sits 62 above the floor, roughly centred in X.
+    measured:
+    tol: 2
+  aim_max:
+    # Projector mounted: tilt (deg) until the body touches the head.
+    measured:
+    unit: deg
+    tol: 1
+
+brick:
+  # Auplf XGM-2406, 24 V 6 A 144 W, 5.5 x 2.5 mm (chosen 2026-10-12, not yet bought). BRINGUP row 4.
+  brick_l:
+    # Length (X on the shelf). Listing: 6.7 in.
+    param: brick[0]
+    measured:
+    spec: 170
+    tol: 2
+  brick_w:
+    # Width (Y on the shelf). Listing: 2.8 in.
+    param: brick[1]
+    measured:
+    spec: 71
+    tol: 2
+  brick_h:
+    # Height (Z). Listing: 1.6 in.
+    param: brick[2]
+    measured:
+    spec: 41
+    tol: 2
+  output_v:
+    # No-load output with a meter. Above 24 V: do not connect the DigiAMP+ and do not use the brick.
+    # The projector's label says 21 V: BRINGUP row 4a decides whether it runs on 24 V.
+    measured:
+    default: 24
+    spec: 24
+    tol: 0.5
+    unit: V
+  output_a:
+    # Rated output current, from the label.
+    measured:
+    spec: 6
+    unit: A
+  input_a:
+    # Rated input current, from the label (no AC fuse is fitted).
+    measured:
+    unit: A
+  cord_d:
+    # Outer diameter of the standard molded AC cord where it passes the rear-wall opening and the
+    # clamp. PROVISIONAL in the model.
+    measured:
+    tol: 0.5
+  cord_open_x:
+    # Cord opening in the rear wall (X). Must pass the cord's molded connector with room (a C13 body
+    # is about 28 x 21 mm): measure the connector's face.
+    param: cord_open[0]
+    measured:
+    tol: 0.2
+
+pi_stack:
+  # Guesses until the boards are stacked (the DigiAMP+ brief gives no height).
+  pi_stack_h:
+    # Pi 3/4: board bottom to the top of the DigiAMP+.
+    measured:
+    tol: 2
+  pi5_stack_h:
+    # Pi 5 with Active Cooler: board bottom to the top of the DigiAMP+.
+    measured:
+    tol: 2
+  zero_stack_h:
+    # Zero 2 W: board bottom to the top of the DigiAMP+.
+    measured:
+    tol: 2
+  zero_hat_z:
+    # Zero 2 W: HAT underside above the board bottom.
+    measured:
+    tol: 1
+  hdmi_plug_w:
+    # Straight HDMI plug at the Pi, with strain relief: width.
+    param: hdmi_plug[0]
+    measured:
+    tol: 2
+  hdmi_plug_l:
+    # Length, plug plus strain relief.
+    param: hdmi_plug[1]
+    measured:
+    tol: 3
+  hdmi_plug_h:
+    # Height.
+    param: hdmi_plug[2]
+    measured:
+    tol: 2
+
+airflow:
+  side_port_depth:
+    # Right-angle HDMI plug standing out of the projector's right face.
+    measured:
+    tol: 2
+  side_cable_d:
+    # HDMI cable run behind that plug, standing out of the right face.
+    measured:
+    tol: 2
+  air_margin:
+    # Exhaust/inlet opening margin along Y (owner measurement).
+    measured:
+    tol: 2
+  air_margin_z:
+    # Exhaust/inlet opening margin along Z (owner measurement).
+    measured:
+    tol: 2
+  side_air:
+    # Side gap each side of the projector. Set by the pan sweep of the right face, the HDMI plug and the
+    # baffle. Could shrink to about 19 (a separate change that moves the base size).
+    measured:
+    tol: 2
+
+consumables:
+  spk_d:
+    # Speaker zip cord, the wider of width and thickness.
+    measured:
+    tol: 1
+  stake_d:
+    # Tent stake diameter.
+    measured:
+    tol: 1
+  cap_h:
+    # Insect screen mesh thickness.
+    measured:
+    tol: 0.5
+  gasket:
+    # Lid gasket foam tape thickness.
+    measured:
+    tol: 0.5
+  cover_gasket:
+    # Hatch cover foam tape thickness.
+    measured:
+    tol: 0.5
+
+pir:
+  pir_dome_d:
+    # Dome diameter.
+    measured:
+    tol: 0.5
+  pir_hole_sp:
+    # Mounting hole spacing, centre to centre.
+    measured:
+    tol: 0.3
+  pir_stand:
+    # Lens frame thickness: board face to dome base.
+    measured:
+    tol: 0.5
+
+window:
+  pane_w:
+    # Pane width: 3.5 x 5 in picture-frame glazing (5 in = 127).
+    measured:
+    tol: 0.5
+  pane_h:
+    # Pane height (3.5 in = 88.9).
+    measured:
+    tol: 0.5
+  pane_t:
+    # Pane thickness. Typical frame glazing is 2; 1/8 in (3.2) also fits. Coupon slot passed 2026-10-15.
+    measured:
+    tol: 0.2
+
+inserts:
+  insert_d:
+    # 1/4-20 heat-set insert hole (pedestal). Test on the coupon.
+    measured:
+    tol: 0.1
+  stud_insert_d:
+    # M5 heat-set insert hole (hatch studs). Coupon passed 2026-10-15.
+    measured: 6.4
+    tol: 0.1
+  m3_insert_d:
+    # M3 heat-set insert hole (sled thumbscrew). Coupon passed 2026-10-15.
+    measured: 4.0
+    tol: 0.1
+  insert_len:
+    # 1/4-20 insert length. The pedestal column hole is this deep; a longer insert bottoms out.
+    measured:
+    tol: 0.5
+  m5_insert_len:
+    # M5 insert length. The hatch insert holes are about 8 deep into the wall bosses; an insert over
+    # about 7.5 breaks through.
+    measured:
+  m3_insert_len:
+    # M3 insert length. The sled thumbscrew hole in the floor is 6 deep.
+    measured:
+
+coupon:
+  # See docs/PRINTING.md, "Fit coupon".
+  clearance:
+    # General fit clearance. Not used by the coupon; it sets the pane rebate (pane + 2 x clearance).
+    measured:
+    tol: 0.05
+  strip_len:
+    # The coupon's 118 mm strip, measured once it is fully cool. The script works out XY shrink and the
+    # pane's clearance after shrink: shrink cancels between printed parts but not where a print wraps a
+    # rigid part, and 0.3 % along the 127 mm pane eats the whole 0.3 clearance. TIGHT (under 0.1 per
+    # side): scale window_frame and base_front by 118 / strip in the slicer, or add the shortfall to
+    # pane_w and pane_h.
+    measured:
+    default: 118
+    tol: 0.35
+
+site:
+  # Where the case will stand. Fill these before printing the big tiles.
+  distance:
+    # Lens face to the projection surface, straight on, case where it will stand.
+    measured:
+  surface_bottom:
+    # Projection surface: bottom edge height above the ground.
+    measured:
+  surface_top:
+    # Projection surface: top edge height above the ground.
+    measured:
+  surface_w:
+    # Projection surface width. Compare with the image width the script prints.
+    measured:
+  lens_height:
+    # Lens height above the ground, case on its feet: feet + floor + pedestal + ball head + lens_z
+    # (z_lens in the model). Measure it once assembled.
+    param: z_lens
+    measured:
+    tol: 5
+  ground_slope_deg:
+    # Ground slope at the case position. Adds to the tilt: shim the feet.
+    measured:
+  visitors_m:
+    # Distance from the case to where visitors first appear. HC-SR501 range is about 7 m. Sets the PIR
+    # sensitivity and whether the rear wall is the right face for it.
+    measured:
+  gfci_m:
+    # Distance from the case to the GFCI outlet. One AC cord, under a cord cover across any path.
+    measured:
+
+# Things that are not a single number. Answer in plain words.
+observations:
+  projector:
+    dc_input: >-
+      External brick with a barrel plug. Label: DC 21 V 3000 mA; stock wall-wart MX48CC-210228US (48 W),
+      retired from the case for the 24 V brick.
+    lens_face: The 6.5 in face (owner; set in the model).
+    ports:
+      # Photos (2026-10-06): DC jack at the rear top-right; HDMI/USB/AV strip on the right face.
+      # The model assumes this (dc_jack, hdmi_y, side_port_*, port_depth): confirm with calipers.
+      answer:
+    plug_types:
+      # HDMI must be right-angle, side-exit, cable leaving rearward along the right face: a straight plug
+      # does not fit the side gap. The DC plug points back, above the intake patch.
+      answer:
+    barrel_pin: 2.5 mm (owner, 2026-10-12); the DigiAMP+'s jack is the same.
+    vents: >-
+      Photos: exhaust grille on the right face (first 40 mm behind the front), intake on the rear face;
+      the second rear grille is a speaker. The case has no fans: the projector's own fan moves the air.
+    focus_keystone_face:
+      # The hatch is the left wall and reaches only the lower 28 mm of the projector. Right or top means:
+      # focus with the lid off, then leave it.
+      answer:
+    ir_window: Front face, above the logo (photos). ir_holder sticks on there (ir_x, ir_z).
+    socket: >-
+      Underside photo: brass insert in the right lobe, 19 mm right of centre, with a small slot beside it.
+      (A plastic socket would need a plate.)
+    cec:
+      # BRINGUP row 9. If not, the relay + IR fallback.
+      answer:
+    ir_power_code:
+      # Learned with the Pi, only if the fallback is needed.
+      answer:
+    auto_start:
+      # Does it keep the last input and power up on its own? Needed for the relay fallback.
+      answer:
+  ball_head:
+    model: UTEBIT 20 mm mini ball head (chosen 2026-10-06).
+    knob_direction:
+      # Which way the lock knob faces when the stud points at the window. Must be reachable through the hatch.
+      answer:
+    base_thread:
+      # 1/4-20 or 3/8-16. The pedestal insert is 1/4-20; 3/8 needs a bushing.
+      answer:
+    locks:
+      # One knob for ball and pan, or separate? Every knob has to land in the hatch.
+      answer:
+  brick:
+    polarity:
+      # Centre + or centre -, from the label, then confirm with a meter.
+      answer:
+    ac_inlet:
+      # C7 / C5 / C13 or captive cord. Buy a cord with the matching molded connector (BRINGUP row 4).
+      answer:
+    listing: >-
+      Claims FCC/CE/RoHS only (no UL/ETL) and mentions a cooling fan: check the label and whether the fan
+      runs (BRINGUP row 4).
+    relay_module:
+      # Coil voltage and trigger level, only if the CEC fallback is built. Driven from a Pi GPIO; 5 V
+      # modules often need a transistor or an opto board.
+      answer:
+  pi:
+    generation:
+      # pi3 / pi4 / pi5 / zero2w: picks the sled.
+      answer:
+    free_gpios:
+      # GPIOs the DigiAMP+ really leaves free (17, 23-25, 27 are its unpopulated headers; 22 is mute).
+      # Needed for the PIR, the relay and the IR LED (GPIO 16).
+      answer:
+  site:
+    approach:
+      # Which way visitors come from, relative to the projection surface. The PIR looks out of the rear
+      # wall and the case faces the surface; from the side, move the PIR or use the web/Matter trigger.
+      answer:
+    rain:
+      # Prevailing wind, and does the spot pool? Standing water above the 6 mm feet reaches the intake.
+      answer:
+  coupon:
+    # snug / loose / cracked (inserts), bite / strip / split (pilots). docs/PRINTING.md, "Fit coupon".
+    insert_1_4_20:
+    insert_m5: snug (2026-10-15)
+    insert_m3: snug (2026-10-15)
+    pilots:
+    m5_keyhole: slides and seats (2026-10-15)
+    pane_slot: snug, no rattle (2026-10-15)
+    hot_shoe:

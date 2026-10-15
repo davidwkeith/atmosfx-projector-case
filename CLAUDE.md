@@ -6,7 +6,7 @@ Context for Claude Code. Read this first, then `docs/DESIGN_LOG.md` for why thin
 
 A parametric OpenSCAD design (`projector_pi_case.scad`, currently v0.10 in its own internal design changelog — see "Versioning" below for how that differs from the repo release version) for an outdoor case that holds a mini projector plus a Raspberry Pi 3 running an AtmosFX Halloween effect. The projector is a Tkisko TO2: 165 x 130 x 66 mm, lens on the long face and offset to the left, short throw (about 0.95:1), DC 21 V 3 A input per its label. Owner: David (dwk), web engineer, comfortable with code, learning 3D design through real projects. Halloween is the deadline, so bias toward getting parts printed and iterated over perfecting the model on screen.
 
-**Status: design only, apart from the fit coupon (M5 hatch fit, M3 insert and pane slot verified 2026-10-15). No case part has been printed, and nothing is wired.** The projector's depth is measured; its other dimensions come from the manual and photos (see "Unverified" below). `docs/measurements.xlsx` is the owner's fill-in worksheet (defaults, manual specs, measured, flag).
+**Status: design only, apart from the fit coupon (M5 hatch fit, M3 insert and pane slot verified 2026-10-15). No case part has been printed, and nothing is wired.** The projector's depth is measured; its other dimensions come from the manual and photos (see "Unverified" below). `docs/measurements.yaml` is the owner's fill-in file (measured, manual spec, tolerance, notes as comments); `scripts/check_measurements.py` compares it with the SCAD's current values.
 
 ## Commands
 
@@ -14,6 +14,7 @@ A parametric OpenSCAD design (`projector_pi_case.scad`, currently v0.10 in its o
 make parts                    # all STLs -> stl/ (gitignored). OPENSCAD=/path/to/openscad if not on PATH
 scripts/check_clash.sh        # interference checks incl. cover lift-off path, lid tiles, an aim sweep of the projector/plug/side-port/IR-holder against the case (baffle included), and the light cone. Must all say ok. Needs python3
 # docs/PRINTING.md has sliced times (PrusaSlicer CLI with the stock MK3S profiles); print fit_coupon first
+uv run scripts/check_measurements.py  # docs/measurements.yaml against the SCAD: UPDATE flags, shrink, throw ratio, site tilt
 scripts/render_previews.sh    # regenerate preview/*.png (needs a GL context; xvfb-run on headless Linux)
 uv run scripts/render_wiring.py  # regenerate docs/wiring-*.svg (Schemdraw schematics; deps come from the script header)
 scripts/publish.sh            # create the GitHub repo with gh and push (one-time bootstrap)
@@ -55,6 +56,7 @@ Print orientation is baked into the `part` dispatch at the bottom (lid flipped r
 - Bed fit is asserted (`bed`, `fits_bed`): a parameter change that pushes a tile past the bed fails every export and check, with the tile's size in the message. The cord opening and clamp (`cord_x`, `cord_dz`: clamp inside the rear wall's left edge, opening inside the left wall, lower screws clear of the shelf, clamp under the lid skirt), `cord_d` against the opening and clamp channel, and the brick (clear of the PIR slot, no deeper than the shelf, under the lid skirt) are asserted too.
 - Keep interference checks green after any geometry change. If you add a part that mates with another, add a pair to `scripts/check_clash.sh`. Cables and plugs need keep-outs as well (`projector_ports`, `projector_side_ports`, `pi_hdmi_plug`): the script only sees what is modelled. The script measures the intersection volume, so parts that merely touch pass ("contact"); anything over 0.5 mm3 is a clash.
 - `%` ghosts (projector, ball head) only show in preview, never in exports.
+- `docs/measurements.yaml` holds no defaults: `scripts/check_measurements.py` reads them from the SCAD by key or `param:`. Renaming a parameter means renaming its YAML key (or `param:`) too; run the script and check it still shows a model value.
 - `--camera` needs all seven numbers; `--viewall` produced tiny renders, so set the distance by hand.
 
 ## Design decisions (short; details in docs/DESIGN_LOG.md)
@@ -90,7 +92,7 @@ Print orientation is baked into the `part` dispatch at the bottom (lid flipped r
 
 Work through `docs/BRINGUP.md` in order:
 1. Print `fit_coupon`; tune insert/pilot/keyhole/pane tolerances.
-2. Owner fills in `docs/measurements.xlsx` (width, lens, socket, ports, throw ratio, offset, the brick (size, inlet, label), ball head); update the flagged parameters; rerun `scripts/check_clash.sh` (body, plugs, brick and light cone) and `make parts`; re-slice for PRINTING.md.
+2. Owner fills in `docs/measurements.yaml` and runs `uv run scripts/check_measurements.py` (width, lens, socket, ports, throw ratio, offset, the brick (size, inlet, label), ball head); update the flagged parameters; rerun `scripts/check_clash.sh` (body, plugs, brick and light cone) and `make parts`; re-slice for PRINTING.md.
 3. Bench-test the Pi image (CEC, rows 4a and 4b (the projector on 24 V, the shared rail), seam time, DigiAMP+ power, PIR, Pi over-temperature, Matter, DMX, update/rollback, power cut).
 4. Print the rest, assemble per `docs/ASSEMBLY.md`, wire per `docs/WIRING.md`, then heat, rain and night tests.
 5. Later: multi-projector sync (deferred), re-measure the louver openings against the real projector vents (and `side_air`).
