@@ -124,8 +124,7 @@ def draw_hv(path):
     note(d, (br.neg[0] + 1.7, br.neg[1]), '24 V -', halign='left', color=NEG, fontsize=FS)
     note(d, (br.pos[0] + 1.7, br.neg[1] - 1.4), 'DC cord, not cut:\nplugs into the Y-splitter\n(wiring-lv-power.svg)', halign='left')
     note(d, (x_wall + 0.4, -8.9),
-         'No AC fuse and no hand-wired AC: the cord and the brick are molded parts; the brick must be UL/ETL listed (check its label); the GFCI is upstream. '
-         'Flame-retardant (V-0) PETG for the shelf.', halign='left')
+         'No AC fuse and no hand-wired AC: the cord and the brick are molded parts; the brick must be UL/ETL listed (check its label); the GFCI is upstream.', halign='left')
     d.save(str(path))
 
 

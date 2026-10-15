@@ -39,7 +39,7 @@ Nothing is hand-wired on the AC side: no stripped conductors, no spade terminals
 5. **No AC fuse.** There is no hand-wired AC conductor left to protect: the cord and brick are molded parts. The brick must be UL/ETL listed (check its label) and has its own protection, and the GFCI/branch breaker is upstream. If you would rather have one, buy an inline-fused cord for the brick's inlet type.
 6. **Earth.** If the brick has a 3-pin inlet, use the 3-wire cord. A 2-pin Class II inlet needs none.
 
-Mains is still present inside the printed box (the cord's connector and the brick's inlet). Print the shelf in flame-retardant (V-0) black PETG as before.
+Mains is still present inside the printed box (the cord's connector and the brick's inlet). The shelf is plain PETG: the owner dropped flame-retardant filament (2026-10-15), since the brick's own shell is flame-retardant ABS+PC per its listing and the cords and boards around it would burn anyway.
 
 ## Low-voltage side
 
