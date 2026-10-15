@@ -11,6 +11,28 @@ One Prusa i3 MK3S (bed 250 x 210 x 210 mm). Two materials: **Inland ASA Army Gre
 - The front tiles lie flat as exported: `base_front` is 231 x 207 mm and `lid_front` 228 x 204 mm, wide side along the bed's 250 mm axis. 207 mm on the 210 mm axis leaves no room for a skirt: turn it off or keep it tight to the part.
 - The STLs are already in print orientation (lid roof-down, hatch cover ribs-up, window frame flat, caps plate-down).
 
+## Fit coupon
+
+`fit_coupon` tests every fit the case depends on in a 1.5-hour print, so a wrong tolerance shows up before a 36-hour one. Print it in ASA, let it cool for an hour, then work through the table. Results go in [BRINGUP.md](BRINGUP.md) row 1 and the Fit coupon rows of [measurements.xlsx](measurements.xlsx).
+
+What is on it:
+
+- **Strip (118 mm long)** with seven labelled bosses, left to right: `1/4` (1/4-20 insert), `M5i` (M5 insert), `M3i` (M3 insert), `M3` (M3 through-hole), `M3p`, `M2.5p`, `M2p` (pilots for self-tapping screws). The holes are blind with a 1.2 mm floor, like the real parts, except the M3 through-hole.
+- **Keyhole tab** off the strip's left end, as thick as the hatch cover.
+- **Pane slot block** at the strip's right end.
+- **Hot-shoe block** below the strip at the left. The T-slot opens on the left edge.
+
+| Feature | How to test | Good fit | If not |
+|---|---|---|---|
+| Heat-set inserts (`1/4`, `M5i`, `M3i`) | Press each insert in with the iron at the insert maker's temperature. Once cool, drive a screw in and back out three times | Goes in straight and flush with steady pressure; the boss doesn't crack or bulge; the insert doesn't spin or pull out | Spins or pulls out: make the hole 0.1-0.2 mm smaller. Needs force, or the boss cracks: 0.1-0.2 mm bigger. Parameters: `insert_d` (1/4-20), `stud_insert_d` (M5), `m3_insert_d` (M3) |
+| Pilots (`M3p`, `M2.5p`, `M2p`) and the `M3` through-hole | Drive the screw for each pilot in and out three times. Pass an M3 screw through the `M3` hole | Pilots: firm torque, threads hold on the third pass, boss doesn't split. Through-hole: the screw drops through without binding | These sizes (2.6, 2.2, 1.8 and 3.4 mm) are fixed numbers in the SCAD, not parameters. If one fails, they need to become parameters first: ask for that change rather than editing the numbers by hand |
+| Keyhole | Push an M5 button-head bolt's head through the round end, slide it 8 mm to the narrow end | Head passes freely, the shank slides without catching, and the tab doesn't wobble on the bolt at the narrow end | Narrow end too tight or loose: change `stud_d` (slot = `stud_d` + 0.8). Head won't pass: raise `stud_head_d` (opening = `stud_head_d` + 1.5). The same numbers cut the hatch cover |
+| Pane slot | Slide the frame glazing into the slot | Goes in by hand without forcing and doesn't rattle much | The slot is `pane_t` + 0.5, the same as the base's rebate. Measure your pane and set `pane_t` |
+| Hot-shoe T-slot | Slide the ball head's hot-shoe adapter in from the left edge and tighten its ring on the lips | Can't wobble or slide out once the ring is tight | Change `shoe_clr` (clearance per side), or measure the adapter and set `shoe_ch_w`, `shoe_open`, `shoe_lip_t`, `shoe_foot_l`, `shoe_neck_d`. If it holds, the pedestal could use it instead of its stud and insert (a design change) |
+| Shrink | Measure the strip's length with calipers once it is fully cool | Enter it in the sheet's coupon strip row (Measured column); the "Pane clearance after shrink" row says ok | TIGHT: scale `window_frame` and `base_front` by 118 / your length in the slicer, or add the shortfall to `pane_w` and `pane_h` |
+
+After any change: `make parts`, then `scripts/check_clash.sh`. If you changed a size by more than 0.2 mm, reprint the coupon and test that feature again before the big prints. None of the coupon's features use `clearance`. It sets the pane rebate's width and height (`pane_w`/`pane_h` + 2 x `clearance`), which only the shrink row checks.
+
 ## Parts
 
 | Part | Qty | Time (0.20 SPEED) | Material, weight | Notes |
