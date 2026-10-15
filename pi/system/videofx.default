@@ -31,8 +31,8 @@
 # --- Audio
 # Volume (%). The slider above sets this too. The file value is only the starting level.
 #VIDEOFX_VOLUME_DEFAULT=30
-# ALSA card name (applies on the next play). Card by name, never by number. Raspberry Pi DigiAMP+: RPiDigiAMP (aplay -l shows it as "RPi DigiAMP+").
-#VIDEOFX_AUDIO_CARD=RPiDigiAMP
+# ALSA card name (applies on the next play). Card by name, never by number. Raspberry Pi DigiAMP+: DigiAMP (aplay -l shows "card 0: DigiAMP [RPi DigiAMP+]").
+#VIDEOFX_AUDIO_CARD=DigiAMP
 # Mixer control (applies on the next play). Hardware volume control on the card. DigiAMP+: Digital.
 #VIDEOFX_MIXER_CONTROL=Digital
 

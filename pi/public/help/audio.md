@@ -6,6 +6,6 @@ The starting volume and whether the speakers start muted. The Dashboard slider c
 
 ## Sound card
 
-With the Raspberry Pi DigiAMP+, the card name is `RPiDigiAMP` and the mixer control is `Digital`. Use the card's name, never its number: numbers can change between restarts. `aplay -l` on the Pi shows the names. Both rows are advanced.
+With the Raspberry Pi DigiAMP+, the card name is `DigiAMP` and the mixer control is `Digital`. Use the card's name, never its number: numbers can change between restarts. `aplay -l` on the Pi shows the names. Both rows are advanced.
 
 Read more: [Audio](../../docs/audio.md)
