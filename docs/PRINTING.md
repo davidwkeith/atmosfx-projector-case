@@ -19,7 +19,7 @@ One Prusa i3 MK3S (bed 250 x 210 x 210 mm). Two materials: **Inland ASA Army Gre
 | `pedestal` | 1 | 1 h 42 m | PETG 29 g | |
 | `window_frame` | 1 | 1 h 19 m | PETG 20 g | |
 | `hatch_cover` | 1 | 2 h 23 m | ASA 38 g | |
-| `sled_pi3` / `pi4` / `pi5` / `zero2w` | 1 | 1 h 8 m to 1 h 20 m | PETG 18-19 g | The one for your Pi |
+| `sled_pi3` / `pi4` / `pi5` / `zero2w` | 1 | 1 h 8 m to 1 h 29 m | PETG 18-20 g | The one for your Pi. Pi 3/4 (1 h 29 m, 20 g, re-sliced 2026-10-15) carry the upright fan plate; it prints standing, the diamond intake needs no supports |
 | `vent_cap` | 1 | 13 m | PETG 2 g | Pi-zone louver |
 | `intake_cap` | 1 | 15 m | PETG 3 g | Rear inlet bank, wall-mounted |
 | `exhaust_cap` | 1 | 22 m | PETG 4 g | Front exhaust bank; the opening is about 74 x 58 mm, the biggest of the three caps |

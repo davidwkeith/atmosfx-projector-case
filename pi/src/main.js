@@ -44,7 +44,7 @@ import { Watchdog } from "./watchdog.js";
 import { capVolume, quietNow, scareBlocked } from "./quiet.js";
 import { readVersion, updateStatus } from "./update.js";
 import { askHelper } from "./upgrade.js";
-import { OverTempGuard, SocWatch, parseMilli } from "./thermal.js";
+import { OverTempGuard, SocWatch, parseMilli, readFanState } from "./thermal.js";
 import { Volume, amixerArgs } from "./volume.js";
 import { createWebServer, isLanAddress } from "./web.js";
 
@@ -450,7 +450,7 @@ function startDmx() {
 }
 startDmx();
 
-// --- heat: the Pi's own SoC temperature (the case has no fans)
+// --- heat: the Pi's own SoC temperature (its sled fan is the kernel's; we only report it)
 
 const guard = new OverTempGuard({
   isOn: () => player.isOn,
@@ -470,7 +470,8 @@ async function thermalTick() {
   try {
     const socC = await readFile("/sys/class/thermal/thermal_zone0/temp", "utf8").then(parseMilli, () => null);
     if (stopping || !get("thermalEnabled")) return; // switched off while reading
-    thermalState = thermal.update(socC);
+    const fan = await readFanState();
+    thermalState = { ...thermal.update(socC), fan };
     const value = socC === null ? null : Math.round(socC * 100);
     if (temperature.state.temperatureMeasurement.measuredValue !== value) {
       await temperature.set({ temperatureMeasurement: { measuredValue: value } });

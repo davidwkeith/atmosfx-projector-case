@@ -93,7 +93,7 @@
 #VIDEOFX_SCHEDULE='{"enabled":false,"sunsetOffsetMin":0,"days":{"sun":{"on":"","off":""},"mon":{"on":"","off":""},"tue":{"on":"","off":""},"wed":{"on":"","off":""},"thu":{"on":"","off":""},"fri":{"on":"","off":""},"sat":{"on":"","off":""}}}'
 
 # --- Cooling
-# Pi over-temperature protection. The case has no fans: the projector's own fan moves the air. If the Pi's SoC reaches the critical temperature, playback stops and the projector switches off until it cools.
+# Pi over-temperature protection. The Pi's sled fan switches itself on (see Hardware); the projector's own fan moves the case air. If the Pi's SoC still reaches the critical temperature, playback stops and the projector switches off until it cools.
 #VIDEOFX_THERMAL=true
 # Pi warning temperature (°C)
 #VIDEOFX_TEMP_WARN_C=70
@@ -127,9 +127,9 @@
 #VIDEOFX_CONSOLE=/dev/tty1
 
 # --- File only (needs root, or would let the page point the service anywhere)
-# The relay and IR pins are also in /boot/firmware/config.txt (the relay's
-# boot level, and the IR overlays), written once by setup.sh with the
-# defaults. Change them there too, or the new pins won't work.
+# The relay, IR and fan pins are also in /boot/firmware/config.txt (the relay's
+# boot level, the IR overlays, the gpio-fan overlay and its temperature), written
+# once by setup.sh with the defaults. Change them there too, or the new values won't work.
 # Relay GPIO (BCM)
 #VIDEOFX_RELAY_GPIO=27
 # Relay input is active-low
@@ -140,6 +140,10 @@
 #VIDEOFX_IR_TX_DRIVER=gpio-ir-tx
 # IR receiver GPIO (BCM)
 #VIDEOFX_IR_RX_GPIO=23
+# Pi fan GPIO (BCM)
+#VIDEOFX_FAN_GPIO=26
+# Pi fan on at (°C). The fan goes off again 10 °C lower.
+#VIDEOFX_FAN_ON_C=60
 # Web page port
 #VIDEOFX_HTTP_PORT=80
 # Matter port

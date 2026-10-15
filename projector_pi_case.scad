@@ -1,4 +1,6 @@
 // Ground-standing projector + Raspberry Pi 3 case: rain-proof (not sealed), ventilated
+// v0.11 - Pi sled fan: an upright plate on the Pi 3/4 sleds for a 30 mm 5 V fan blowing into the Pi-HAT gap (gpio-fan, GPIO 26);
+//         pi_fan keep-out and fan-<sled> clash pairs. The case itself still has no fans.
 // v0.10 - single supply: one desktop brick on the shelf (receptacle plate, barrier, second adapter and the PG9 gland replaced by a brick envelope, a rear-wall opening and a cord clamp).
 // v0.10 - passive airflow: the projector's own fan, exhaust and inlet louver banks on the right wall, a lip baffle between them;
 //         no case fans or sensors; photo-derived side-port keep-outs
@@ -171,6 +173,11 @@ sled_post = 3;      // board standoffs on the sled
 m3_insert_d = 4.0;  // M3 heat-set insert for the sled thumbscrew; check your insert
 hdmi_plug = [22, 45, 13];   // straight HDMI plug at the Pi, with strain relief: [width, length, height] (check_clash.sh keep-out)
 pass_x = [-40, 25];         // divider pass-through, left/right edge: spans every board's HDMI port
+pi_fan = [30, 10];          // 5 V axial fan on the Pi 3/4 sleds [frame side, thickness]: stands at the SD-card end, blows into the Pi-HAT gap (Pi 5: Active Cooler; Zero: no room past the thumbscrew)
+pi_fan_sp = 24;             // fan screw spacing (24 for 30 mm fans)
+pi_fan_dy = -8;             // fan centre in Y from pi_cy: clear of the thumbscrew (pi_cy+18)
+pi_fan_gap = 4;             // fan outlet face to the board's SD-card end (the card sticks out about 2.5 mm)
+pi_fan_t = 3.5;             // upright bracket plate the fan screws to
 
 /* [Printer] */
 bed = [250, 210, 210];   // print volume; every tile is asserted to fit (either way round)
@@ -251,8 +258,12 @@ function sled_holes(s) = s == "zero2w" ? [[3.5,3.5],[61.5,3.5],[3.5,26.5],[61.5,
                                        : [[3.5,3.5],[61.5,3.5],[3.5,52.5],[61.5,52.5]];   // 3B/3B+/4B/5 share 58 x 49
 function sled_stack(s) = s == "pi5" ? pi5_stack_h : s == "zero2w" ? zero_stack_h : pi_stack_h;
 function sled_label(s) = s == "zero2w" ? "Zero 2W" : str("Pi ", s[2]);
+function sled_fan(s) = s == "pi3" || s == "pi4";
+pi_fan_x0 = -42.5 - pi_fan_gap - pi_fan[1];  // fan intake face (the bracket plate is behind it)
 function sled_hdmi_x(s) = s == "pi3" ? 32 : s == "zero2w" ? 12.4 : 26;   // HDMI (HDMI0) centre from the board's SD-card end
 assert(z_board + max([for (s=SLEDS) sled_stack(s)]) + 1 <= shelf_zz, "raise shelf_z: a sled stack hits the shelf");
+assert(pi_fan_x0 - pi_fan_t >= sled_x[0] - 0.01, "the Pi fan bracket hangs off the sled's left edge: shrink pi_fan_gap or pi_fan_t");
+assert(pi_cy + pi_fan_dy + pi_fan[0]/2 + 5 <= sled_pts[2][1], "the Pi fan crowds the sled thumbscrew: lower pi_fan_dy");
 shelf_w = inner_w - 1;
 shelf_d = pi_zone_d - 1;
 brick_x0 = -shelf_w/2 + 3;                 // the brick's left end, against the left wall side of the shelf
@@ -562,6 +573,7 @@ module assembly() {
   exhaust_cap_placed();
   intake_cap_placed();
   %pi_stack(sled);
+  %pi_fan(sled);
   %pi_hdmi_plug(sled);
   // ghosts (preview only): ball head + projector
   %translate([ped_x, ped_y, z_floor+ped_top]) cylinder(d=32, h=ball_head_h);
@@ -659,6 +671,11 @@ module pi_stack(s) {
   translate([-42.5, y_gpio-56, z_board]) cube([s == "zero2w" ? 65 : 88, 56, sled_stack(s)]);
 }
 
+// The fan on its sled bracket (keep-out and preview ghost); nothing for sleds without one
+module pi_fan(s) {
+  if (sled_fan(s)) translate([pi_fan_x0, pi_cy+pi_fan_dy-pi_fan[0]/2, z_floor+sled_pad+sled_t]) cube([pi_fan[1], pi_fan[0], pi_fan[0]]);
+}
+
 // Keep-out for a straight HDMI plug in the Pi, running forward through the divider pass-through
 module pi_hdmi_plug(s) {
   translate([-42.5+sled_hdmi_x(s)-hdmi_plug[0]/2, y_gpio-sled_board(s)[1]-hdmi_plug[1], z_board+1.6+3.2-hdmi_plug[2]/2])
@@ -676,12 +693,18 @@ module pi_sled(s) {
       for (h=sled_holes(s)) translate([x0+h[0], y0b+h[1], 0]) cylinder(d=6, h=sled_t+sled_post);
       if (s == "zero2w")   // hold up the part of the DigiAMP+ that overhangs the Zero
         for (hx=[3.5, 61.5]) translate([x0+hx, y_gpio-52.5, 0]) cylinder(d=6, h=sled_t+sled_post+zero_hat_z);
+      if (sled_fan(s))     // upright fan plate: the fan screws to its +X face
+        translate([pi_fan_x0-pi_fan_t, pi_cy+pi_fan_dy-pi_fan[0]/2, 0]) cube([pi_fan_t, pi_fan[0], sled_t+pi_fan[0]]);
+    }
+    if (sled_fan(s)) translate([pi_fan_x0-pi_fan_t/2, pi_cy+pi_fan_dy, sled_t+pi_fan[0]/2]) {
+      rotate([45, 0, 0]) cube([pi_fan_t+2, pi_fan[0]*0.65, pi_fan[0]*0.65], center=true);   // diamond intake: 45 deg top, no supports
+      for (dy=[-1,1], dz=[-1,1]) translate([0, dy*pi_fan_sp/2, dz*pi_fan_sp/2]) rotate([0, 90, 0]) cylinder(d=2.9, h=pi_fan_t+2, center=true);   // M2.5 x 16 through the fan, nut on its outlet side
     }
     for (p=[sled_pts[0], sled_pts[1]]) translate([p[0], p[1], -1]) cylinder(d=4.4, h=sled_t+2);
     translate([sled_pts[2][0], sled_pts[2][1], -1]) cylinder(d=3.4, h=sled_t+2);
     for (h=sled_holes(s)) translate([x0+h[0], y0b+h[1], 0.6]) cylinder(d=2.2, h=20);   // M2.5 self-tap
     if (s == "zero2w") for (hx=[3.5, 61.5]) translate([x0+hx, y_gpio-52.5, 0.6]) cylinder(d=2.2, h=40);
-    translate([-56, (sled_pts[0][1]+sled_pts[2][1])/2, sled_t-0.6]) rotate([0,0,90]) linear_extrude(1)
+    translate([sled_fan(s) ? -50 : -56, (sled_pts[0][1]+sled_pts[2][1])/2, sled_t-0.6]) rotate([0,0,90]) linear_extrude(1)
       text(sled_label(s), size=5, halign="center", valign="center");
   }
 }

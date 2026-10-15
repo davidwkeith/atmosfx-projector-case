@@ -5,7 +5,7 @@ These values cannot be changed here. Ports need root, and paths would let this p
 ## What is shown
 
 - The Raspberry Pi model, detected from the board.
-- The GPIO pins for the relay, the IR LED and the IR receiver, with the pins reserved for the DigiAMP+.
+- The GPIO pins for the relay, the IR LED, the IR receiver and the Pi fan (with the temperature it starts at), and the pins reserved for the DigiAMP+.
 - The web page and Matter ports, the media folder, the playlist file and the state folder.
 
 Each row's (i) panel names the variable to set.

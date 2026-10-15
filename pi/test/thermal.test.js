@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { OverTempGuard, SocWatch, parseMilli } from "../src/thermal.js";
+import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { OverTempGuard, SocWatch, parseMilli, readFanState } from "../src/thermal.js";
 
 const cfg = { warnC: 70, critC: 80, hysteresisC: 5 };
 
@@ -82,5 +85,27 @@ describe("over-temperature shutdown and resume rule", () => {
     g.reset();
     expect(g.blocked).toBeNull();
     expect(powerOn).not.toHaveBeenCalled();
+  });
+});
+
+describe("readFanState", () => {
+  const device = async (root, name, type, state) => {
+    await mkdir(join(root, name));
+    await writeFile(join(root, name, "type"), `${type}\n`);
+    await writeFile(join(root, name, "cur_state"), `${state}\n`);
+  };
+  it("finds the gpio-fan cooling device among the others", async () => {
+    const root = await mkdtemp(join(tmpdir(), "fan-"));
+    await device(root, "cooling_device0", "cpufreq-cpu0", 2);
+    await device(root, "cooling_device1", "gpio-fan", 1);
+    expect(await readFanState(root)).toBe(true);
+    await writeFile(join(root, "cooling_device1", "cur_state"), "0\n");
+    expect(await readFanState(root)).toBe(false);
+  });
+  it("is null with no gpio-fan overlay, or no folder", async () => {
+    const root = await mkdtemp(join(tmpdir(), "fan-"));
+    await device(root, "cooling_device0", "cpufreq-cpu0", 0);
+    expect(await readFanState(root)).toBeNull();
+    expect(await readFanState(join(root, "missing"))).toBeNull();
   });
 });

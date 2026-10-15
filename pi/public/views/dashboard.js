@@ -130,7 +130,8 @@ export function mount(root) {
         heat.sub.textContent = "Turn on over-temperature protection in Settings > Cooling.";
       } else {
         heat.value.textContent = t.temp == null ? "–" : `${t.temp.toFixed(1)} °C`;
-        heat.sub.textContent = t.tripped ? `Stopped: ${t.tripped}` : "OK";
+        const fan = t.fan == null ? "" : t.fan ? ", fan on" : ", fan off";
+        heat.sub.textContent = t.tripped ? `Stopped: ${t.tripped}` : `OK${fan}`;
       }
     },
   };

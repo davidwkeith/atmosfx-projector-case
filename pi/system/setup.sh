@@ -124,8 +124,11 @@ grep -q '^dtoverlay=rpi-digiampplus\|^dtoverlay=iqaudio-digiampplus' "$config" |
 grep -q '^dtoverlay=gpio-ir-tx\|^dtoverlay=pwm-ir-tx' "$config" || missing+=$'# IR LED (projector power)\ndtoverlay=gpio-ir-tx,gpio_pin=16\n'
 grep -q '^dtoverlay=gpio-ir,' "$config" || missing+=$'# IR receiver (learning remote codes)\ndtoverlay=gpio-ir,gpio_pin=23\n'
 grep -q '^gpio=27=' "$config" || missing+=$'# Projector relay open at boot (active-low module)\ngpio=27=op,dh\n'
+# Pi 3/4 sled fan through a transistor: the kernel switches it on at 60 C and off 10 C lower,
+# with or without the service running. Change VIDEOFX_FAN_GPIO/_FAN_ON_C? Change this line too.
+grep -q '^dtoverlay=gpio-fan' "$config" || missing+=$'# Pi sled fan (on at 60 C)\ndtoverlay=gpio-fan,gpiopin=26,temp=60000\n'
 [ -z "$missing" ] || printf '\n[all]\n%s' "$missing" >>"$config"
-# Older installs added fan PWM and 1-wire overlays; the case has no fans or DS18B20s now.
+# Older installs added PWM case-fan and 1-wire overlays; the case fans and DS18B20s are gone (the Pi fan above is gpio-fan).
 # Only when both ends of the block are there, so a hand-edited file never loses everything after the marker.
 if grep -q '^# videofx: fans and 1-wire' "$config" && grep -q '^dtoverlay=w1-gpio-pi5' "$config"; then
   # Drop the whole block, from its marker to the Pi 5 w1 line (a trailing [all] stays, which is harmless).

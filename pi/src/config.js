@@ -91,6 +91,7 @@ const PIN_ROLES = {
   relayPin: "relay",
   irTxPin: "IR LED",
   irRxPin: "IR receiver",
+  fanPin: "fan",
 };
 
 /** Cross-setting check: one role per pin, and warn below critical. Returns an error message or undefined. */
@@ -104,6 +105,7 @@ export function checkPins(values) {
     seen.set(pin, role);
   }
   if (values.tempWarnC !== undefined && values.tempCritC !== undefined && values.tempWarnC >= values.tempCritC) return "the warning temperature must be below the critical one";
+  if (values.fanOnC !== undefined && values.tempWarnC !== undefined && values.fanOnC >= values.tempWarnC) return "the fan must start below the warning temperature";
   return undefined;
 }
 
@@ -469,7 +471,7 @@ export const SETTINGS = [
     env: "VIDEOFX_THERMAL",
     group: "Cooling",
     label: "Pi over-temperature protection",
-    help: "The case has no fans: the projector's own fan moves the air. If the Pi's SoC reaches the critical temperature, playback stops and the projector switches off until it cools.",
+    help: "The Pi's sled fan switches itself on (see Hardware); the projector's own fan moves the case air. If the Pi's SoC still reaches the critical temperature, playback stops and the projector switches off until it cools.",
     apply: "live",
     default: () => true,
     parse: bool,
@@ -600,6 +602,9 @@ export const SETTINGS = [
   { key: "irTxPin", env: "VIDEOFX_IR_TX_GPIO", group: "Hardware", label: "IR LED GPIO (BCM)", apply: "fixed", default: () => 16, parse: gpioPin },
   { key: "irTxDriver", env: "VIDEOFX_IR_TX_DRIVER", group: "Hardware", label: "IR LED driver", apply: "fixed", options: ["gpio-ir-tx", "pwm-ir-tx"], default: () => "gpio-ir-tx", parse: oneOf(["gpio-ir-tx", "pwm-ir-tx"]) },
   { key: "irRxPin", env: "VIDEOFX_IR_RX_GPIO", group: "Hardware", label: "IR receiver GPIO (BCM)", apply: "fixed", default: () => 23, parse: gpioPin },
+  // The Pi fan is switched by the kernel's gpio-fan overlay (config.txt), not by this service.
+  { key: "fanPin", env: "VIDEOFX_FAN_GPIO", group: "Hardware", label: "Pi fan GPIO (BCM)", apply: "fixed", default: () => 26, parse: gpioPin },
+  { key: "fanOnC", env: "VIDEOFX_FAN_ON_C", group: "Hardware", label: "Pi fan on at (°C)", help: "The fan goes off again 10 °C lower.", apply: "fixed", default: () => 60, parse: int(40, 80) },
   { key: "httpPort", env: "VIDEOFX_HTTP_PORT", group: "Hardware", label: "Web page port", apply: "fixed", default: () => 80, parse: int(1, 65535) },
   { key: "matterPort", env: "VIDEOFX_MATTER_PORT", group: "Hardware", label: "Matter port", apply: "fixed", default: () => 5540, parse: int(1, 65535) },
   { key: "mediaDir", env: "VIDEOFX_MEDIA_DIR", group: "Hardware", label: "Media folder", apply: "fixed", default: (_, ctx) => join(ctx.home, "media"), parse: absPath },

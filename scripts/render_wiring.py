@@ -11,7 +11,7 @@ Three drawings, matching the sections of docs/WIRING.md:
 
     wiring-hv.svg          mains: outlet, AC cord (molded plugs, not cut), cord clamp, the 24 V desktop brick
     wiring-lv-power.svg    the one DC rail: Y-splitter, projector, DigiAMP+ (relay contact only as the CEC fallback)
-    wiring-lv-signals.svg  the Pi header: every GPIO used; relay and IR LED are CEC fallbacks
+    wiring-lv-signals.svg  the Pi header: every GPIO used (PIR, Pi fan); relay and IR LED are CEC fallbacks
 
 The supply is the Auplf XGM-2406 24 V 6 A desktop brick, ASIN B0H32DNLP3 (label values to be read on arrival). Keep this file in step with
 WIRING.md, pi/README.md ("GPIO pins and wiring") and BOM.md.
@@ -242,6 +242,27 @@ def draw_lv_signals(path):
     wire([(XLW, y(13)), relay.inp])
     note(d, ((XLW + XL1) / 2 - 1.8, y(13) - 0.32), 'high = contact open (from boot)', fontsize=FSS - 2, color=SIG)
 
+    # Pi sled fan, low-side switch: GPIO26 (pin 37) -> R2 1 k -> Q1 BC337 base; emitter to GND (pin 39);
+    # collector to the fan's -, fan + to 5 V (pin 4, shared with the relay if fitted); D2 across the fan.
+    # Drawn under the relay, left of the IR LED's route.
+    x_fan = XL2 + 2.6
+    wire([(XLW, y(37)), (x_fan, y(37))])
+    note(d, ((XLW + x_fan) / 2 - 0.5, y(37) - 0.35), 'GPIO26: kernel gpio-fan, on at 60 C', fontsize=FSS - 2, color=SIG)
+    r2 = d.add(elm.Resistor().at((x_fan, y(37))).left().length(1.6).color(SIG).label('R2 1 k', loc='top', fontsize=FSS - 1))
+    q1 = d.add(elm.BjtNpn(circle=True).right().reverse().anchor('base').at(r2.end))   # right() first: it would inherit the resistor's left
+    note(d, (q1.center[0] + 1.2, q1.center[1] - 0.9), 'Q1 BC337', fontsize=FSS - 1)
+    d.add(elm.Line().at(q1.emitter).down(0.4).color(NEG))
+    d.add(elm.Ground().label('GND, pin 39', loc='bottom', fontsize=FSS - 1, ofst=0.1))
+    d.add(elm.Line().at(q1.collector).up(0.5).color(NEG))
+    top_c = d.here
+    d.add(elm.Motor().up().length(2.0).label('M1  30 mm 5 V fan\non the sled', loc='bottom', fontsize=FSS - 2, ofst=0.3))
+    d.add(elm.Line().up(0.3).color(POS))
+    top_f = d.here
+    d.add(elm.Line().right(0.5).color(POS).label('5 V, pin 4', loc='right', fontsize=FSS - 1))
+    d.add(elm.Line().at(top_c).left(1.2).color(NEG))
+    d.add(elm.Diode().up().toy(top_f[1]).color(POS).label('D2\n1N5819', loc='top', fontsize=FSS - 2, ofst=0.2))
+    d.add(elm.Line().right().tox(top_f[0]).color(POS))
+
     # IR LED, direct drive (CEC fallback): GPIO16 (pin 36, right column; GPIO22 is the DigiAMP+ mute line) -> R1 -> LED -> GND.
     # The wire comes round under the header to the LED on the left.
     yb = y(11) - 5.6
@@ -258,7 +279,8 @@ def draw_lv_signals(path):
 
     note(d, (0.6, y_ir - 1.4),
          'Pin numbers are the header\'s physical pins; GPIO numbers are BCM. HDMI from the Pi to the projector carries CEC, the default power control.\n'
-         'Service pins: PIR 17, relay 27 and IR LED 16 (both CEC fallbacks). The TSOP38238 receiver (GPIO 23) is bench-only, to learn the remote.\nGPIO 22 is the DigiAMP+ mute line.')
+         'Service pins: PIR 17, relay 27 and IR LED 16 (both CEC fallbacks). The kernel owns GPIO 26 (Pi fan, gpio-fan overlay).\n'
+         'The TSOP38238 receiver (GPIO 23) is bench-only, to learn the remote. GPIO 22 is the DigiAMP+ mute line.')
     d.save(str(path))
 
 
