@@ -78,4 +78,14 @@ describe("waiting for the projector to appear", () => {
     for (let n = 0; n < 3; n++) await watch.poll();
     expect(connected).toHaveBeenCalledTimes(1);
   });
+
+  it("reports a lost display once, after the same polls that count as an unplug", async () => {
+    const { watch } = setup([true, false, true, false, false, false, true]);
+    const lost = vi.fn();
+    watch.on("disconnected", lost);
+    for (let n = 0; n < 3; n++) await watch.poll();
+    expect(lost).not.toHaveBeenCalled();
+    for (let n = 0; n < 3; n++) await watch.poll();
+    expect(lost).toHaveBeenCalledTimes(1);
+  });
 });

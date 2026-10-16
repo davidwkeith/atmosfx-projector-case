@@ -23,3 +23,4 @@ _Upgrade note: `tempWarnC` / `tempCritC` now refer to the Pi's SoC. A saved `tem
 - **What the cut-off can do depends on the projector power mode.** With `relay` or `relay-ir` it cuts the projector's power. With `cec` it asks for standby, which a hung projector can ignore; with `hdmi-off` it only drops the signal; with `none` it only stops playback. The relay is the only way the Pi can really cut the projector's power on over-temperature.
 - **A missing reading** (the sysfs file unreadable) changes nothing: no trip, no clear.
 - **Matter:** the SoC temperature is endpoint 4.
+- **History:** System > Health log keeps the SoC temperature, fan and throttle flags for about a month, through power cuts ([Health log](reliability.md#health-log)).
