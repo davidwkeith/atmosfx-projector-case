@@ -21,8 +21,8 @@ Amazon cart placed or about to be: 12 SKUs, $145.32 with tax (checkout PDF). Row
 | Item | Qty | Notes | Buy |
 |---|---|---|---|
 | Mini projector, 1/4-20 tripod socket, HDMI-CEC if possible | 1 | 165 x 130 x 66 mm (depth measured, width and height from the manual) | Owned (Tkisko TO2). The [Amazon listing](https://www.amazon.com/dp/B0CKNBWDP1) was unavailable on 2026-10-05 |
-| Mini ball head, rated above the projector's weight | 1 | Chosen: UTEBIT 20 mm (male 1/4-20 on top into the projector, female 1/4-20 underneath; 58 mm overall, 32 mm base, Amazon rates it 2.5 lb / 1.1 kg (other listings say 2.5 kg), against the projector's 0.72 kg, so confirm it holds the aim; the hot-shoe adapter in the box is not used) **Ordered 2026-10-06** ($7.99). | [Amazon: UTEBIT 20 mm mini ball head](https://www.amazon.com/dp/B06XKW7V14) |
-| 1/4-20 double-ended stud | 1 | Pedestal insert to the head's bottom hole (both female) **Not ordered**: needed unless the hot-shoe slot on the coupon works; at about $5 it is cheap insurance. | [Amazon: SmallRig 828, 2-pack](https://www.amazon.com/dp/B007LTH1X2) |
+| Mini ball head, rated above the projector's weight | 1 | Chosen: UTEBIT 20 mm (male 1/4-20 on top into the projector, female 1/4-20 underneath; 58 mm overall, 32 mm base, Amazon rates it 2.5 lb / 1.1 kg (other listings say 2.5 kg), against the projector's 0.72 kg, so confirm it holds the aim; its hot-shoe adapter mounts it in the pedestal's T-slot) **Ordered 2026-10-06** ($7.99). | [Amazon: UTEBIT 20 mm mini ball head](https://www.amazon.com/dp/B06XKW7V14) |
+| 1/4-20 double-ended stud | 0 | **Not needed** (2026-10-15): the pedestal takes the head's hot-shoe adapter. Only for `ped_mount = "insert"`. | [Amazon: SmallRig 828, 2-pack](https://www.amazon.com/dp/B007LTH1X2) |
 | Raspberry Pi 3B/3B+, 4B, 5 or Zero 2 W | 1 | Print the matching sled | Micro Center: [Pi 5](https://www.microcenter.com/product/673712/raspberry-pi-5?storeid=195), [Pi 4B](https://www.microcenter.com/product/637834/raspberry-pi-4-model-b?storeid=195), [Pi 3B+](https://www.microcenter.com/product/601561/raspberry-pi-3-model-b?storeid=195). Zero 2 W is in-store only there, so [Amazon: Pi Zero 2 W](https://www.amazon.com/dp/B09LH5SBPS) |
 | Raspberry Pi DigiAMP+ (SC2076) | 1 | 2 x 35 W class D, 12-24 V in (5.5 x 2.5 mm barrel or P5 hard-wire), powers the Pi at 5.1 V / 2.5 A; 40-pin pass-through header; 0-50 °C ([product brief](<https://pip-assets.raspberrypi.com/categories/765-raspberry-pi-digiamp/documents/RP-008138-DS-1-digiamp-plus-hat-product-brief.pdf>)) | [Micro Center: Raspberry Pi DigiAMP+](https://www.microcenter.com/product/631851/raspberry-pi-digiamp?storeid=195) (chosen over the HiFiBerry Amp4: same TAS5756M, half the price, in stock locally) |
 | 2x20 GPIO header | 0-1 | Zero 2 W only (it ships without one); the DigiAMP+ passes the other pins through | [Micro Center: 52Pi 2x20 stacking header kit](https://www.microcenter.com/product/669727/52pi-2x20-40-pin-stacking-female-header-kit?storeid=195) |
@@ -64,7 +64,7 @@ Amazon cart placed or about to be: 12 SKUs, $145.32 with tax (checkout PDF). Row
 
 | Item | Qty | Where | Buy |
 |---|---|---|---|
-| 1/4-20 heat-set insert | 1 | Pedestal **Not ordered**: the Ktehloy kit is metric only. | [Amazon: ruthex 1/4-20 heat-set inserts, 20-pack](https://www.amazon.com/dp/B09MTS6ZZQ) |
+| 1/4-20 heat-set insert | 0 | **Not needed** (2026-10-15): the pedestal uses the hot-shoe slot. Only for `ped_mount = "insert"` (the Ktehloy kit is metric only). | [Amazon: ruthex 1/4-20 heat-set inserts, 20-pack](https://www.amazon.com/dp/B09MTS6ZZQ) |
 | M5 heat-set insert | 4 | Hatch studs. **Ordered** (Ktehloy 400-pc metric kit M2-M6, $15.97, has M5); the M5 hole is `stud_insert_d` 6.4: check it on the coupon against the kit's actual insert. | [Micro Center: Leo Sales heat-set insert kit (M3/M4/M5)](https://www.microcenter.com/product/675642/leo-sales-ltd-heat-set-insert-kit-%28m3-m4-m5%29?storeid=195) |
 | M3 heat-set insert | 1 | Sled thumbscrew Same Ktehloy kit. | Same kit |
 | M5 button-head (ISO 7380), 10-14 mm long | 4 | Hatch keyholes. **Owner has them.** Length: at least 10 mm (5 mm outside the wall face for the gasket, plate and head gap, plus about 5 mm in the insert) and at most about 14 mm (longer pokes through the inner boss); 12 is ideal. The keyholes are sized for a 9.5 mm head (`stud_head_d`) | Owner's stock |
@@ -112,7 +112,7 @@ These are estimates from typical retail prices, not quotes; check current prices
 | Pi (one board) + microSD | 50-90 |
 | DigiAMP+ | 30 |
 | Speakers (outdoor pair) + wire | 50-120 |
-| Ball head + stud | 15-35 |
+| Ball head | 15-35 |
 | PIR | 5-10 |
 | Pi fan, heatsink, transistor, diode, screws | 15-25 |
 | Power parts (brick, cord, Y-splitter, wire, connection box) | 45-70 |
