@@ -6,6 +6,10 @@ Extra `--name=value` options for the player, separated by spaces and added after
 
 Only decoding, DRM output, scaling, sync, cache, audio-timing and a few filter options are accepted. Everything else is refused, including anything that can read or write files. Wrong options can stop playback; clear the field and apply to go back.
 
+## Sound card
+
+With the Raspberry Pi DigiAMP+, the card name is `DigiAMP` and the mixer control is `Digital`. Use the card's name, never its number: numbers can change between restarts. `aplay -l` on the Pi shows the names. Volume and mute are on the Dashboard.
+
 This group is only listed when **Show advanced settings** is on. Other advanced rows live in their own groups.
 
-Read more: [Settings](../../docs/settings.md)
+Read more: [Settings](../../docs/settings.md), [Audio](../../docs/audio.md)

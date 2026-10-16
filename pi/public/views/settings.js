@@ -1,5 +1,5 @@
 import { api, el, json, run, toast } from "../api.js";
-import { SETTINGS_GROUPS, groupSlug } from "../nav.js";
+import { GROUP_VIEW, SETTINGS_GROUPS, groupSlug } from "../nav.js";
 import { advancedShown, advancedToggle, effective, fixedRow, pending, pinTable, rowOf, safeToRebuild, visibleItems } from "../settings-form.js";
 import { setting, state } from "../state.js";
 
@@ -156,7 +156,7 @@ export function mount(root, { sub }) {
 
     if (search.value.trim()) {
       subnav.hidden = true;
-      const found = visibleItems(data.settings, { advanced, query: search.value });
+      const found = visibleItems(data.settings.filter((s) => GROUP_VIEW[s.group] !== "dashboard"), { advanced, query: search.value });
       body.replaceChildren(
         ...(found.length
           ? found.map((s) => {

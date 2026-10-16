@@ -14,7 +14,7 @@ export const GROUP_VIEW = {
   Device: "settings",
   Playback: "settings",
   Projector: "settings",
-  Audio: "settings",
+  Audio: "dashboard", // volume and mute: the Dashboard slider is their only control
   Display: "settings",
   DMX: "settings",
   Cooling: "settings",
