@@ -1,11 +1,34 @@
 import { describe, expect, it, vi } from "vitest";
-import { canon, createPending, visibleItems } from "../public/settings-form.js";
+import { canon, createPending, parsePlace, placeOf, visibleItems } from "../public/settings-form.js";
 
 describe("canon", () => {
   it("ignores object key order but not array order", () => {
     expect(canon({ a: 1, b: { c: 2, d: 3 } })).toBe(canon({ b: { d: 3, c: 2 }, a: 1 }));
     expect(canon([1, 2])).not.toBe(canon([2, 1]));
     expect(canon("1")).not.toBe(canon(1));
+  });
+});
+
+describe("placeOf", () => {
+  it("rounds a browser position to two decimals, without a negative zero", () => {
+    expect(placeOf({ latitude: 37.774929, longitude: -122.419416 })).toEqual({ latitude: 37.77, longitude: -122.42 });
+    expect(Object.is(placeOf({ latitude: -0.001, longitude: 0 }).latitude, 0)).toBe(true);
+  });
+});
+
+describe("parsePlace", () => {
+  it("reads the pairs map apps copy", () => {
+    expect(parsePlace("37.7749, -122.4194")).toEqual({ latitude: 37.77, longitude: -122.42 });
+    expect(parsePlace(" 37.7749,-122.4194 ")).toEqual({ latitude: 37.77, longitude: -122.42 });
+    expect(parsePlace("37.77493° N, 122.41942° W")).toEqual({ latitude: 37.77, longitude: -122.42 });
+    expect(parsePlace("33.87° S, 151.21° E")).toEqual({ latitude: -33.87, longitude: 151.21 });
+  });
+  it("leaves anything else to an ordinary paste", () => {
+    expect(parsePlace("37.77")).toBeNull();
+    expect(parsePlace("91, 0")).toBeNull();
+    expect(parsePlace("0, 181")).toBeNull();
+    expect(parsePlace("37.77° E, 122.42° N")).toBeNull();
+    expect(parsePlace("1, 2, 3")).toBeNull();
   });
 });
 
