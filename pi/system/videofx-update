@@ -32,6 +32,7 @@ CHECK_OUT=/var/lib/videofx/update-check.json
 PENDING=$WORK/pending
 
 die() {
+  LAST_ERROR=$*
   echo "videofx-update: $*" >&2
   exit 1
 }
@@ -68,6 +69,24 @@ fi
 [ "$(id -u)" -eq 0 ] || die "run with sudo"
 install -d -m 700 "$WORK"
 
+# The journal is in RAM and an update reboots, so a run also logs to the data
+# partition: $LOG (this run; a resumed run appends, the run before is $LOG.1) and,
+# for the web page, update-last.json (state, reason, the end of the log).
+LOG=$WORK/last.log
+LAST_OUT=/var/lib/videofx/update-last.json
+LAST_ERROR=""
+if [ "$MODE" = resume ]; then
+  [ -f "$PENDING" ] || exit 0
+else
+  [ ! -f "$LOG" ] || mv -f "$LOG" "$LOG.1"
+fi
+exec > >(tee -a "$LOG") 2>&1
+echo "== videofx-update $MODE, $(date '+%F %T %Z'), installed $(current_version)"
+record() { # state [message]
+  [ -d "$(dirname "$LAST_OUT")" ] || return 0
+  node "$APP/src/update-cli.js" result --out "$LAST_OUT" --state "$1" --message "${2:-}" --current "$(current_version)" --log "$LOG" 2>/dev/null || true
+}
+
 # Protected root: park the job on the data partition, reboot writable, resume.
 park_and_reboot() {
   {
@@ -75,7 +94,8 @@ park_and_reboot() {
   } >"$PENDING"
   sync
   /usr/local/sbin/videofx-maint on
-  echo "Rebooting into maintenance mode; the update continues after the reboot (journalctl -u videofx-update-resume)."
+  echo "Rebooting into maintenance mode; the update continues after the reboot (log: $LOG)."
+  record running "rebooting into maintenance mode; the update continues after the reboot"
   systemctl reboot
   exit 0
 }
@@ -85,6 +105,7 @@ finish() {
   local what=Done
   [ "$FAILED" = 0 ] || what="The update FAILED and the previous version was put back"
   rm -f "$PENDING"
+  if [ "$FAILED" = 0 ]; then record "done" "$what: $(current_version) installed"; else record failed "$what"; fi
   sync
   if [ "${RESTORE_PROTECTION:-0}" = 1 ]; then
     /usr/local/sbin/videofx-maint off
@@ -184,7 +205,9 @@ do_rollback() {
 # die or set -e) must not leave the Pi in maintenance mode with a writable root.
 on_exit() {
   local code=$?
-  [ "$code" -ne 0 ] && [ "${FINISHED:-0}" = 0 ] && [ "${RESTORE_PROTECTION:-0}" = 1 ] || return 0
+  [ "$code" -ne 0 ] && [ "${FINISHED:-0}" = 0 ] || return 0
+  record stopped "${LAST_ERROR:-stopped with exit code $code; see the log}"
+  [ "${RESTORE_PROTECTION:-0}" = 1 ] || return 0
   echo "videofx-update: stopped (exit $code); switching protection back on and rebooting" >&2
   rm -f "$PENDING" "$WORK/release.tar.gz" "$WORK/release.tar.gz.sigstore.json"
   sync
@@ -200,11 +223,26 @@ case "$MODE" in
     . "$PENDING"
     mv "$PENDING" "$PENDING.running" # never loop on a failing update
     PENDING=$PENDING.running
+    record running "resumed after the maintenance reboot"
     if [ "$MODE" = rollback ]; then do_rollback; else do_update; fi
     finish
     ;;
   update)
     rm -f "$WORK/release.tar.gz" "$WORK/release.tar.gz.sigstore.json"
+    # A plain update only moves forward: ask GitHub first, so an up-to-date Pi is not
+    # rebooted twice for nothing (and a network failure changes nothing).
+    if [ -z "$TAG$TARBALL" ] && [ "$OS" = 0 ]; then
+      meta=$(node "$APP/src/update-cli.js" latest --token-file "$TOKEN") ||
+        die "could not ask GitHub for the latest release; nothing was changed"
+      latest=$(node -e 'console.log(JSON.parse(process.argv[1]).version)' "$meta")
+      if ! node -e 'import(process.argv[1]).then((m) => process.exit(m.compareVersions(process.argv[2], process.argv[3]) > 0 ? 0 : 1))' "$APP/src/update.js" "$latest" "$(current_version)"; then
+        echo "Already up to date ($(current_version); the latest release is $latest). Nothing to do."
+        record up-to-date "already up to date; the latest release is $latest"
+        exit 0
+      fi
+      echo "== $(current_version) -> $latest"
+    fi
+    record running "updating from $(current_version)"
     if [ -n "$TARBALL" ]; then
       install -m 600 "$TARBALL" "$WORK/release.tar.gz"
       if [ "$VERIFY" = 1 ]; then
@@ -217,6 +255,7 @@ case "$MODE" in
     finish
     ;;
   rollback)
+    record running "rolling back from $(current_version)"
     protected && park_and_reboot
     do_rollback
     finish

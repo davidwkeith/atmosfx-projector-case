@@ -724,9 +724,10 @@ function restartService(before = async () => {}) {
   }, 200);
 }
 
-// What the last `videofx-update --check` found (the page never reaches the network itself).
-const versionStatus = () =>
-  updateStatus(currentVersion, (() => { try { return readFileSync(join(stateDir, "update-check.json"), "utf8"); } catch { return ""; } })());
+// What the last `videofx-update --check` found (the page never reaches the network itself),
+// and how the last update run went (update-last.json, written by videofx-update).
+const readState = (name) => { try { return readFileSync(join(stateDir, name), "utf8"); } catch { return ""; } };
+const versionStatus = () => updateStatus(currentVersion, readState("update-check.json"), readState("update-last.json"));
 
 const posters = createPosterCache({ dir: join(stateDir, "posters"), resolve: media.resolve, mpv: get("mpv") });
 

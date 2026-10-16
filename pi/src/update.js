@@ -68,7 +68,7 @@ export function checkResult(asset, current, now = new Date()) {
 }
 
 /** For the page: current version, and whether the last check found a newer one. */
-export function updateStatus(current, checkText) {
+export function updateStatus(current, checkText, lastText = "") {
   let check = null;
   try {
     check = JSON.parse(checkText);
@@ -83,5 +83,40 @@ export function updateStatus(current, checkText) {
     checkedAt: check?.checkedAt ?? null,
     available: Boolean(latest && compareVersions(latest, current.version) > 0),
     error: check?.error ?? null,
+    last: lastUpdate(lastText),
+  };
+}
+
+export const UPDATE_STATES = ["running", "up-to-date", "done", "failed", "stopped"];
+export const LOG_TAIL_LINES = 20;
+
+/**
+ * What videofx-update writes to update-last.json at each step (the log itself is
+ * root-only on the data partition): the state, a one-line reason, the version
+ * installed at that moment and the end of the log, so a failed run explains itself
+ * after the reboots that wipe the journal.
+ */
+export function lastUpdateRecord({ state, message = "", version = null }, logText = "", now = new Date()) {
+  if (!UPDATE_STATES.includes(state)) throw new Error(`unknown update state ${state}`);
+  const lines = logText.split("\n").map((l) => l.trimEnd());
+  while (lines.length && !lines.at(-1)) lines.pop();
+  return { state, message: message || null, version, at: now.toISOString(), tail: lines.slice(-LOG_TAIL_LINES) };
+}
+
+/** update-last.json for the page; null when no update has run or the file is junk. */
+export function lastUpdate(text) {
+  let r;
+  try {
+    r = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  if (!r || !UPDATE_STATES.includes(r.state)) return null;
+  return {
+    state: r.state,
+    message: typeof r.message === "string" ? r.message : null,
+    version: typeof r.version === "string" ? r.version : null,
+    at: typeof r.at === "string" ? r.at : null,
+    tail: Array.isArray(r.tail) ? r.tail.filter((l) => typeof l === "string").slice(-LOG_TAIL_LINES) : [],
   };
 }

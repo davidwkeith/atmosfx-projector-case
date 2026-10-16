@@ -1,0 +1,89 @@
+#!/bin/bash
+# SSH login banner: installed as /etc/update-motd.d/20-videofx, run as root by
+# pam_motd on every login. Local reads only (no network, no node), so it stays
+# fast on a Pi 3, and every line degrades to "?" rather than failing the login.
+set -u
+app=/opt/videofx
+check=/var/lib/videofx/update-check.json
+last=/var/lib/videofx/update-last.json
+
+json() { sed -n "s/.*\"$1\":\"\\([^\"]*\\)\".*/\\1/p" "$2" 2>/dev/null | head -n1; }
+# The update files live in a folder the unprivileged service owns: never pass their
+# control characters (terminal escapes, C0 or C1) through to an admin's terminal:
+# the banner is ASCII, so keep printable ASCII and newlines only.
+clean() { LC_ALL=C tr -cd '\012\040-\176'; }
+row() { printf '  %-9s %s\n' "$1" "$2" | clean; }
+
+version=$(json version "$app/version.json")
+sha=$(json sha "$app/version.json")
+model=$(tr -d '\0' </proc/device-tree/model 2>/dev/null)
+echo
+echo "VideoFX ${version:-?}${sha:+ ($sha)} on $(hostname) - ${model:-unknown board}" | clean
+
+row Up: "$(uptime -p 2>/dev/null | sed 's/^up //'), load $(cut -d' ' -f1-3 /proc/loadavg)"
+
+temp=$(awk '{ printf "%.1f C", $1 / 1000 }' /sys/class/thermal/thermal_zone0/temp 2>/dev/null)
+power=""
+if command -v vcgencmd >/dev/null; then
+  t=$(vcgencmd get_throttled 2>/dev/null | sed 's/.*=//')
+  if [ -n "$t" ]; then
+    t=$((t))
+    now="" past=""
+    ((t & 0x1)) && now+=" under-voltage"
+    ((t & 0x4)) && now+=" throttled"
+    ((t & 0x8)) && now+=" temp-limit"
+    ((t & 0x10000)) && past+=" under-voltage"
+    ((t & 0x40000)) && past+=" throttled"
+    ((t & 0x80000)) && past+=" temp-limit"
+    if [ -n "$now" ]; then power="NOW:$now"
+    elif [ -n "$past" ]; then power="since boot:$past"
+    else power="power ok"; fi
+  fi
+fi
+row SoC: "${temp:-?}${power:+, $power}"
+
+row Memory: "$(free -m 2>/dev/null | awk '/^Mem:/ { printf "%d of %d MB used", $2 - $7, $2 }')"
+
+if grep -q 'overlayroot=tmpfs' /proc/cmdline && [ "$(findmnt -no FSTYPE / 2>/dev/null)" = overlay ]; then
+  root="protected (changes vanish at reboot)"
+else
+  root="WRITABLE (maintenance mode: sudo videofx-maint off)"
+fi
+row Root: "$root"
+if findmnt -n /srv/videofx >/dev/null 2>&1; then
+  row Data: "$(df -h --output=used,size,pcent /srv/videofx | awk 'NR == 2 { printf "%s of %s used (%s)", $1, $2, $3 }') on /srv/videofx"
+else
+  row Data: "not mounted (settings and videos are on the root)"
+fi
+
+addrs=$(ip -4 -o addr show scope global 2>/dev/null | awk '{ sub("/.*", "", $4); printf "%s%s %s", sep, $2, $4; sep = ", " }')
+row Network: "${addrs:-no address}"
+
+port=$(sed -n 's/^VIDEOFX_HTTP_PORT=//p' /etc/default/videofx 2>/dev/null | tail -n1)
+url="http://$(hostname).local"
+[ -z "$port" ] || [ "$port" = 80 ] || url+=":$port"
+row Player: "$(systemctl is-active videofx-player.service 2>/dev/null), web page $url"
+
+if [ -f "$check" ]; then
+  latest=$(json latest "$check")
+  error=$(json error "$check")
+  checked=$(json checkedAt "$check" | cut -c1-16 | tr T ' ')
+  if [ -n "$error" ]; then upd="last check failed: $error"
+  elif [ -n "$latest" ] && [ "$latest" != "$version" ] &&
+    [ "$(printf '%s\n%s\n' "$latest" "$version" | sort -V | tail -n1)" = "$latest" ]; then
+    upd="$latest available (sudo videofx-update)"
+  else upd="up to date"; fi
+  row Update: "$upd${checked:+, checked $checked UTC}"
+else
+  row Update: "not checked yet (sudo videofx-update --check)"
+fi
+if [ -f "$last" ]; then
+  state=$(json state "$last")
+  at=$(json at "$last" | cut -c1-16 | tr T ' ')
+  why=$(json message "$last")
+  case "$state" in
+    failed | stopped) state=${state^^} ;;
+  esac
+  row "Last run:" "${state:-?}${at:+ $at UTC}${why:+: $why} (log: /srv/videofx/update/last.log)"
+fi
+echo

@@ -1,6 +1,6 @@
 import { api, el, json, restartService, run, toast } from "../api.js";
 import { chart, peak } from "../health.js";
-import { systemNotesOf } from "../notes.js";
+import { lastUpdateNote, systemNotesOf } from "../notes.js";
 import { refreshStatus } from "../state.js";
 
 export function mount(root) {
@@ -122,6 +122,7 @@ export function mount(root) {
   // --- software
   const version = el("p", {});
   const notes = el("div", {});
+  const lastUpdate = el("div", { hidden: true });
   const restart = el("button", { type: "button" }, "Restart now");
   const checkNow = el("button", { type: "button" }, "Check now");
   const needsPassword = el("p", { className: "warn" }, "Set a page password (Settings > Web page) to upgrade from here, or run \"sudo videofx-update\" on the Pi.");
@@ -161,6 +162,7 @@ export function mount(root) {
       {},
       el("h3", {}, "Software"),
       version,
+      lastUpdate,
       notes,
       upgradePanel,
       el("div", { className: "actions" }, checkNow),
@@ -249,6 +251,19 @@ export function mount(root) {
       upgradeGo.hidden = !st.web?.passwordSet;
       upgradeTitle.textContent = v?.available ? `Upgrade to ${v.latest}` : "Upgrade";
       if (v?.error) version.textContent += ` · last check failed: ${v.error}`;
+      const last = lastUpdateNote(v?.last);
+      lastUpdate.hidden = !last;
+      // Rebuilt only when the record changes, so an open log stays open across status polls.
+      const lastKey = JSON.stringify(v?.last ?? null);
+      if (last && lastKey !== lastUpdate.dataset.key) {
+        lastUpdate.dataset.key = lastKey;
+        const parts = [el("p", { className: last.level === "warn" ? "warn" : "hint" }, last.text)];
+        // The end of the update's log: enough to see why it failed without SSH.
+        if (last.level === "warn" && v.last.tail?.length) {
+          parts.push(el("details", {}, el("summary", {}, "End of the update log"), el("pre", { className: "log" }, v.last.tail.join("\n"))));
+        }
+        lastUpdate.replaceChildren(...parts);
+      }
       const list = systemNotesOf(st);
       notes.replaceChildren(...(list.length ? list.map((n) => el("p", { className: "warn" }, n.text)) : [el("p", { className: "hint" }, "No storage, clock or password problems.")]));
     },

@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { applyStagedRestore, createBackup, safeRelPath, stageRestore, validateBackup } from "../src/backup.js";
 import { DEFAULT_QUIET, capVolume, inQuietHours, parseQuiet, quietNow, scareBlocked } from "../src/quiet.js";
-import { checkResult, compareVersions, pickAsset, readVersion, updateStatus } from "../src/update.js";
+import { LOG_TAIL_LINES, checkResult, compareVersions, lastUpdate, lastUpdateRecord, pickAsset, readVersion, updateStatus } from "../src/update.js";
 
 const q = (days, over = {}) => parseQuiet({ enabled: true, volumeCap: 10, days, ...over });
 const at = (y, m, d, h, min = 0) => new Date(y, m - 1, d, h, min); // 2026-10-30 is a Friday
@@ -118,6 +118,25 @@ describe("versions and releases", () => {
     expect(updateStatus(cur, '{"latest":"0.3.0","checkedAt":"2026-10-01T00:00:00Z"}')).toMatchObject({ available: true, latest: "0.3.0" });
     expect(updateStatus(cur, '{"latest":"0.2.0"}').available).toBe(false);
     expect(updateStatus(cur, '{"latest":null,"error":"GitHub 404"}')).toMatchObject({ available: false, error: "GitHub 404" });
+  });
+
+  it("records the last update run with the end of its log, and reads it back", () => {
+    const now = new Date("2026-10-15T23:40:00Z");
+    const log = Array.from({ length: 30 }, (_, i) => `line ${i + 1}  `).join("\n") + "\n\n";
+    const rec = lastUpdateRecord({ state: "stopped", message: "attestation does not check out", version: "0.10.2" }, log, now);
+    expect(rec).toMatchObject({ state: "stopped", message: "attestation does not check out", version: "0.10.2", at: now.toISOString() });
+    expect(rec.tail).toHaveLength(LOG_TAIL_LINES);
+    expect(rec.tail.at(-1)).toBe("line 30"); // trailing blanks and spaces dropped
+    expect(lastUpdateRecord({ state: "done" }, "", now)).toMatchObject({ message: null, version: null, tail: [] });
+    expect(() => lastUpdateRecord({ state: "exploded" })).toThrow(/unknown update state/);
+
+    const cur = { version: "0.10.2", sha: null };
+    expect(updateStatus(cur, "", JSON.stringify(rec)).last).toEqual(rec);
+    expect(updateStatus(cur, "").last).toBeNull();
+    expect(lastUpdate("not json")).toBeNull();
+    expect(lastUpdate('{"state":"weird"}')).toBeNull();
+    // Written by root but read from a folder the service owns: keep only the expected shapes.
+    expect(lastUpdate('{"state":"failed","message":5,"tail":["a",7,"b"]}')).toEqual({ state: "failed", message: null, version: null, at: null, tail: ["a", "b"] });
   });
 });
 
