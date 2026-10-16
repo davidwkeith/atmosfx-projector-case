@@ -6,6 +6,12 @@ Matter lets Apple Home and other controllers switch VideoFX on and off, change t
 
 **Reset pairing** removes the device from every controller. You will have to pair it again. Videos and settings are kept.
 
+## Health log
+
+A chart of the Pi's SoC temperature over the last 24 hours, written once a minute to the data partition so it survives power cuts. The dashed lines are the warning and cut-off temperatures (Settings > Cooling). The green bar underneath shows when the fan ran. Red marks are under-voltage (the 5 V supply sagged) and amber marks are throttling. Below the chart are the latest events: starts and stops, under-voltage, temperature alarms, Wi-Fi and HDMI drops, and player crashes.
+
+**Pi started** with no **Service stopped** before it means the power was cut. **Download CSV** has every sample from about the last month.
+
 ## Backup and restore
 
 The backup file holds your settings, schedule, quiet hours, playlist and Matter pairing, but not the videos. It contains the pairing keys and the password hash, so keep it private.
@@ -20,4 +26,4 @@ After an update, a line under the version says how the last run went: finished, 
 
 **Restart service** stops playback for a few seconds. It comes back by itself and restores the last state.
 
-Read more: [Pair with Apple Home](../../docs/apple-home.md), [Backup and restore](../../docs/updates.md#backup-and-restore), [Updates](../../docs/updates.md#updates)
+Read more: [Health log](../../docs/reliability.md#health-log), [Pair with Apple Home](../../docs/apple-home.md), [Backup and restore](../../docs/updates.md#backup-and-restore), [Updates](../../docs/updates.md#updates)

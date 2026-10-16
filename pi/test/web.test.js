@@ -144,6 +144,7 @@ describe("web server", () => {
       resetMatter,
       upgrade: async () => ((upgradeCalls += 1), upgradeResult),
       checkUpdate: async () => upgradeResult,
+      health: { read: ({ sinceMs = 0 } = {}) => ({ samples: [{ t: Math.max(sinceMs, 0), soc: 50, fan: 1, thr: 0, dbm: -60, on: 1 }], events: [], sinceMs }) },
       log: { error: () => {} },
     });
     await new Promise((resolve, reject) => {
@@ -178,6 +179,21 @@ describe("web server", () => {
       req.end(body);
     });
   }
+
+  it("serves the health log for the chart (24 h by default, a week at most) and as CSV", async () => {
+    const before = Date.now();
+    const day = await call("GET", "/api/health");
+    expect(day.status).toBe(200);
+    expect(day.json.sinceMs).toBeGreaterThanOrEqual(before - 24 * 3_600_000);
+    expect(day.json.sinceMs).toBeLessThanOrEqual(Date.now() - 24 * 3_600_000);
+    const big = await call("GET", "/api/health?hours=99999");
+    expect(big.json.sinceMs).toBeLessThanOrEqual(Date.now() - 168 * 3_600_000);
+    expect(big.json.sinceMs).toBeGreaterThan(Date.now() - 169 * 3_600_000);
+    const csv = await call("GET", "/api/health.csv");
+    expect(csv.headers["content-type"]).toMatch(/text\/csv/);
+    expect(csv.headers["content-disposition"]).toMatch(/attachment/);
+    expect(csv.text).toBe("time,soc_c,fan,throttled,wifi_dbm,on,clock_synced\n1970-01-01T00:00:00.000Z,50,1,0x0,-60,1,1\n");
+  });
 
   it("with no page password, refuses to upgrade and never asks for the Pi login password", async () => {
     const res = await call("POST", "/api/update/upgrade", { body: '{"password":"right"}' });

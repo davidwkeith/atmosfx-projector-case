@@ -181,7 +181,7 @@ function supervisor(overrides = {}) {
   });
   const log = { info: vi.fn(), error: vi.fn(), warn: vi.fn() };
   const s = new MpvSupervisor({ spawn, connect, socket: "/run/x.sock", args: () => ["--idle=yes"], log, restartDelayMs: 1000, maxRestarts: 3, ...overrides });
-  const events = { ready: vi.fn(), down: vi.fn(), failed: vi.fn() };
+  const events = { ready: vi.fn(), down: vi.fn(), failed: vi.fn(), crashed: vi.fn() };
   for (const [k, f] of Object.entries(events)) s.on(k, f);
   return { s, spawn, connect, children, ipcs, events };
 }
@@ -227,6 +227,7 @@ describe("mpv supervisor", () => {
     children.at(-1).exit(1);
     await vi.advanceTimersByTimeAsync(5000);
     expect(events.failed).toHaveBeenCalledTimes(1);
+    expect(events.crashed).toHaveBeenCalledTimes(4);
     expect(children).toHaveLength(4);
     s.start(); // a later power-on tries again
     await vi.advanceTimersByTimeAsync(0);
@@ -244,6 +245,7 @@ describe("mpv supervisor", () => {
       await vi.advanceTimersByTimeAsync(0);
     }
     expect(events.failed).not.toHaveBeenCalled();
+    expect(events.crashed).not.toHaveBeenCalled();
     expect(spawn.mock.calls.at(-1)[1]).toEqual(["--gen=7"]);
   });
 

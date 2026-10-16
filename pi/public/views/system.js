@@ -1,4 +1,5 @@
 import { api, el, json, restartService, run, toast } from "../api.js";
+import { chart, peak } from "../health.js";
 import { lastUpdateNote, systemNotesOf } from "../notes.js";
 import { refreshStatus } from "../state.js";
 
@@ -27,6 +28,56 @@ export function mount(root) {
       reset,
     ),
   );
+
+  // --- health log: the last 24 h from /api/health, refreshed every minute
+  const healthSummary = el("p", { className: "hint" });
+  const healthChart = el("div", { className: "health-chart" });
+  const healthEvents = el("ul", { className: "health-events" });
+  const loadHealth = () =>
+    api("/api/health?hours=24")
+      .then(drawHealth)
+      .catch(() => {});
+  const healthTimer = setInterval(loadHealth, 60_000);
+  loadHealth();
+
+  function drawHealth({ samples, events, warnC, critC }) {
+    const w = 600;
+    const h = 160;
+    const c = chart(samples, { to: Date.now(), hours: 24, w, h });
+    const svg = (tag, attrs, ...kids) => {
+      const node = document.createElementNS("http://www.w3.org/2000/svg", tag);
+      for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+      node.append(...kids);
+      return node;
+    };
+    const hLine = (temp, cls) => svg("line", { x1: 0, x2: w, y1: c.y(temp), y2: c.y(temp), class: cls });
+    const label = (temp) => svg("text", { x: 4, y: c.y(temp) - 3, class: "axis" }, `${temp} °C`);
+    healthChart.replaceChildren(
+      svg(
+        "svg",
+        { viewBox: `0 0 ${w} ${h + 22}`, role: "img", "aria-label": "Pi temperature over the last 24 hours" },
+        ...c.fan.map(([a, b]) => svg("rect", { x: a, y: h + 2, width: Math.max(1, b - a), height: 6, class: "fan" })),
+        ...c.throttle.map((t) => svg("line", { x1: t.x, x2: t.x, y1: 0, y2: h, class: t.underVoltage ? "uv" : "thr" })),
+        ...(warnC ? [hLine(warnC, "warn-line"), label(warnC)] : []),
+        ...(critC ? [hLine(critC, "crit-line"), label(critC)] : []),
+        label(50),
+        ...[0, 6, 12, 18, 24].map((ago) =>
+          svg("text", { x: w - (ago / 24) * w, y: h + 20, class: "axis", "text-anchor": ago === 0 ? "end" : ago === 24 ? "start" : "middle" }, ago ? `${ago} h ago` : "now"),
+        ),
+        ...c.lines.map((points) => svg("polyline", { points, class: "soc" })),
+      ),
+    );
+    const top = peak(samples);
+    healthSummary.textContent = samples.length
+      ? `Pi temperature, last 24 h${top ? `: peak ${top.soc.toFixed(1)} °C at ${new Date(top.t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : ""}. Bar underneath: fan on. Red marks: under-voltage; amber: throttled.`
+      : "No samples yet: the first one is written a minute after the service starts.";
+    const recent = events.slice(-20).reverse();
+    healthEvents.replaceChildren(
+      ...(recent.length
+        ? recent.map((e) => el("li", { className: e.lv }, el("time", {}, new Date(e.t).toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })), " ", e.ev))
+        : [el("li", { className: "hint" }, "Nothing logged in the last 24 hours.")]),
+    );
+  }
 
   // --- backup and restore
   const restoreFile = el("input", { type: "file", accept: ".json,application/json" });
@@ -88,6 +139,15 @@ export function mount(root) {
 
   root.append(
     el("section", {}, el("h3", {}, "Matter"), unpaired, paired),
+    el(
+      "section",
+      {},
+      el("h3", {}, "Health log"),
+      healthSummary,
+      healthChart,
+      healthEvents,
+      el("div", { className: "actions" }, el("a", { className: "button", href: "/api/health.csv", download: "" }, "Download CSV (all samples)")),
+    ),
     el(
       "section",
       {},
@@ -164,6 +224,7 @@ export function mount(root) {
 
   return {
     helpSlug: () => "system",
+    unmount: () => clearInterval(healthTimer),
     update({ status: st }) {
       if (!st) return;
       const m = st.matter;

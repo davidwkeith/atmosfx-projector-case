@@ -28,6 +28,28 @@ const media = createMediaStore({ dir, playlist: join(dir, "playlist.m3u"), maxUp
 if (process.env.DEV_PASSWORD) writeFileSync(join(dir, "settings.json"), JSON.stringify({ password: hashPassword("pumpkin") }));
 const settings = new Settings({ dir, env: {}, log: console });
 
+// A made-up warm day for the System screen's health log: SoC follows the afternoon,
+// the fan cycles above 60 °C, a short under-voltage at 14:00, and a 20-minute power cut.
+const healthLog = (() => {
+  const now = Date.now();
+  const samples = [];
+  for (let t = now - 24 * 3_600_000; t <= now; t += 60_000) {
+    const hour = new Date(t).getHours() + new Date(t).getMinutes() / 60;
+    if (hour > 3 && hour < 3.33) continue; // power cut
+    const soc = Math.round((48 + 16 * Math.max(0, Math.sin(((hour - 8) / 14) * Math.PI)) + 2 * Math.sin(t / 400_000)) * 10) / 10;
+    samples.push({ t, soc, fan: soc > 60 ? 1 : 0, thr: hour > 14 && hour < 14.05 ? 0x50005 : 0, dbm: -58, on: hour > 18 || hour < 1 ? 1 : 0 });
+  }
+  const at = (h) => { const d = new Date(now); d.setHours(h, 0, 0, 0); return d > now ? d - 86_400_000 : +d; };
+  const events = [
+    { t: at(3) + 20 * 60_000, lv: "info", ev: "Pi started" },
+    { t: at(14), lv: "critical", ev: "Under-voltage started" },
+    { t: at(14) + 180_000, lv: "info", ev: "Under-voltage ended" },
+    { t: at(15), lv: "warn", ev: "Pi temperature warning: 70.4 °C" },
+    { t: at(15) + 600_000, lv: "info", ev: "Pi temperature back to normal: 68.9 °C" },
+  ].sort((a, b) => a.t - b.t);
+  return { read: ({ sinceMs = 0 } = {}) => ({ samples: samples.filter((s) => s.t >= sinceMs), events: events.filter((e) => e.t >= sinceMs), warnC: 70, critC: 80 }) };
+})();
+
 let on = false;
 let volume = { level: 30, muted: false };
 const status = () => ({
@@ -56,6 +78,7 @@ const server = createWebServer({
   settings,
   auth: settings,
   hostNames: () => ["localhost"],
+  health: healthLog,
   status,
   setPower: async (v) => void (on = v),
   setVolume: async (v) => (volume = { level: v.level ?? volume.level, muted: v.muted ?? volume.muted }),

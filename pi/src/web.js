@@ -9,6 +9,7 @@ import { createServer } from "node:http";
 import { BlockList, isIP } from "node:net";
 import { networkInterfaces } from "node:os";
 import { fileURLToPath } from "node:url";
+import { toCsv } from "./healthlog.js";
 import { HttpError } from "./media.js";
 
 const here = (p) => fileURLToPath(new URL(p, import.meta.url));
@@ -142,6 +143,7 @@ async function readJson(req, limit = JSON_LIMIT) {
  * @param {object} o
  * @param {ReturnType<import("./media.js").createMediaStore>} o.media
  * @param {() => object} o.status          device state for the UI
+ * @param {{ read: Function }} [o.health]  the health log (healthlog.js)
  * @param {() => string|undefined} [o.problem]  why playback cannot start in the current mode
  * @param {(on: boolean) => Promise<void>} o.setPower  goes through Matter so controllers stay in sync
  * @param {(v: {level?: number, muted?: boolean}) => Promise<object>} o.setVolume
@@ -198,6 +200,15 @@ export function createWebServer(o) {
       if (hit) return send(res, 200, await readFile(hit[0]), hit[1]);
     }
     if (method === "GET" && path === "/api/status") return send(res, 200, o.status());
+    if (method === "GET" && path === "/api/health" && o.health) {
+      // The page's chart: a week at most (10 080 one-minute samples).
+      const hours = Math.min(168, Math.max(1, Number(url.searchParams.get("hours")) || 24));
+      return send(res, 200, o.health.read({ sinceMs: Date.now() - hours * 3_600_000 }));
+    }
+    if (method === "GET" && path === "/api/health.csv" && o.health) {
+      res.setHeader("content-disposition", 'attachment; filename="videofx-health.csv"');
+      return send(res, 200, toCsv(o.health.read().samples), "text/csv; charset=utf-8");
+    }
     if (method === "GET" && path === "/api/pairing.svg") {
       const svg = o.pairingSvg();
       return svg ? send(res, 200, svg, "image/svg+xml") : send(res, 404, { error: "already paired" });
