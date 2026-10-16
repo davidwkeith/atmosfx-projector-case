@@ -56,6 +56,9 @@ After any change: `make parts`, then `scripts/check_clash.sh`. If you changed a 
 
 ## Order, on one printer
 
+Printed so far (2026-10-16): `fit_coupon`, `hatch_cover`, `cord_clamp`, `lid_rear`, all ASA. `cord_clamp` came before BRINGUP row 4: if the real cord changes `cord_d`, reprint it (44 m).
+
+
 The small parts first, so any fit problem shows up before a 36-hour print. Everything runs back to back on the one bed, so a failure anywhere delays everything behind it.
 
 | Step | Print | Time | Why here |

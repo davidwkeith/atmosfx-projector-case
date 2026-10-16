@@ -2,7 +2,7 @@
 
 Parametric [OpenSCAD](https://openscad.org) design for a ground-standing, rain-proof (not sealed), ventilated case that holds a mini projector and a Raspberry Pi 3 running an [AtmosFX](https://atmosfx.com) Halloween effect.
 
-**Status: v0.11 (unreleased), design only. Nothing has been printed or wired yet.** Dimensions assume a typical mini projector (about 171 x 134 x 75 mm, 0.72 kg). Measure yours and edit the parameters before printing.
+**Status: v0.11 (unreleased). The fit coupon passed; `hatch_cover`, `cord_clamp` and `lid_rear` are printed. Nothing is wired yet.** Dimensions assume a typical mini projector (about 171 x 134 x 75 mm, 0.72 kg). Measure yours and edit the parameters before printing.
 
 ## Features
 
