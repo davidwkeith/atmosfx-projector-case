@@ -38,3 +38,34 @@ export function badgesOf(st) {
     system: !!st.version?.available || (!!st.web && !st.web.passwordSet),
   };
 }
+
+// A run still "running" this long after its last step stopped without saying why
+// (power cut, killed): the slowest step, npm ci on a Pi 3, takes about 15 minutes.
+export const UPDATE_STALE_MS = 60 * 60 * 1000;
+
+/**
+ * One line about the last videofx-update run (st.version.last), for the Software
+ * section: {level: "ok"|"warn"|"info", text}, or null when no run is recorded.
+ */
+export function lastUpdateNote(last, now = Date.now()) {
+  if (!last) return null;
+  const when = last.at ? new Date(last.at) : null;
+  const at = when && !Number.isNaN(when.getTime()) ? ` (${when.toLocaleString()})` : "";
+  const why = last.message ? `: ${last.message}` : "";
+  switch (last.state) {
+    case "done":
+      return { level: "ok", text: `Last update finished${at}${why}.` };
+    case "up-to-date":
+      return { level: "ok", text: `Last update had nothing to do${at}${why}.` };
+    case "failed":
+      return { level: "warn", text: `Last update FAILED and the previous version was put back${at}${why}.` };
+    case "stopped":
+      return { level: "warn", text: `Last update stopped early, nothing was installed${at}${why}.` };
+    case "running":
+      return when && now - when.getTime() > UPDATE_STALE_MS
+        ? { level: "warn", text: `Last update never finished${at}; its last step was${why || " unknown"}.` }
+        : { level: "info", text: `Update in progress${at}${why}.` };
+    default:
+      return null;
+  }
+}

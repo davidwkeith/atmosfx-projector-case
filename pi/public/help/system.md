@@ -16,6 +16,8 @@ When restoring, leave **Also restore the Matter pairing** off unless this is the
 
 The page shows the installed version. The Pi looks for a newer release on GitHub once a day; **Check now** asks right away. When one exists an **Upgrade to X.Y.Z** panel appears. Upgrading from the page needs a page password (Settings > Web page), because otherwise anyone on your network could press the button; without one, run `sudo videofx-update` on the Pi instead. You are already signed in with it, so you just confirm. Then it installs the release and reboots. The old version is kept, so `sudo videofx-update --rollback` undoes it.
 
+After an update, a line under the version says how the last run went: finished, nothing to do, stopped early (nothing installed) or failed (the previous version put back). If it stopped or failed, **End of the update log** shows its last lines, so you can see why without SSH. The full log is `/srv/videofx/update/last.log` on the Pi (the run before is `last.log.1`), and the login banner shows the same summary.
+
 **Restart service** stops playback for a few seconds. It comes back by itself and restores the last state.
 
 Read more: [Pair with Apple Home](../../docs/apple-home.md), [Backup and restore](../../docs/updates.md#backup-and-restore), [Updates](../../docs/updates.md#updates)

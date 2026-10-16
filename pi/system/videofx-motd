@@ -5,6 +5,7 @@
 set -u
 app=/opt/videofx
 check=/var/lib/videofx/update-check.json
+last=/var/lib/videofx/update-last.json
 
 json() { sed -n "s/.*\"$1\":\"\\([^\"]*\\)\".*/\\1/p" "$2" 2>/dev/null | head -n1; }
 row() { printf '  %-9s %s\n' "$1" "$2"; }
@@ -71,5 +72,14 @@ if [ -f "$check" ]; then
   row Update: "$upd${checked:+, checked $checked UTC}"
 else
   row Update: "not checked yet (sudo videofx-update --check)"
+fi
+if [ -f "$last" ]; then
+  state=$(json state "$last")
+  at=$(json at "$last" | cut -c1-16 | tr T ' ')
+  why=$(json message "$last")
+  case "$state" in
+    failed | stopped) state=${state^^} ;;
+  esac
+  row "Last run:" "${state:-?}${at:+ $at UTC}${why:+: $why} (log: /srv/videofx/update/last.log)"
 fi
 echo
