@@ -21,6 +21,21 @@ export function placeOf(coords) {
   return { latitude: round(coords.latitude), longitude: round(coords.longitude) };
 }
 
+/**
+ * Pasted map coordinates as Latitude and Longitude, or null if the text is not a pair.
+ * Takes "37.7749, -122.4194" (Google Maps, most apps) and "37.7749° N, 122.4194° W" (Apple Maps).
+ */
+export function parsePlace(text) {
+  const part = String.raw`\s*([+-]?\d+(?:\.\d+)?)\s*°?\s*([NSEW])?\s*`;
+  const m = new RegExp(`^${part},${part}$`, "i").exec(String(text).trim());
+  if (!m) return null;
+  const signed = (v, hemi, neg) => (hemi && hemi.toUpperCase() === neg ? -Math.abs(Number(v)) : Number(v));
+  const [, lat, latH, lon, lonH] = m;
+  if ((latH && !/[NS]/i.test(latH)) || (lonH && !/[EW]/i.test(lonH))) return null;
+  const place = placeOf({ latitude: signed(lat, latH, "S"), longitude: signed(lon, lonH, "W") });
+  return Math.abs(place.latitude) <= 90 && Math.abs(place.longitude) <= 180 ? place : null;
+}
+
 export function createPending() {
   const edits = new Map(); // key -> { value } | { reset: true }
   const subs = new Set();
@@ -200,17 +215,40 @@ export function settingRow(s) {
   return row;
 }
 
+/** Types a place into the Latitude and Longitude rows; each row's own handler records the edit. */
+function fillPlace(place) {
+  for (const [key, value] of Object.entries(place)) {
+    const input = document.getElementById(`set-${key}`);
+    if (!input || input.disabled) continue; // hidden, or waiting to be reset
+    input.value = String(value);
+    input.dispatchEvent(new Event("input"));
+  }
+}
+
+/** Pasting "lat, lon" from a map app into Latitude fills both rows. Anything else pastes as usual. */
+function withPlacePaste(row) {
+  row.querySelector("input")?.addEventListener("paste", (e) => {
+    const place = parsePlace(e.clipboardData?.getData("text") ?? "");
+    if (!place) return;
+    e.preventDefault();
+    fillPlace(place);
+    toast(`Location ${place.latitude}, ${place.longitude}. Apply to save it.`);
+  });
+  return row;
+}
+
 /**
  * "Use this device's location" under the Latitude and Longitude rows. It types into them, so the
  * values wait in the Apply bar like any edit. Browsers only offer location to secure pages (HTTPS
- * or localhost), so on the Pi's plain-HTTP page the button is disabled and says why.
+ * or localhost), so on the Pi's plain-HTTP page the button is disabled and says why; pasting into Latitude
+ * (withPlacePaste) is the way there.
  */
 export function locateCard() {
   const button = el("button", { type: "button" }, "Use this device's location");
   const hint = el("p", { className: "hint" });
   if (!window.isSecureContext || !("geolocation" in navigator)) {
     button.disabled = true;
-    hint.textContent = "Browsers only share location with HTTPS pages, and this page is plain HTTP. Copy the numbers from a map app instead.";
+    hint.textContent = "Browsers only share location with HTTPS pages, and this page is plain HTTP. Instead, copy a dropped pin's coordinates in a map app and paste them into Latitude: both fields fill in.";
   }
   button.addEventListener("click", () => {
     button.disabled = true;
@@ -218,12 +256,7 @@ export function locateCard() {
       (pos) => {
         button.disabled = false;
         const place = placeOf(pos.coords);
-        for (const [key, value] of Object.entries(place)) {
-          const input = document.getElementById(`set-${key}`);
-          if (!input || input.disabled) continue; // hidden, or waiting to be reset
-          input.value = String(value);
-          input.dispatchEvent(new Event("input")); // the row's own handler records the edit
-        }
+        fillPlace(place);
         toast(`Location ${place.latitude}, ${place.longitude}. Apply to save it.`);
       },
       (err) => {
@@ -304,7 +337,8 @@ export function pinTable(items) {
   return el("div", { className: "setting" }, el("span", { className: "title" }, "GPIO pins"), el("table", { className: "kv" }, ...rows.map(([k, x]) => el("tr", {}, el("th", {}, k), el("td", {}, x)))));
 }
 
-export const rowOf = (s) => (s.key === "password" ? passwordRow(s) : s.apply === "fixed" ? fixedRow(s) : settingRow(s));
+export const rowOf = (s) =>
+  s.key === "password" ? passwordRow(s) : s.apply === "fixed" ? fixedRow(s) : s.key === "latitude" ? withPlacePaste(settingRow(s)) : settingRow(s);
 
 async function applyAll() {
   const items = state.settings?.settings ?? [];

@@ -1,6 +1,6 @@
 import { api, el, json, run, toast } from "../api.js";
 import { SETTINGS_GROUPS, groupSlug } from "../nav.js";
-import { advancedShown, advancedToggle, effective, fixedRow, locateCard, pending, pinTable, rowOf, safeToRebuild, visibleItems } from "../settings-form.js";
+import { advancedShown, advancedToggle, effective, fixedRow, pending, pinTable, rowOf, safeToRebuild, visibleItems } from "../settings-form.js";
 import { setting, state } from "../state.js";
 
 function renderDmx(box, dmx) {
@@ -108,7 +108,6 @@ export function mount(root, { sub }) {
       after.push(ir);
       syncIr();
     }
-    if (group === "Schedule") after.push(locateCard());
     if (group === "DMX") {
       after.push(dmxBox);
       if (state.status) renderDmx(dmxBox, state.status.dmx ?? {});
