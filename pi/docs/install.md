@@ -33,6 +33,6 @@ ssh you@raspberrypi.local 'cd videofx-setup && sudo ./install.sh && sudo reboot'
 
 - installs `mpv gpiod v4l-utils alsa-utils avahi-daemon`, plus Node 24 from NodeSource if the system Node is older than 20.19;
 - installs the app, udev rules for CEC, lirc, GPIO and fb blank, and the systemd units;
-- disables the tty1 login prompt;
+- disables the tty1 login prompt and keeps boot text off the projector (kernel console on tty3, `quiet`, no rainbow splash);
 - sets the SSH login banner (`/etc/update-motd.d/20-videofx`): version, board, uptime, SoC temperature and any under-voltage or throttling, memory, root protection, data partition, addresses, player state and the last update check. It replaces overlayroot's mount listing;
 - edits `config.txt` (see [GPIO pins](wiring.md)). It is idempotent.

@@ -215,6 +215,29 @@ describe("shuffled loop", () => {
     for (let i = 1; i < order.length; i++) expect(order[i]).not.toBe(order[i - 1]);
   });
 
+  it("skips a clip that will not play instead of going idle, and gives up after a whole round", async () => {
+    const { mpv, player, cmds, clear } = setup({ shuffleClips: () => clips });
+    mpv.up();
+    player.setOn(true);
+    await flush();
+    clear();
+    mpv.event({ event: "end-file", reason: "error", file_error: "unrecognized file format" });
+    await flush();
+    expect(cmds()).toEqual(["loadfile /m/c.mp4 replace"]);
+    clear();
+    mpv.event({ event: "end-file", reason: "error" });
+    mpv.event({ event: "end-file", reason: "error" });
+    await flush();
+    expect(cmds()).toHaveLength(1); // the third failure in a row of three clips: stop trying
+    // A clip that loads resets the count.
+    mpv.event({ event: "file-loaded" });
+    await flush();
+    clear();
+    mpv.event({ event: "end-file", reason: "error" });
+    await flush();
+    expect(loaded(cmds)).toHaveLength(1);
+  });
+
   it("falls back to the playlist loop when not shuffling, and ignores loads in other modes", async () => {
     const { mpv, player, cmds, content, clear } = setup({ shuffleClips: () => null });
     mpv.up();
@@ -229,6 +252,23 @@ describe("shuffled loop", () => {
     player.reload();
     await flush();
     expect(loaded(cmds)).toHaveLength(1);
+  });
+});
+
+describe("fade out", () => {
+  it("steps brightness down to black from the dimmer level, and does nothing while off", async () => {
+    const { mpv, player, cmds, clear } = setup();
+    mpv.up();
+    await player.fadeOut();
+    expect(cmds()).toEqual([]);
+    player.setOn(true);
+    player.setDimmer(0x80);
+    await flush();
+    clear();
+    const done = player.fadeOut({ ms: 400, steps: 4 });
+    await vi.advanceTimersByTimeAsync(400);
+    await done;
+    expect(cmds()).toEqual(["set_property brightness -62", "set_property brightness -75", "set_property brightness -87", "set_property brightness -100"]);
   });
 });
 
