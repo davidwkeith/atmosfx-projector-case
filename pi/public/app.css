@@ -283,6 +283,7 @@ dialog#help::backdrop { background: rgb(0 0 0 / 0.5); }
 .md h4, .md h5 { font-size: 1rem; margin: 12px 0 4px; }
 .md p, .md li { margin: 4px 0 8px; }
 .md pre { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; overflow-x: auto; }
+pre.log { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 12px; overflow-x: auto; font-size: 0.85rem; white-space: pre; margin: 4px 0 12px; }
 .md code { font-size: 0.95rem; letter-spacing: 0; }
 .md a { color: var(--accent); }
 .md ul ul, .md ol ul, .md ul ol, .md ol ol { margin: 0 0 4px; }

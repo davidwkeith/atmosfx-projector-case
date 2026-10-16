@@ -95,6 +95,11 @@ systemctl enable systemd-timesyncd.service 2>/dev/null || true
 echo "== Bonjour: web UI as _http._tcp"
 install -m 644 "$src/system/videofx.avahi.service" /etc/avahi/services/videofx.service
 
+echo "== SSH login banner"
+install -m 755 "$src/system/videofx-motd" /etc/update-motd.d/20-videofx
+# overlayroot's own banner is a raw dump of the root mounts; 20-videofx says the same in one line.
+[ ! -e /etc/update-motd.d/97-overlayroot ] || chmod -x /etc/update-motd.d/97-overlayroot
+
 echo "== media folder $home/media"
 install -d -o "$user" -g "$(id -gn "$user")" "$home/media"
 
