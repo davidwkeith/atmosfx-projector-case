@@ -50,11 +50,12 @@ export function fitShader(fit, { params = true } = {}) {
       `  if (n > ${i}.5) { c = region(p, mat3(${h}), vec4(s${i}_x, s${i}_y, s${i}_w, s${i}_h)); if (c.a >= 0.0) return c; }`,
     );
   }
-  return `${blocks}
-//!HOOK OUTPUT
+  // PARAM blocks are their own //! sections and go first. Constants must sit inside the
+  // hook section: mpv drops everything before the first //! header.
+  return `${params ? blocks : ""}//!HOOK OUTPUT
 //!BIND HOOKED
 //!DESC ${SHADER_DESC}
-vec4 region(vec2 p, mat3 h, vec4 s) {
+${params ? "" : blocks}vec4 region(vec2 p, mat3 h, vec4 s) {
   vec3 q = vec3(p, 1.0) * h;
   if (q.z <= 0.0) return vec4(-1.0);
   vec2 t = q.xy / q.z;

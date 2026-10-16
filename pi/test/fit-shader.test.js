@@ -26,6 +26,10 @@ describe("fit shader", () => {
     for (const [k, v] of Object.entries(params)) expect(text).toContain(`const float ${k} = ${v.toPrecision(9)};\n`);
     expect(text.match(/^const float /gm)).toHaveLength(54);
     expect(text).toMatch(/\/\/!HOOK OUTPUT\n\/\/!BIND HOOKED\n\/\/!DESC videofx fit\n/);
+    const desc = text.indexOf("//!DESC videofx fit");
+    expect(text.indexOf("const float n ")).toBeGreaterThan(desc);
+    expect(text.indexOf("const float s3_h ")).toBeGreaterThan(desc);
+    expect(text.indexOf("const float s3_h ")).toBeLessThan(text.indexOf("vec4 region"));
     expect(fitShader(three)).toContain("//!PARAM");
   });
   it("opts string carries every parameter", () => {
