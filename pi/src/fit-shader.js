@@ -33,9 +33,16 @@ export function fitShaderOpts(fit) {
   return paramNames().map((k) => `${k}=${p[k].toPrecision(9)}`).join(",");
 }
 
-export function fitShader(fit) {
+/**
+ * params true (default): //!PARAM blocks, for --vo=gpu-next (live glsl-shader-opts).
+ * params false: `const float` declarations, for --vo=gpu (mpv 0.40's gpu has no //!PARAM);
+ * a new fit means a new file.
+ */
+export function fitShader(fit, { params = true } = {}) {
   const p = fitParams(fit);
-  const blocks = paramNames().map((k) => `//!PARAM ${k}\n//!TYPE float\n${p[k].toPrecision(9)}\n`).join("\n");
+  const blocks = paramNames()
+    .map((k) => (params ? `//!PARAM ${k}\n//!TYPE float\n${p[k].toPrecision(9)}\n` : `const float ${k} = ${p[k].toPrecision(9)};\n`))
+    .join(params ? "\n" : "");
   const regions = [];
   for (let i = 0; i < MAX_REGIONS; i++) {
     const h = Array.from({ length: 9 }, (_, k) => `h${i}_${k}`).join(", ");
