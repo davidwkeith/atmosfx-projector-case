@@ -45,6 +45,7 @@ export class Player extends EventEmitter {
   #mark = null; // { kind, at } while measuring a seam
   #clip = null; // DMX clip select: absolute path looped instead of the normal content
   #dimmer = 255;
+  #paused = false; // frozen on the current frame (the web page's header); cleared by any power change
 
   /**
    * @param {object} o
@@ -72,6 +73,7 @@ export class Player extends EventEmitter {
     this.#mpv.on("ready", () => this.#onReady());
     this.#mpv.on("down", () => {
       this.#phase = "idle";
+      this.#paused = false; // a new mpv starts unpaused
       this.#mirrored = false;
     });
     this.#mpv.on("event", (e) => this.#onEvent(e));
@@ -105,8 +107,33 @@ export class Player extends EventEmitter {
       nextScare: c.mode === "scare" ? this.#nextScare : null,
       cooldownLeftMs: Math.max(0, this.#cooldownUntil - this.#now()),
       queued: this.#queued,
+      paused: this.#paused,
       lastSeamMs: { ...this.#seam },
     };
+  }
+
+  get isPaused() {
+    return this.#paused;
+  }
+
+  /**
+   * Freeze on the current frame, or carry on. Only while playing: the projector stays on
+   * and Matter, the schedule and DMX still see "on". Returns the resulting state.
+   */
+  setPaused(paused) {
+    if (!this.isPlaying) return false;
+    if (paused === this.#paused) return paused;
+    this.#paused = paused;
+    this.#log.info(paused ? "Paused" : "Resumed");
+    this.#run(["set_property", "pause", paused]);
+    return paused;
+  }
+
+  // mpv keeps its pause flag across files, so anything that starts or stops playback resumes first.
+  #unpause() {
+    if (!this.#paused) return;
+    this.#paused = false;
+    if (this.#mpv.ready) this.#run(["set_property", "pause", false]);
   }
 
   /**
@@ -250,6 +277,7 @@ export class Player extends EventEmitter {
       return { result: "ignored", reason };
     };
     if (!this.#on) return ignore("playback is off");
+    if (this.#paused) return ignore("playback is paused");
     const blocked = this.#gate(source); // quiet hours
     if (blocked) return ignore(blocked);
     if (c.mode !== "scare") return ignore("scare mode is off");
@@ -290,6 +318,7 @@ export class Player extends EventEmitter {
 
   #play() {
     const c = this.#content();
+    this.#unpause();
     this.#clearQueue();
     const last = this.#shuffle?.last ?? null;
     this.#shuffle = null;
@@ -417,6 +446,7 @@ export class Player extends EventEmitter {
   }
 
   #stop() {
+    this.#unpause();
     const wasScare = this.scareActive;
     this.#phase = "idle";
     this.#clearQueue();

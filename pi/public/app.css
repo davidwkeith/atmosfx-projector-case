@@ -211,6 +211,7 @@ button.now-toggle { flex: none; width: 52px; height: 52px; border-radius: 50%; b
 button.now-toggle.on { background: transparent; color: var(--text); border-color: var(--text); }
 button.now-toggle .icon-svg { width: 24px; height: 24px; }
 button.now-toggle:not(.on) .icon-svg { fill: currentColor; }
+button.now-toggle.on .icon-svg { stroke-width: 3; }
 .titlebar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 12px 0 0; }
 .titlebar h2 { font-size: 1.25rem; margin: 0; }
 .titlebar .tools { display: flex; align-items: center; gap: 12px; }

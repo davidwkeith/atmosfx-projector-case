@@ -1,6 +1,7 @@
-// The now-playing header on every screen: poster frame, clip, elapsed time and a Play/Stop
-// button. Tapping the rest of it goes to the Dashboard. The functions at the top are DOM-free
-// so the tests can import them.
+// The now-playing header on every screen: poster frame, clip, elapsed time and a Play/Pause
+// button (Play switches on when off; while on, it freezes the current frame with the projector
+// still on). Tapping the rest of it goes to the Dashboard. The functions at the top are
+// DOM-free so the tests can import them.
 
 /** 75 -> "1:15", 3725 -> "1:02:05". */
 export function clock(seconds) {
@@ -27,13 +28,21 @@ export function elapsed(now, sinceMs) {
 export function nowView(st, sinceMs) {
   const now = st?.on ? st.now : null;
   const locked = !!st?.dmx?.inControl;
-  const toggle = { on: !!st?.on, disabled: !st || locked, label: st?.on ? "Stop" : "Play" };
+  const paused = !!(st?.on && st.player?.paused);
+  // action: what a tap does. "power" switches on; "pause"/"resume" only while something plays.
+  const action = !st?.on ? "power" : paused ? "resume" : "pause";
+  const toggle = {
+    action,
+    icon: action === "pause" ? "pause" : "play",
+    label: { power: "Play", pause: "Pause", resume: "Resume" }[action],
+    disabled: !st || locked || (st.on && !now),
+  };
   if (!now) {
     const title = !st ? "Connecting…" : st.on ? "Starting…" : st.problem ? `Can't play: ${st.problem}` : "Nothing playing";
     return { title, time: "", progress: null, poster: null, toggle };
   }
-  const t = elapsed(now, sinceMs);
-  const scare = st.player?.scareActive ? " · scare" : "";
+  const t = elapsed(now, paused ? 0 : sinceMs); // the clock stands still while paused
+  const scare = paused ? " · paused" : st.player?.scareActive ? " · scare" : "";
   return {
     title: clipTitle(now.file),
     time: (now.duration ? `${clock(t)} / ${clock(now.duration)}` : clock(t)) + scare,
@@ -50,8 +59,8 @@ export function mountNowBar({ icon, api, json, run, refreshStatus, state }) {
   const toggle = $("now-toggle");
   placeholder.append(icon("media"));
   const play = icon("play");
-  const stop = icon("stop");
-  toggle.append(play, stop);
+  const pause = icon("pause");
+  toggle.append(play, pause);
 
   let shown = null; // status the clock counts from
   let received = 0;
@@ -62,9 +71,11 @@ export function mountNowBar({ icon, api, json, run, refreshStatus, state }) {
 
   toggle.addEventListener("click", () =>
     run(async () => {
+      const { action } = nowView(state.status, 0).toggle;
       toggle.disabled = true;
       try {
-        await api("/api/power", json("POST", { on: !state.status.on }));
+        if (action === "power") await api("/api/power", json("POST", { on: true }));
+        else await api("/api/pause", json("POST", { paused: action === "pause" }));
         await refreshStatus();
       } finally {
         render();
@@ -90,9 +101,9 @@ export function mountNowBar({ icon, api, json, run, refreshStatus, state }) {
     toggle.disabled = v.toggle.disabled;
     toggle.setAttribute("aria-label", v.toggle.label);
     toggle.title = v.toggle.label;
-    toggle.classList.toggle("on", v.toggle.on);
-    play.style.display = v.toggle.on ? "none" : "";
-    stop.style.display = v.toggle.on ? "" : "none";
+    toggle.classList.toggle("on", v.toggle.icon === "pause");
+    play.style.display = v.toggle.icon === "play" ? "" : "none";
+    pause.style.display = v.toggle.icon === "pause" ? "" : "none";
   }
 
   setInterval(() => document.visibilityState === "visible" && render(), 1000);

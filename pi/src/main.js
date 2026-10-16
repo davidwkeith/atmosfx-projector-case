@@ -397,6 +397,7 @@ const dmx = new DmxControl({
   act: {
     takeover: () => {
       beforeDmx = { on: player.isOn };
+      player.setPaused(false); // the desk is in charge of what shows
       console.info("DMX in control");
     },
     release: () => {
@@ -692,6 +693,11 @@ const web = createWebServer({
   setPower: async (on) => {
     const r = requestPower("web", on);
     if (!r.ok) throw new HttpError(409, r.reason);
+  },
+  setPaused: (paused) => {
+    if (dmx.inControl) throw new HttpError(409, "DMX is in control");
+    if (!player.isPlaying) throw new HttpError(409, "nothing is playing");
+    player.setPaused(paused);
   },
   setVolume: (v) => {
     if (dmx.inControl) throw new HttpError(409, "DMX is in control");

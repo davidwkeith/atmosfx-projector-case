@@ -146,6 +146,7 @@ async function readJson(req, limit = JSON_LIMIT) {
  * @param {(name: string) => Promise<{body: Buffer, type: string}|null>} [o.poster]  a clip's poster frame
  * @param {() => string|undefined} [o.problem]  why playback cannot start in the current mode
  * @param {(on: boolean) => Promise<void>} o.setPower  goes through Matter so controllers stay in sync
+ * @param {(paused: boolean) => void} [o.setPaused]  freeze or resume the clip on screen (projector stays on)
  * @param {(v: {level?: number, muted?: boolean}) => Promise<object>} o.setVolume
  * @param {() => void} o.playlistChanged   restarts playback if playing
  * @param {() => string|undefined} o.pairingSvg
@@ -227,6 +228,13 @@ export function createWebServer(o) {
         if (problem) throw new HttpError(409, problem);
       }
       await o.setPower(on);
+      return send(res, 200, o.status());
+    }
+    if (method === "POST" && path === "/api/pause") {
+      const { paused } = await readJson(req);
+      if (typeof paused !== "boolean") throw new HttpError(400, "paused must be true or false");
+      if (!o.setPaused) throw new HttpError(503, "pause unavailable");
+      await o.setPaused(paused);
       return send(res, 200, o.status());
     }
     if (method === "POST" && path === "/api/volume") {

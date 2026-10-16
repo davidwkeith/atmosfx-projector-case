@@ -68,7 +68,7 @@ function renderChrome({ status: st }) {
   document.title = st.name;
   $("name").textContent = st.name;
   const pill = $("state");
-  pill.textContent = st.playing ? "Playing" : st.on ? "Starting…" : "Off";
+  pill.textContent = st.player?.paused && st.on ? "Paused" : st.playing ? "Playing" : st.on ? "Starting…" : "Off";
   pill.classList.toggle("on", st.on);
   const badges = badgesOf(st);
   for (const id of Object.keys(badges)) $(`nav-${id}`).querySelector(".dot").hidden = !badges[id];

@@ -33,14 +33,21 @@ describe("now-playing header", () => {
   it("shows the clip, time, progress and poster while playing", () => {
     const v = nowView({ on: true, now: { file: "zombie walk.mp4", position: 30, duration: 120 }, player: {} }, 0);
     expect(v).toMatchObject({ title: "zombie walk", time: "0:30 / 2:00", progress: 0.25, poster: "/api/poster/zombie%20walk.mp4" });
-    expect(v.toggle).toEqual({ on: true, disabled: false, label: "Stop" });
+    expect(v.toggle).toEqual({ action: "pause", icon: "pause", label: "Pause", disabled: false });
   });
 
   it("says why nothing plays, and locks the button under DMX", () => {
     expect(nowView(null, 0)).toMatchObject({ title: "Connecting…", poster: null, toggle: { disabled: true } });
     expect(nowView({ on: false, problem: "playlist is empty" }, 0).title).toBe("Can't play: playlist is empty");
     expect(nowView({ on: true, now: null }, 0).title).toBe("Starting…");
-    expect(nowView({ on: false, dmx: { inControl: true } }, 0).toggle).toEqual({ on: false, disabled: true, label: "Play" });
+    expect(nowView({ on: false, dmx: { inControl: true } }, 0).toggle).toEqual({ action: "power", icon: "play", label: "Play", disabled: true });
+    expect(nowView({ on: true, now: null }, 0).toggle.disabled).toBe(true); // nothing to pause yet
+  });
+
+  it("stops the clock while paused and offers Resume", () => {
+    const v = nowView({ on: true, now: { file: "a.mp4", position: 10, duration: 60 }, player: { paused: true } }, 5000);
+    expect(v.time).toBe("0:10 / 1:00 · paused");
+    expect(v.toggle).toMatchObject({ action: "resume", icon: "play", label: "Resume" });
   });
 
   it("marks a scare", () => {
@@ -85,6 +92,55 @@ describe("Player.nowPlaying", () => {
     await vi.waitFor(() => expect(p.isPlaying).toBe(true));
     mpv.hang = true;
     expect(await p.nowPlaying({ timeoutMs: 20 })).toBeNull();
+  });
+});
+
+describe("Player pause", () => {
+  const content = { mode: "scare", playlist: "/m/p.m3u", buffer: "/m/calm.mp4", scares: ["/m/s1.mp4"], order: "sequential", cooldownMs: 0, duringScare: "ignore", mirror: false };
+  function make() {
+    const mpv = new FakeMpv();
+    const sent = [];
+    const orig = mpv.command.bind(mpv);
+    mpv.command = (...a) => (a[0] === "set_property" && a[1] === "pause" && sent.push(a[2]), orig(...a));
+    const p = new Player({ mpv, content: () => content, log: { info() {}, warn() {}, error() {} } });
+    return { mpv, p, sent };
+  }
+
+  it("does nothing while off", () => {
+    const { p, sent } = make();
+    expect(p.setPaused(true)).toBe(false);
+    expect(sent).toEqual([]);
+  });
+
+  it("pauses and resumes mpv, and blocks scares while paused", async () => {
+    const { p, sent } = make();
+    p.setOn(true);
+    await vi.waitFor(() => expect(p.isPlaying).toBe(true));
+    expect(p.setPaused(true)).toBe(true);
+    expect(p.status.paused).toBe(true);
+    expect(p.trigger("web page")).toEqual({ result: "ignored", reason: "playback is paused" });
+    expect(p.setPaused(false)).toBe(false);
+    await vi.waitFor(() => expect(sent).toEqual([true, false]));
+  });
+
+  it("resumes on stop, so the next start is not frozen", async () => {
+    const { p, sent } = make();
+    p.setOn(true);
+    await vi.waitFor(() => expect(p.isPlaying).toBe(true));
+    p.setPaused(true);
+    p.setOn(false);
+    expect(p.isPaused).toBe(false);
+    await vi.waitFor(() => expect(sent).toEqual([true, false]));
+  });
+
+  it("forgets the pause when mpv restarts", async () => {
+    const { mpv, p } = make();
+    p.setOn(true);
+    await vi.waitFor(() => expect(p.isPlaying).toBe(true));
+    p.setPaused(true);
+    mpv.ready = false;
+    mpv.emit("down");
+    expect(p.isPaused).toBe(false);
   });
 });
 
@@ -144,9 +200,10 @@ describe("poster cache", () => {
 });
 
 describe("web routes", () => {
-  let dir, server, port;
+  let dir, server, port, paused;
   beforeEach(async () => {
     dir = await mkdtemp(join(tmpdir(), "videofx-now-"));
+    paused = [];
     const media = createMediaStore({ dir, playlist: join(dir, "playlist.m3u") });
     server = createWebServer({
       media,
@@ -154,6 +211,7 @@ describe("web routes", () => {
       hostNames: () => ["localhost"],
       status: () => ({ name: "videofx-1a2b", on: true }),
       nowPlaying: async () => ({ file: "a.mp4", position: 1, duration: 2, at: 0 }),
+      setPaused: (p) => (paused.push(p), undefined),
       poster: async (name) => (name === "a b.mp4" ? { body: Buffer.from("jpg"), type: "image/jpeg" } : null),
       log: { error() {} },
     });
@@ -164,16 +222,23 @@ describe("web routes", () => {
     server.close();
     await rm(dir, { recursive: true, force: true });
   });
-  const get = (path) =>
+  const get = (path, method = "GET", body) =>
     new Promise((resolve, reject) => {
-      const req = request({ host: "127.0.0.1", port, path, headers: { host: "localhost" } }, (res) => {
+      const req = request({ host: "127.0.0.1", port, path, method, headers: { host: "localhost", "x-videofx": "1" } }, (res) => {
         let data = "";
         res.on("data", (c) => (data += c));
         res.on("end", () => resolve({ status: res.statusCode, type: res.headers["content-type"], data }));
       });
       req.on("error", reject);
-      req.end();
+      req.end(body);
     });
+
+  it("pauses and resumes, and refuses anything but true or false", async () => {
+    expect((await get("/api/pause", "POST", '{"paused":true}')).status).toBe(200);
+    expect((await get("/api/pause", "POST", '{"paused":false}')).status).toBe(200);
+    expect((await get("/api/pause", "POST", '{"paused":"yes"}')).status).toBe(400);
+    expect(paused).toEqual([true, false]);
+  });
 
   it("adds what is playing to the status", async () => {
     const r = await get("/api/status");

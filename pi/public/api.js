@@ -62,7 +62,7 @@ const ICONS = {
   info: ["M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18z", "M12 11v5", "M12 8h.01"],
   close: ["M6 6l12 12", "M18 6 6 18"],
   play: ["M7 4v16l13-8z"],
-  stop: ["M6 6h12v12H6z"],
+  pause: ["M8 5v14", "M16 5v14"],
   chevron: ["M9 6l6 6-6 6"],
 };
 
