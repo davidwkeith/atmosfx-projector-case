@@ -1,11 +1,12 @@
-import { api, el, json, run, toast } from "../api.js";
+import { api, el, icon, json, run, toast } from "../api.js";
 import { alarmsOf, systemNotesOf } from "../notes.js";
 import { refreshStatus, state } from "../state.js";
 
-function tile(title) {
+// Each tile opens the screen where that part is set up.
+function tile(title, href) {
   const value = el("p", { className: "tile-value" }, "–");
   const sub = el("p", { className: "hint tile-sub" });
-  return { box: el("div", { className: "tile" }, el("h3", {}, title), value, sub), value, sub };
+  return { box: el("a", { className: "tile", href }, el("h3", {}, title), value, sub, icon("chevron")), value, sub };
 }
 
 const when = (ms) => new Date(ms).toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit" });
@@ -25,10 +26,10 @@ export function mount(root) {
   const mute = el("button", { type: "button", disabled: true }, "Mute");
   const volume = el("div", { className: "volume" }, slider, out, mute);
 
-  const projector = tile("Projector");
-  const schedule = tile("Schedule");
-  const network = tile("Network");
-  const heat = tile("Pi temperature");
+  const projector = tile("Projector", "#/settings/projector");
+  const schedule = tile("Schedule", "#/schedule");
+  const network = tile("Network", "#/docs/networks"); // Wi-Fi is set in Raspberry Pi Imager, not on this page
+  const heat = tile("Pi temperature", "#/settings/cooling");
 
   root.append(
     dmx, alarms, notes,

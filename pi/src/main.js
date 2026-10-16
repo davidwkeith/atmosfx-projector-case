@@ -35,6 +35,7 @@ import { isShuffled, parsePlaylist } from "./playlist-core.js";
 import { MpvSupervisor, mpvArgs } from "./mpv.js";
 import { Pir, gpiomonMajor, pirArgs } from "./pir.js";
 import { Player } from "./player.js";
+import { createPosterCache } from "./poster.js";
 import { Projector } from "./projector.js";
 import { qrTextToSvg } from "./qr.js";
 import { Scheduler, missedEvent } from "./schedule.js";
@@ -406,6 +407,7 @@ const dmx = new DmxControl({
   act: {
     takeover: () => {
       beforeDmx = { on: player.isOn };
+      player.setPaused(false); // the desk is in charge of what shows
       console.info("DMX in control");
     },
     release: () => {
@@ -681,8 +683,12 @@ function restartService(before = async () => {}) {
 const versionStatus = () =>
   updateStatus(currentVersion, (() => { try { return readFileSync(join(stateDir, "update-check.json"), "utf8"); } catch { return ""; } })());
 
+const posters = createPosterCache({ dir: join(stateDir, "posters"), resolve: media.resolve, mpv: get("mpv") });
+
 const web = createWebServer({
   media,
+  nowPlaying: () => player.nowPlaying(),
+  poster: (name) => posters.poster(name),
   settings,
   // The chart draws the warning and cut-off lines too.
   health: { read: (q) => ({ ...health.read(q), warnC: get("tempWarnC"), critC: get("tempCritC") }) },
@@ -724,6 +730,11 @@ const web = createWebServer({
   setPower: async (on) => {
     const r = requestPower("web", on);
     if (!r.ok) throw new HttpError(409, r.reason);
+  },
+  setPaused: (paused) => {
+    if (dmx.inControl) throw new HttpError(409, "DMX is in control");
+    if (!player.isPlaying) throw new HttpError(409, "nothing is playing");
+    player.setPaused(paused);
   },
   setVolume: (v) => {
     if (dmx.inControl) throw new HttpError(409, "DMX is in control");

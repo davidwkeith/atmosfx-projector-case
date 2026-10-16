@@ -143,9 +143,12 @@ async function readJson(req, limit = JSON_LIMIT) {
  * @param {object} o
  * @param {ReturnType<import("./media.js").createMediaStore>} o.media
  * @param {() => object} o.status          device state for the UI
+ * @param {() => Promise<object|null>} [o.nowPlaying]  the clip on screen and how far in (added to the status as `now`)
+ * @param {(name: string) => Promise<{body: Buffer, type: string}|null>} [o.poster]  a clip's poster frame
  * @param {{ read: Function }} [o.health]  the health log (healthlog.js)
  * @param {() => string|undefined} [o.problem]  why playback cannot start in the current mode
  * @param {(on: boolean) => Promise<void>} o.setPower  goes through Matter so controllers stay in sync
+ * @param {(paused: boolean) => void} [o.setPaused]  freeze or resume the clip on screen (projector stays on)
  * @param {(v: {level?: number, muted?: boolean}) => Promise<object>} o.setVolume
  * @param {() => void} o.playlistChanged   restarts playback if playing
  * @param {() => string|undefined} o.pairingSvg
@@ -199,7 +202,21 @@ export function createWebServer(o) {
       const hit = await staticFile(path);
       if (hit) return send(res, 200, await readFile(hit[0]), hit[1]);
     }
-    if (method === "GET" && path === "/api/status") return send(res, 200, o.status());
+    if (method === "GET" && path === "/api/status") {
+      const now = (await o.nowPlaying?.().catch(() => null)) ?? null;
+      return send(res, 200, { ...o.status(), now });
+    }
+    const poster = /^\/api\/poster\/([^/]+)$/.exec(path);
+    if (method === "GET" && poster) {
+      let name;
+      try {
+        name = decodeURIComponent(poster[1]);
+      } catch {
+        throw new HttpError(400, "invalid file name");
+      }
+      const img = await o.poster?.(name);
+      return img ? send(res, 200, img.body, img.type) : send(res, 404, { error: "no poster" });
+    }
     if (method === "GET" && path === "/api/health" && o.health) {
       // The page's chart: a week at most (10 080 one-minute samples).
       const hours = Math.min(168, Math.max(1, Number(url.searchParams.get("hours")) || 24));
@@ -222,6 +239,13 @@ export function createWebServer(o) {
         if (problem) throw new HttpError(409, problem);
       }
       await o.setPower(on);
+      return send(res, 200, o.status());
+    }
+    if (method === "POST" && path === "/api/pause") {
+      const { paused } = await readJson(req);
+      if (typeof paused !== "boolean") throw new HttpError(400, "paused must be true or false");
+      if (!o.setPaused) throw new HttpError(503, "pause unavailable");
+      await o.setPaused(paused);
       return send(res, 200, o.status());
     }
     if (method === "POST" && path === "/api/volume") {

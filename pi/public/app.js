@@ -1,8 +1,9 @@
-import { el, icon, restartService, run } from "./api.js";
+import { api, el, icon, json, restartService, run } from "./api.js";
 import { renderMarkdown } from "./markdown.js";
 import { mountApplyBar } from "./settings-form.js";
 import { DOCS_VIEW, VIEWS, docHref, parseHash } from "./nav.js";
 import { badgesOf } from "./notes.js";
+import { mountNowBar } from "./now.js";
 import { ensureLoaded, isDirty, refreshMedia, refreshSettings, refreshStatus, state, subscribe } from "./state.js";
 
 const $ = (id) => document.getElementById(id);
@@ -25,6 +26,9 @@ $("nav").replaceChildren(
 $("help-btn").append(icon("help"));
 $("help-close").append(icon("close"));
 mountApplyBar($("apply-bar"));
+const nowBar = mountNowBar({ icon, api, json, run, refreshStatus, state });
+// Already on the dashboard: the header link has nowhere to go, so bring its controls back into view.
+$("now-link").addEventListener("click", () => parseHash(location.hash).view === "dashboard" && window.scrollTo({ top: 0, behavior: "smooth" }));
 
 let current = null;
 let token = 0; // a slow import must not replace a view the user has already left
@@ -59,11 +63,12 @@ async function show() {
 // --- header, banners, badges
 
 function renderChrome({ status: st }) {
+  nowBar.update();
   if (!st) return;
   document.title = st.name;
   $("name").textContent = st.name;
   const pill = $("state");
-  pill.textContent = st.playing ? "Playing" : st.on ? "Starting…" : "Off";
+  pill.textContent = st.player?.paused && st.on ? "Paused" : st.playing ? "Playing" : st.on ? "Starting…" : "Off";
   pill.classList.toggle("on", st.on);
   const badges = badgesOf(st);
   for (const id of Object.keys(badges)) $(`nav-${id}`).querySelector(".dot").hidden = !badges[id];

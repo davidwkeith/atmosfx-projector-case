@@ -11,11 +11,19 @@
 <body>
   <nav id="nav" aria-label="Sections"></nav>
 
-  <div id="content"><div class="wrap">
-    <header class="top">
-      <h1 id="name">VideoFX</h1>
-      <span id="state" class="pill">…</span>
-    </header>
+  <div id="content">
+  <header id="now" class="now"><div class="wrap now-inner">
+    <a id="now-link" class="now-link" href="#/dashboard" title="Open the dashboard">
+      <div class="poster"><img id="now-poster" alt="" hidden><span id="now-placeholder"></span></div>
+      <div class="now-text">
+        <div class="now-top"><h1 id="name">VideoFX</h1><span id="state" class="pill">…</span></div>
+        <p id="now-title" class="now-title">Nothing playing</p>
+        <div class="now-time"><span id="now-elapsed"></span><span class="now-bar"><span id="now-progress"></span></span></div>
+      </div>
+    </a>
+    <button id="now-toggle" type="button" class="icon now-toggle" aria-label="Play" disabled></button>
+  </div></header>
+  <div class="wrap">
 
     <div id="dmx-strip" class="banner dmx" role="status" hidden>
       <p><b>DMX in control.</b> Power and volume are locked until the signal stops.</p>

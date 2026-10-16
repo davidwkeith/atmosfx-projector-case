@@ -51,6 +51,14 @@ const healthLog = (() => {
 })();
 
 let on = false;
+let onSince = 0;
+let pausedAt = null; // ms of play time when paused
+const clips = { "zombie.mp4": 312, "ghost-buffer.mp4": 95 };
+// A made-up poster per clip, so the header has something to show without mpv.
+const posterSvg = (name) => {
+  const hue = [...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 0);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 90"><rect width="160" height="90" fill="hsl(${hue} 45% 22%)"/><circle cx="80" cy="42" r="20" fill="hsl(${hue} 60% 70%)"/><text x="80" y="82" font-size="10" text-anchor="middle" fill="#fff" font-family="sans-serif">${name}</text></svg>`;
+};
 let volume = { level: 30, muted: false };
 const status = () => ({
   name: "VideoFX-DEV",
@@ -63,7 +71,7 @@ const status = () => ({
   thermal: { enabled: true, temp: 48.2, tripped: null, alarms: process.env.DEV_ALARM ? [{ level: "warn", text: "Pi: 71.0 °C (warning at 70 °C)" }] : [] },
   projector: { mode: "cec", power: on ? "on" : "standby", cec: "supported", notice: null },
   dmx: { enabled: !!process.env.DEV_DMX, inControl: !!process.env.DEV_DMX, live: !!process.env.DEV_DMX, values: [255, 0, 1, 0, 200, 0, 255, 0], sources: [{ name: "Desk", ip: "192.168.1.9", priority: 100, packetsPerSecond: 44 }], rejected: 0 },
-  player: { mode: "scare", scareActive: false, cooldownLeftMs: 0, lastSeamMs: { toScareMs: 38, toBufferMs: 41 } },
+  player: { mode: "scare", paused: pausedAt !== null, scareActive: false, cooldownLeftMs: 0, lastSeamMs: { toScareMs: 38, toBufferMs: 41 } },
   schedule: { enabled: true, next: { on: !on, at: Date.now() + 3_600_000, label: "Mon sunset" } },
   network: { ethernet: false, wifi: { connected: true, ssid: "Home", band: "5 GHz", signalDbm: -52, quality: 80, verdict: "good" } },
   storage: { maintenance: false, dataMounted: true, state: "ok" },
@@ -80,7 +88,19 @@ const server = createWebServer({
   hostNames: () => ["localhost"],
   health: healthLog,
   status,
-  setPower: async (v) => void (on = v),
+  setPower: async (v) => void ((on = v), (onSince = Date.now()), (pausedAt = null)),
+  setPaused: (p) => {
+    if (!on) throw new Error("nothing is playing");
+    if (p && pausedAt === null) pausedAt = Date.now() - onSince;
+    if (!p && pausedAt !== null) ((onSince = Date.now() - pausedAt), (pausedAt = null));
+  },
+  nowPlaying: async () => {
+    if (!on) return null;
+    const t = (pausedAt ?? Date.now() - onSince) / 1000;
+    const [file, duration] = t % 407 < 312 ? ["zombie.mp4", clips["zombie.mp4"]] : ["ghost-buffer.mp4", clips["ghost-buffer.mp4"]];
+    return { file, position: file === "zombie.mp4" ? t % 407 : (t % 407) - 312, duration, at: Date.now() };
+  },
+  poster: async (name) => (name in clips ? { body: posterSvg(name), type: "image/svg+xml" } : null),
   setVolume: async (v) => (volume = { level: v.level ?? volume.level, muted: v.muted ?? volume.muted }),
   playlistChanged: () => {},
   pairingSvg: () => '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 10 10"><rect width="10" height="10" fill="#fff"/><rect x="1" y="1" width="3" height="3"/><rect x="6" y="1" width="3" height="3"/><rect x="1" y="6" width="3" height="3"/></svg>',
