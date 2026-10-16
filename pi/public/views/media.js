@@ -10,6 +10,7 @@ let shuffle = false;
 let maxUploadBytes = Infinity;
 let freeText = "";
 let seen = null; // the state.media object last copied in
+let usbDone = null; // time of the last USB import the lists were refreshed for
 const dirty = () => shuffle !== saved.shuffle || JSON.stringify(entries) !== JSON.stringify(saved.entries);
 const undo = () => ((entries = structuredClone(saved.entries)), (shuffle = saved.shuffle));
 const lengthText = (seconds) => (seconds === undefined ? "" : formatDuration(seconds));
@@ -23,7 +24,13 @@ function uploadOne(file, onProgress) {
     xhr.setRequestHeader("x-videofx", "1");
     xhr.upload.onprogress = (e) => e.lengthComputable && onProgress(e.loaded / e.total);
     xhr.onload = () => {
-      if (xhr.status < 300) return resolve();
+      if (xhr.status < 300) {
+        try {
+          return resolve(JSON.parse(xhr.responseText));
+        } catch {
+          return resolve({});
+        }
+      }
       let message = `${xhr.status}`;
       try {
         message = JSON.parse(xhr.responseText).error;
@@ -49,6 +56,7 @@ export function mount(root) {
   const input = el("input", { type: "file", multiple: true, accept: "video/*,audio/*,.m3u,.m3u8" });
   const progress = el("progress", { max: 1, value: 0, hidden: true });
   const space = el("p", { className: "hint" });
+  const usbLine = el("p", { className: "hint", hidden: true });
 
   root.append(
     el(
@@ -62,7 +70,7 @@ export function mount(root) {
       total,
       el("div", { className: "actions" }, save, revert, unsaved),
     ),
-    el("section", {}, el("h3", {}, "Videos"), list, empty, el("label", { className: "upload" }, el("span", {}, "Upload videos"), input), progress, space),
+    el("section", {}, el("h3", {}, "Videos"), list, empty, el("label", { className: "upload" }, el("span", {}, "Upload videos"), input), progress, space, usbLine),
   );
 
   function render() {
@@ -149,13 +157,16 @@ export function mount(root) {
     const good = picked.filter((f) => !bad.includes(f));
     const total = good.reduce((n, f) => n + f.size, 0) || 1;
     let done = 0;
+    let auto = false;
     progress.hidden = false;
     try {
       for (const file of good) {
-        await uploadOne(file, (p) => (progress.value = (done + p * file.size) / total));
+        const r = await uploadOne(file, (p) => (progress.value = (done + p * file.size) / total));
+        auto ||= r.autoPlaylist === true;
         done += file.size;
       }
-      if (good.length) toast(`Uploaded ${good.length} file${good.length === 1 ? "" : "s"}. Add them to the playlist and save.`);
+      const n = `${good.length} file${good.length === 1 ? "" : "s"}`;
+      if (good.length) toast(auto ? `Uploaded ${n} and put them on the playlist.` : `Uploaded ${n}. Add them to the playlist and save.`);
     } catch (err) {
       toast(err.message);
     } finally {
@@ -173,9 +184,29 @@ export function mount(root) {
 
   render(); // module state from an earlier visit, if any
 
+  function showUsb(usb) {
+    if (!usb) return;
+    // The lists change under the page when an import finishes: refresh once per import.
+    if (usbDone === null) usbDone = usb.state === "copying" ? "" : usb.at;
+    else if (usb.state !== "copying" && usb.at !== usbDone) {
+      usbDone = usb.at;
+      refreshMedia().catch(() => {});
+    }
+    usbLine.hidden = usb.state === "idle";
+    if (usbLine.hidden) return;
+    const pull = usb.present ? " You can pull the stick out." : "";
+    usbLine.textContent =
+      usb.state === "copying"
+        ? `USB stick: copying ${usb.current ?? ""} (${usb.copied + usb.skipped + 1} of ${usb.total}). Leave it in.`
+        : usb.state === "done"
+          ? `USB stick: ${usb.total} file${usb.total === 1 ? "" : "s"} imported${usb.skipped ? ` (${usb.skipped} were already here)` : ""}; they are now the playlist.${pull}`
+          : `USB stick: import stopped. ${usb.error}${pull}`;
+  }
+
   return {
     helpSlug: () => "media",
-    update({ media }) {
+    update({ media, status }) {
+      showUsb(status?.usb);
       if (!media || media === seen) return; // the status poll must not rebuild the lists
       const edited = dirty(); // keep unsaved edits across refreshes
       seen = media;

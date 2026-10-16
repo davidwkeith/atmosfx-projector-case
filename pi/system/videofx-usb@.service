@@ -1,0 +1,14 @@
+# Installed by setup.sh. Started by udev (99-videofx.rules) for each USB
+# partition with a filesystem; stopped when the stick is pulled (BindsTo).
+# A service, not RUN+= in the rule: udev runs in its own mount namespace, so a
+# mount made there would be invisible to the player.
+[Unit]
+Description=VideoFX: USB stick %I, mounted read-only for import
+BindsTo=dev-%i.device
+After=dev-%i.device
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/videofx-usb mount %I
+ExecStop=/usr/local/sbin/videofx-usb unmount %I

@@ -1,6 +1,9 @@
 # Videos, playlist, scare mode
 
-Your purchased videos are not included or downloaded. Upload them on the web page, or `scp` them to `~/media/` on the Pi.
+Your purchased videos are not included or downloaded. Put them on a USB stick, upload them on the web page, or `scp` them to `~/media/` on the Pi.
+
+- **USB stick:** plug a stick with your videos into the Pi, in whatever folders they came in (an unzipped AtmosFX download is fine). The Pi mounts it read-only, copies every video and audio file into the media folder from any folder depth, and makes those files the playlist, in name order. In loop mode it starts playing them. macOS `._` files, hidden folders and other files are skipped, and a file name that appears in several folders is copied once. Files already on the Pi (same name and size) are not copied again, and older files stay on the Pi, off the playlist. The Media screen shows the progress; pull the stick out when it says the import is done (it is mounted read-only, so pulling it early loses nothing). If the card fills up, the import stops at that file and the playlist is left as it was. FAT32, exFAT, NTFS and ext4 sticks work.
+- **First upload:** while the playlist is empty or holds only the built-in test clip, uploaded videos go onto the playlist by themselves, in name order. It stays automatic (later uploads join it) until you save the playlist by hand; after that, uploads wait for you to add them. The file marks this with a `#VIDEOFX-AUTO` line, which mpv ignores.
 
 Until then, a fresh Pi plays a built-in test clip: "VideoFX" bouncing over a light alignment grid (also handy for focus and aiming). It is copied into the media folder as `videofx-default.mp4` and made the playlist only when no playlist file exists, so deleting it sticks. Regenerate it with `tools/make-default-video.sh`.
 

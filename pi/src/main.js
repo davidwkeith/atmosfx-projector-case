@@ -31,6 +31,7 @@ import { GpioOut, gpiosetArgs } from "./gpio.js";
 import { HealthLog, HealthWatch, parseThrottled } from "./healthlog.js";
 import { Ir, lircFeatures } from "./ir.js";
 import { HttpError, createMediaStore } from "./media.js";
+import { createUsbImporter } from "./usb.js";
 import { isShuffled, parsePlaylist } from "./playlist-core.js";
 import { MpvSupervisor, mpvArgs } from "./mpv.js";
 import { Pir, gpiomonMajor, pirArgs } from "./pir.js";
@@ -106,6 +107,9 @@ const media = createMediaStore({
   dir: get("mediaDir"),
   playlist: get("playlist"),
   maxUploadBytes: () => get("maxUploadMb") * 1024 * 1024,
+  // A first upload (or one onto the built-in clip) builds the playlist by itself.
+  autoPlaylist: true,
+  defaultClip: "videofx-default.mp4",
 });
 // Uploads cut short by a crash or power cut would otherwise fill the card over time.
 media
@@ -339,6 +343,18 @@ const requestPower = (source, on) => {
   if (!r.ok) console.info(`Power ${on ? "on" : "off"} from ${source} refused: ${r.reason}`);
   return r;
 };
+
+// --- USB stick import: the stick's videos become the playlist and play (loop mode).
+const usb = createUsbImporter({
+  dir: "/run/videofx-usb",
+  media,
+  onImported: () => {
+    if (get("mode") !== "loop") return; // scare mode plays its own clips
+    player.reload();
+    requestPower("usb stick", true);
+  },
+});
+setInterval(() => usb.scan(), 2000).unref();
 
 // The player gave up (no playlist, repeated crashes): report "off" so the
 // controller shows the truth. Deferred so we never write inside the change event.
@@ -771,6 +787,7 @@ const web = createWebServer({
       web: { passwordSet: settings.passwordSet },
       network,
       storage,
+      usb: usb.status,
       matter: {
         commissioned: server.lifecycle.isCommissioned,
         fabrics: Object.keys(server.state.commissioning.fabrics ?? {}).length,
