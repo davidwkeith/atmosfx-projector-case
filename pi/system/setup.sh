@@ -69,6 +69,9 @@ install -m 755 "$src/system/videofx-storage" /usr/local/sbin/videofx-storage
 install -m 755 "$src/system/videofx-maint" /usr/local/sbin/videofx-maint
 install -m 755 "$src/system/videofx-relay-open" /usr/local/sbin/videofx-relay-open
 install -m 755 "$src/system/videofx-update" /usr/local/sbin/videofx-update
+# USB stick import: udev starts this per stick; it mounts read-only under /run/videofx-usb.
+install -m 755 "$src/system/videofx-usb" /usr/local/sbin/videofx-usb
+install -m 644 "$src/system/videofx-usb@.service" /etc/systemd/system/videofx-usb@.service
 install -m 644 "$src/system/videofx-update-resume.service" /etc/systemd/system/videofx-update-resume.service
 systemctl enable videofx-update-resume.service
 # The web page's Upgrade / Check now buttons (root helper on a socket) and the daily check.

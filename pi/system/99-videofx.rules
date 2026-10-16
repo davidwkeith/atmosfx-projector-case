@@ -6,3 +6,5 @@ SUBSYSTEM=="lirc", KERNEL=="lirc[0-9]*", GROUP="video", MODE="0660"
 SUBSYSTEM=="gpio", KERNEL=="gpiochip[0-9]*", GROUP="gpio", MODE="0660"
 # fbdev blank, for projector power "hdmi-off": let the video group write it.
 SUBSYSTEM=="graphics", KERNEL=="fb0", RUN+="/bin/chgrp video /sys%p/blank", RUN+="/bin/chmod g+w /sys%p/blank"
+# USB sticks: mount read-only for the player's media import (videofx-usb@.service).
+ACTION=="add", SUBSYSTEM=="block", ENV{ID_BUS}=="usb", ENV{ID_FS_USAGE}=="filesystem", TAG+="systemd", ENV{SYSTEMD_WANTS}+="videofx-usb@%k.service"

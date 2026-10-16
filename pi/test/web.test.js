@@ -357,6 +357,32 @@ describe("web server", () => {
     }
   });
 
+  it("a first upload builds the playlist and tells the player; a saved playlist stops that", async () => {
+    const changed = vi.fn();
+    const auto = createWebServer({
+      media: createMediaStore({ dir, playlist: join(dir, "playlist.m3u"), autoPlaylist: true }),
+      auth: { passwordSet: false, verifyPassword: () => true },
+      hostNames: () => [],
+      status: () => ({}),
+      playlistChanged: changed,
+      log: { error: () => {} },
+    });
+    await new Promise((resolve) => auto.listen(0, "127.0.0.1", resolve));
+    const mine = port;
+    port = auto.address().port;
+    try {
+      expect((await call("PUT", "/api/media/b.mp4", { body: "v" })).json).toEqual({ name: "b.mp4", size: 1, autoPlaylist: true });
+      expect(changed).toHaveBeenCalledTimes(1);
+      expect(await readFile(join(dir, "playlist.m3u"), "utf8")).toBe("#EXTM3U\n#VIDEOFX-AUTO\nb.mp4\n");
+      await call("PUT", "/api/playlist", { body: JSON.stringify({ entries: [{ file: "b.mp4", enabled: true }] }) });
+      expect((await call("PUT", "/api/media/a.mp4", { body: "v" })).json.autoPlaylist).toBe(false);
+      expect(await readFile(join(dir, "playlist.m3u"), "utf8")).toBe("#EXTM3U\nb.mp4\n");
+    } finally {
+      port = mine;
+      auto.close();
+    }
+  });
+
   it("rejects an upload that would not leave the free-space reserve", async () => {
     const full = createWebServer({
       media: createMediaStore({ dir, playlist: join(dir, "playlist.m3u"), maxUploadBytes: 1000, reserveBytes: 100, statfs: async () => ({ bavail: 1, bsize: 150 }) }),

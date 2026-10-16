@@ -7,6 +7,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createMediaStore } from "../src/media.js";
 import { SelfCheck } from "../src/selfcheck.js";
+import { createUsbImporter } from "../src/usb.js";
 import { Settings, hashPassword } from "../src/settings.js";
 import { createWebServer } from "../src/web.js";
 
@@ -26,7 +27,12 @@ const fakeMp4 = (seconds) => {
 };
 for (const [n, s] of [["ghost-buffer.mp4", 95], ["ghost-scare-1.mp4", 12.4], ["ghost-scare-2.mp4", 9], ["zombie.mp4", 312]]) writeFileSync(join(dir, n), fakeMp4(s));
 writeFileSync(join(dir, "playlist.m3u"), "zombie.mp4\nghost-buffer.mp4\n");
-const media = createMediaStore({ dir, playlist: join(dir, "playlist.m3u"), maxUploadBytes: 500 * 1024 * 1024 });
+const media = createMediaStore({ dir, playlist: join(dir, "playlist.m3u"), maxUploadBytes: 500 * 1024 * 1024, autoPlaylist: true, defaultClip: "videofx-default.mp4" });
+// DEV_USB=/some/folder: act as if a USB stick holding that folder was plugged in 3 s after start.
+const usbRun = mkdtempSync(join(tmpdir(), "videofx-dev-usb-"));
+const usb = createUsbImporter({ dir: usbRun, media, onImported: (names) => console.info(`USB import: ${names.length} files are now the playlist`) });
+setInterval(() => usb.scan(), 1000).unref();
+if (process.env.DEV_USB) setTimeout(() => writeFileSync(join(usbRun, "sda1.ready"), process.env.DEV_USB), 3000);
 if (process.env.DEV_PASSWORD) writeFileSync(join(dir, "settings.json"), JSON.stringify({ password: hashPassword("pumpkin") }));
 const settings = new Settings({ dir, env: {}, log: console });
 
@@ -108,6 +114,7 @@ const status = () => ({
   schedule: { enabled: true, next: { on: !on, at: Date.now() + 3_600_000, label: "Mon sunset" } },
   network: { ethernet: false, wifi: { connected: true, ssid: "Home", band: "5 GHz", signalDbm: -52, quality: 80, verdict: "good" } },
   storage: { maintenance: false, dataMounted: true, state: "ok" },
+  usb: usb.status,
   web: { passwordSet: settings.passwordSet },
   clock: { synced: true },
   quiet: { active: false },

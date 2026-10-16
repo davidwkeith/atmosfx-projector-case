@@ -2,7 +2,7 @@
 // request goes through resolve(), which only allows plain files directly inside
 // the media folder.
 
-import { createWriteStream, lstatSync, readFileSync } from "node:fs";
+import { createReadStream, createWriteStream, lstatSync, readFileSync } from "node:fs";
 import { access, copyFile, lstat, mkdir, readFile, readdir, statfs, unlink } from "node:fs/promises";
 import { randomBytes } from "node:crypto";
 import { basename, dirname, join, resolve as resolvePath, sep } from "node:path";
@@ -12,6 +12,7 @@ import { mediaDuration } from "./duration.js";
 import { commitFile, writeFileAtomic } from "./fsutil.js";
 import {
   enabledCount,
+  isAuto,
   isMediaFile,
   isPlaylistFile,
   isSafeName,
@@ -35,8 +36,18 @@ const TEMP_UPLOAD = /^\.upload-[0-9a-f]{12}$/;
  * maxUploadBytes: a number, or a function so the limit can change at runtime.
  * reserveBytes: free space uploads must leave. Settings, the Matter pairing and
  * the on/off state live on the same partition, and a full disk fails their writes.
+ * autoPlaylist: uploads build the playlist while it is empty, holds only
+ * defaultClip (the built-in test clip), or was built that way and not saved by hand.
  */
-export function createMediaStore({ dir, playlist, maxUploadBytes: limit = 4 * 1024 ** 3, reserveBytes = 64 * 1024 ** 2, statfs: statfsFn = statfs }) {
+export function createMediaStore({
+  dir,
+  playlist,
+  maxUploadBytes: limit = 4 * 1024 ** 3,
+  reserveBytes = 64 * 1024 ** 2,
+  statfs: statfsFn = statfs,
+  autoPlaylist = false,
+  defaultClip,
+}) {
   const maxUpload = typeof limit === "function" ? limit : () => limit;
   const root = resolvePath(dir);
   const playlistPath = resolvePath(playlist);
@@ -63,8 +74,8 @@ export function createMediaStore({ dir, playlist, maxUploadBytes: limit = 4 * 10
   const readPlaylist = async () => parsePlaylist(await readText(), prefix);
   const readShuffle = async () => isShuffled(await readText());
 
-  /** shuffle: true/false, or undefined to keep what the file has. */
-  async function writePlaylist(entries, { shuffle } = {}) {
+  /** shuffle, auto: true/false, or undefined to keep what the file has. */
+  async function writePlaylist(entries, { shuffle, auto } = {}) {
     let valid;
     try {
       valid = validateEntries(entries);
@@ -72,9 +83,27 @@ export function createMediaStore({ dir, playlist, maxUploadBytes: limit = 4 * 10
       throw new HttpError(400, err.message);
     }
     if (shuffle !== undefined && typeof shuffle !== "boolean") throw new HttpError(400, "shuffle must be true or false");
-    shuffle ??= await readShuffle();
-    await atomicWrite(playlistPath, serializePlaylist(valid, prefix, { shuffle }));
+    if (auto !== undefined && typeof auto !== "boolean") throw new HttpError(400, "auto must be true or false");
+    const text = shuffle === undefined || auto === undefined ? await readText() : "";
+    shuffle ??= isShuffled(text);
+    auto ??= isAuto(text);
+    await atomicWrite(playlistPath, serializePlaylist(valid, prefix, { shuffle, auto }));
     return valid;
+  }
+
+  const byName = (names) => [...new Set(names)].sort((a, b) => a.localeCompare(b)).map((file) => ({ file, enabled: true }));
+
+  /** Add uploaded files to an automatic playlist. Returns whether it did. */
+  async function autoAdd(names) {
+    if (!autoPlaylist) return false;
+    const text = await readText();
+    const entries = parsePlaylist(text, prefix).filter((e) => e.file !== defaultClip);
+    const fresh = entries.length === 0;
+    if (!fresh && !isAuto(text)) return false;
+    const kept = new Map(entries.map((e) => [e.file, e.enabled]));
+    const merged = byName([...kept.keys(), ...names]).map((e) => ({ ...e, enabled: kept.get(e.file) ?? true }));
+    await writePlaylist(merged, { auto: true });
+    return true;
   }
 
   // Clip lengths by name, kept while the file's size and time are unchanged.
@@ -112,6 +141,32 @@ export function createMediaStore({ dir, playlist, maxUploadBytes: limit = 4 * 10
       }
     }
     return paths;
+  }
+
+  /** Stream into a temp file and rename it into place. Returns the byte count. */
+  async function store(path, stream, declaredLength, maxBytes) {
+    if (declaredLength > maxBytes) throw new HttpError(413, "file too large");
+    await mkdir(root, { recursive: true });
+    const free = await freeBytes();
+    const room = free === undefined ? Infinity : free - reserveBytes;
+    const noRoom = () => new HttpError(507, "not enough free space on the Pi: delete some videos first");
+    if (declaredLength > room) throw noRoom();
+    const tmp = join(root, `.upload-${randomBytes(6).toString("hex")}`);
+    let bytes = 0;
+    const limit = new Transform({
+      transform(chunk, _enc, done) {
+        bytes += chunk.length;
+        done(bytes > maxBytes ? new HttpError(413, "file too large") : bytes > room ? noRoom() : null, chunk);
+      },
+    });
+    try {
+      await pipeline(stream, limit, createWriteStream(tmp, { flags: "wx" }));
+      await commitFile(tmp, path); // fsync, rename, fsync of the folder
+    } catch (err) {
+      await unlink(tmp).catch(() => {});
+      throw err;
+    }
+    return bytes;
   }
 
   return {
@@ -237,31 +292,24 @@ export function createMediaStore({ dir, playlist, maxUploadBytes: limit = 4 * 10
         return { playlist: await writePlaylist(parsePlaylist(text, prefix), { shuffle: isShuffled(text) }) };
       }
       if (!isMediaFile(name)) throw new HttpError(415, "only video, audio and .m3u files are allowed");
-      const maxUploadBytes = maxUpload();
-      if (declaredLength > maxUploadBytes) throw new HttpError(413, "file too large");
-
-      await mkdir(root, { recursive: true });
-      const free = await freeBytes();
-      const room = free === undefined ? Infinity : free - reserveBytes;
-      const noRoom = () => new HttpError(507, "not enough free space on the Pi: delete some videos first");
-      if (declaredLength > room) throw noRoom();
-      const tmp = join(root, `.upload-${randomBytes(6).toString("hex")}`);
-      let bytes = 0;
-      const limit = new Transform({
-        transform(chunk, _enc, done) {
-          bytes += chunk.length;
-          done(bytes > maxUploadBytes ? new HttpError(413, "file too large") : bytes > room ? noRoom() : null, chunk);
-        },
-      });
-      try {
-        await pipeline(stream, limit, createWriteStream(tmp, { flags: "wx" }));
-        await commitFile(tmp, path); // fsync, rename, fsync of the folder
-      } catch (err) {
-        await unlink(tmp).catch(() => {});
-        throw err;
-      }
-      return { name, size: bytes };
+      const size = await store(path, stream, declaredLength, maxUpload());
+      return { name, size, autoPlaylist: await autoAdd([name]) };
     },
+
+    /**
+     * Copy a file from elsewhere on the Pi (a USB stick) into the media folder.
+     * No upload limit; skipped when a file of that name and size is already here.
+     */
+    async copyIn(source, name, size) {
+      const path = resolve(name);
+      if (!isMediaFile(name)) throw new HttpError(415, "not a video or audio file");
+      const here = await lstat(path).catch(() => null);
+      if (here?.isFile() && here.size === size) return { name, size, skipped: true };
+      return { name, size: await store(path, createReadStream(source), size, Infinity), skipped: false };
+    },
+
+    /** Make the playlist exactly these files, in name order, as an automatic one. */
+    replaceWithAuto: (names) => writePlaylist(byName(names), { shuffle: false, auto: true }),
 
     /** Delete a media file and drop it from the playlist. */
     async remove(name) {

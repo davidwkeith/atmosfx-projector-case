@@ -265,7 +265,8 @@ export function createWebServer(o) {
     }
     if (method === "PUT" && path === "/api/playlist") {
       const { entries, shuffle } = await readJson(req);
-      const saved = await o.media.writePlaylist(entries, { shuffle });
+      // Saved by hand: later uploads no longer join it on their own.
+      const saved = await o.media.writePlaylist(entries, { shuffle, auto: false });
       o.playlistChanged();
       return send(res, 200, { playlist: saved, shuffle: await o.media.readShuffle() });
     }
@@ -280,7 +281,7 @@ export function createWebServer(o) {
       if (method === "PUT") {
         const length = Number(req.headers["content-length"] ?? 0);
         const result = await o.media.save(name, req, length);
-        if (result.playlist) o.playlistChanged();
+        if (result.playlist || result.autoPlaylist) o.playlistChanged();
         return send(res, 201, result);
       }
       if (method === "DELETE") {
