@@ -27,9 +27,20 @@ Tap a tile to go to where that part is set up.
 - **Network**: Ethernet, or the Wi-Fi strength. Wi-Fi is set in Raspberry Pi Imager, not on this page, so it opens the networks guide.
 - **Pi temperature**: the Pi's own temperature. At the critical temperature it stops playback and switches the projector off. Opens Settings > Cooling.
 
+## Setup checks
+
+A list of what works and what doesn't: the Pi, the amplifier, the projector on HDMI (with the name and resolution it reports), whether the projector answers CEC, the motion sensor, the power supply, the temperature, the network, the time and the videos. They run by themselves about 30 seconds after the Pi starts; **Run checks** runs them again, for example after plugging something in.
+
+- **✓ OK** works.
+- **✕ Problem** needs fixing: the row says how, and **Go there** opens the setting or guide.
+- **? Not sure yet** can't be told yet. The motion sensor stays here until it has seen someone walk past.
+- **– Not used** is switched off in Settings, or not needed for how the projector is powered.
+
+A problem also puts a red dot on Dashboard and a line in the health log.
+
 ## Banners
 
 - **DMX in control**: a lighting desk is sending signal, so power and volume are locked until it stops.
 - A red banner lists alarms (heat, projector) and system problems (no password, clock not synced, storage).
 
-Read more: [How it works](../../docs/how-it-works.md)
+Read more: [How it works](../../docs/how-it-works.md), [Troubleshooting](../../docs/troubleshooting.md#setup-checks)

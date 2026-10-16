@@ -25,6 +25,8 @@ Everything below has only been tested in software. Work through it on the bench 
 
 ## Pi on the bench (before it goes in the case)
 
+After row 6, the web page's dashboard has a **Setup checks** list that covers parts of row 8 (the DigiAMP+ is found, no under-voltage), row 9 (does the projector answer CEC) and row 12 (the motion sensor fires), plus the HDMI connection, network and time. Use it as a quick first look; the rows here are still the real tests.
+
 | # | Test | Pass | If not |
 |---|---|---|---|
 | 6 | Flash the image onto a fresh card (release image through Imager's repository JSON, or your own build; or `install.sh`), first boot | One extra reboot, then `videofx-xxxx.local` answers, the name shows as VideoFX-XXXX (or the hostname you gave Imager) and your user can log in. `systemctl status videofx-player` is active and `grep ^User= /etc/systemd/system/videofx-player.service` names the user that exists (try an Imager user other than `videofx`). `videofx-maint status` says protected, `lsblk` shows three partitions, and `ssh` doesn't warn about a changed host key after a second reboot | `journalctl -b -u videofx-storage` (and `-u cloud-final` on the release image). If `videofx-storage` never started (no journal lines, `InactiveExitTimestamp` empty), look for an ordering cycle: `journalctl -b _PID=1 | grep -i cycle` (cloud-final runs After=multi-user.target, so nothing multi-user.target wants may be ordered after it; seen 2026-10-13 on a Pi 3, fixed by `Type=exec` and no `After=cloud-final`); see `pi/docs/install.md`, `pi/docs/reliability.md` and `pi/docs/troubleshooting.md` |

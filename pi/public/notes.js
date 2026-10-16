@@ -30,11 +30,29 @@ export function systemNotesOf(st) {
   return notes;
 }
 
+/** How each setup check status reads on the dashboard. */
+export const CHECK_STATUS = {
+  pass: { mark: "✓", text: "OK" },
+  fail: { mark: "✕", text: "Problem" },
+  unknown: { mark: "?", text: "Not sure yet" },
+  off: { mark: "–", text: "Not used" },
+};
+
+/** "8 OK · 1 problem · 1 to confirm", from the setup checks' summary; null before the first run. */
+export function checksSummaryText(summary) {
+  if (!summary) return null;
+  const parts = [`${summary.pass} OK`];
+  if (summary.fail) parts.push(`${summary.fail} problem${summary.fail === 1 ? "" : "s"}`);
+  if (summary.unknown) parts.push(`${summary.unknown} to confirm`);
+  if (summary.off) parts.push(`${summary.off} not used`);
+  return parts.join(" · ");
+}
+
 /** Red dots on the navigation. A missing password belongs to System, not the Dashboard. */
 export function badgesOf(st) {
   if (!st) return { dashboard: false, system: false };
   return {
-    dashboard: alarmsOf(st).length > 0 || systemNotesOf(st).some((n) => n.id !== "password"),
+    dashboard: alarmsOf(st).length > 0 || systemNotesOf(st).some((n) => n.id !== "password") || st.checks?.fail > 0,
     system: !!st.version?.available || (!!st.web && !st.web.passwordSet),
   };
 }

@@ -179,6 +179,18 @@ export class Projector extends EventEmitter {
     return this.state;
   }
 
+  /**
+   * For the setup checks: does the projector answer CEC? Only asks for its power
+   * status, so it wakes nothing and changes no power state or fallback.
+   * @returns {Promise<"supported"|"no-response"|"no-device">}
+   */
+  async checkCec() {
+    if (!(await this.#configure())) return "no-device";
+    if (!parsePowerStatus(await this.#cec(["--to", "0", "--give-device-power-status"]))) return "no-response";
+    if (this.#state.cec !== "supported") this.#set({ cec: "supported" });
+    return "supported";
+  }
+
   /** keepSignal: leave HDMI on in hdmi-off mode (e.g. to show the pairing code). */
   async off({ keepSignal = false } = {}) {
     this.#cancelRetry();

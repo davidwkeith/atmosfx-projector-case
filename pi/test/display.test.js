@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { DisplayWatch, displayConnected } from "../src/display.js";
+import { DisplayWatch, displayConnected, readEdid } from "../src/display.js";
 
 const sysfs = (tree) => ({
   readdir: async () => {
@@ -29,6 +29,28 @@ describe("HDMI connector status", () => {
   it("is unknown off a Pi or for a connector that is not there", async () => {
     expect(await displayConnected({ fs: sysfs(null) })).toBeNull();
     expect(await displayConnected({ connector: "HDMI-A-3", fs: sysfs(tree) })).toBeNull();
+  });
+});
+
+describe("EDID", () => {
+  const edidFs = (tree) => ({
+    readdir: async () => Object.keys(tree),
+    readFile: async (path) => {
+      const v = tree[path.split("/").at(-2)];
+      if (v === undefined) throw new Error("ENOENT");
+      return Buffer.from(v);
+    },
+  });
+
+  it("reads the chosen connector's EDID, or the first HDMI one that has any", async () => {
+    const fs = edidFs({ "card1-HDMI-A-1": "", "card1-HDMI-A-2": "edid-2", "card1-Writeback-1": "x" });
+    expect(String(await readEdid({ connector: "HDMI-A-2", fs }))).toBe("edid-2");
+    expect(await readEdid({ connector: "HDMI-A-1", fs })).toBeNull();
+    expect(String(await readEdid({ fs }))).toBe("edid-2");
+  });
+
+  it("is null off a Pi", async () => {
+    expect(await readEdid({ fs: { readdir: async () => { throw new Error("ENOENT"); } } })).toBeNull();
   });
 });
 
