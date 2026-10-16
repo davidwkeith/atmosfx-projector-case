@@ -53,8 +53,10 @@ aim_max = 15;      // tilt range the case must clear (check_clash.sh sweeps it)
 pan_max = 10;      // pan range the case must clear: the light cone clips the window frame past this at throw_ratio 0.95 (turn the case for more)
 cone_tilt = 11;     // light-cone check: the image must clear the window, frame and visor at +/- this tilt
 aim_combo = 8;     // tilt while panned by pan_max (corners): the rear plugs reach the divider past this; more would lengthen base_front past the 210 mm bed axis
-ped_top = 30;      // pedestal top height above floor
-shoe_ch_w = 18.6;  // hot-shoe receiver (ISO 518, UNVERIFIED against the UTEBIT adapter; fit_coupon only so far): channel width under the lips
+ped_mount = "shoe"; // [shoe, insert] how the ball head sits on the pedestal: the UTEBIT hot-shoe adapter in a T-slot (coupon passed 2026-10-15), or a 1/4-20 insert plus double-ended stud
+ped_top = 25;      // pedestal top height above floor (the T-slot lips; with "insert" use 30 to keep the projector height)
+shoe_rise = 5;     // the hot-shoe adapter's ring: lip top to the head's base (about 5, measure it)
+shoe_ch_w = 18.6;  // hot-shoe receiver (ISO 518; the UTEBIT adapter fits the coupon, 2026-10-15): channel width under the lips
 shoe_foot_t = 2;   // foot plate thickness (ISO 2 +0.15)
 shoe_open = 12.5;  // opening between the lips
 shoe_lip_t = 2;    // lip thickness: the adapter's ring clamps on this
@@ -197,7 +199,8 @@ seam_rib = 4;      // extra roof thickness at the lid seam for the scarf joint
 /* [Hidden] */
 $fn = 48;
 z_floor = foot_h + floor_t;
-proj_z0 = ped_top + ball_head_h;          // projector underside above floor
+head_z = ped_top + (ped_mount == "shoe" ? shoe_rise : 0);   // ball head base above floor
+proj_z0 = head_z + ball_head_h;           // projector underside above floor
 fw = wall + pane_t + 4;
 div_t = 3;
 inner_w = proj_w + 2*side_air;
@@ -207,6 +210,7 @@ inner_h = proj_z0 + proj_h + top_air;
 out_w = inner_w + 2*wall;
 out_d = inner_d + fw + wall;
 ribs_x = concat([-(out_w-rib_t)/2], foot_ribs, [(out_w-rib_t)/2]);   // outer ribs sit under the side walls: no floor past them
+assert(ped_mount == "insert" || ped_top - boss_h >= shoe_lip_t + shoe_foot_t + 0.45 + 4, "pedestal column too short for the hot-shoe slot: raise ped_top");
 assert(max([for (i=[1:len(ribs_x)-1]) ribs_x[i]-ribs_x[i-1]-rib_t]) <= max_bridge, "floor bridge too long: add or move foot_ribs");
 base_h = z_floor + inner_h;
 y_front = -out_d/2;
@@ -275,7 +279,7 @@ lid_a = atan(rise/lid_d);
 yfl = -lid_d/2;
 lid_seam = yfl - visor_len + lid_front_len;
 seam_t = top_t + seam_rib;                // roof thickness across the scarf
-pivot = [ped_x, ped_y, z_floor + ped_top + pivot_h];
+pivot = [ped_x, ped_y, z_floor + head_z + pivot_h];
 lid_z0 = base_h + gasket - (skirt_h - top_t);
 clamp_w = cord_open[0] + 2*clamp_flange;
 clamp_h = cord_open[1] + 2*clamp_flange;      // both halves together
@@ -489,7 +493,8 @@ module hatch_cover() {
   }
 }
 
-// Screws to the floor bosses and carries the ball head (1/4-20 insert + short stud)
+// Screws to the floor bosses and carries the ball head: the head's hot-shoe adapter slides into a
+// T-slot from the left (hatch side) and its ring clamps on the lips; or a 1/4-20 insert + short stud.
 module pedestal() {
   difference() {
     union() {
@@ -497,7 +502,8 @@ module pedestal() {
       cylinder(d=40, h=ped_top-boss_h);
     }
     for (sx=[-1,1], sy=[-1,1]) translate([sx*35, sy*25, -1]) cylinder(d=3.4, h=6);
-    translate([0, 0, ped_top-boss_h-insert_len]) cylinder(d=insert_d, h=insert_len+0.1);
+    if (ped_mount == "shoe") translate([0, 0, ped_top-boss_h]) hot_shoe_cut(25);
+    else translate([0, 0, ped_top-boss_h-insert_len]) cylinder(d=insert_d, h=insert_len+0.1);
   }
 }
 
@@ -576,7 +582,8 @@ module assembly() {
   %pi_fan(sled);
   %pi_hdmi_plug(sled);
   // ghosts (preview only): ball head + projector
-  %translate([ped_x, ped_y, z_floor+ped_top]) cylinder(d=32, h=ball_head_h);
+  if (ped_mount == "shoe") %translate([ped_x, ped_y, z_floor+ped_top]) cylinder(d=24, h=shoe_rise);   // adapter ring
+  %translate([ped_x, ped_y, z_floor+head_z]) cylinder(d=32, h=ball_head_h);
   %projector(aim[0], aim[1]);
   %ir_holder_placed(aim[0], aim[1]);
 }

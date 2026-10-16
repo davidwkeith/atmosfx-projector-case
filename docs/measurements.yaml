@@ -202,6 +202,11 @@ ball_head:
     # Ball centre above the head's base (the aim pivot).
     measured:
     tol: 2
+  shoe_rise:
+    # The hot-shoe adapter's ring: from the pedestal's lip top to the ball head's base, ring tight. Sets
+    # how far ped_top sits below the head (guess 5).
+    measured:
+    tol: 1
   base_d:
     # Base diameter. Must sit on the 40 mm pedestal top.
     measured:
