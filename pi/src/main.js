@@ -101,6 +101,8 @@ volume.applyCurrent().catch(() => {});
 
 // Console device and ports are read once: changing them needs a restart.
 const screen = createScreen(get("console"));
+// Wipe whatever boot left on the console before anything can reveal it.
+screen.black();
 const media = createMediaStore({
   dir: get("mediaDir"),
   playlist: get("playlist"),
@@ -271,6 +273,9 @@ display.on("disconnected", () => health.event("warn", "HDMI display lost"));
 display.on("connected", () => health.event("info", "HDMI display back"));
 display.start();
 mpv.on("crashed", () => health.event("warn", "Video player crashed"));
+// mpv gone (crash, kill, restart): the console shows until the next one draws.
+// Black while playback is on, so a crash never shows pairing text or anything else.
+mpv.on("down", () => (player.isOn ? screen.black() : idleScreen()));
 
 // --- power
 
@@ -895,6 +900,9 @@ display.stop();
 pir?.stop();
 if (thermalTimer) clearInterval(thermalTimer);
 dmxSocket?.close();
+// Fade out rather than cut, and leave the console black behind mpv.
+await player.fadeOut();
+screen.black();
 await player.shutdown();
 // A relay-switched projector goes off (videofx-relay-open covers a crash or kill).
 await projector.shutdown();
