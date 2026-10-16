@@ -73,6 +73,7 @@ export class DisplayWatch extends EventEmitter {
     const connected = await this.#probe();
     if (connected === false) {
       this.#absent++;
+      if (this.#absent === this.#minAbsentPolls) this.emit("disconnected");
       return connected;
     }
     const wasAbsent = this.#absent >= this.#minAbsentPolls;

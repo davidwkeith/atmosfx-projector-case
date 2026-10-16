@@ -1,8 +1,24 @@
-// Heat protection: the Pi's own SoC temperature. The case has no fans; the projector's
-// own fan moves the air, and the projector has its own thermal cutoff. This file reads
-// the SoC zone and switches the projector off (OverTempGuard) if the Pi itself overheats.
+// Heat protection: the Pi's own SoC temperature. The projector's own fan moves the case
+// air; the Pi 3/4 sleds carry a small fan that the kernel's gpio-fan overlay switches on
+// and off by itself. This file reads the SoC zone and the fan's state, and switches the
+// projector off (OverTempGuard) if the Pi overheats anyway.
+
+import { readFile, readdir } from "node:fs/promises";
+import { join } from "node:path";
 
 export const parseMilli = (text) => (/^-?\d+$/.test((text ?? "").trim()) ? Number(text) / 1000 : null);
+
+/** The gpio-fan overlay's cooling device: true (running), false (off), or null (no such device). */
+export async function readFanState(root = "/sys/class/thermal") {
+  const names = await readdir(root).catch(() => []);
+  for (const name of names.filter((n) => n.startsWith("cooling_device"))) {
+    const type = await readFile(join(root, name, "type"), "utf8").catch(() => "");
+    if (type.trim() !== "gpio-fan") continue;
+    const state = await readFile(join(root, name, "cur_state"), "utf8").catch(() => null);
+    return state === null ? null : Number(state.trim()) > 0;
+  }
+  return null;
+}
 
 /**
  * SoC temperature watch; no I/O. update(socC) returns { temp, alarms, locked }.

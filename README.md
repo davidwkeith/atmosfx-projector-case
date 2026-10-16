@@ -2,7 +2,7 @@
 
 Parametric [OpenSCAD](https://openscad.org) design for a ground-standing, rain-proof (not sealed), ventilated case that holds a mini projector and a Raspberry Pi 3 running an [AtmosFX](https://atmosfx.com) Halloween effect.
 
-**Status: v0.10 (unreleased), design only. Nothing has been printed or wired yet.** Dimensions assume a typical mini projector (about 171 x 134 x 75 mm, 0.72 kg). Measure yours and edit the parameters before printing.
+**Status: v0.11 (unreleased), design only. Nothing has been printed or wired yet.** Dimensions assume a typical mini projector (about 171 x 134 x 75 mm, 0.72 kg). Measure yours and edit the parameters before printing.
 
 ## Features
 
@@ -85,6 +85,7 @@ Mains is still inside a printed box (the cord's connector and the brick's inlet)
 
 ## Changelog
 
+- v0.11 (unreleased): Pi sled fan for the Pi 3/4 (upright fan plate on the sled, kernel `gpio-fan` on GPIO 26 through a BC337, fan state on the Dashboard)
 - v0.9 (unreleased): sized to the Tkisko TO2 (lens on the long face, 0.95 throw), front tiles print end-on, pan and combined-aim limits, receptacle plate on the power shelf for the stock wall-wart plus a second one (the brick cradle is gone), gland beside the plate, Pi zone 85 mm, wall-wart clash check
 - v0.8: light-cone check, taller 4 x 5 in window set high for upward tilt, shorter visor, skirt notch, plug clearance behind the projector, fit-test coupon, interior stake tubes, lid screws moved from the roof to the skirt sides, screwed base seam, insect-screen caps, second fan for the Pi/brick zone, shelf vents, support-free printing (ribbed floor, diamond hatch, snap-out window ribs, gabled pass-through), IR LED holder, rear-wall PIR mount, Pi sleds for 3B/3B+/4B/5/Zero 2 W, audio (Amp4 HAT, floor chimney for speaker wire, shelf raised 5 mm), 3 x 5 in stock acrylic pane (wider window), AC gland above the shelf, taller barrier, keyholes flipped to lift off, lid scarf joint and gasket land, larger front/rear gaps so the aim range actually clears
 - v0.7: DC brick inside on the power shelf, barrier, heat louvers

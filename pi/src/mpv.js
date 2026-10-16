@@ -307,6 +307,7 @@ export class MpvSupervisor extends EventEmitter {
     const now = this.#now();
     this.#crashes = this.#crashes.filter((t) => now - t < this.#restartWindowMs);
     this.#crashes.push(now);
+    this.emit("crashed");
     if (this.#crashes.length > this.#maxRestarts) {
       this.#log.error(`${this.#command} crashed ${this.#crashes.length} times in ${this.#restartWindowMs} ms; giving up`);
       this.emit("failed", "the video player keeps crashing");

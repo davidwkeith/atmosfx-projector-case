@@ -13,7 +13,7 @@ import { execFile, spawn } from "node:child_process";
 import dgram from "node:dgram";
 import { existsSync, mkdirSync, readFileSync, statSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
-import { hostname } from "node:os";
+import { hostname, uptime } from "node:os";
 import { fileURLToPath } from "node:url";
 import { monitorEventLoopDelay } from "node:perf_hooks";
 import { join } from "node:path";
@@ -28,6 +28,7 @@ import { DisplayWatch, displayConnected } from "./display.js";
 import { DmxControl, InternalWrites, PowerArbiter, SACN_PORT, SacnReceiver, fixtureValues, interpret, multicastGroup } from "./dmx.js";
 import { writeFileAtomicSync } from "./fsutil.js";
 import { GpioOut, gpiosetArgs } from "./gpio.js";
+import { HealthLog, HealthWatch, parseThrottled } from "./healthlog.js";
 import { Ir, lircFeatures } from "./ir.js";
 import { HttpError, createMediaStore } from "./media.js";
 import { isShuffled, parsePlaylist } from "./playlist-core.js";
@@ -45,7 +46,7 @@ import { Watchdog } from "./watchdog.js";
 import { capVolume, quietNow, scareBlocked } from "./quiet.js";
 import { readVersion, updateStatus } from "./update.js";
 import { askHelper } from "./upgrade.js";
-import { OverTempGuard, SocWatch, parseMilli } from "./thermal.js";
+import { OverTempGuard, SocWatch, parseMilli, readFanState } from "./thermal.js";
 import { Volume, amixerArgs, missingCardMessage } from "./volume.js";
 import { createWebServer, isLanAddress } from "./web.js";
 
@@ -60,6 +61,11 @@ mkdirSync(stateDir, { recursive: true });
 const runDir = process.env.RUNTIME_DIRECTORY || stateDir;
 const settings = new Settings({ dir: stateDir, env: process.env, ctx });
 const get = (key) => settings.get(key);
+
+// Temperatures and failures over time, on the data partition (the journal is in RAM).
+const health = new HealthLog({ file: join(stateDir, "health.jsonl") });
+// Short uptime: the Pi itself started (power-up, power cut or reboot), not just the service.
+health.event("info", uptime() < 300 ? "Pi started" : "Service restarted");
 
 // A restore from the web page staged Matter storage: swap it in before matter.js opens it.
 await applyStagedRestore(stateDir);
@@ -256,7 +262,10 @@ display.on("connected", () => {
   console.info("HDMI display connected: starting playback again");
   player.reload();
 });
+display.on("disconnected", () => health.event("warn", "HDMI display lost"));
+display.on("connected", () => health.event("info", "HDMI display back"));
 display.start();
+mpv.on("crashed", () => health.event("warn", "Video player crashed"));
 
 // --- power
 
@@ -327,6 +336,7 @@ const requestPower = (source, on) => {
 
 // The player gave up (no playlist, repeated crashes): report "off" so the
 // controller shows the truth. Deferred so we never write inside the change event.
+player.on("failed", (why) => health.event("critical", `Playback stopped: ${why}`));
 player.on("failed", () => setImmediate(() => writePower(false).catch((e) => console.error(e))));
 
 // --- scares: Matter "scare" switch, PIR, web button
@@ -461,7 +471,7 @@ function startDmx() {
 }
 startDmx();
 
-// --- heat: the Pi's own SoC temperature (the case has no fans)
+// --- heat: the Pi's own SoC temperature (its sled fan is the kernel's; we only report it)
 
 const guard = new OverTempGuard({
   isOn: () => player.isOn,
@@ -480,8 +490,10 @@ let stopping = false;
 async function thermalTick() {
   try {
     const socC = await readFile("/sys/class/thermal/thermal_zone0/temp", "utf8").then(parseMilli, () => null);
+    health.noteTemp(socC);
     if (stopping || !get("thermalEnabled")) return; // switched off while reading
-    thermalState = thermal.update(socC);
+    const fan = await readFanState();
+    thermalState = { ...thermal.update(socC), fan };
     const value = socC === null ? null : Math.round(socC * 100);
     if (temperature.state.temperatureMeasurement.measuredValue !== value) {
       await temperature.set({ temperatureMeasurement: { measuredValue: value } });
@@ -542,6 +554,27 @@ async function refreshStorage() {
 refreshStorage();
 setInterval(refreshStorage, 60_000).unref();
 
+// --- health log: one sample a minute, plus an event whenever something changes
+
+const healthWatch = new HealthWatch();
+async function healthTick() {
+  try {
+    // Under-voltage and throttling flags from the firmware (needs the video group).
+    const throttled = await run("vcgencmd", ["get_throttled"], { timeout: 5000 }).then((r) => parseThrottled(r.stdout), () => null);
+    if (stopping) return;
+    const alarm = thermalState.locked ? "critical" : thermalState.alarms.some((a) => a.level === "warn") ? "warn" : null;
+    for (const e of healthWatch.check({ alarm, temp: thermalState.temp, throttled, wifi: Boolean(network.wifi.connected) })) {
+      health.event(e.level, e.text);
+    }
+    health.sample({ fan: thermalState.fan, throttled, dbm: network.wifi.signalDbm, on: player.isOn, synced: clockSynced() });
+  } catch (err) {
+    console.error(`Health log: ${err.message}`);
+  }
+}
+// After the first thermal and network readings are in.
+setTimeout(healthTick, 10_000).unref();
+setInterval(healthTick, 60_000).unref();
+
 // --- watchdog: systemd restarts us if the event loop stops pinging
 
 const loopDelay = monitorEventLoopDelay({ resolution: 50 });
@@ -553,7 +586,9 @@ const watchdog = new Watchdog({
   healthy: () => {
     const lagMs = loopDelay.max / 1e6;
     loopDelay.reset();
-    return lagMs > 5000 ? `event loop blocked for ${Math.round(lagMs)} ms` : null;
+    if (lagMs <= 5000) return null;
+    health.event("critical", `Event loop blocked for ${Math.round(lagMs)} ms`);
+    return `event loop blocked for ${Math.round(lagMs)} ms`;
   },
 });
 // --- lifecycle and settings
@@ -655,6 +690,8 @@ const web = createWebServer({
   nowPlaying: () => player.nowPlaying(),
   poster: (name) => posters.poster(name),
   settings,
+  // The chart draws the warning and cut-off lines too.
+  health: { read: (q) => ({ ...health.read(q), warnC: get("tempWarnC"), critC: get("tempCritC") }) },
   auth: settings,
   hostNames: () => {
     const name = get("name").toLowerCase();
@@ -785,6 +822,7 @@ watchdog.ready().catch(() => {});
 // code to stdout, which is the journal under systemd.
 await server.run();
 stopping = true;
+health.event("info", "Service stopped");
 await watchdog.stopping();
 web.close();
 scheduler.stop();

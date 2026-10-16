@@ -303,6 +303,31 @@ pi_stack:
     # Zero 2 W: HAT underside above the board bottom.
     measured:
     tol: 1
+  pi_fan_side:
+    # Pi 3/4 sled fan (BOM: Coolerguys 30 mm): frame side.
+    param: pi_fan[0]
+    measured:
+    tol: 0.5
+  pi_fan_thick:
+    # Fan frame thickness.
+    param: pi_fan[1]
+    measured:
+    tol: 0.5
+  pi_fan_sp:
+    # Fan screw hole spacing, centre to centre.
+    measured:
+    tol: 0.3
+  sd_protrusion:
+    # How far the microSD card sticks out past the Pi's end. Must stay at least 1 under pi_fan_gap (4),
+    # or the fan presses on the card.
+    measured:
+    default: 2.5
+    tol: 1
+  heatsink_h:
+    # SoC heatsink height, tape included. Must clear the DigiAMP+ underside with the HAT on (BRINGUP 13a).
+    measured:
+    default: 8
+    tol: 1
   hdmi_plug_w:
     # Straight HDMI plug at the Pi, with strain relief: width.
     param: hdmi_plug[0]

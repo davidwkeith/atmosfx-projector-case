@@ -2,6 +2,8 @@
 
 VideoFX watches the Pi's own temperature. It does not read the projector's.
 
+The Pi 3/4 sled fan is switched by the Pi's kernel, not by this page: on at 60 °C, off 10 °C lower. The Dashboard's Pi temperature tile shows whether it is running. Its pin and temperature are under Hardware.
+
 ## Over-temperature protection
 
 Turn it on, then set two limits:

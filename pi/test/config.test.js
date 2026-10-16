@@ -15,7 +15,7 @@ describe("config", () => {
     expect(c.name).toBe("VideoFX-BEEF");
     expect([c.audioCard, c.mixerControl, c.volume]).toEqual(["DigiAMP", "Digital", 30]);
     expect([c.scareCooldown, c.scareDuringScare, c.scareOrder]).toEqual([20, "ignore", "sequential"]);
-    expect([c.pirEnabled, c.pirPin, c.relayPin, c.irTxPin, c.irRxPin]).toEqual([false, 17, 27, 16, 23]);
+    expect([c.pirEnabled, c.pirPin, c.relayPin, c.irTxPin, c.irRxPin, c.fanPin, c.fanOnC]).toEqual([false, 17, 27, 16, 23, 26, 60]);
     expect(c.projectorPower).toBe("cec");
     expect(c.mpv).toBe("mpv");
     expect([c.thermalEnabled, c.tempWarnC, c.tempCritC, c.tempHysteresisC]).toEqual([true, 70, 80, 5]);
@@ -93,7 +93,7 @@ describe("config", () => {
 });
 
 describe("GPIO pins", () => {
-  const base = { pirPin: 17, relayPin: 27, irTxPin: 16, irRxPin: 23, irTxDriver: "gpio-ir-tx" };
+  const base = { pirPin: 17, relayPin: 27, irTxPin: 16, irRxPin: 23, fanPin: 26, irTxDriver: "gpio-ir-tx" };
   it("accepts the default layout", () => expect(checkPins(base)).toBeUndefined());
   it("refuses two roles on one pin", () => {
     expect(checkPins({ ...base, relayPin: 17 })).toMatch(/GPIO17 is set for both the PIR and the relay/);
@@ -104,7 +104,14 @@ describe("GPIO pins", () => {
     expect(() => loadConfig({ VIDEOFX_PIR_GPIO: String(pin) }, ctx)).toThrow(/DigiAMP+/);
     expect(() => loadConfig({ VIDEOFX_RELAY_GPIO: String(pin) }, ctx)).toThrow(/DigiAMP+/);
   });
-  it("pwm-ir-tx is allowed now that the fans are gone (GPIO12 is free)", () => {
+  it("refuses the fan on a pin another role uses", () => {
+    expect(checkPins({ ...base, fanPin: 16 })).toMatch(/GPIO16 is set for both the IR LED and the fan/);
+  });
+  it("the fan must start below the warning temperature", () => {
+    expect(checkPins({ ...base, fanOnC: 60, tempWarnC: 70 })).toBeUndefined();
+    expect(checkPins({ ...base, fanOnC: 70, tempWarnC: 70 })).toMatch(/fan/);
+  });
+  it("pwm-ir-tx is allowed: the fan is on/off on GPIO26, so PWM0 (GPIO12) is free", () => {
     expect(checkPins({ ...base, irTxDriver: "pwm-ir-tx", irTxPin: 12 })).toBeUndefined();
   });
   it("a file conflict is an error in strict mode and a warning otherwise", () => {

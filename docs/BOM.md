@@ -13,6 +13,7 @@ Amazon cart placed or about to be: 12 SKUs, $145.32 with tax (checkout PDF). Row
 **Still to buy**
 - Safety-critical: the brick, its cord, the Y-splitter, and the weatherproof connection box.
 - Fasteners: M5 button-head bolts (owner has them), the M3 knurled thumbscrew, and (unless the hot-shoe slot works) the 1/4-20 insert and stud.
+- Pi fan parts (added 2026-10-15): the 30 mm fan, a heatsink, BC337, 1N5819, M2.5 x 16 screws and nuts (see "Sensors, control"). Not ordered.
 - Everything else outside the cart: the Pi, DigiAMP+, microSD, PIR, speakers and wire, HDMI cable and right-angle adapter, the 3.5 x 5 in frame, foam tape, silicone, screen, paint, filament.
 
 ## Core
@@ -54,6 +55,9 @@ Amazon cart placed or about to be: 12 SKUs, $145.32 with tax (checkout PDF). Row
 | HC-SR501 PIR motion sensor | 1 | | [Micro Center: Inland PIR module](https://www.microcenter.com/product/618776/inland-pir-motion-sensor-module?storeid=195) (HC-SR501 type) or [Amazon: HC-SR501 5-pack](https://www.amazon.com/dp/B07KBWVJMP) |
 | Relay module, 5 V coil, opto-isolated, active-low | 0-1 | Only if the projector lacks CEC (BRINGUP row 9 fails). Needs the projector leg cut: see WIRING.md. Keep two of the ordered generic lever connectors for the relay splice. | [Micro Center: Inland single 5 V relay module](https://www.microcenter.com/product/659887/inland-single-5v-relay-module-for-arduino?storeid=195); confirm the trigger polarity on the board before wiring |
 | 940 nm IR LED + 150 R resistor | 0-1 | Only if CEC fails. Driven straight from GPIO 16 (no transistor). | [Micro Center: Adafruit IR transceiver (940 nm emitter with driver + 38 kHz receiver)](https://www.microcenter.com/product/691617/adafruit-industries-infrared-ir-remote-transceiver-stemma-jst-ph-2mm-940nm-emitter-38khz-receiver?storeid=195) covers this row and the next. Discrete: [IR LEDs](https://www.microcenter.com/product/456455/adafruit-industries-super-bright-5mm-ir-led-940nm-25-pack?storeid=195), [resistors](https://www.microcenter.com/product/618896/inland-1-4-watt-1-resistors-610-pack?storeid=195) |
+| 30 mm 5 V fan, 30 x 30 x 10, 2-pin | 1 | Pi 3/4 sled fan (not the Pi 5 or Zero 2 W). Added 2026-10-15 after the Pi tripped its over-temperature protection on a warm day. No LED: a lit fan would glow through the Pi vent at night. Its 2-pin connector is not Dupont: cut it off and crimp Dupont shells, or splice to jumper leads. **Not ordered.** $6.99, in stock (page read 2026-10-15) | [Amazon: Coolerguys 30 mm 5 V CG3010H05](https://www.amazon.com/dp/B08R97Y9ZT) |
+| Pi SoC heatsink, stick-on | 1 | On the SoC, under the DigiAMP+. Keep it under about 8 mm tall so it clears the HAT (check with the HAT on before peeling the tape). The 4-piece kit has spares for the USB/LAN chip. **Not ordered.** $3.49 (page read 2026-10-15). Micro Center Santa Clara's Adafruit 14 x 14 x 8 and Micro Connectors kit were both sold out that day | [Amazon: Easycargo heatsink kit, 4 pcs](https://www.amazon.com/dp/B079FV2RH3) |
+| BC337 NPN transistor + 1 k resistor + 1N5819 diode | 1 each | Fan switch: GPIO 26 through 1 k to the base, fan minus on the collector, the diode across the fan. Resistor from the same Inland pack as the IR LED's 150 R. **Not ordered.** | [Amazon: E-Projects BC337, 50 pcs](https://www.amazon.com/dp/B07YN77PTX), [Amazon: Chanzon 1N5819, 100 pcs](https://www.amazon.com/dp/B079KG1TN2), [Micro Center: resistors](https://www.microcenter.com/product/618896/inland-1-4-watt-1-resistors-610-pack?storeid=195) |
 | TSOP38238 IR receiver | 0-1 | Bench tool, optional: learns the remote's power code once; not fitted in the case. | The Adafruit board above, or [Amazon: TSOP38238 + TSAL6200 LEDs, 5 each](https://www.amazon.com/dp/B09D3RGSHX) |
 
 ## Fasteners
@@ -70,6 +74,7 @@ Amazon cart placed or about to be: 12 SKUs, $145.32 with tax (checkout PDF). Row
 | M3 x 10 self-tapping | 4 | Pedestal to floor **Ordered**: Mikniri 750-pc M1.7-M3 assortment ($7.99); the M3 lengths are unconfirmed. | [Amazon: M3 pan-head self-tapping assortment, 6-20 mm](https://www.amazon.com/dp/B07BTNDC6W) |
 | M3 x 8 self-tapping | 4 | Window frame Same Mikniri assortment. | Same assortment |
 | M3 knurled thumbscrew, 8 mm | 1 | Sled **Not ordered.** | [Amazon: MECCANIXITY M3 x 8 stainless thumb screws, 10-pack](https://www.amazon.com/dp/B0FC6FS6M3) |
+| M2.5 x 16 socket screw + nut | 4 | Fan to the sled's fan plate: 3.5 mm plate + 10 mm fan, nut on the fan's outlet side. **Not ordered.** | [Amazon: M2.5 stainless screw and nut kit, 210 pcs (6-20 mm)](https://www.amazon.com/dp/B0D9HK4ZBR) |
 | M2.5 x 6 self-tapping | 4 | Pi to sled Same Mikniri assortment (lengths unconfirmed). | [Amazon: uxcell M2.5 x 6 stainless self-tapping, 100-pack](https://www.amazon.com/dp/B01L7PDGXO) |
 | M2 x 6 self-tapping | 10 | Screen caps (6), PIR (2) Same Mikniri assortment (lengths unconfirmed). | [Amazon: M1.7-M3 small self-tapping assortment](https://www.amazon.com/dp/B0GF1CHDVV) |
 
@@ -109,6 +114,7 @@ These are estimates from typical retail prices, not quotes; check current prices
 | Speakers (outdoor pair) + wire | 50-120 |
 | Ball head + stud | 15-35 |
 | PIR | 5-10 |
+| Pi fan, heatsink, transistor, diode, screws | 15-25 |
 | Power parts (brick, cord, Y-splitter, wire, connection box) | 45-70 |
 | Acrylic pane | 10-25 |
 | Inserts, screws, foam, silicone, screen, paint | 30-50 |

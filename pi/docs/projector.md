@@ -23,4 +23,4 @@ Setting: **Projector power** = `cec` (default) | `relay-ir` | `relay` | `hdmi-of
 - **IR** uses the `gpio-ir-tx` overlay for the LED and `gpio-ir` for a TSOP38238-style receiver, driven with `ir-ctl`.
   - On the page (Settings > Projector, with **Projector power** set to `relay-ir`): **Learn power button**, then press the remote's power button at the receiver. The capture is decoded as NEC (`nec`, `necx` or `nec32`, the same scancode forms the kernel's encoder sends) or kept as raw pulse/space data.
   - Or paste a code (`nec:0x40bf`, `rc5:0x1e01`, `raw:+9000 -4500 ...`). **Send test** fires it.
-  - `pwm-ir-tx` is allowed (set `VIDEOFX_IR_TX_DRIVER` and use its overlay in `config.txt`): the case has no fans, so hardware PWM0 is free.
+  - `pwm-ir-tx` is allowed (set `VIDEOFX_IR_TX_DRIVER` and use its overlay in `config.txt`): the Pi fan is plain on/off on GPIO 26, so hardware PWM0 is free.

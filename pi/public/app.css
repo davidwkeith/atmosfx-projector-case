@@ -291,3 +291,19 @@ dialog#help::backdrop { background: rgb(0 0 0 / 0.5); }
 .md th, .md td { border: 1px solid var(--line); padding: 4px 8px; text-align: left; vertical-align: top; }
 .md th { background: var(--bg); }
 .total { color: var(--muted); font-size: 0.85rem; margin: 8px 0 0; }
+
+/* System > Health log */
+.health-chart svg { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 6px; }
+.health-chart .soc { fill: none; stroke: var(--text); stroke-width: 1.5; vector-effect: non-scaling-stroke; }
+.health-chart .warn-line, .health-chart .crit-line { stroke-dasharray: 4 4; vector-effect: non-scaling-stroke; }
+.health-chart .warn-line { stroke: var(--accent); }
+.health-chart .crit-line { stroke: var(--danger); }
+.health-chart .fan { fill: var(--ok); }
+.health-chart .uv { stroke: var(--danger); opacity: 0.6; }
+.health-chart .thr { stroke: var(--accent); opacity: 0.5; }
+.health-chart .axis { fill: var(--muted); font-size: 10px; }
+.health-events { list-style: none; padding: 0; margin: 12px 0; font-size: 0.9rem; }
+.health-events li { padding: 2px 0; }
+.health-events time { color: var(--muted); }
+.health-events .warn { color: var(--accent); margin: 0; }
+.health-events .critical { color: var(--danger); }

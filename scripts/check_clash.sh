@@ -58,6 +58,9 @@ for s in pi3 pi4 pi5 zero2w; do
   run "sled-$s"   "intersection(){ base_all(); translate([0,0,z_floor+sled_pad]) pi_sled(\"$s\"); }"
   run "stack-$s"  "intersection(){ pi_stack(\"$s\"); union(){ base_all(); translate([0, y_pi0+0.3, shelf_zz]) power_shelf(); } }"
 done
+for s in pi3 pi4; do   # the sled fan vs the case, shelf, Pi + HAT, HDMI plug and the other sled parts
+  run "fan-$s"    "intersection(){ pi_fan(\"$s\"); union(){ base_all(); translate([0, y_pi0+0.3, shelf_zz]) power_shelf(); pi_stack(\"$s\"); pi_hdmi_plug(\"$s\"); translate([0,0,z_floor+sled_pad]) pi_sled(\"$s\"); } }"
+done
 for s in pi3 pi4 pi5; do   # a straight HDMI plug in the Pi, through the divider (the Zero's port sits 35 mm back and takes a slim plug)
   run "hdmi-$s"   "intersection(){ pi_hdmi_plug(\"$s\"); union(){ base_all(); translate([0,0,z_floor+sled_pad]) pi_sled(\"$s\"); translate([ped_x, ped_y, z_floor+boss_h]) pedestal(); for (a=[-aim_max, aim_max]) { projector(0, a); projector_ports(0, a); } } }"
 done

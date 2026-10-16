@@ -257,6 +257,7 @@ export function pinTable(items) {
     ["Projector relay out", `GPIO${v.relayPin}${v.relayActiveLow ? " (active-low)" : ""}`],
     ["IR LED out", `GPIO${v.irTxPin} (${v.irTxDriver})`],
     ["IR receiver in", `GPIO${v.irRxPin}`],
+    ["Pi fan out (gpio-fan)", `GPIO${v.fanPin}, on at ${v.fanOnC} °C`],
   ];
   return el("div", { className: "setting" }, el("span", { className: "title" }, "GPIO pins"), el("table", { className: "kv" }, ...rows.map(([k, x]) => el("tr", {}, el("th", {}, k), el("td", {}, x)))));
 }
