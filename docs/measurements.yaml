@@ -419,8 +419,8 @@ window:
 
 inserts:
   insert_d:
-    # 1/4-20 heat-set insert hole (pedestal). Test on the coupon.
-    measured:
+    # 1/4-20 heat-set insert hole (pedestal). Coupon passed 2026-10-15.
+    measured: 8.2
     tol: 0.1
   stud_insert_d:
     # M5 heat-set insert hole (hatch studs). Coupon passed 2026-10-15.
@@ -568,10 +568,10 @@ observations:
       answer:
   coupon:
     # snug / loose / cracked (inserts), bite / strip / split (pilots). docs/PRINTING.md, "Fit coupon".
-    insert_1_4_20:
+    insert_1_4_20: snug (2026-10-15)
     insert_m5: snug (2026-10-15)
     insert_m3: snug (2026-10-15)
-    pilots:
+    pilots: bite, M3/M2.5/M2 (2026-10-15)
     m5_keyhole: slides and seats (2026-10-15)
     pane_slot: snug, no rattle (2026-10-15)
-    hot_shoe:
+    hot_shoe: holds, no wobble or slide with the ring tight (2026-10-15)
