@@ -33,6 +33,7 @@ const TYPES = {
 export async function staticFile(path, root = PUBLIC, docsRoot = DOCS) {
   if (path === "/") path = "/index.html";
   if (path === "/playlist-core.js") return [here("./playlist-core.js"), TYPES.js];
+  if (path === "/fit-math.js") return [here("./fit-math.js"), TYPES.js];
   const m = /^\/((?:[a-z][a-z0-9-]*\/)*[a-z][a-z0-9-]*)\.(js|css|html|md)$/.exec(path);
   if (!m) return null;
   const [, name, ext] = m;
