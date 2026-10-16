@@ -158,6 +158,9 @@ label.title, p.title { display: block; font-weight: 600; margin: 12px 0 4px; }
 label.check { display: flex; gap: 8px; align-items: center; margin: 8px 0; }
 .sched { width: 100%; border-collapse: collapse; margin: 8px 0; }
 .sched th, .sched td { text-align: left; padding: 4px 2px; border-bottom: 1px solid var(--line); }
+.sched .sunset { display: inline-flex; align-items: center; min-height: 40px; }
+.sched input[type="checkbox"] { width: 22px; height: 22px; accent-color: var(--accent); }
+.sched input[type="time"]::-webkit-datetime-edit-fields-wrapper, .sched input[type="time"]::-webkit-datetime-edit-ampm-field { color: var(--text); }
 .sched input[type="time"] { font: inherit; min-height: 40px; width: 100%; max-width: 8em; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--text); }
 .kv { width: 100%; border-collapse: collapse; }
 .kv th, .kv td { text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--line); vertical-align: top; }
