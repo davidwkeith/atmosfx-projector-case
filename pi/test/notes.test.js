@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { alarmsOf, badgesOf, systemNotesOf } from "../public/notes.js";
+import { alarmsOf, badgesOf, checksSummaryText, systemNotesOf } from "../public/notes.js";
 
 const calm = { thermal: { enabled: true, alarms: [] }, storage: { dataMounted: true, state: "ok" }, web: { passwordSet: true }, clock: { synced: true }, version: { available: false } };
 
@@ -33,7 +33,18 @@ describe("badgesOf", () => {
     expect(badgesOf({ ...calm, thermal: { enabled: true, alarms: [{ level: "warn", text: "x" }] } }).dashboard).toBe(true);
     expect(badgesOf({ ...calm, clock: { synced: false } }).dashboard).toBe(true);
     expect(badgesOf({ ...calm, version: { available: true } }).system).toBe(true);
+    expect(badgesOf({ ...calm, checks: { fail: 1, unknown: 0 } }).dashboard).toBe(true);
+    expect(badgesOf({ ...calm, checks: { fail: 0, unknown: 3 } }).dashboard).toBe(false); // "to confirm" is not a problem
     const noPw = badgesOf({ ...calm, web: { passwordSet: false } });
     expect(noPw).toEqual({ dashboard: false, system: true });
+  });
+});
+
+describe("checksSummaryText", () => {
+  it("counts what matters and skips zeros", () => {
+    expect(checksSummaryText(null)).toBeNull();
+    expect(checksSummaryText({ pass: 10, fail: 0, unknown: 0, off: 0 })).toBe("10 OK");
+    expect(checksSummaryText({ pass: 7, fail: 1, unknown: 2, off: 1 })).toBe("7 OK · 1 problem · 2 to confirm · 1 not used");
+    expect(checksSummaryText({ pass: 6, fail: 2, unknown: 1, off: 0 })).toBe("6 OK · 2 problems · 1 to confirm");
   });
 });

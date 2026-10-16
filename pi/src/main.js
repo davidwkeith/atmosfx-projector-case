@@ -24,7 +24,7 @@ import { OccupancySensorDevice, OnOffPlugInUnitDevice, TemperatureSensorDevice }
 import { QrCode } from "@matter/main/types";
 import { applyStagedRestore, createBackup, stageRestore, validateBackup } from "./backup.js";
 import { defaultContext, resolveSettings } from "./config.js";
-import { DisplayWatch, displayConnected } from "./display.js";
+import { DisplayWatch, displayConnected, readEdid } from "./display.js";
 import { DmxControl, InternalWrites, PowerArbiter, SACN_PORT, SacnReceiver, fixtureValues, interpret, multicastGroup } from "./dmx.js";
 import { writeFileAtomicSync } from "./fsutil.js";
 import { GpioOut, gpiosetArgs } from "./gpio.js";
@@ -39,6 +39,7 @@ import { createPosterCache } from "./poster.js";
 import { Projector } from "./projector.js";
 import { qrTextToSvg } from "./qr.js";
 import { Scheduler, missedEvent } from "./schedule.js";
+import { SelfCheck } from "./selfcheck.js";
 import { createScreen } from "./screen.js";
 import { Settings } from "./settings.js";
 import { TIMESYNC_FLAG, parseIwLink, parseNmcliDevices, signalVerdict, storageStatus } from "./system.js";
@@ -352,11 +353,14 @@ scareSwitch.events.onOff.onOff$Changed.on((on) => {
 });
 
 let pir = null;
+let pirSeen = false; // for the setup checks: has the sensor changed since it started?
 function startPir() {
   pir?.stop();
   pir = null;
+  pirSeen = false;
   if (!get("pirEnabled") || gpiodMajor === null) return;
   pir = new Pir({ spawn, args: pirArgs(gpiodMajor, get("pirPin"), get("pirDebounceMs")), debounceMs: get("pirDebounceMs") });
+  pir.on("change", () => (pirSeen = true));
   pir.on("change", (occupied) => motion.set({ occupancySensing: { occupancy: { occupied } } }).catch((e) => console.error(e)));
   pir.on("motion", () => player.trigger("motion sensor"));
   pir.start();
@@ -575,6 +579,47 @@ async function healthTick() {
 setTimeout(healthTick, 10_000).unref();
 setInterval(healthTick, 60_000).unref();
 
+// --- setup checks: the dashboard's list of what works, once at start-up and from the page
+
+const selfCheck = new SelfCheck({
+  gather: async () => {
+    const mode = get("projectorPower");
+    const playMode = get("mode");
+    const [model, cardsText, connected, edid, cec, socC, throttled] = await Promise.all([
+      readFile("/proc/device-tree/model", "utf8").catch(() => null),
+      readFile("/proc/asound/cards", "utf8").catch(() => null),
+      displayConnected({ connector: get("videoOutput") }),
+      readEdid({ connector: get("videoOutput") }),
+      // Relay modes: the projector may have no power, so its silence would mean nothing.
+      mode === "cec" || mode === "hdmi-off" ? projector.checkCec().catch(() => "no-device") : null,
+      readFile("/sys/class/thermal/thermal_zone0/temp", "utf8").then(parseMilli, () => null),
+      run("vcgencmd", ["get_throttled"], { timeout: 5000 }).then((r) => parseThrottled(r.stdout), () => null),
+    ]);
+    return {
+      board: { model },
+      audio: { card: get("audioCard"), cardsText },
+      display: { connected, edid },
+      projector: { mode, cec },
+      pir: { enabled: get("pirEnabled"), available: gpiodMajor !== null, running: pir?.running ?? false, seen: pirSeen },
+      thermal: { temp: socC, warnC: get("tempWarnC"), throttled },
+      network,
+      clock: { synced: clockSynced() },
+      media: {
+        problem: media.problem({ mode: playMode, buffer: get("scareBuffer"), scares: get("scareClips") }) ?? null,
+        mode: playMode,
+        clips: playMode === "scare" ? scareNames().length : (media.enabledClips()?.length ?? null),
+      },
+    };
+  },
+});
+selfCheck.on("done", ({ checks, summary }) => {
+  const failed = checks.filter((c) => c.status === "fail").map((c) => c.label);
+  if (failed.length) health.event("warn", `Setup checks: ${failed.join(", ")}`);
+  console.info(`Setup checks: ${summary.pass} ok, ${summary.fail} failed, ${summary.unknown} unknown`);
+});
+// Late enough for the network, the clock and a projector switched on with the Pi.
+setTimeout(() => selfCheck.run().catch((err) => console.error(`Setup checks: ${err.message}`)), 30_000).unref();
+
 // --- watchdog: systemd restarts us if the event loop stops pinging
 
 const loopDelay = monitorEventLoopDelay({ resolution: 50 });
@@ -716,6 +761,7 @@ const web = createWebServer({
       clock: { synced: clockSynced(), now: new Date().toISOString() },
       quiet: { active: quietNow(get("quietHours"), new Date(), { clockOk: clockSynced() }), cap: get("quietHours").volumeCap, noScares: get("quietHours").disableScares },
       version: versionStatus(),
+      checks: selfCheck.last && { at: selfCheck.last.at, ...selfCheck.last.summary },
       web: { passwordSet: settings.passwordSet },
       network,
       storage,
@@ -766,6 +812,7 @@ const web = createWebServer({
     restartService();
     return { restored: { settings: true, playlist: entries.length, matter: r.matter }, restarting: true };
   },
+  checks: { last: () => selfCheck.last, run: () => selfCheck.run() },
   irLearn: () => ir.learn(),
   irTest: (code) => ir.send(code ?? get("irPowerCode")),
   afterSettingChange,

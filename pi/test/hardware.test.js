@@ -80,6 +80,21 @@ describe("CEC", () => {
     expect(state).toMatchObject({ cec: "supported", power: "on", effective: "cec", notice: null });
   });
 
+  it("setup check: asks for the power status only, and never falls back or unblanks", async () => {
+    const answers = projectorSetup({ replies: { "--playback --osd-name VideoFX-BEEF-a": CONFIGURED, "--to 0 --give-device-power-status": PWR("standby") } });
+    expect(await answers.p.checkCec()).toBe("supported");
+    expect(answers.calls).toEqual(["cec-ctl -d /dev/cec0 --playback --osd-name VideoFX-BEEF-a", "cec-ctl -d /dev/cec0 --to 0 --give-device-power-status"]);
+    expect(answers.p.state).toMatchObject({ cec: "supported", power: "unknown" });
+
+    const silent = projectorSetup({ replies: { "--playback --osd-name VideoFX-BEEF-a": CONFIGURED } });
+    expect(await silent.p.checkCec()).toBe("no-response");
+    expect(silent.p.state).toMatchObject({ cec: "unknown", effective: "cec" });
+    expect(silent.blank).not.toHaveBeenCalled();
+
+    const none = projectorSetup({ replies: { "--playback --osd-name VideoFX-BEEF-a": new Error("no /dev/cec0") } });
+    expect(await none.p.checkCec()).toBe("no-device");
+  });
+
   it("off: Standby", async () => {
     const { p, calls } = projectorSetup({ replies: { "--playback --osd-name VideoFX-BEEF-a": CONFIGURED, "--to 0 --give-device-power-status": PWR("on") } });
     await p.on();

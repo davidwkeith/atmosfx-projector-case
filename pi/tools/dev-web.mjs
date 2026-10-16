@@ -1,10 +1,12 @@
 // A fake device for looking at the web page: `node tools/dev-web.mjs`, then open http://localhost:8080/.
 // Real settings and media code on a temp folder; status, power and the rest are stubs.
-// DEV_DMX=1 shows DMX in control, DEV_ALARM=1 shows a thermal alarm, DEV_PASSWORD=1 sets a password (user: any, password: "pumpkin").
+// DEV_DMX=1 shows DMX in control, DEV_ALARM=1 shows a thermal alarm, DEV_PASSWORD=1 sets a password (user: any, password: "pumpkin"),
+// DEV_CHECKS_OK=1 makes every setup check pass.
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createMediaStore } from "../src/media.js";
+import { SelfCheck } from "../src/selfcheck.js";
 import { Settings, hashPassword } from "../src/settings.js";
 import { createWebServer } from "../src/web.js";
 
@@ -50,6 +52,37 @@ const healthLog = (() => {
   return { read: ({ sinceMs = 0 } = {}) => ({ samples: samples.filter((s) => s.t >= sinceMs), events: events.filter((e) => e.t >= sinceMs), warnC: 70, critC: 80 }) };
 })();
 
+// Setup checks from made-up facts: a Pi 3 with its amp and a sleeping projector that
+// answers CEC, a PIR nobody has walked past yet, one past under-voltage and IR unused.
+// DEV_CHECKS_OK=1 makes them all pass.
+const edid = (() => {
+  const b = Buffer.alloc(128);
+  Buffer.from([0, 255, 255, 255, 255, 255, 255, 0]).copy(b);
+  b.writeUInt16BE((19 << 10) | (20 << 5) | 11, 8); // "STK"
+  Buffer.from([0x02, 0x3a, 0x80, 0x18, 0x71, 0x38, 0x2d, 0x40]).copy(b, 54); // 1920 x 1080 at 60 Hz
+  b[75] = 0xfc;
+  Buffer.from("S2-TEK TV\n   ", "latin1").copy(b, 77);
+  return b;
+})();
+const allOk = !!process.env.DEV_CHECKS_OK;
+const selfCheck = new SelfCheck({
+  gather: async () => {
+    await new Promise((r) => setTimeout(r, 1200)); // CEC takes a moment on a real Pi
+    return {
+      board: { model: "Raspberry Pi 3 Model B Rev 1.2" },
+      audio: { card: "DigiAMP", cardsText: " 0 [vc4hdmi        ]: vc4-hdmi\n 1 [DigiAMP        ]: IQaudIODAC\n" },
+      display: { connected: on, edid },
+      projector: { mode: "cec", cec: "supported" },
+      pir: { enabled: true, available: true, running: true, seen: allOk },
+      thermal: { temp: 48.2, warnC: 70, throttled: allOk ? 0 : 0x50000 },
+      network: status().network,
+      clock: { synced: true },
+      media: { problem: null, mode: "loop", clips: 2 },
+    };
+  },
+});
+setTimeout(() => selfCheck.run(), 3000);
+
 let on = false;
 let onSince = 0;
 let pausedAt = null; // ms of play time when paused
@@ -79,6 +112,7 @@ const status = () => ({
   clock: { synced: true },
   quiet: { active: false },
   version: { version: "0.9.0", sha: "dev", available: false, latest: null, checkedAt: Date.now() },
+  checks: selfCheck.last && { at: selfCheck.last.at, ...selfCheck.last.summary },
 });
 
 const server = createWebServer({
@@ -107,6 +141,7 @@ const server = createWebServer({
   resetMatter: async () => {},
   restart: async () => {},
   scare: () => ({ result: "fired" }),
+  checks: { last: () => selfCheck.last, run: () => selfCheck.run() },
   irLearn: async () => "nec:0x40bf",
   irTest: async () => {},
   backup: async () => ({ format: "videofx-backup", device: "videofx-dev", createdAt: new Date().toISOString(), settings: {}, matter: {} }),

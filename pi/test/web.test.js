@@ -114,8 +114,10 @@ describe("web server", () => {
   let upgradeResult;
   let upgradeCalls;
   let password;
+  let lastChecks;
 
   beforeEach(async () => {
+    lastChecks = null;
     dir = await mkdtemp(join(tmpdir(), "videofx-web-"));
     power = vi.fn(async () => {});
     playlistChanged = vi.fn();
@@ -144,6 +146,10 @@ describe("web server", () => {
       resetMatter,
       upgrade: async () => ((upgradeCalls += 1), upgradeResult),
       checkUpdate: async () => upgradeResult,
+      checks: {
+        last: () => lastChecks,
+        run: async () => (lastChecks = { at: "2026-10-15T18:00:00.000Z", checks: [{ id: "clock", status: "pass" }], summary: { pass: 1, fail: 0, off: 0, unknown: 0, total: 1 } }),
+      },
       health: { read: ({ sinceMs = 0 } = {}) => ({ samples: [{ t: Math.max(sinceMs, 0), soc: 50, fan: 1, thr: 0, dbm: -60, on: 1 }], events: [], sinceMs }) },
       log: { error: () => {} },
     });
@@ -193,6 +199,14 @@ describe("web server", () => {
     expect(csv.headers["content-type"]).toMatch(/text\/csv/);
     expect(csv.headers["content-disposition"]).toMatch(/attachment/);
     expect(csv.text).toBe("time,soc_c,fan,throttled,wifi_dbm,on,clock_synced\n1970-01-01T00:00:00.000Z,50,1,0x0,-60,1,1\n");
+  });
+
+  it("serves the setup checks and runs them on request (a write)", async () => {
+    expect((await call("GET", "/api/checks")).json).toEqual({ at: null, checks: [], summary: null });
+    expect((await call("POST", "/api/checks", { headers: { "x-videofx": "" } })).status).toBe(403);
+    const ran = await call("POST", "/api/checks", { body: "{}" });
+    expect(ran.json.summary.pass).toBe(1);
+    expect((await call("GET", "/api/checks")).json.checks).toEqual([{ id: "clock", status: "pass" }]);
   });
 
   it("with no page password, refuses to upgrade and never asks for the Pi login password", async () => {
