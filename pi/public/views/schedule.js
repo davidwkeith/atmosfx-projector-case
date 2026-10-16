@@ -1,5 +1,5 @@
 import { el } from "../api.js";
-import { advancedShown, effective, pending, rowOf, safeToRebuild, visibleItems } from "../settings-form.js";
+import { advancedShown, effective, locateCard, pending, rowOf, safeToRebuild, visibleItems } from "../settings-form.js";
 import { setting, state } from "../state.js";
 
 const DAY_NAMES = { mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun" };
@@ -121,7 +121,7 @@ export function mount(root) {
   function drawPlace() {
     const data = state.settings;
     if (!data) return;
-    place.replaceChildren(...visibleItems(data.settings.filter((s) => s.group === "Schedule"), { advanced: advancedShown(), query: "" }).map(rowOf));
+    place.replaceChildren(...visibleItems(data.settings.filter((s) => s.group === "Schedule"), { advanced: advancedShown(), query: "" }).map(rowOf), locateCard());
   }
 
   function updateGeo() {

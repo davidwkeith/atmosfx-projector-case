@@ -15,6 +15,12 @@ export function canon(value) {
   return String(JSON.stringify(value));
 }
 
+/** A browser position as the Latitude and Longitude settings: two decimals (about 1 km) is plenty for sunset. */
+export function placeOf(coords) {
+  const round = (v) => Math.round(v * 100) / 100 || 0; // || 0: no "-0"
+  return { latitude: round(coords.latitude), longitude: round(coords.longitude) };
+}
+
 export function createPending() {
   const edits = new Map(); // key -> { value } | { reset: true }
   const subs = new Set();
@@ -192,6 +198,42 @@ export function settingRow(s) {
   );
   sync();
   return row;
+}
+
+/**
+ * "Use this device's location" under the Latitude and Longitude rows. It types into them, so the
+ * values wait in the Apply bar like any edit. Browsers only offer location to secure pages (HTTPS
+ * or localhost), so on the Pi's plain-HTTP page the button is disabled and says why.
+ */
+export function locateCard() {
+  const button = el("button", { type: "button" }, "Use this device's location");
+  const hint = el("p", { className: "hint" });
+  if (!window.isSecureContext || !("geolocation" in navigator)) {
+    button.disabled = true;
+    hint.textContent = "Browsers only share location with HTTPS pages, and this page is plain HTTP. Copy the numbers from a map app instead.";
+  }
+  button.addEventListener("click", () => {
+    button.disabled = true;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        button.disabled = false;
+        const place = placeOf(pos.coords);
+        for (const [key, value] of Object.entries(place)) {
+          const input = document.getElementById(`set-${key}`);
+          if (!input || input.disabled) continue; // hidden, or waiting to be reset
+          input.value = String(value);
+          input.dispatchEvent(new Event("input")); // the row's own handler records the edit
+        }
+        toast(`Location ${place.latitude}, ${place.longitude}. Apply to save it.`);
+      },
+      (err) => {
+        button.disabled = false;
+        toast(err.code === err.PERMISSION_DENIED ? "Location permission was denied." : `No location: ${err.message}`);
+      },
+      { timeout: 15000, maximumAge: 600000 },
+    );
+  });
+  return el("div", {}, el("div", { className: "actions" }, button), hint);
 }
 
 export function fixedRow(s) {

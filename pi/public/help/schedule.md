@@ -10,6 +10,8 @@ The schedule only acts at these times. If you switch on or off by hand, that hol
 
 Sunset is worked out on the Pi from **Latitude** and **Longitude** (north and east are positive, so west is negative). The **offset** moves the time: a negative number is before sunset. Days with no sunset, in polar summer or winter, get no on time.
 
+**Use this device's location** fills both in from your phone or computer, rounded to about 1 km; press **Apply** to keep them. Browsers only share location with HTTPS pages, so on the Pi's own address the button is greyed out: read the numbers off a map app instead.
+
 ## The Pi's clock
 
 The Pi has no battery clock. The schedule and quiet hours wait until it has the time from the network, and the Dashboard says so.
