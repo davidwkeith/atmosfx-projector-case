@@ -11,9 +11,11 @@
 
 import { execFile, spawn } from "node:child_process";
 import dgram from "node:dgram";
+import { createServer as createHttpServer } from "node:http";
+import { createServer as createHttpsServer } from "node:https";
 import { existsSync, mkdirSync, readFileSync, statSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
-import { hostname, uptime } from "node:os";
+import { hostname, networkInterfaces, uptime } from "node:os";
 import { fileURLToPath } from "node:url";
 import { monitorEventLoopDelay } from "node:perf_hooks";
 import { join } from "node:path";
@@ -49,7 +51,8 @@ import { readVersion, updateStatus } from "./update.js";
 import { askHelper } from "./upgrade.js";
 import { OverTempGuard, SocWatch, parseMilli, readFanState } from "./thermal.js";
 import { Volume, amixerArgs, missingCardMessage } from "./volume.js";
-import { createWebServer, isLanAddress } from "./web.js";
+import { createWebHandler, isLanAddress } from "./web.js";
+import { TlsStore } from "./tls.js";
 
 const run = promisify(execFile);
 // No RTC on the Pi 3/4/Zero 2 W: time-based rules wait for NTP (see schedule.js, quiet.js).
@@ -710,6 +713,10 @@ async function afterSettingChange(key) {
       }
       if (!player.isPlaying) idleScreen();
       return "Matter node label updated. Apple Home keeps the name you gave it there.";
+    case "httpsEnabled":
+      await startHttps();
+      if (!get("httpsEnabled")) return undefined;
+      return httpsError ?? `HTTPS on port ${get("httpsPort")}. A self-signed certificate makes the browser warn once; accept it for this Pi.`;
     case "console":
       return "Restart the service to use it.";
     default:
@@ -736,7 +743,67 @@ const versionStatus = () => updateStatus(currentVersion, readState("update-check
 
 const posters = createPosterCache({ dir: join(stateDir, "posters"), resolve: media.resolve, mpv: get("mpv") });
 
-const web = createWebServer({
+// Names this page answers to (the Host header guard) and that a self-signed certificate covers.
+const webHostNames = () => {
+  const name = get("name").toLowerCase();
+  return [hostname(), `${hostname()}.local`, ctx.hostName, `${ctx.hostName}.local`, name, `${name}.local`, ...get("webHosts")];
+};
+// The Pi's own addresses for a self-signed certificate (not link-local: those carry a scope).
+const ownAddresses = () =>
+  Object.values(networkInterfaces())
+    .flat()
+    .filter((a) => a && !a.internal && !/^fe80:/i.test(a.address))
+    .map((a) => a.address);
+
+// --- HTTPS: the same handler as port 80, on httpsPort, while enabled and a certificate is stored.
+const tlsStore = new TlsStore({ dir: join(stateDir, "tls") });
+let https = null;
+let httpsError = null;
+const httpsState = () => ({ enabled: get("httpsEnabled"), only: get("httpsOnly"), running: !!https?.listening, port: get("httpsPort"), error: httpsError });
+
+function stopHttps() {
+  if (!https) return;
+  https.close();
+  https.closeAllConnections();
+  https = null;
+}
+
+/** Resolves once the listener is up or has failed (httpsError says which). */
+async function startHttps() {
+  const pair = get("httpsEnabled") ? tlsStore.load() : null;
+  if (!pair) {
+    stopHttps();
+    httpsError = get("httpsEnabled") ? "No certificate yet: upload one or make a self-signed one." : null;
+    return;
+  }
+  try {
+    // A running listener takes the new certificate for new connections; no restart.
+    if (https) return https.setSecureContext(pair), (httpsError = null);
+    const server = createHttpsServer(pair, webHandler);
+    server.on("error", (err) => {
+      httpsError = err.message;
+      console.error(`HTTPS: ${err.message}`);
+      if (https === server) https = null;
+      server.close();
+    });
+    https = server;
+    return new Promise((resolve) => {
+      server.once("error", resolve);
+      server.listen(get("httpsPort"), () => {
+        httpsError = null;
+        console.info(`Web UI (HTTPS) on port ${get("httpsPort")}`);
+        resolve();
+      });
+    });
+  } catch (err) {
+    stopHttps();
+    httpsError = `The certificate is not usable: ${err.message}`;
+    console.error(`HTTPS: ${httpsError}`);
+  }
+}
+const tlsView = () => ({ https: httpsState(), cert: tlsStore.info() });
+
+const webHandler = createWebHandler({
   media,
   nowPlaying: () => player.nowPlaying(),
   poster: (name) => posters.poster(name),
@@ -744,9 +811,25 @@ const web = createWebServer({
   // The chart draws the warning and cut-off lines too.
   health: { read: (q) => ({ ...health.read(q), warnC: get("tempWarnC"), critC: get("tempCritC") }) },
   auth: settings,
-  hostNames: () => {
-    const name = get("name").toLowerCase();
-    return [hostname(), `${hostname()}.local`, ctx.hostName, `${ctx.hostName}.local`, name, `${name}.local`, ...get("webHosts")];
+  hostNames: webHostNames,
+  httpsRedirect: () => (get("httpsOnly") && https?.listening ? get("httpsPort") : null),
+  tls: {
+    get: tlsView,
+    upload: async (cert, key) => {
+      tlsStore.install(cert, key);
+      await startHttps();
+      return tlsView();
+    },
+    selfSigned: async () => {
+      await tlsStore.generate({ names: webHostNames(), ips: ownAddresses() });
+      await startHttps();
+      return tlsView();
+    },
+    remove: async () => {
+      tlsStore.remove();
+      await startHttps();
+      return tlsView();
+    },
   },
   status: () => {
     const codes = pairingCodes({ evenIfPaired: !get("hidePairingWhenPaired") });
@@ -768,7 +851,7 @@ const web = createWebServer({
       quiet: { active: quietNow(get("quietHours"), new Date(), { clockOk: clockSynced() }), cap: get("quietHours").volumeCap, noScares: get("quietHours").disableScares },
       version: versionStatus(),
       checks: selfCheck.last && { at: selfCheck.last.at, ...selfCheck.last.summary },
-      web: { passwordSet: settings.passwordSet },
+      web: { passwordSet: settings.passwordSet, https: httpsState() },
       network,
       storage,
       matter: {
@@ -851,8 +934,10 @@ const web = createWebServer({
     restartService();
   },
 });
+const web = createHttpServer(webHandler);
 web.on("error", (err) => console.error(`Web UI: ${err.message}`));
 web.listen(get("httpPort"), () => console.info(`Web UI on port ${get("httpPort")}`));
+startHttps();
 
 // Start mpv (it idles until there is something to play), the schedule, then
 // restore the last state (or the configured one).
@@ -878,6 +963,7 @@ stopping = true;
 health.event("info", "Service stopped");
 await watchdog.stopping();
 web.close();
+stopHttps();
 scheduler.stop();
 display.stop();
 pir?.stop();

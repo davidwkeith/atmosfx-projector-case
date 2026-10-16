@@ -52,6 +52,86 @@ function irCard() {
   );
 }
 
+// The HTTPS certificate: upload a PEM pair or make a self-signed one. These act at once, not through Apply.
+function tlsCard() {
+  const box = el("div", {});
+  const certFile = el("input", { type: "file", accept: ".pem,.crt,.cer", attrs: { "aria-label": "Certificate file (PEM)" } });
+  const keyFile = el("input", { type: "file", accept: ".pem,.key", attrs: { "aria-label": "Private key file (PEM)" } });
+  const draw = ({ https, cert }) => {
+    const status = !https.enabled
+      ? "HTTPS is off."
+      : https.running
+        ? `HTTPS is running on port ${https.port}.`
+        : https.error ?? "HTTPS is starting…";
+    const rows = cert
+      ? [
+          ["Issued to", cert.subject],
+          ["Issued by", cert.selfSigned ? "itself (self-signed)" : cert.issuer],
+          ["Names", cert.names.join(", ") || "none"],
+          ["Valid until", new Date(cert.validTo).toLocaleDateString()],
+          ["SHA-256", cert.fingerprint],
+        ]
+      : [];
+    const expired = cert && new Date(cert.validTo) < new Date();
+    box.replaceChildren(
+      el("p", { className: https.enabled && !https.running ? "warn-box" : "hint" }, status),
+      cert ? el("table", { className: "kv" }, ...rows.map(([k, v]) => el("tr", {}, el("th", {}, k), el("td", { className: k === "SHA-256" ? "mono" : "" }, v)))) : el("p", { className: "hint" }, "No certificate yet."),
+      ...(expired ? [el("p", { className: "warn-box" }, "This certificate has expired. Make a new one or upload another.")] : []),
+    );
+    remove.hidden = !cert;
+  };
+  const act = (fn) => () =>
+    run(async () => {
+      for (const b of [make, upload, remove]) b.disabled = true;
+      try {
+        draw(await fn());
+      } finally {
+        for (const b of [make, upload, remove]) b.disabled = false;
+      }
+    });
+  const make = el("button", { type: "button" }, "Make self-signed certificate");
+  make.addEventListener(
+    "click",
+    act(async () => {
+      const r = await api("/api/tls/self-signed", json("POST", {}));
+      toast("Made a self-signed certificate. Browsers warn about it once; accept it for this Pi.");
+      return r;
+    }),
+  );
+  const upload = el("button", { type: "button" }, "Upload certificate and key");
+  upload.addEventListener(
+    "click",
+    act(async () => {
+      const [c, k] = [certFile.files?.[0], keyFile.files?.[0]];
+      if (!c || !k) throw new Error("Choose the certificate file and the key file first.");
+      const r = await api("/api/tls", json("PUT", { cert: await c.text(), key: await k.text() }));
+      certFile.value = keyFile.value = "";
+      toast("Certificate installed.");
+      return r;
+    }),
+  );
+  const remove = el("button", { type: "button", className: "danger" }, "Remove certificate");
+  remove.addEventListener(
+    "click",
+    act(async () => {
+      if (!confirm("Remove the certificate? HTTPS stops until you add another.")) return api("/api/tls");
+      const r = await api("/api/tls", json("DELETE", {}));
+      toast("Certificate removed.");
+      return r;
+    }),
+  );
+  run(async () => draw(await api("/api/tls")));
+  return el(
+    "div",
+    { className: "setting" },
+    el("span", { className: "title" }, "HTTPS certificate"),
+    el("p", { className: "hint" }, "Upload a PEM certificate (a chain is fine) and its unencrypted private key, or make a self-signed one for this Pi's names and current addresses."),
+    box,
+    el("div", { className: "control" }, el("label", {}, "Certificate ", certFile), el("label", {}, "Private key ", keyFile)),
+    el("div", { className: "actions" }, make, upload, remove),
+  );
+}
+
 export function mount(root, { sub }) {
   let group = null;
   let lastSettings = null;
@@ -108,6 +188,7 @@ export function mount(root, { sub }) {
       after.push(ir);
       syncIr();
     }
+    if (group === "Web page") after.push(tlsCard());
     if (group === "DMX") {
       after.push(dmxBox);
       if (state.status) renderDmx(dmxBox, state.status.dmx ?? {});

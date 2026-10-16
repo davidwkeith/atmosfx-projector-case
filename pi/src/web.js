@@ -1,5 +1,5 @@
 // LAN-only web UI: playlist, media upload, play/stop and Matter pairing.
-// Plain node:http. Every request passes guard(): private source address, known
+// Plain node:http, plus the same handler over node:https when HTTPS is on (main.js). Every request passes guard(): private source address, known
 // Host header (DNS-rebinding guard), optional basic auth, and a custom header on
 // writes so other web sites cannot post to it from a browser (CSRF).
 
@@ -11,6 +11,7 @@ import { networkInterfaces } from "node:os";
 import { fileURLToPath } from "node:url";
 import { toCsv } from "./healthlog.js";
 import { HttpError } from "./media.js";
+import { PEM_LIMIT } from "./tls.js";
 
 const here = (p) => fileURLToPath(new URL(p, import.meta.url));
 
@@ -165,8 +166,22 @@ async function readJson(req, limit = JSON_LIMIT) {
  * @param {() => Promise<string|null>} o.irLearn     wait for one remote press
  * @param {(code?: string) => Promise<void>} o.irTest
  * @param {(name: string) => void} [o.mediaDeleted]
+ * @param {{ get: () => object, upload: (cert: string, key: string) => object|Promise<object>, selfSigned: () => Promise<object>, remove: () => object|Promise<object> }} [o.tls]
+ *   the HTTPS certificate (tls.js) and listener; each returns { https, cert } for the page
+ * @param {() => number|null} [o.httpsRedirect]  the HTTPS port when plain HTTP should be sent there
  */
 export function createWebServer(o) {
+  return createServer(createWebHandler(o));
+}
+
+/** https:// URL for the same host and path; the port is left out when it is 443. */
+export function httpsUrl(hostHeader = "", path = "/", port = 443) {
+  const host = hostHeader.replace(/:\d+$/, "");
+  return `https://${host}${port === 443 ? "" : `:${port}`}${path}`;
+}
+
+/** The request handler, shared by the HTTP and HTTPS servers. */
+export function createWebHandler(o) {
   const log = o.log ?? console;
 
   const HELPER_ERRORS = {
@@ -184,6 +199,12 @@ export function createWebServer(o) {
   function guard(req, res) {
     if (!isLanAddress(req.socket.remoteAddress)) return send(res, 403, { error: "LAN only" }), false;
     if (!isAllowedHost(req.headers.host, o.hostNames())) return send(res, 421, { error: "unknown host name" }), false;
+    // Before the password check, so a browser is moved to HTTPS before it is asked for one.
+    const httpsPort = req.socket.encrypted ? null : o.httpsRedirect?.();
+    if (httpsPort) {
+      res.writeHead(308, { location: httpsUrl(req.headers.host, req.url, httpsPort), "cache-control": "no-store", connection: "close" });
+      return res.end(), false;
+    }
     if (o.auth.passwordSet && !o.auth.verifyPassword(basicPassword(req.headers.authorization), req.socket.remoteAddress)) {
       res.setHeader("www-authenticate", 'Basic realm="VideoFX", charset="UTF-8"');
       return send(res, 401, { error: "password required" }), false;
@@ -342,6 +363,21 @@ export function createWebServer(o) {
       const note = await o.afterSettingChange?.(key);
       return send(res, 200, { setting: result, note: note ?? null, restartNeeded: o.settings.restartNeeded });
     }
+    if (path === "/api/tls" && o.tls) {
+      if (method === "GET") return send(res, 200, o.tls.get());
+      if (method === "PUT") {
+        const { cert, key } = await readJson(req, 2 * PEM_LIMIT + 1024);
+        return send(res, 200, await o.tls.upload(cert, key));
+      }
+      if (method === "DELETE") {
+        await readJson(req);
+        return send(res, 200, await o.tls.remove());
+      }
+    }
+    if (method === "POST" && path === "/api/tls/self-signed" && o.tls) {
+      await readJson(req);
+      return send(res, 200, await o.tls.selfSigned());
+    }
     if (method === "POST" && path === "/api/update/check") {
       await readJson(req);
       return helperResult(res, 200, o.checkUpdate ? await o.checkUpdate() : { error: "unavailable" }, { checked: true });
@@ -367,7 +403,7 @@ export function createWebServer(o) {
     throw new HttpError(404, "not found");
   }
 
-  return createServer(async (req, res) => {
+  return async (req, res) => {
     if (!guard(req, res)) return;
     try {
       await route(req, res);
@@ -377,5 +413,5 @@ export function createWebServer(o) {
       if (res.headersSent) return res.destroy();
       send(res, status, { error: status === 500 ? "internal error" : err.message });
     }
-  });
+  };
 }

@@ -20,7 +20,7 @@ apt-get update
 # mpv (DRM/KMS video, ALSA audio), gpiod (gpiomon/gpioset: PIR, relay),
 # v4l-utils (cec-ctl, ir-ctl), avahi for videofx-xxxx.local and the Bonjour entry.
 apt-get install -y --no-install-recommends \
-  mpv gpiod v4l-utils alsa-utils avahi-daemon iw overlayroot ca-certificates curl gpg
+  mpv gpiod v4l-utils alsa-utils avahi-daemon iw overlayroot ca-certificates curl gpg openssl
 
 echo "== node.js"
 node_ok() {
