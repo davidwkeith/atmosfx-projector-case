@@ -146,7 +146,7 @@ export const SETTINGS = [
     env: "VIDEOFX_WEB_PASSWORD",
     group: "Web page",
     label: "Password",
-    help: "HTTP basic auth, any user name. Plain HTTP on your LAN, not HTTPS.",
+    help: "HTTP basic auth, any user name. Sent in the clear over plain HTTP; turn on HTTPS below to encrypt it.",
     apply: "live",
     secret: true,
     allowEmpty: true,
@@ -180,6 +180,26 @@ export const SETTINGS = [
       }
       return list.map((h) => h.toLowerCase());
     },
+  },
+  {
+    key: "httpsEnabled",
+    env: "VIDEOFX_HTTPS",
+    group: "Web page",
+    label: "HTTPS",
+    help: "Also serve this page over HTTPS (port 443), with the certificate below. Plain HTTP keeps working unless you turn on the next setting.",
+    apply: "live",
+    default: () => false,
+    parse: bool,
+  },
+  {
+    key: "httpsOnly",
+    env: "VIDEOFX_HTTPS_ONLY",
+    group: "Web page",
+    label: "Send plain HTTP to HTTPS",
+    help: "Redirect http:// to https:// while HTTPS is running, so the password is never sent in the clear.",
+    apply: "live",
+    default: () => false,
+    parse: bool,
   },
   {
     key: "maxUploadMb",
@@ -610,6 +630,7 @@ export const SETTINGS = [
   { key: "fanPin", env: "VIDEOFX_FAN_GPIO", group: "Hardware", label: "Pi fan GPIO (BCM)", apply: "fixed", default: () => 26, parse: gpioPin },
   { key: "fanOnC", env: "VIDEOFX_FAN_ON_C", group: "Hardware", label: "Pi fan on at (°C)", help: "The fan goes off again 10 °C lower.", apply: "fixed", default: () => 60, parse: int(40, 80) },
   { key: "httpPort", env: "VIDEOFX_HTTP_PORT", group: "Hardware", label: "Web page port", apply: "fixed", default: () => 80, parse: int(1, 65535) },
+  { key: "httpsPort", env: "VIDEOFX_HTTPS_PORT", group: "Hardware", label: "HTTPS port", apply: "fixed", default: () => 443, parse: int(1, 65535) },
   { key: "matterPort", env: "VIDEOFX_MATTER_PORT", group: "Hardware", label: "Matter port", apply: "fixed", default: () => 5540, parse: int(1, 65535) },
   { key: "mediaDir", env: "VIDEOFX_MEDIA_DIR", group: "Hardware", label: "Media folder", apply: "fixed", default: (_, ctx) => join(ctx.home, "media"), parse: absPath },
   { key: "playlist", env: "VIDEOFX_PLAYLIST", group: "Hardware", label: "Playlist file", apply: "fixed", default: (v) => join(v.mediaDir, "playlist.m3u"), parse: absPath },

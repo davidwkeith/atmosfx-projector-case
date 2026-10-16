@@ -9,6 +9,7 @@ import { createMediaStore } from "../src/media.js";
 import { SelfCheck } from "../src/selfcheck.js";
 import { createUsbImporter } from "../src/usb.js";
 import { Settings, hashPassword } from "../src/settings.js";
+import { TlsStore } from "../src/tls.js";
 import { createWebServer } from "../src/web.js";
 
 const dir = mkdtempSync(join(tmpdir(), "videofx-dev-"));
@@ -122,8 +123,18 @@ const status = () => ({
   checks: selfCheck.last && { at: selfCheck.last.at, ...selfCheck.last.summary },
 });
 
+// Real certificate store on the temp folder; no HTTPS listener here.
+const tlsStore = new TlsStore({ dir: join(dir, "tls") });
+const tlsView = () => ({ https: { enabled: settings.get("httpsEnabled"), only: settings.get("httpsOnly"), running: false, port: 443, error: settings.get("httpsEnabled") ? "Not on the dev server." : null }, cert: tlsStore.info() });
+
 const server = createWebServer({
   media,
+  tls: {
+    get: tlsView,
+    upload: (c, k) => (tlsStore.install(c, k), tlsView()),
+    selfSigned: async () => (await tlsStore.generate({ names: ["videofx-dev", "videofx-dev.local", "localhost"], ips: ["127.0.0.1"] }), tlsView()),
+    remove: () => (tlsStore.remove(), tlsView()),
+  },
   settings,
   auth: settings,
   hostNames: () => ["localhost"],
