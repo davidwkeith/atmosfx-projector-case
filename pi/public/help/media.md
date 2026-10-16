@@ -12,7 +12,13 @@ These are the files on the Pi. **Add** puts one on the playlist (you can add the
 
 ## Uploading
 
-Choose one or more video or audio files, or an `.m3u` playlist. The page shows how much space is free and the largest file it accepts; the limit is **Largest upload** under Settings > Web page. Uploaded files are not on the playlist until you add them and save.
+Choose one or more video or audio files, or an `.m3u` playlist. The page shows how much space is free and the largest file it accepts; the limit is **Largest upload** under Settings > Web page.
+
+Your first uploads build the playlist by themselves, in name order. Once you save the playlist yourself, new uploads wait until you add them and save.
+
+## USB stick
+
+Plug a USB stick with your videos into the Pi, in any folders. Its video and audio files are copied to the Pi and become the playlist, and in loop mode they start playing. The line under the upload button shows the progress. When it says the import is done, pull the stick out.
 
 Your purchased videos are not included with VideoFX. Upload them here, or copy them to the media folder over SSH. A new Pi starts with a built-in "VideoFX" test clip (bouncing over an alignment grid); delete it once you have your own.
 

@@ -9,6 +9,7 @@ import {
   formatDuration,
   isMediaFile,
   isSafeName,
+  isAuto,
   isShuffled,
   moveEntry,
   parsePlaylist,
@@ -263,5 +264,86 @@ describe("media store", () => {
     expect((await store.list()).files).toEqual([]);
     await expect(store.remove("link.mp4")).rejects.toMatchObject({ status: 400 });
     expect(await readFile(outside, "utf8")).toBe("do not touch");
+  });
+});
+
+describe("auto playlist", () => {
+  let dir;
+  let store;
+  const playlist = () => readFile(join(dir, "playlist.m3u"), "utf8");
+  const upload = (name, data = "x") => store.save(name, Readable.from([Buffer.from(data)]), data.length);
+
+  beforeEach(async () => {
+    dir = await mkdtemp(join(tmpdir(), "videofx-auto-"));
+    store = createMediaStore({ dir, playlist: join(dir, "playlist.m3u"), autoPlaylist: true, defaultClip: "videofx-default.mp4" });
+  });
+  afterEach(async () => rm(dir, { recursive: true, force: true }));
+
+  it("stores the flag as a comment line mpv ignores", () => {
+    const text = serializePlaylist([{ file: "a.mp4", enabled: true }], "", { auto: true });
+    expect(text).toBe("#EXTM3U\n#VIDEOFX-AUTO\na.mp4\n");
+    expect(isAuto(text)).toBe(true);
+    expect(isAuto(serializePlaylist([]))).toBe(false);
+  });
+
+  it("builds the playlist from first uploads, in name order", async () => {
+    expect(await upload("b.mp4")).toMatchObject({ name: "b.mp4", autoPlaylist: true });
+    expect(await upload("a.mp4")).toMatchObject({ autoPlaylist: true });
+    expect(await store.readPlaylist()).toEqual([
+      { file: "a.mp4", enabled: true },
+      { file: "b.mp4", enabled: true },
+    ]);
+    expect(await playlist()).toContain("#VIDEOFX-AUTO");
+  });
+
+  it("replaces the built-in test clip", async () => {
+    await writeFile(join(dir, "videofx-default.mp4"), "x");
+    await store.writePlaylist([{ file: "videofx-default.mp4", enabled: true }]);
+    await upload("ghost.mp4");
+    expect(await store.readPlaylist()).toEqual([{ file: "ghost.mp4", enabled: true }]);
+  });
+
+  it("leaves a playlist the owner saved alone", async () => {
+    await upload("a.mp4");
+    await store.writePlaylist([{ file: "a.mp4", enabled: false }], { auto: false });
+    expect(await upload("b.mp4")).toMatchObject({ autoPlaylist: false });
+    expect(await store.readPlaylist()).toEqual([{ file: "a.mp4", enabled: false }]);
+  });
+
+  it("keeps the flag when a file is deleted", async () => {
+    await upload("a.mp4");
+    await upload("b.mp4");
+    await store.remove("a.mp4");
+    expect(isAuto(await playlist())).toBe(true);
+  });
+
+  it("is off unless asked for", async () => {
+    store = createMediaStore({ dir, playlist: join(dir, "playlist.m3u") });
+    expect(await upload("a.mp4")).toMatchObject({ autoPlaylist: false });
+    expect(await store.readPlaylist()).toEqual([]);
+  });
+
+  it("copies a file in without the upload limit, and skips one already there", async () => {
+    store = createMediaStore({ dir, playlist: join(dir, "playlist.m3u"), maxUploadBytes: 2 });
+    const src = join(dir, "..", `src-${Date.now()}.mp4`);
+    await writeFile(src, "12345");
+    try {
+      expect(await store.copyIn(src, "big.mp4", 5)).toEqual({ name: "big.mp4", size: 5, skipped: false });
+      expect(await readFile(join(dir, "big.mp4"), "utf8")).toBe("12345");
+      expect(await store.copyIn(src, "big.mp4", 5)).toEqual({ name: "big.mp4", size: 5, skipped: true });
+    } finally {
+      await rm(src, { force: true });
+    }
+  });
+
+  it("replaces the playlist with an import", async () => {
+    await store.writePlaylist([{ file: "old.mp4", enabled: true }], { auto: false, shuffle: true });
+    await store.replaceWithAuto(["b.mp4", "a.mp4"]);
+    expect(await store.readPlaylist()).toEqual([
+      { file: "a.mp4", enabled: true },
+      { file: "b.mp4", enabled: true },
+    ]);
+    expect(await store.readShuffle()).toBe(false);
+    expect(isAuto(await playlist())).toBe(true);
   });
 });
