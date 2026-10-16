@@ -56,7 +56,7 @@ export function parseEdid(buf) {
 // Where each check is set up or explained: the page links its "fix" there.
 const WHERE = {
   board: "#/docs/boards",
-  audio: "#/settings/audio",
+  audio: "#/docs/audio",
   display: "#/docs/projector",
   cec: "#/settings/projector",
   pir: "#/media",

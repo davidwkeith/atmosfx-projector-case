@@ -21,10 +21,14 @@
 #VIDEOFX_RESTORE=last
 
 # --- Web page
-# Password. HTTP basic auth, any user name. Plain HTTP on your LAN, not HTTPS.
+# Password. HTTP basic auth, any user name. Sent in the clear over plain HTTP; turn on HTTPS below to encrypt it.
 #VIDEOFX_WEB_PASSWORD=
 # Extra host names. Other names this page answers to, e.g. a UniFi local DNS record. Space separated.
 #VIDEOFX_WEB_HOSTS=
+# HTTPS. Also serve this page over HTTPS (port 443), with the certificate below. Plain HTTP keeps working unless you turn on the next setting.
+#VIDEOFX_HTTPS=false
+# Send plain HTTP to HTTPS. Redirect http:// to https:// while HTTPS is running, so the password is never sent in the clear.
+#VIDEOFX_HTTPS_ONLY=false
 # Largest upload (MB)
 #VIDEOFX_MAX_UPLOAD_MB=4096
 
@@ -146,6 +150,8 @@
 #VIDEOFX_FAN_ON_C=60
 # Web page port
 #VIDEOFX_HTTP_PORT=80
+# HTTPS port
+#VIDEOFX_HTTPS_PORT=443
 # Matter port
 #VIDEOFX_MATTER_PORT=5540
 # Media folder

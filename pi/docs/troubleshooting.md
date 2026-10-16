@@ -23,7 +23,7 @@ The dashboard runs these about 30 seconds after start-up and whenever you press 
 | Check | What it looks at | Usual fix for a problem |
 |---|---|---|
 | Raspberry Pi | The board model (`/proc/device-tree/model`) | A board VideoFX does not know: see [Supported boards](boards.md) |
-| Amplifier | The ALSA card named in Settings > Audio (`/proc/asound/cards`) | Seat the DigiAMP+, power it from its barrel jack, check `config.txt` |
+| Amplifier | The ALSA card named in Settings > Advanced (`/proc/asound/cards`) | Seat the DigiAMP+, power it from its barrel jack, check `config.txt` |
 | Projector on HDMI | The connector status and the EDID: name and preferred resolution | Use HDMI0 on a 4B or 5 and switch the projector on |
 | Projector control (CEC) | One power-status request with `cec-ctl` (only in the CEC and hdmi-off modes; it wakes nothing) | Switch the projector on and check again; if it never answers, use hdmi-off or the relay ([Projector power](projector.md)) |
 | Motion sensor | Whether the PIR input has changed since start-up | Walk past it; if nothing, check the pin and wiring ([GPIO pins and wiring](wiring.md)) |
