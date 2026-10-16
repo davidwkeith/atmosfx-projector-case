@@ -59,7 +59,7 @@ const WHERE = {
   audio: "#/settings/audio",
   display: "#/docs/projector",
   cec: "#/settings/projector",
-  pir: "#/scares",
+  pir: "#/media",
   power: "#/docs/wiring",
   temp: "#/settings/cooling",
   network: "#/docs/networks",

@@ -10,8 +10,8 @@ Until then, a fresh Pi plays a built-in test clip: "VideoFX" bouncing over a lig
 - **Loop mode:** build the playlist on the page (order, enable/disable, shuffle, save). Saving while playing reloads it in mpv. **Shuffle** plays the enabled clips in random order, each once per round, reshuffled every round and never the same clip twice in a row; it is saved in the playlist file as a `#VIDEOFX-SHUFFLE` line, which mpv ignores. The page shows each clip's length and the total for one pass through the enabled clips. Lengths are read from the file header of MP4, M4V and MOV files; other formats show no length.
 - **Scare mode:**
   1. Upload the calm clip and the scare clips. Files named like `Ghost_Buffer.mp4` and `Ghost_Scare1.mp4` get paired by **Suggest from file names**.
-  2. Pick the calm clip and the scare clips in **Scare mode**, and save.
-  3. Set Settings > Playback > **Mode** to `scare`.
+  2. On the Media screen, pick the calm clip and the scare clips under **Scare mode**.
+  3. Set **Mode** (top of the Media screen) to `scare`, and press **Apply**.
   4. Tune the order (sequential/random), the cooldown (default 20 s, counted from the end of a scare), and what happens to a trigger during a scare: `ignore` (default) or `queue` (one scare, played after the cooldown).
   5. Trigger with **Scare now**, the **Scare** switch in Home (for example, "when the doorbell rings, turn on Scare"), the PIR, or DMX.
 - **The seam.** The calm clip loops with `loop-file=inf`. The next scare clip and the calm clip after it are already queued, so mpv's `--prefetch-playlist` opens them early. A trigger sets `loop-file=no` and sends `playlist-next`. The service measures each seam from mpv's events and logs it (`journalctl -u videofx-player | grep seam`); the page shows it too. **It has not been measured on a Pi:** the Mac test used a fake mpv, whose ~50 ms is its own simulated delay.

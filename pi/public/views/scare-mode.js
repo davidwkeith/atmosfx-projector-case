@@ -15,7 +15,8 @@ function setBuffer(name) {
   setClips(clipsNow().filter((c) => c !== name)); // the calm clip cannot also be a scare clip
 }
 
-export function mount(root) {
+/** The scare-mode sections of the Media screen: clips, behaviour, motion sensor. */
+export function mountScares(root) {
   let lastSettings = null;
   let lastMedia = null;
 
@@ -29,19 +30,12 @@ export function mount(root) {
     el(
       "section",
       {},
-      el("h3", {}, "Scare mode"),
+      el("h3", {}, "Scare mode ", el("span", { className: "tag", hidden: true }, "in use")),
       el(
         "p",
         { className: "hint" },
-        'A calm clip loops without a gap; on a trigger (the "Scare" switch in your Home app, the motion sensor, DMX, or the Scare now button on the Dashboard) one scare clip plays, then it goes back to the calm clip. Turn it on under ',
-        el("a", { href: "#/settings/playback" }, "Settings > Playback > Mode"),
-        ".",
+        'A calm clip loops without a gap; on a trigger (the "Scare" switch in your Home app, the motion sensor, DMX, or the Scare now button on the Dashboard) one scare clip plays, then it goes back to the calm clip. Used when Mode is scare.',
       ),
-    ),
-    el(
-      "section",
-      {},
-      el("h3", {}, "Clips"),
       el("label", { className: "title", htmlFor: "scare-buffer" }, "Calm clip"),
       select,
       el("p", { className: "title" }, "Scare clips"),
@@ -91,7 +85,6 @@ export function mount(root) {
   });
 
   return {
-    helpSlug: () => "scares",
     update(s) {
       // Not while someone is typing or choosing; the next update tries again.
       if (!safeToRebuild(root)) return;

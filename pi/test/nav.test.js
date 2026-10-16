@@ -14,8 +14,8 @@ describe("navigation data", () => {
   });
 
   it("orders the Settings groups as designed", () => {
-    expect(SETTINGS_GROUPS).toEqual(["Device", "Playback", "Projector", "Audio", "Display", "DMX", "Cooling", "Web page", "Advanced", "Hardware"]);
-    expect(groupsOf("scares")).toEqual(["Scare", "Motion sensor"]);
+    expect(SETTINGS_GROUPS).toEqual(["Device", "Projector", "Audio", "Display", "DMX", "Cooling", "Web page", "Advanced", "Hardware"]);
+    expect(groupsOf("media")).toEqual(["Playback", "Scare", "Motion sensor"]);
     expect(groupsOf("schedule")).toEqual(["Schedule"]);
   });
 
@@ -26,7 +26,7 @@ describe("navigation data", () => {
     expect(groupSlug("Web page")).toBe("web-page");
     expect(slugs).toContain("web-page");
     expect(slugs).not.toContain("settings");
-    expect(slugs).toHaveLength(15);
+    expect(slugs).toHaveLength(13);
   });
 
   it.each([
@@ -35,6 +35,8 @@ describe("navigation data", () => {
     ["#/settings/web-page", { view: "settings", sub: "web-page" }],
     ["#/nonsense", { view: "dashboard", sub: "" }],
     ["#settings", { view: "settings", sub: "" }],
+    ["#/scares", { view: "media", sub: "" }],
+    ["#/settings/playback", { view: "media", sub: "" }],
   ])("parses %j", (hash, expected) => expect(parseHash(hash)).toEqual(expected));
 });
 
