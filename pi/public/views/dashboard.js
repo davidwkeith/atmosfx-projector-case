@@ -1,5 +1,5 @@
 import { api, el, icon, json, run, toast } from "../api.js";
-import { alarmsOf, systemNotesOf } from "../notes.js";
+import { CHECK_STATUS, alarmsOf, checksSummaryText, systemNotesOf } from "../notes.js";
 import { refreshStatus, state } from "../state.js";
 
 // Each tile opens the screen where that part is set up.
@@ -10,6 +10,25 @@ function tile(title, href) {
 }
 
 const when = (ms) => new Date(ms).toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit" });
+const clockTime = (iso) => new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+// One row of the setup checks. Problems and "not sure yet" say what to do and link to where.
+function checkRow(c) {
+  const s = CHECK_STATUS[c.status] ?? CHECK_STATUS.unknown;
+  const open = c.status === "fail" || c.status === "unknown";
+  return el(
+    "li",
+    { className: `check ${c.status}` },
+    el("span", { className: "check-mark", attrs: { role: "img", "aria-label": s.text } }, s.mark),
+    el(
+      "div",
+      { className: "check-body" },
+      el("p", { className: "check-title" }, c.label),
+      el("p", { className: "hint" }, c.detail),
+      open && (c.fix || c.href) ? el("p", { className: "check-fix" }, c.fix ?? "", c.fix && c.href ? " " : "", c.href ? el("a", { href: c.href }, "Go there") : null) : null,
+    ),
+  );
+}
 
 export function mount(root) {
   const dmx = el("div", { className: "banner dmx", role: "status", hidden: true }, el("p", {}, el("b", {}, "DMX in control."), " Power, mode, clip, volume and dimmer follow the lighting desk. Matter, this page and the schedule take over again a few seconds after the DMX signal stops."));
@@ -31,11 +50,50 @@ export function mount(root) {
   const network = tile("Network", "#/docs/networks"); // Wi-Fi is set in Raspberry Pi Imager, not on this page
   const heat = tile("Pi temperature", "#/settings/cooling");
 
+  const checksSummary = el("p", { className: "hint" });
+  const checksList = el("ul", { className: "checks" });
+  const runChecks = el("button", { type: "button" }, "Run checks");
+
   root.append(
     dmx, alarms, notes,
     el("section", {}, el("h3", {}, "Playback"), problem, power, scareNow, scareState),
     el("section", {}, el("h3", {}, "Speaker volume"), volume),
     el("div", { className: "tiles" }, projector.box, schedule.box, network.box, heat.box),
+    el("section", {}, el("h3", {}, "Setup checks"), checksSummary, checksList, runChecks),
+  );
+
+  // The list itself comes from /api/checks; the status only says when it last changed.
+  let checksAt;
+  let loadingChecks = false;
+  function showChecks(r) {
+    checksAt = r?.at ?? null;
+    checksSummary.textContent = r?.at
+      ? `${checksSummaryText(r.summary)} · checked at ${clockTime(r.at)}`
+      : "Not run yet. They run by themselves about 30 seconds after the Pi starts.";
+    checksList.replaceChildren(...(r?.checks ?? []).map(checkRow));
+  }
+  async function loadChecks() {
+    if (loadingChecks) return;
+    loadingChecks = true;
+    try {
+      showChecks(await api("/api/checks"));
+    } finally {
+      loadingChecks = false;
+    }
+  }
+  loadChecks().catch(() => {});
+  runChecks.addEventListener("click", () =>
+    run(async () => {
+      runChecks.disabled = true;
+      runChecks.textContent = "Checking…";
+      try {
+        showChecks(await api("/api/checks", json("POST", {})));
+        await refreshStatus();
+      } finally {
+        runChecks.disabled = false;
+        runChecks.textContent = "Run checks";
+      }
+    }),
   );
 
   async function setVolume(change) {
@@ -119,6 +177,8 @@ export function mount(root) {
         schedule.value.textContent = next ? `${next.on ? "On" : "Off"} ${when(next.at)}` : "Nothing this week";
         schedule.sub.textContent = next ? `${next.label}${locked ? " · paused while DMX is in control" : ""}` : "Schedule on, but nothing is scheduled in the next week.";
       }
+
+      if (st.checks !== undefined && (st.checks?.at ?? null) !== checksAt && !runChecks.disabled) loadChecks().catch(() => {});
 
       const n = st.network ?? {};
       const w = n.wifi ?? {};

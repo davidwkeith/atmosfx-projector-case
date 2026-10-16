@@ -161,6 +161,7 @@ async function readJson(req, limit = JSON_LIMIT) {
  * @param {() => Promise<{ok: true}|{error: string, message?: string}>} [o.upgrade]  asks the root helper to start videofx-update
  * @param {() => Promise<{ok: true}|{error: string, message?: string}>} [o.checkUpdate]  asks the root helper to look at GitHub now
  * @param {() => object} o.scare                     fire a scare; returns the player's result
+ * @param {{ last: () => object|null, run: () => Promise<object> }} [o.checks]  the setup checks (selfcheck.js)
  * @param {() => Promise<string|null>} o.irLearn     wait for one remote press
  * @param {(code?: string) => Promise<void>} o.irTest
  * @param {(name: string) => void} [o.mediaDeleted]
@@ -302,6 +303,13 @@ export function createWebServer(o) {
     if (method === "POST" && path === "/api/scare") {
       await readJson(req);
       return send(res, 200, o.scare());
+    }
+    if (path === "/api/checks" && o.checks) {
+      if (method === "GET") return send(res, 200, o.checks.last() ?? { at: null, checks: [], summary: null });
+      if (method === "POST") {
+        await readJson(req);
+        return send(res, 200, await o.checks.run());
+      }
     }
     if (method === "POST" && path === "/api/ir/learn") {
       await readJson(req);

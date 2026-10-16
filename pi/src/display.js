@@ -33,6 +33,30 @@ export async function displayConnected({ connector = "", dir = "/sys/class/drm",
   return known ? false : null;
 }
 
+/**
+ * The EDID the display gave the Pi, from /sys/class/drm/card*-<connector>/edid, or
+ * null (none, or not a Pi). It may still be there while the projector is in
+ * standby. With no connector chosen, the first HDMI output that has one.
+ */
+export async function readEdid({ connector = "", dir = "/sys/class/drm", fs = { readdir, readFile } } = {}) {
+  let names;
+  try {
+    names = await fs.readdir(dir);
+  } catch {
+    return null;
+  }
+  for (const name of names) {
+    if (connector ? !name.endsWith(`-${connector}`) : !/-HDMI-A-\d+$/.test(name)) continue;
+    try {
+      const edid = await fs.readFile(`${dir}/${name}/edid`);
+      if (edid?.length) return edid;
+    } catch {
+      // no EDID file
+    }
+  }
+  return null;
+}
+
 /** Emits "connected" when the display appears after being absent for a while. */
 export class DisplayWatch extends EventEmitter {
   #probe;
