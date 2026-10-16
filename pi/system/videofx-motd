@@ -8,7 +8,10 @@ check=/var/lib/videofx/update-check.json
 last=/var/lib/videofx/update-last.json
 
 json() { sed -n "s/.*\"$1\":\"\\([^\"]*\\)\".*/\\1/p" "$2" 2>/dev/null | head -n1; }
-row() { printf '  %-9s %s\n' "$1" "$2"; }
+# The update files live in a folder the unprivileged service owns: never pass their
+# control characters (terminal escapes) through to an admin's terminal.
+clean() { LC_ALL=C tr -d '\000-\011\013-\037\177'; }
+row() { printf '  %-9s %s\n' "$1" "$2" | clean; }
 
 version=$(json version "$app/version.json")
 sha=$(json sha "$app/version.json")
