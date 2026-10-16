@@ -20,7 +20,29 @@ The case lives on an outdoor extension cord that will get unplugged.
 - **Sizes.** On first boot `videofx-storage` grows the root partition to `ROOT_SIZE_MB`, makes the data partition from the rest of the card (at least `DATA_MIN_MB`), turns the overlay on and reboots once. Both sizes are in `pi/config`; defaults 6144 and 1024. The image disables Pi OS's own "grow root over the whole card" (`resize` / `rpi-resize`).
 - **install.sh on an existing Pi:** Pi OS has usually already grown root over the whole card, and a mounted root can't shrink, so the page reports "no-space" and protection stays off. Fix: flash a fresh card, and before its first boot remove the word ` resize` from `cmdline.txt` on the boot partition. Then run install.sh.
 - **OS updates** need maintenance mode (the last section on this page).
-- **Logs** are kept in RAM while protected. `journalctl` works until the next reboot.
+- **Logs** are kept in RAM while protected. `journalctl` works until the next reboot. The health log (below) is the part that survives.
+
+## Health log
+
+The journal is gone after a power cut, so the service keeps its own record of how the Pi is doing in `/var/lib/videofx/health.jsonl` on the data partition. System > Health log shows the last 24 hours as a chart with the recent events, and **Download CSV** gives every sample for a spreadsheet.
+
+- **Every minute, one sample:**
+  - the hottest SoC reading of that minute;
+  - whether the sled fan is on;
+  - the firmware's throttle flags (`vcgencmd get_throttled`: under-voltage, frequency capped, throttled, soft temperature limit);
+  - the Wi-Fi signal;
+  - whether VideoFX is on.
+- **Events, when something changes:**
+  - Pi started (uptime under 5 minutes: power-up, power cut or reboot), service restarted, service stopped;
+  - under-voltage or throttling started or ended, plus any of them already flagged since boot when the service starts;
+  - temperature warning, over-temperature cut-off, back to normal;
+  - Wi-Fi lost or back, HDMI display lost or back;
+  - the video player crashed, playback stopped, the event loop blocked.
+- **Reading it.** "Pi started" with no "Service stopped" before it means the power was cut (or the Pi hung and the hardware watchdog reset it). Under-voltage means the 5 V rail sagged: check the DigiAMP+'s supply and its barrel plug before anything else.
+- **Temperature needs the protection on.** The SoC is read by the over-temperature check (Settings > Cooling); with it switched off, samples have no temperature.
+- **Clock.** Before NTP has synced, times can be off; those samples are marked (`clock_synced` 0 in the CSV).
+- **Size.** About 60 bytes a minute. Past 3 MB the file moves to `health.jsonl.1` and a new one starts, so the last month or so is kept and it never passes 6 MB.
+- **Power cuts.** Lines are appended without fsync; the data partition commits every 5 s, and a line cut short is skipped when reading.
 
 ## Time (no RTC)
 
