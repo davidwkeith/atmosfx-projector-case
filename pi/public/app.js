@@ -11,7 +11,6 @@ const $ = (id) => document.getElementById(id);
 const LOADERS = {
   dashboard: () => import("./views/dashboard.js"),
   media: () => import("./views/media.js"),
-  scares: () => import("./views/scares.js"),
   schedule: () => import("./views/schedule.js"),
   settings: () => import("./views/settings.js"),
   system: () => import("./views/system.js"),
