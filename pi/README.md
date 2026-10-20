@@ -12,7 +12,7 @@ It also:
 - takes DMX over sACN from show software;
 - watches the Pi's own temperature and switches the projector off if it overheats; the Pi 3/4 sled fan is switched by the kernel (the projector's fan does the case cooling).
 
-A web page on your LAN (`http://videofx-xxxx.local/`) handles videos, the playlist, scare clips, the schedule and every setting. It has six screens (Dashboard, Media, Scares, Schedule, Settings, System), and every screen has a **?** button with help for that screen. A bar at the top of every screen shows the clip playing (a frame from it, elapsed time and length) with a Play/Pause button (pause freezes the picture, projector still on); tapping it goes back to the Dashboard.
+A web page on your LAN (`http://videofx-xxxx.local/`) handles videos, the playlist, scare clips, the schedule and every setting. It has five screens (Dashboard, Media, Schedule, Settings, System), and every screen has a **?** button with help for that screen. A bar at the top of every screen shows the clip playing (a frame from it, elapsed time and length) with a Play/Pause button (pause freezes the picture, projector still on); tapping it goes back to the Dashboard.
 
 **Status: untested on hardware.** The logic is unit tested (534 tests). The whole service was run on a Mac against a fake mpv, with real UDP sACN. Nothing has run on a Pi, the image has not been built, and nothing has been paired with Apple Home. See [What is verified](#what-is-verified).
 

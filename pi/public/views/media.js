@@ -1,6 +1,8 @@
 import { enabledCount, formatDuration, isMediaFile, moveEntry, playlistDuration } from "/playlist-core.js";
 import { api, bytes, el, json, run, toast } from "../api.js";
-import { onDirtyCheck, refreshMedia, refreshStatus } from "../state.js";
+import { effective, pending, rowOf, safeToRebuild, visibleItems } from "../settings-form.js";
+import { onDirtyCheck, refreshMedia, refreshStatus, state } from "../state.js";
+import { mountScares } from "./scare-mode.js";
 
 // Module-level on purpose: unsaved playlist edits survive leaving this screen and coming back.
 let files = []; // [{ name, size, duration? }]
@@ -57,12 +59,18 @@ export function mount(root) {
   const progress = el("progress", { max: 1, value: 0, hidden: true });
   const space = el("p", { className: "hint" });
   const usbLine = el("p", { className: "hint", hidden: true });
+  const modeRows = el("div", {});
+  const loopTag = el("span", { className: "tag", hidden: true }, "in use");
+  const scareBox = el("div", {});
+  const scares = mountScares(scareBox);
+  let lastSettings = null;
 
   root.append(
+    el("section", {}, el("h3", {}, "Mode"), modeRows),
     el(
       "section",
       {},
-      el("h3", {}, "Playlist"),
+      el("h3", {}, "Loop mode: playlist ", loopTag),
       howHint,
       el("label", { className: "check" }, shuffleBox, el("span", {}, "Shuffle")),
       playlist,
@@ -70,6 +78,7 @@ export function mount(root) {
       total,
       el("div", { className: "actions" }, save, revert, unsaved),
     ),
+    scareBox,
     el("section", {}, el("h3", {}, "Videos"), list, empty, el("label", { className: "upload" }, el("span", {}, "Upload videos"), input), progress, space, usbLine),
   );
 
@@ -184,6 +193,19 @@ export function mount(root) {
 
   render(); // module state from an earlier visit, if any
 
+  // The Mode row (Playback group) and which section it puts in use.
+  function drawMode() {
+    const data = state.settings;
+    if (!data) return;
+    modeRows.replaceChildren(...visibleItems(data.settings.filter((s) => s.group === "Playback"), { advanced: true, query: "" }).map(rowOf));
+  }
+  const syncMode = () => {
+    const scare = effective("mode") === "scare";
+    loopTag.hidden = scare;
+    scareBox.querySelector("h3 .tag")?.toggleAttribute("hidden", !scare);
+  };
+  const offPending = pending.subscribe(syncMode);
+
   function showUsb(usb) {
     if (!usb) return;
     // The lists change under the page when an import finishes: refresh once per import.
@@ -205,7 +227,15 @@ export function mount(root) {
 
   return {
     helpSlug: () => "media",
-    update({ media, status }) {
+    unmount: offPending,
+    update(s) {
+      const { media, status } = s;
+      scares.update(s);
+      if (s.settings !== lastSettings && safeToRebuild(modeRows)) {
+        lastSettings = s.settings;
+        drawMode();
+      }
+      syncMode();
       showUsb(status?.usb);
       if (!media || media === seen) return; // the status poll must not rebuild the lists
       const edited = dirty(); // keep unsaved edits across refreshes
