@@ -1,14 +1,15 @@
 // THROWAWAY: Pi 3 feasibility spike for the phone fit (BRINGUP row 11a). Delete
-// this once the fit is proven on the Pi. It imports only Node builtins and
-// ../src/{fit-math,fit-shader,mpv}.js, so a plain copy of pi/src and pi/tools works.
+// this once the fit is proven on the Pi. It ships in the release tarball, so after
+// the next update it is at /opt/videofx/tools/fit-spike.mjs.
 //
 // On the Pi (service stopped, as the service user, projector on):
-//   scp -r pi/src pi/tools <user>@videofx-xxxx.local:fit-spike/      (from your Mac)
 //   sudo systemctl stop videofx-player
-//   node fit-spike/tools/fit-spike.mjs CLIP --mode none     [--minutes 10] [--yes]
-//   node fit-spike/tools/fit-spike.mjs CLIP --mode shader --variant gpu       (the Pi's current VO)
-//   node fit-spike/tools/fit-spike.mjs CLIP --mode shader --variant gpu-next
-//   node fit-spike/tools/fit-spike.mjs CLIP --mode lavfi
+//   u=$(systemctl show -p User --value videofx-player)
+//   sudo -u "$u" node /opt/videofx/tools/fit-spike.mjs CLIP --mode none     [--minutes 10] [--yes]
+//   sudo -u "$u" node /opt/videofx/tools/fit-spike.mjs CLIP --mode shader --variant gpu       (the Pi's current VO)
+//   sudo -u "$u" node /opt/videofx/tools/fit-spike.mjs CLIP --mode shader --variant gpu-next
+//   sudo -u "$u" node /opt/videofx/tools/fit-spike.mjs CLIP --mode lavfi
+//   sudo systemctl start videofx-player
 // Run `none` first: it writes /tmp/fit-spike-none.json, the drop baseline.
 // Each run prints a labelled report and writes /tmp/fit-spike-<mode>[-<variant>].json. Paste the report back.
 // --yes (or no TTY) skips the questions and records null for the answers.
