@@ -79,7 +79,7 @@ The small parts first, so any fit problem shows up before a 51-hour print. Every
 
 **Hold `power_shelf` and `base_rear` until BRINGUP row 4 has set `brick`, `cord_*` and the brick's placement; the provisional layout puts the brick across the cord opening and cannot be assembled.** The Parts table shows what the provisional model slices to, not what to print yet.
 
-About 108 h of printing (about 95 h still to go after the parts printed so far, if `lid_rear` is kept), so 4.5 days of machine time and more than a week of calendar time with plate changes and sleep, if nothing fails. A failed `base_front` costs the most: watch its first layers. The 0.30 DRAFT profile saved about 10 h on `base_front` and 5 h on `base_rear` with stock settings; it has not been sliced with the overrides.
+About 108 h of printing (about 71 h still to go if the printed `lid_rear` and `base_rear` are kept, 95 h if `base_rear` is reprinted), so 4.5 days of machine time and more than a week of calendar time with plate changes and sleep, if nothing fails. A failed `base_front` costs the most: watch its first layers. The 0.30 DRAFT profile saved about 10 h on `base_front` and 5 h on `base_rear` with stock settings; it has not been sliced with the overrides.
 
 ## After printing
 
