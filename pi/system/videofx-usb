@@ -1,0 +1,46 @@
+#!/bin/bash
+# Mount a USB stick read-only for the player's import, or unmount it.
+# Run as root by videofx-usb@<device>.service, which udev starts when a USB
+# partition with a filesystem appears (99-videofx.rules) and stops when it goes.
+#   videofx-usb mount sda1    -> /run/videofx-usb/mnt/sda1, then sda1.ready
+#   videofx-usb unmount sda1
+# The player watches for <device>.ready (src/usb.js) and copies from the mount
+# point written in it. Read-only, so pulling the stick at any time loses nothing.
+set -euo pipefail
+
+action=${1:-}
+dev=${2:-}
+[[ $dev =~ ^[a-z0-9]+$ ]] || { echo "videofx-usb: bad device name: $dev" >&2; exit 2; }
+run=/run/videofx-usb
+mnt=$run/mnt/$dev
+ready=$run/$dev.ready
+
+case $action in
+mount)
+  type=$(blkid -o value -s TYPE "/dev/$dev" || true)
+  opts=ro,nosuid,nodev,noexec
+  case $type in
+  vfat | exfat) opts=$opts,umask=0022 ;;
+  ntfs) type=ntfs3 opts=$opts,umask=0022 ;;
+  ext2 | ext3 | ext4 | iso9660 | udf | hfsplus) ;;
+  *) echo "videofx-usb: $dev: unsupported filesystem '$type', not mounting"; exit 0 ;;
+  esac
+  install -d -m 755 "$run" "$run/mnt"
+  install -d -m 755 "$mnt"
+  mount -t "$type" -o "$opts" "/dev/$dev" "$mnt"
+  printf '%s\n' "$mnt" >"$ready.tmp"
+  chmod 644 "$ready.tmp"
+  mv "$ready.tmp" "$ready"
+  echo "videofx-usb: $dev ($type) mounted read-only at $mnt"
+  ;;
+unmount)
+  rm -f "$ready"
+  if mountpoint -q "$mnt"; then umount -l "$mnt"; fi
+  rmdir "$mnt" 2>/dev/null || true
+  echo "videofx-usb: $dev unmounted"
+  ;;
+*)
+  echo "usage: videofx-usb mount|unmount DEVICE" >&2
+  exit 2
+  ;;
+esac

@@ -28,7 +28,7 @@ What is on it:
 | Pilots (`M3p`, `M2.5p`, `M2p`) and the `M3` through-hole | Drive the screw for each pilot in and out three times. Pass an M3 screw through the `M3` hole | Pilots: firm torque, threads hold on the third pass, boss doesn't split. Through-hole: the screw drops through without binding | These sizes (2.6, 2.2, 1.8 and 3.4 mm) are fixed numbers in the SCAD, not parameters. If one fails, they need to become parameters first: ask for that change rather than editing the numbers by hand |
 | Keyhole | Push an M5 button-head bolt's head through the round end, slide it 8 mm to the narrow end | Head passes freely, the shank slides without catching, and the tab doesn't wobble on the bolt at the narrow end | Narrow end too tight or loose: change `stud_d` (slot = `stud_d` + 0.8). Head won't pass: raise `stud_head_d` (opening = `stud_head_d` + 1.5). The same numbers cut the hatch cover |
 | Pane slot | Slide the frame glazing into the slot | Goes in by hand without forcing and doesn't rattle much | The slot is `pane_t` + 0.5, the same as the base's rebate. Measure your pane and set `pane_t` |
-| Hot-shoe T-slot | Slide the ball head's hot-shoe adapter in from the left edge and tighten its ring on the lips | Can't wobble or slide out once the ring is tight | Change `shoe_clr` (clearance per side), or measure the adapter and set `shoe_ch_w`, `shoe_open`, `shoe_lip_t`, `shoe_foot_l`, `shoe_neck_d`. If it holds, the pedestal could use it instead of its stud and insert (a design change) |
+| Hot-shoe T-slot | Slide the ball head's hot-shoe adapter in from the left edge and tighten its ring on the lips | Can't wobble or slide out once the ring is tight | Change `shoe_clr` (clearance per side), or measure the adapter and set `shoe_ch_w`, `shoe_open`, `shoe_lip_t`, `shoe_foot_l`, `shoe_neck_d`. The pedestal uses the same slot (`ped_mount`), so a change here changes the pedestal too |
 | Shrink | Measure the strip's length with calipers once it is fully cool | Enter it as `coupon.strip_len` in measurements.yaml; `uv run scripts/check_measurements.py` says the pane clearance after shrink is ok | TIGHT: scale `window_frame` and `base_front` by 118 / your length in the slicer, or add the shortfall to `pane_w` and `pane_h` |
 
 After any change: `make parts`, then `scripts/check_clash.sh`. If you changed a size by more than 0.2 mm, reprint the coupon and test that feature again before the big prints. None of the coupon's features use `clearance`. It sets the pane rebate's width and height (`pane_w`/`pane_h` + 2 x `clearance`), which only the shrink row checks.
@@ -38,7 +38,7 @@ After any change: `make parts`, then `scripts/check_clash.sh`. If you changed a 
 | Part | Qty | Time (0.20 SPEED) | Material, weight | Notes |
 |---|---|---|---|---|
 | `fit_coupon` | 1 | 1 h 34 m | ASA 16 g | **Print first.** Test inserts, pilots, the keyhole on an M5 bolt, the frame glazing in its slot, the ball head's hot-shoe adapter in its T-slot |
-| `pedestal` | 1 | 1 h 42 m | PETG 29 g | |
+| `pedestal` | 1 | 1 h 37 m | PETG 27 g | Hot-shoe T-slot on top for the ball head's adapter (re-sliced 2026-10-15). PETG shrinks less than the ASA coupon, so the slot may be a touch looser: check the adapter can't wobble once the ring is tight |
 | `window_frame` | 1 | 1 h 19 m | PETG 20 g | |
 | `hatch_cover` | 1 | 2 h 23 m | ASA 38 g | |
 | `sled_pi3` / `pi4` / `pi5` / `zero2w` | 1 | 1 h 8 m to 1 h 29 m | PETG 18-20 g | The one for your Pi. Pi 3/4 (1 h 29 m, 20 g, re-sliced 2026-10-15) carry the upright fan plate; it prints standing, the diamond intake needs no supports |
@@ -55,6 +55,9 @@ After any change: `make parts`, then `scripts/check_clash.sh`. If you changed a 
 | **Total** | | **about 83 h** | **ASA about 1.0 kg, PETG about 0.13 kg** | Two 1 kg ASA spools (one leaves nothing for a failed print) and one black PETG spool. ASA parts re-sliced 2026-10-15 with the `Prusament ASA` profile; ASA is less dense than PETG, so the same parts weigh about 15% less. |
 
 ## Order, on one printer
+
+Printed so far (2026-10-16): `fit_coupon`, `hatch_cover`, `cord_clamp`, `lid_rear`, all ASA. `cord_clamp` came before BRINGUP row 4: if the real cord changes `cord_d`, reprint it (44 m).
+
 
 The small parts first, so any fit problem shows up before a 36-hour print. Everything runs back to back on the one bed, so a failure anywhere delays everything behind it.
 
@@ -75,5 +78,5 @@ About 83 h of printing, so 3.5 to 4 days of machine time and a week of calendar 
 ## After printing
 
 - Snap out the two thin ribs in the window opening.
-- Heat-set inserts: 1/4-20 (pedestal), M5 (hatch studs), M3 (sled thumbscrew). Use the sizes that fit the coupon.
+- Heat-set inserts: M5 (hatch studs), M3 (sled thumbscrew); 1/4-20 only if the pedestal is built with `ped_mount = "insert"`. Use the sizes that fit the coupon.
 - Spray the inside of the case matte black (masking the window rebate and screw holes) so projector light doesn't glow through the vents at night.

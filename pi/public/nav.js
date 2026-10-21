@@ -3,7 +3,6 @@
 export const VIEWS = [
   { id: "dashboard", title: "Dashboard", icon: "dashboard" },
   { id: "media", title: "Media", icon: "media" },
-  { id: "scares", title: "Scares", icon: "scares" },
   { id: "schedule", title: "Schedule", icon: "schedule" },
   { id: "settings", title: "Settings", icon: "settings" },
   { id: "system", title: "System", icon: "system" },
@@ -12,17 +11,17 @@ export const VIEWS = [
 // Which view shows each schema group. Key order is the order of the Settings sub-navigation.
 export const GROUP_VIEW = {
   Device: "settings",
-  Playback: "settings",
   Projector: "settings",
-  Audio: "settings",
+  Audio: "dashboard", // volume and mute: the Dashboard slider is their only control
   Display: "settings",
   DMX: "settings",
   Cooling: "settings",
   "Web page": "settings",
   Advanced: "settings",
   Hardware: "settings",
-  Scare: "scares",
-  "Motion sensor": "scares",
+  Playback: "media",
+  Scare: "media",
+  "Motion sensor": "media",
   Schedule: "schedule",
 };
 
@@ -59,8 +58,12 @@ export function docHref(href, dir = "pi/docs") {
   return REPO_BLOB + target + (frag ? `#${frag}` : "");
 }
 
+// Old links: scare mode and the Mode setting used to have their own screen and settings group.
+const MOVED = { scares: "media", "settings/playback": "media" };
+
 /** "#/settings/web-page" -> { view: "settings", sub: "web-page" }. Unknown views fall back to the dashboard. */
 export function parseHash(hash = "") {
-  const [name = "", sub = ""] = hash.replace(/^#\/?/, "").split("/");
+  const path = hash.replace(/^#\/?/, "");
+  const [name = "", sub = ""] = (MOVED[path] ?? MOVED[path.split("/")[0]] ?? path).split("/");
   return { view: name === DOCS_VIEW || VIEWS.some((v) => v.id === name) ? name : "dashboard", sub };
 }

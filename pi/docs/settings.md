@@ -1,6 +1,6 @@
 # Settings
 
-Settings are on the web page: the **Settings** screen holds most of them, and the Scares and Schedule screens hold their own. Each row shows its label and a one-line description; the (i) button shows its value's source (*set here* / *from /etc/default/videofx* / *default*), its default, when it takes effect (at once / next play / after a restart), and a **Reset**. Edits are collected in a bar at the bottom and saved together with **Apply**. **Show advanced settings** reveals rarely needed rows, and the search box finds any setting.
+Settings are on the web page: the **Settings** screen holds most of them, and the Media and Schedule screens hold their own (Mode and the scare settings are on Media). Each row shows its label and a one-line description; the (i) button shows its value's source (*set here* / *from /etc/default/videofx* / *default*), its default, when it takes effect (at once / next play / after a restart), and a **Reset**. Edits are collected in a bar at the bottom and saved together with **Apply**. **Show advanced settings** reveals rarely needed rows, and the search box finds any setting.
 
 - **Precedence:** web page (`/var/lib/videofx/settings.json`, written atomically, mode 600) > `/etc/default/videofx` > default. A corrupt settings.json is backed up to `settings.json.corrupt` and ignored, with a warning.
 - **Password:** stored as a scrypt hash and never sent back. Changing it needs the current password; removing it needs the current password and a confirmation.

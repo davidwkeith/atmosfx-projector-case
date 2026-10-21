@@ -34,7 +34,7 @@ export class Player extends EventEmitter {
   #order = []; // scare clips in play order
   #orderPos = 0;
   #nextScare = null;
-  #shuffle = null; // shuffled loop: { clips, order, pos, last }
+  #shuffle = null; // shuffled loop: { clips, order, pos, last, errors }
   #queued = false;
   #queueTimer = null;
   #cooldownUntil = 0;
@@ -302,6 +302,20 @@ export class Player extends EventEmitter {
     return { result: "fired", clip };
   }
 
+  /**
+   * Fade the picture to black through mpv's brightness, for a clean stop (service
+   * stop, update, reboot). Bounded by the step count; a no-op when nothing plays.
+   */
+  async fadeOut({ ms = 600, steps = 12 } = {}) {
+    if (!this.isPlaying) return;
+    const sleep = (t) => new Promise((r) => this.#setTimer(r, t));
+    const from = Math.round((this.#dimmer / 255) * 100) - 100;
+    for (let i = 1; i <= steps; i++) {
+      await this.#mpv.command("set_property", "brightness", Math.round(from + ((-100 - from) * i) / steps)).catch(() => {});
+      await sleep(ms / steps);
+    }
+  }
+
   async shutdown() {
     this.#clearQueue();
     await this.#mpv.shutdown?.();
@@ -348,7 +362,7 @@ export class Player extends EventEmitter {
           ["loadfile", all[0], "replace"],
         );
       } else if (clips?.length) {
-        this.#shuffle = { clips, order: [], pos: 0, last };
+        this.#shuffle = { clips, order: [], pos: 0, last, errors: 0 };
         this.#run(
           ["set_property", "loop-file", "no"],
           ["set_property", "loop-playlist", "no"],
@@ -414,7 +428,21 @@ export class Player extends EventEmitter {
   #onEvent(e) {
     if (e.event === "file-loaded" && this.#phase === "loop" && this.#shuffle) {
       // Drop what has played and queue the next clip so mpv can prefetch it.
+      this.#shuffle.errors = 0;
       this.#run(["playlist-clear"], ["loadfile", this.#nextShuffled(), "append"]);
+      return;
+    }
+    if (e.event === "end-file" && e.reason === "error" && this.#phase === "loop" && this.#shuffle) {
+      // An unplayable clip never loads, so nothing was queued behind it and mpv
+      // would go idle. Skip to the next one; after a whole round of failures, stop
+      // trying (the screen stays black) rather than spin.
+      const s = this.#shuffle;
+      if (++s.errors >= s.clips.length) {
+        this.#log.error(`mpv: none of the ${s.clips.length} shuffled clips will play`);
+        return;
+      }
+      this.#log.warn(`mpv: skipping a clip that will not play (${e.file_error ?? "error"})`);
+      this.#run(["loadfile", this.#nextShuffled(), "replace"]);
       return;
     }
     if (e.event === "playback-restart" && this.#mark) {

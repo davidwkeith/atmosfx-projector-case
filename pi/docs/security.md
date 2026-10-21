@@ -14,5 +14,6 @@ With no password set, the page shows a warning: anyone on your network can contr
 
 - The page answers only private, link-local and ULA addresses.
 - The Host header must be an IP, `localhost`, `videofx-xxxx(.local)`, the device name or an extra host name (case-insensitive). This blocks DNS rebinding.
-- Every write needs an `X-VideoFX: 1` header (CSRF). The optional password uses basic auth, over plain HTTP.
+- Every write needs an `X-VideoFX: 1` header (CSRF). The optional password uses basic auth, over plain HTTP unless HTTPS is on.
+- HTTPS (Settings > Web page) serves the same page on port 443 (`VIDEOFX_HTTPS_PORT`) with an uploaded certificate or a self-signed one made with `openssl` (P-256, 825 days, the Pi's names and addresses in the SAN). The certificate and key live in `/var/lib/videofx/tls/`, mode 0600, and are not part of a backup. With **Send plain HTTP to HTTPS** on, port 80 answers only with a 308 redirect, sent before the password is asked for. There is no HSTS header: a browser would then refuse a self-signed certificate it has not been told to trust, and a removed certificate would lock the page.
 - Uploads: file names are checked, the size is capped, extensions are limited, and media is never served back.

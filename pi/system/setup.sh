@@ -20,7 +20,7 @@ apt-get update
 # mpv (DRM/KMS video, ALSA audio), gpiod (gpiomon/gpioset: PIR, relay),
 # v4l-utils (cec-ctl, ir-ctl), avahi for videofx-xxxx.local and the Bonjour entry.
 apt-get install -y --no-install-recommends \
-  mpv gpiod v4l-utils alsa-utils avahi-daemon iw overlayroot ca-certificates curl gpg
+  mpv gpiod v4l-utils alsa-utils avahi-daemon iw overlayroot ca-certificates curl gpg openssl
 
 echo "== node.js"
 node_ok() {
@@ -69,6 +69,9 @@ install -m 755 "$src/system/videofx-storage" /usr/local/sbin/videofx-storage
 install -m 755 "$src/system/videofx-maint" /usr/local/sbin/videofx-maint
 install -m 755 "$src/system/videofx-relay-open" /usr/local/sbin/videofx-relay-open
 install -m 755 "$src/system/videofx-update" /usr/local/sbin/videofx-update
+# USB stick import: udev starts this per stick; it mounts read-only under /run/videofx-usb.
+install -m 755 "$src/system/videofx-usb" /usr/local/sbin/videofx-usb
+install -m 644 "$src/system/videofx-usb@.service" /etc/systemd/system/videofx-usb@.service
 install -m 644 "$src/system/videofx-update-resume.service" /etc/systemd/system/videofx-update-resume.service
 systemctl enable videofx-update-resume.service
 # The web page's Upgrade / Check now buttons (root helper on a socket) and the daily check.
@@ -132,6 +135,10 @@ grep -q '^gpio=27=' "$config" || missing+=$'# Projector relay open at boot (acti
 # Pi 3/4 sled fan through a transistor: the kernel switches it on at 60 C and off 10 C lower,
 # with or without the service running. Change VIDEOFX_FAN_GPIO/_FAN_ON_C? Change this line too.
 grep -q '^dtoverlay=gpio-fan' "$config" || missing+=$'# Pi sled fan (on at 60 C)\ndtoverlay=gpio-fan,gpiopin=26,temp=60000\n'
+# Nothing but video or black on the projector: no rainbow splash, no warning icons over the picture
+# (under-voltage still shows in the health log through vcgencmd get_throttled).
+grep -q '^disable_splash=' "$config" || missing+=$'# No rainbow boot splash on the projector\ndisable_splash=1\n'
+grep -q '^avoid_warnings=' "$config" || missing+=$'avoid_warnings=1\n'
 [ -z "$missing" ] || printf '\n[all]\n%s' "$missing" >>"$config"
 # Older installs added PWM case-fan and 1-wire overlays; the case fans and DS18B20s are gone (the Pi fan above is gpio-fan).
 # Only when both ends of the block are there, so a hand-edited file never loses everything after the marker.
@@ -146,7 +153,9 @@ echo "== console: tty1 is the projector's idle screen"
 systemctl disable getty@tty1.service
 cmdline=/boot/firmware/cmdline.txt
 [ -e "$cmdline" ] || cmdline=/boot/cmdline.txt
-for opt in consoleblank=0 logo.nologo vt.global_cursor_default=0; do
+# Kernel and boot messages (and cloud-init's key banner) go to tty3, not the HDMI console.
+sed -i '1 s/\bconsole=tty1\b/console=tty3/' "$cmdline"
+for opt in console=tty3 quiet loglevel=3 consoleblank=0 logo.nologo vt.global_cursor_default=0; do
   grep -qw "$opt" "$cmdline" || sed -i "1 s/\$/ $opt/" "$cmdline"
 done
 

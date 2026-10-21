@@ -9,6 +9,8 @@ export const PLAYLIST_EXTS = [".m3u", ".m3u8"];
 const DISABLED = "#VIDEOFX-DISABLED:";
 // Play order flag, also a comment mpv ignores: the player shuffles itself.
 const SHUFFLE = "#VIDEOFX-SHUFFLE";
+// Built from uploads or a USB import, not edited by hand yet: new uploads join it.
+const AUTO = "#VIDEOFX-AUTO";
 
 export function extOf(name) {
   const i = name.lastIndexOf(".");
@@ -59,9 +61,12 @@ export function parsePlaylist(text, prefix = "") {
 /** True if the .m3u text asks for shuffled play. */
 export const isShuffled = (text) => text.split(/\r?\n/).some((line) => line.trim() === SHUFFLE);
 
-export function serializePlaylist(entries, prefix = "", { shuffle = false } = {}) {
+/** True if the .m3u text was built automatically and not saved by hand since. */
+export const isAuto = (text) => text.split(/\r?\n/).some((line) => line.trim() === AUTO);
+
+export function serializePlaylist(entries, prefix = "", { shuffle = false, auto = false } = {}) {
   const lines = entries.map(({ file, enabled }) => (enabled ? "" : DISABLED) + prefix + file);
-  return ["#EXTM3U", ...(shuffle ? [SHUFFLE] : []), ...lines, ""].join("\n");
+  return ["#EXTM3U", ...(auto ? [AUTO] : []), ...(shuffle ? [SHUFFLE] : []), ...lines, ""].join("\n");
 }
 
 /** Throws unless entries is a list of { file: media file name, enabled: boolean }. */

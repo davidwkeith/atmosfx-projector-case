@@ -1,5 +1,5 @@
 import { el } from "../api.js";
-import { advancedShown, effective, pending, rowOf, safeToRebuild, visibleItems } from "../settings-form.js";
+import { advancedShown, effective, locateCard, pending, rowOf, safeToRebuild, visibleItems } from "../settings-form.js";
 import { setting, state } from "../state.js";
 
 const DAY_NAMES = { mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun" };
@@ -68,6 +68,7 @@ export function mount(root) {
   const scheduleEdited = () => pending.set("schedule", collectSchedule(), setting("schedule"));
   const quietEdited = () => pending.set("quietHours", collectQuiet(), setting("quietHours"));
 
+  sunOffset.addEventListener("input", () => drawSunsetLabels());
   for (const control of [schedEnabled, sunOffset]) {
     control.addEventListener("input", scheduleEdited);
     control.addEventListener("change", scheduleEdited);
@@ -85,17 +86,30 @@ export function mount(root) {
     schedDays.replaceChildren(
       ...Object.keys(DAY_NAMES).map((d) => {
         const day = sched.days[d];
-        const on = el("input", { type: "time", value: day.on === "sunset" ? "" : day.on, disabled: day.on === "sunset", attrs: { "aria-label": `${DAY_NAMES[d]} on` } });
+        // a disabled, empty time input reads as a greyed placeholder time (Safari shows the
+        // current time), so sunset days show the word instead of the field
+        const on = el("input", { type: "time", value: day.on === "sunset" ? "" : day.on, hidden: day.on === "sunset", attrs: { "aria-label": `${DAY_NAMES[d]} on` } });
+        const atSunset = el("span", { className: "sunset", hidden: day.on !== "sunset" });
         const sun = el("input", { type: "checkbox", checked: day.on === "sunset", title: "On at sunset", attrs: { "aria-label": `${DAY_NAMES[d]} on at sunset` } });
-        sun.addEventListener("change", () => (on.disabled = sun.checked));
+        sun.addEventListener("change", () => {
+          on.hidden = sun.checked;
+          atSunset.hidden = !sun.checked;
+        });
         const off = el("input", { type: "time", value: day.off, attrs: { "aria-label": `${DAY_NAMES[d]} off` } });
-        const row = el("tr", {}, el("td", {}, DAY_NAMES[d]), el("td", {}, on), el("td", {}, sun), el("td", {}, off));
+        const row = el("tr", {}, el("td", {}, DAY_NAMES[d]), el("td", {}, on, atSunset), el("td", {}, sun), el("td", {}, off));
         row.dataset.day = d;
         row.addEventListener("input", scheduleEdited);
         row.addEventListener("change", scheduleEdited);
         return row;
       }),
     );
+    drawSunsetLabels();
+  }
+
+  function drawSunsetLabels() {
+    const n = Number(sunOffset.value || 0);
+    const text = n ? `Sunset ${n > 0 ? "+" : "\u2212"}${Math.abs(n)} min` : "Sunset";
+    for (const span of schedDays.querySelectorAll(".sunset")) span.textContent = text;
   }
 
   function drawQuiet() {
@@ -121,7 +135,7 @@ export function mount(root) {
   function drawPlace() {
     const data = state.settings;
     if (!data) return;
-    place.replaceChildren(...visibleItems(data.settings.filter((s) => s.group === "Schedule"), { advanced: advancedShown(), query: "" }).map(rowOf));
+    place.replaceChildren(...visibleItems(data.settings.filter((s) => s.group === "Schedule"), { advanced: advancedShown(), query: "" }).map(rowOf), locateCard());
   }
 
   function updateGeo() {

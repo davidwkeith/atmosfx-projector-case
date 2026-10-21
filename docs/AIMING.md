@@ -43,6 +43,6 @@ Past that, the projector hits the window frame or the Pi divider. Get the case c
 |---|---|
 | Image cut off or dark at one edge | The window is clipping it: recentre the projector and move the case. |
 | Can't reach the target | Turn the case for pan. For tilt, shim under the front or rear feet and keep the gap under the floor open. |
-| Image droops over time | Retighten the ball head. Check the pedestal screws and the 1/4-20 stud are tight. |
+| Image droops over time | Retighten the ball head. Check the pedestal screws and the hot-shoe adapter's ring are tight. |
 | Image is trapezoidal | Use the projector's keystone setting. Square up the case first, since keystone correction softens the image. |
 | Cover won't seat | A bolt is too tight against the wall: back it out half a turn so the head clears the cover. |
