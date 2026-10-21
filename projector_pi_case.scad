@@ -1,6 +1,6 @@
 // Ground-standing projector + Raspberry Pi 3 case: rain-proof (not sealed), ventilated
 // v0.12 - mouse ears (ears, ear_d, ear_layers) on both base tiles' foot-rib ends (the base stands on ten 4 mm ribs, and base_rear's edge lifted in ASA)
-//         and on the lid tiles' roof corners.
+//         and on the lid tiles' roof corners and the hatch cover's corners.
 // v0.11 - Pi sled fan: an upright plate on the Pi 3/4 sleds for a 30 mm 5 V fan blowing into the Pi-HAT gap (gpio-fan, GPIO 26);
 //         pi_fan keep-out and fan-<sled> clash pairs. The case itself still has no fans.
 // v0.10 - single supply: one desktop brick on the shelf (receptacle plate, barrier, second adapter and the PG9 gland replaced by a brick envelope, a rear-wall opening and a cord clamp).
@@ -186,7 +186,7 @@ pi_fan_t = 3.5;             // upright bracket plate the fan screws to
 /* [Printer] */
 bed = [250, 210, 210];   // print volume; every tile is asserted to fit (either way round)
 max_bridge = 30;         // longest unsupported bridge under the floor
-ears = true;             // mouse ears against warping (cut or peel off after printing): base tiles on every foot-rib end, lid tiles on the roof corners
+ears = true;             // mouse ears against warping (cut or peel off after printing): base tiles on every foot-rib end, lid tiles and hatch cover on their corners
 ear_d = 18;              // ear diameter: half of each ear lies inside the tile, so only the outer ribs' ears widen it in X; ribs 20 mm apart, so 20 would make neighbouring ears touch (non-manifold)
 ear_layers = 2;          // ear thickness in layers of layer_h
 
@@ -511,10 +511,12 @@ module hood() {
 
 // Hatch cover: hangs on four M5 button-head bolts (see stud_d) through keyholes; lift kh_drop and pull off, no tools.
 // Foam-tape gasket on the wall side. Prints ribs-up (part="hatch_cover").
-module hatch_cover() {
+// with_ears: mouse ears at the corners, in the outer face's plane (export only); the keyholes cut through them.
+module hatch_cover(with_ears=false) {
   difference() {
     union() {
       translate([-cover_s/2, -cover_s/2, 0]) cube([cover_s, cover_s, 3]);
+      if (with_ears) for (sx=[-1,1], sy=[-1,1]) translate([sx*cover_s/2, sy*cover_s/2, 3-ear_layers*layer_h]) cylinder(d=ear_d, h=ear_layers*layer_h);
       translate([-cover_s/2+4, -1.5, -4]) cube([cover_s-8, 3, 4.1]);
       translate([-1.5, -cover_s/2+4, -4]) cube([3, cover_s-8, 4.1]);
     }
@@ -790,7 +792,7 @@ else if (part == "lid") rotate([180,0,0]) rotate([lid_a,0,0]) lid_tile(tile) uni
 else if (part == "window_frame") rotate([90,0,0]) window_frame();
 else if (part == "pedestal") pedestal();
 else if (part == "power_shelf") power_shelf();
-else if (part == "hatch_cover") rotate([180,0,0]) hatch_cover();
+else if (part == "hatch_cover") rotate([180,0,0]) hatch_cover(ears);
 else if (part == "ir_holder") ir_holder();
 else if (part == "cord_clamp") cord_clamp();
 else if (part == "fit_coupon") fit_coupon();
