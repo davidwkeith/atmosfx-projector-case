@@ -62,7 +62,7 @@ After any change: `make parts`, then `scripts/check_clash.sh`. If you changed a 
 
 ## Order, on one printer
 
-Printed so far: `fit_coupon`, `hatch_cover`, `cord_clamp`, `lid_rear` (2026-10-16) and `base_rear` (by 2026-10-21), all ASA with the stock profile. `cord_clamp` and `base_rear` came before BRINGUP row 4: if the real cord or brick changes `cord_d`, `brick` or the shelf layout, reprint them. That `base_rear` showed the faults the ASA overrides above fix (a split corner, a lifted bottom edge, infill showing through the walls, a wavy floor): check the split corner for strength before relying on it, and reprint with `slicer/asa_tiles.ini` if it flexes.
+Printed so far: `fit_coupon`, `hatch_cover`, `cord_clamp`, `lid_rear` (2026-10-16) and `base_rear` (by 2026-10-21), all ASA with the stock profile. `cord_clamp` and `base_rear` came before BRINGUP row 4: if the real cord or brick changes `cord_d`, `brick` or the shelf layout, reprint them. That `base_rear` showed the faults the ASA overrides above fix (a split corner, a lifted bottom edge, infill showing through the walls, a wavy floor) and is to be reprinted with `slicer/asa_tiles.ini` (owner, 2026-10-21); keep the old one for test-fitting the clamp, sled and shelf.
 
 
 The small parts first, so any fit problem shows up before a 51-hour print. Everything runs back to back on the one bed, so a failure anywhere delays everything behind it.
@@ -79,7 +79,7 @@ The small parts first, so any fit problem shows up before a 51-hour print. Every
 
 **Hold `power_shelf` and `base_rear` until BRINGUP row 4 has set `brick`, `cord_*` and the brick's placement; the provisional layout puts the brick across the cord opening and cannot be assembled.** The Parts table shows what the provisional model slices to, not what to print yet.
 
-About 108 h of printing (about 71 h still to go if the printed `lid_rear` and `base_rear` are kept, 95 h if `base_rear` is reprinted), so 4.5 days of machine time and more than a week of calendar time with plate changes and sleep, if nothing fails. A failed `base_front` costs the most: watch its first layers. The 0.30 DRAFT profile saved about 10 h on `base_front` and 5 h on `base_rear` with stock settings; it has not been sliced with the overrides.
+About 108 h of printing (about 95 h still to go: everything but the parts printed so far, with `base_rear` reprinted), so 4.5 days of machine time and more than a week of calendar time with plate changes and sleep, if nothing fails. A failed `base_front` costs the most: watch its first layers. The 0.30 DRAFT profile saved about 10 h on `base_front` and 5 h on `base_rear` with stock settings; it has not been sliced with the overrides.
 
 ## After printing
 
