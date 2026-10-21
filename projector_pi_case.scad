@@ -1,5 +1,6 @@
 // Ground-standing projector + Raspberry Pi 3 case: rain-proof (not sealed), ventilated
 // v0.14 - PIR hood raised: its 45 deg underside started 6 mm below the top of the dome, so the dome could not pass through (found by the new pir clash pair);
+//         amp_dc_plug() keep-out (the DigiAMP+'s jack faces the divider: leg 2 takes a right-angle adapter);
 //         pir_sensor(), ac_cord() and pi_wiring() ghosts for the assembly preview; assembly steps (step, step_pull) for docs/ASSEMBLY.md
 // v0.13 - sacrificial skin (hole_skin) over the floor holes: drains, speaker chimney and stake bores start one layer above the floor's underside
 //         so its first bridge layer is solid (PrusaSlicer flagged the hole rims as floating bridge anchors); punch it out after printing
@@ -187,6 +188,9 @@ hdmi_plug = [22, 45, 13];   // straight HDMI plug at the Pi, with strain relief:
 pass_x = [-40, 25];         // divider pass-through, left/right edge: spans every board's HDMI port
 pi_fan = [30, 10];          // 5 V axial fan on the Pi 3/4 sleds [frame side, thickness]: stands at the SD-card end, blows into the Pi-HAT gap (Pi 5: Active Cooler; Zero: no room past the thumbscrew)
 pi_fan_sp = 24;             // fan screw spacing (24 for 30 mm fans)
+amp_jack_x = 13;            // DigiAMP+ barrel jack centre from the HAT's pin-1 end (the Pi's SD-card end), on the edge opposite the GPIO header, facing the divider (scaled off the Raspberry Pi product photo)
+amp_jack_dz = 8;            // jack centre below the top of the Pi stack (guess: check yours)
+amp_spk_x = [30, 50];       // the two speaker terminal blocks on the same edge, from the pin-1 end (product photo)
 pi_fan_dy = -8;             // fan centre in Y from pi_cy: clear of the thumbscrew (pi_cy+18)
 pi_fan_gap = 4;             // fan outlet face to the board's SD-card end (the card sticks out about 2.5 mm)
 pi_fan_t = 3.5;             // upright bracket plate the fan screws to
@@ -527,7 +531,7 @@ module ac_cord() {
 }
 
 // Pi-zone wiring as routed in docs/ASSEMBLY.md step 10 and docs/WIRING.md (preview ghost only; the DigiAMP+'s
-// jack and terminals are placed at the board's USB end by guess): HDMI from the Pi forward through the divider
+// jack and terminals are on its edge facing the divider, amp_jack_x, amp_spk_x): HDMI from the Pi forward through the divider
 // pass-through, across the rear gap, up the side gap and forward over the baffle to the projector's right-face plug;
 // the Y-splitter's leg 2 from the brick down the shelf's wire slot to the DigiAMP+; the PIR leads down the same slot
 // to the header; the fan lead; speaker wire down the floor chimney and out under the floor.
@@ -537,17 +541,18 @@ module pi_wiring(s) {
   hz = z_board + 1.6 + 3.2;
   sx = proj_w/2 + side_cable_d/2;                          // side-gap run, inside the plug's cable keep-out
   slot = [pir_x + 4, y_pi0 + 0.3 + shelf_d - wire_slot[1]/2];
-  amp_x = -42.5 + (s == "zero2w" ? 65 : 88) - 4;
   wire([[hx, y_gpio-sled_board(s)[1]-hdmi_plug[1], hz], [hx, y_pf+proj_d+4, hz], [sx, y_pf+proj_d+4, hz],
         [sx, y_pf+proj_d+4, z_pj+proj_h-side_port_h/2], [sx, y_pf+hdmi_y, z_pj+proj_h-side_port_h/2]], 7);   // HDMI
+  j = amp_jack(s);
   wire([[brick_x0+brick[0], y_pi0+0.3+brick_y0+brick[1]-8, shelf_zz+3+brick[2]/2], [slot[0], slot[1], shelf_zz+10],
-        [slot[0], slot[1], top+6], [amp_x, y_gpio-12, top]], 4);                                                   // Y-splitter leg 2
+        [slot[0], slot[1], top+6], [j[0], j[1]-port_depth/2, top+6], [j[0], j[1]-port_depth/2, j[2]+7]], 4);       // Y-splitter leg 2, into the right-angle adapter
   wire([[pir_x, y_back-pir_stand-3, pir_zz-pir_board[1]/2], [slot[0]-4, slot[1], shelf_zz+6], [slot[0]-4, slot[1], top+8],
         [0, y_gpio-3, top]], 2.5);                                                                                  // PIR leads
   if (sled_fan(s)) wire([[pi_fan_x0+pi_fan[1]/2, pi_cy+pi_fan_dy+pi_fan[0]/2, z_floor+sled_pad+sled_t+pi_fan[0]],
                          [-30, y_gpio-3, top]], 2.5);                                                               // fan
-  wire([[amp_x, y_gpio-40, top], [spk_x, pi_cy, top+5], [spk_x, pi_cy, z_floor+spk_collar+5], [spk_x, pi_cy, foot_h/2],
-        [spk_x, y_back+wall+30, foot_h/2]], 5);                                                                     // speaker wire
+  for (tx=amp_spk_x) wire([[-42.5+tx, y_gpio-56, top-6], [-42.5+tx, y_gpio-62, top-6], [spk_x, y_gpio-62, top],
+        [spk_x, pi_cy, top+5], [spk_x, pi_cy, z_floor+spk_collar+5], [spk_x, pi_cy, foot_h/2],
+        [spk_x, y_back+wall+30, foot_h/2]], 4);                                                                    // speaker wire
 }
 
 // Lip baffle on the right wall between the exhaust and the rear inlet: exhaust that stays in the case does not creep back to the
@@ -688,7 +693,7 @@ module assembly() {
   stage(12, asa_c, [0,0,1.5]) translate([0, 0, lid_z0 + explode]) lid_tile(tile) lid();
   stage(10, petg_c, [0,0,0]) translate([0, 0, z_floor+sled_pad]) pi_sled(sled);   // in place, so the wiring meets it
   stage(4, petg_c, [-1,0,0]) { for (v=vents) vent_cap_placed(v); exhaust_cap_placed(); intake_cap_placed(); }
-  hw_stage(10, [0,0,0]) { pi_stack(sled); pi_fan(sled); pi_hdmi_plug(sled); }
+  hw_stage(10, [0,0,0]) { pi_stack(sled); pi_fan(sled); pi_hdmi_plug(sled); amp_dc_plug(sled); }
   hw_stage(10, [0,0,0], wire_c) pi_wiring(sled);
   // ghosts (preview only): ball head + projector
   if (step == 0 || step >= 8) {
@@ -798,6 +803,13 @@ module pi_fan(s) {
 module pi_hdmi_plug(s) {
   translate([-42.5+sled_hdmi_x(s)-hdmi_plug[0]/2, y_gpio-sled_board(s)[1]-hdmi_plug[1], z_board+1.6+3.2-hdmi_plug[2]/2])
     cube(hdmi_plug);
+}
+
+// Keep-out for the Y-splitter's leg 2 in the DigiAMP+'s jack: a right-angle adapter (port_depth out of the HAT's edge
+// toward the divider, the pass-through is open there) with the plug turned up
+function amp_jack(s) = [-42.5 + amp_jack_x, y_gpio - 56, z_board + sled_stack(s) - amp_jack_dz];
+module amp_dc_plug(s) {
+  translate(amp_jack(s) - [7, port_depth, 7]) cube([14, port_depth, 14]);
 }
 
 // Removable Pi sled: lifts out from the top (lid off, shelf out), located by two floor pins and held

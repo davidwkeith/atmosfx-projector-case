@@ -63,6 +63,7 @@ for s in pi3 pi4; do   # the sled fan vs the case, shelf, Pi + HAT, HDMI plug an
 done
 for s in pi3 pi4 pi5; do   # a straight HDMI plug in the Pi, through the divider (the Zero's port sits 35 mm back and takes a slim plug)
   run "hdmi-$s"   "intersection(){ pi_hdmi_plug(\"$s\"); union(){ base_all(); translate([0,0,z_floor+sled_pad]) pi_sled(\"$s\"); translate([ped_x, ped_y, z_floor+boss_h]) pedestal(); for (a=[-aim_max, aim_max]) { projector(0, a); projector_ports(0, a); } } }"
+  run "ampdc-$s"  "intersection(){ amp_dc_plug(\"$s\"); union(){ base_all(); pi_hdmi_plug(\"$s\"); pi_fan(\"$s\"); translate([0,0,z_floor+sled_pad]) pi_sled(\"$s\"); translate([0, y_pi0+0.3, shelf_zz]) power_shelf(); for (a=[-aim_max, aim_max]) { projector(0, a); projector_ports(0, a); } } }"   # leg 2's right-angle adapter in the DigiAMP+ jack
 done
 run screen-caps   "intersection(){ base_all(); union(){ for (v=vents) vent_cap_placed(v); exhaust_cap_placed(); intake_cap_placed(); } }"
 run cord-clamp     "intersection(){ cord_clamp_placed(); union(){ base_all(); $LID; } }"   # clamp against the rear wall and lid skirt: contact only
