@@ -91,7 +91,7 @@ Pass low-voltage wires from the shelf to the Pi through the wire slot at the bac
 
 ### Pi header signals
 
-![Pi header schematic: the 40-pin header with the PIR, and the relay coil and IR LED (both only if CEC fails)](wiring-lv-signals.svg)
+![Pi header schematic: the 40-pin header with the PIR, the Pi fan switched by a BC337 on GPIO 26, and the relay coil and IR LED (both only if CEC fails)](wiring-lv-signals.svg)
 
 ```mermaid
 flowchart LR
@@ -103,8 +103,10 @@ flowchart LR
     RELAY["Relay module IN, active-low<br/>VCC 5 V pin 4, GND pin 14"]
     IRLED["940 nm IR LED in ir_holder<br/>via 150 R to GND"]
   end
-  FAN["30 mm 5 V fan on the sled<br/>+ to 5 V pin 4, - to BC337 collector<br/>1N5819 across it"]
-  Q1["BC337: base via 1 k,<br/>emitter to GND pin 39"]
+  subgraph COOL["Pi fan, always built (Pi 3/4 sleds)"]
+    Q1["BC337: base via 1 k,<br/>emitter to GND pin 39"]
+    FAN["30 mm 5 V fan on the sled<br/>+ to 5 V pin 4, - to BC337 collector<br/>1N5819 across it"]
+  end
   PROJ["Projector HDMI input"]
   PIR -- "OUT to GPIO17, pin 11" --> PI
   PI -- "GPIO27, pin 13" --> RELAY
@@ -116,7 +118,7 @@ flowchart LR
 
 The DigiAMP+ re-exposes the header on top, so the leads plug into its pass-through header (a Zero 2 W needs its own 40-pin header soldered first). GPIO 22 is the DigiAMP+ mute line, which is why the IR LED sits on GPIO 16. The relay and the IR LED are built only if bring-up row 9 shows the projector ignores CEC. The LED needs no transistor: from 3.3 V through 150 R it draws about 13 mA, under a pin's 16 mA, and it sits centimetres from the projector's receiver; if row 22 shows it too weak, add a BC337 and 1 k. The TSOP38238 receiver (GPIO 23) is a bench tool to learn the remote's code, not part of the case.
 
-The Pi fan (Pi 3/4 sleds) is the one signal that is always built. A fan draws up to 0.2 A, far past a GPIO's 16 mA, so a BC337 switches its minus side; the 1N5819 across the fan catches the motor's kick at switch-off, stripe to 5 V. The kernel's `gpio-fan` overlay drives GPIO 26 (on at 60 °C, off at 50 °C), not the VideoFX service. Solder R2 and the diode inline in the fan's leads and sleeve them in heat-shrink; a fan leg on a Dupont shell plugs into the pass-through header.
+The Pi fan (Pi 3/4 sleds) is the one signal that is always built. A fan draws up to 0.2 A, far past a GPIO's 16 mA, so a BC337 switches its minus side; the 1N5819 across the fan catches the motor's kick at switch-off, stripe to 5 V. The kernel's `gpio-fan` overlay drives GPIO 26 (on at 60 °C, off at 50 °C), not the VideoFX service. Solder R2 and the diode inline in the fan's leads and sleeve them in heat-shrink; a fan leg on a Dupont shell plugs into the pass-through header. The header has only two 5 V pins (2 for the PIR, 4 for the relay), so if the relay is fitted, splice the fan's + and the relay's VCC into one Dupont shell on pin 4. The fan's 0.2 A, the relay coil and the PIR all come off the 5.1 V / 2.5 A the DigiAMP+ feeds the Pi; a Pi 3 or 4 with no USB loads leaves room for them, and System > Health log shows any under-voltage.
 
 ## Cords outdoors
 
