@@ -67,6 +67,8 @@ done
 run screen-caps   "intersection(){ base_all(); union(){ for (v=vents) vent_cap_placed(v); exhaust_cap_placed(); intake_cap_placed(); } }"
 run cord-clamp     "intersection(){ cord_clamp_placed(); union(){ base_all(); $LID; } }"   # clamp against the rear wall and lid skirt: contact only
 run brick          "intersection(){ translate([0, y_pi0+0.3, shelf_zz]) brick_env(); union(){ base_all(); $LID; translate([0, y_pi0+0.3, shelf_zz]) power_shelf(); } }"   # the brick on the shelf vs case, lid roof and shelf
+run pir            "intersection(){ pir_sensor(); union(){ base_all(); translate([0, y_pi0+0.3, shelf_zz]) { power_shelf(); brick_env(); } } }"   # board and dome vs case, shelf and brick (the dome passes through its hole)
+run cord-base      "intersection(){ ac_cord(); base_all(); }"   # the cord through its opening
 run aim-sweep      "intersection(){ union(){ base_all(); $LID; translate([lens_x, y0, win_zc]) window_frame(); exhaust_cap_placed(); intake_cap_placed(); }
                       for (a=[[1,0],[0,1],[1,1],[1,-1]], sg=[-1,1])
                         { projector(sg*a[0]*pan_max, sg*a[1]*(a[0] ? aim_combo : aim_max));

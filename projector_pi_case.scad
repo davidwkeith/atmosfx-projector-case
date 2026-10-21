@@ -1,4 +1,6 @@
 // Ground-standing projector + Raspberry Pi 3 case: rain-proof (not sealed), ventilated
+// v0.14 - PIR hood raised: its 45 deg underside started 6 mm below the top of the dome, so the dome could not pass through (found by the new pir clash pair);
+//         pir_sensor() and ac_cord() ghosts for the assembly preview; assembly steps (step, step_pull) for docs/ASSEMBLY.md
 // v0.13 - sacrificial skin (hole_skin) over the floor holes: drains, speaker chimney and stake bores start one layer above the floor's underside
 //         so its first bridge layer is solid (PrusaSlicer flagged the hole rims as floating bridge anchors); punch it out after printing
 // v0.12 - mouse ears (ears, ear_d, ear_layers) on both base tiles' foot-rib ends (the base stands on ten 4 mm ribs, and base_rear's edge lifted in ASA)
@@ -136,6 +138,8 @@ pir_dz = 45;        // dome centre above the shelf's top face
 pir_dome_d = 23.5;  // lens dome; check yours
 pir_hole_sp = 28.7; // board mounting holes (M2), check yours
 pir_stand = 3;      // lens frame thickness: board sits this far off the wall
+pir_board = [32, 24, 1.6];  // board [X, Z, thickness] (HC-SR501 size; the preview ghost and clash check only)
+pir_dome_h = 9;     // how far the dome stands proud of the wall outside (dome radius less the wall; preview ghost and clash check)
 
 /* [Projector power fallback] */
 ir_angle = 30;      // IR LED tilt in the stick-on holder
@@ -299,6 +303,7 @@ cord_screws = [for (sx=[-1,1], sz=[-1,1]) [cord_x + sx*(cord_open[0]/2 + clamp_f
 assert(cord_x - clamp_w/2 >= -out_w/2, "move cord_x right: the cord clamp hangs off the rear wall's left edge");
 assert(cord_x - cord_open[0]/2 - 4 >= -inner_w/2, "move cord_x right: the cord opening must sit inside the left wall");
 assert(cord_dz - cord_open[1]/2 - clamp_flange >= 3, "raise cord_dz: the clamp's lower screws land on the shelf");
+assert(pir_zz + pir_dome_d/2 + hood_d + 4 <= lid_z0, "the PIR hood runs into the lid skirt: lower pir_dz");
 assert(cord_z + clamp_h/2 <= lid_z0 - 2, "lower cord_dz: the cord clamp runs into the lid skirt");
 assert(cord_d >= 5 && cord_d <= cord_open[1] - 6, "cord_d: measure the cord; it must fit the opening and the clamp channel");
 assert(brick_x0 + brick[0] + 3 <= pir_x - 6, "the brick runs into the PIR / wire slot: measure it, or shorten it");
@@ -465,7 +470,7 @@ module base_all(ribs=true) {
       hood();
       if (pir) {
         for (sx=[-1,1]) translate([pir_x+sx*pir_hole_sp/2, y_back+0.1, pir_zz]) rotate([90,0,0]) cylinder(d=5, h=pir_stand+0.1);
-        translate([pir_x-20, out_d/2, pir_zz+pir_dome_d/2+4]) rotate([90,0,90])   // 45 deg rain hood over the dome
+        translate([pir_x-20, out_d/2, pir_zz+pir_dome_d/2+hood_d+1]) rotate([90,0,90])   // 45 deg rain hood over the dome; its underside starts 1 mm above the dome
           linear_extrude(40) polygon([[-0.1, 3], [hood_d, 0], [-0.1, -hood_d]]);
       }
       translate([spk_x, pi_cy, z_floor-0.1]) cylinder(d=spk_d+4.8, h=spk_collar+0.1);   // speaker-wire chimney
@@ -499,6 +504,26 @@ module power_shelf() {
 // The brick's envelope on the shelf (shelf coordinates): preview ghost and clash keep-out
 module brick_env() {
   translate([brick_x0, brick_y0, 3]) cube(brick);
+}
+
+// The PIR as fitted (preview ghost, clash keep-out): board on the lens frame inside the rear wall, dome through the wall.
+module pir_sensor() {
+  translate([pir_x, 0, pir_zz]) {
+    translate([-pir_board[0]/2, y_back-pir_stand-pir_board[2], -pir_board[1]/2]) cube([pir_board[0], pir_board[2], pir_board[1]]);
+    translate([0, y_back-pir_stand, 0]) rotate([-90,0,0]) cylinder(d=pir_dome_d, h=pir_stand+wall);
+    translate([0, y_back+wall, 0]) scale([1, pir_dome_h/(pir_dome_d/2), 1]) difference() {
+      sphere(d=pir_dome_d);
+      translate([-pir_dome_d, -2*pir_dome_d, -pir_dome_d]) cube(2*pir_dome_d);
+    }
+  }
+}
+
+// The AC cord as routed (preview ghost): in through the clamp, then outside a drip loop below the clamp and down to the ground.
+module ac_cord() {
+  yo = y_back + wall + clamp_t;
+  pts = [[cord_x, y_back-3, cord_z], [cord_x, yo+20, cord_z], [cord_x, yo+40, cord_z-20], [cord_x, yo+35, cord_z-clamp_h/2-20],
+         [cord_x, yo+60, cord_z-clamp_h/2-15], [cord_x, yo+90, cord_d/2]];
+  for (i=[0:len(pts)-2]) hull() for (p=[pts[i], pts[i+1]]) translate(p) sphere(d=cord_d, $fn=16);
 }
 
 // Lip baffle on the right wall between the exhaust and the rear inlet: exhaust that stays in the case does not creep back to the
@@ -607,12 +632,17 @@ module window_frame() {
 }
 
 // One assembly step (step > 0): parts from step n on show from that step, in their print colour,
-// and on step n itself highlighted and moved by dir * step_pull.
+// and on step n itself highlighted and moved by dir * step_pull. hw_stage is the same for bought hardware,
+// which is a % ghost except on its own step.
 asa_c = "#5b6b3a"; petg_c = "#3a3a3a"; new_c = "#ff8c1a";
 module stage(n, mat, dir=[0,0,1]) {
   if (step == 0) children();
   else if (step == n) translate(dir*step_pull) color(new_c) children();
   else if (step > n) color(mat) children();
+}
+module hw_stage(n, dir=[0,0,1]) {
+  if (step == 0 || step > n) %children();
+  else if (step == n) translate(dir*step_pull) color(new_c) children();
 }
 
 module assembly() {
@@ -625,17 +655,15 @@ module assembly() {
   stage(8, petg_c, [0,0,2]) translate([ped_x, ped_y, z_floor+boss_h]) pedestal();
   stage(9, petg_c, [0,0,2]) translate([0, y_pi0+0.3, shelf_zz]) power_shelf();
   stage(9, asa_c, [0,1,0]) cord_clamp_placed();
-  if (step == 0 || step >= 9) %translate([0, y_pi0+0.3, shelf_zz + (step == 9 ? 2*step_pull : 0)]) brick_env();
+  hw_stage(9, [0,0,2]) translate([0, y_pi0+0.3, shelf_zz]) brick_env();
+  hw_stage(9, [0,1,0]) ac_cord();
+  if (pir) hw_stage(7, [0,-0.4,1.3]) pir_sensor();   // up and in: behind the divider it would be hidden
   stage(6, petg_c, [0,1,0]) translate([lens_x, y0, win_zc]) window_frame();
   stage(13, asa_c, [-1,0,0]) translate([-out_w/2-cover_gasket-3, hatch_y, hatch_zz]) rotate([90,0,90]) hatch_cover();
   stage(12, asa_c, [0,0,1.5]) translate([0, 0, lid_z0 + explode]) lid_tile(tile) lid();
   stage(10, petg_c, [0,0,2]) translate([0, 0, z_floor+sled_pad]) pi_sled(sled);
   stage(4, petg_c, [-1,0,0]) { for (v=vents) vent_cap_placed(v); exhaust_cap_placed(); intake_cap_placed(); }
-  if (step == 0 || step >= 10) translate([0, 0, step == 10 ? 2*step_pull : 0]) {
-    %pi_stack(sled);
-    %pi_fan(sled);
-    %pi_hdmi_plug(sled);
-  }
+  hw_stage(10, [0,0,2]) { pi_stack(sled); pi_fan(sled); pi_hdmi_plug(sled); }
   // ghosts (preview only): ball head + projector
   if (step == 0 || step >= 8) {
     if (ped_mount == "shoe") %translate([ped_x, ped_y, z_floor+ped_top]) cylinder(d=24, h=shoe_rise);   // adapter ring

@@ -2,7 +2,7 @@
 
 In order. Parts are in [BOM.md](BOM.md); wiring is in [WIRING.md](WIRING.md) and must be followed exactly. Nothing here has been built yet, so expect to adjust.
 
-The pictures are the model built up to each step (`part="assembly"`, `step=N`). **Orange** is what that step adds, pulled out of its place; green is ASA, dark grey PETG, and see-through grey is bought hardware (projector, ball head, brick, Pi and HAT). Regenerate them with `scripts/render_assembly.sh` after a model change.
+The pictures are the model built up to each step (`part="assembly"`, `step=N`). **Orange** is what that step adds, pulled out of its place; green is ASA, dark grey PETG, and see-through grey is bought hardware already fitted (projector, ball head, brick, AC cord, PIR, Pi and HAT). Regenerate them with `scripts/render_assembly.sh` after a model change.
 
 ## 1. Fit coupon
 
@@ -56,7 +56,7 @@ The pictures are the model built up to each step (`part="assembly"`, `step=N`). 
 
 ## 7. PIR
 
-![Rear wall: PIR hole under its hood](assembly/step-07.png)
+![PIR going in from inside the rear wall](assembly/step-07.png)
 
 1. Push the dome through the rear-wall hole (under the hood) from inside.
 2. Screw the board on (2x M2).
@@ -76,7 +76,7 @@ The pictures are the model built up to each step (`part="assembly"`, `step=N`). 
 
 ## 9. Power
 
-![Power shelf, brick and cord clamp](assembly/step-09.png)
+![Power shelf, brick, AC cord and cord clamp](assembly/step-09.png)
 
 Note: the shipped provisional brick layout cannot be assembled (the brick sits across the cord opening); re-fit the shelf after BRINGUP row 4.
 
