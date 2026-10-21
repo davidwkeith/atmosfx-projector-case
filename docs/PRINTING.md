@@ -1,6 +1,6 @@
 # Printing plan
 
-One Prusa i3 MK3S (bed 250 x 210 x 210 mm). Two materials: **Inland ASA Army Green** for every part seen from outside (it holds its colour and strength in sun and rain), **Inland PETG Black** for every part inside (black also stops light glowing through) (including `power_shelf`). Times and weights are PrusaSlicer's estimates from the current (v0.10, 3.5 x 5 in 2 mm pane) STLs with the stock `Original Prusa i3 MK3S & MK3S+` printer profile and the `Prusament ASA` or `Prusament PETG` material profile. PrusaSlicer has no Inland profiles: start from `Generic ASA` and `Generic PETG` and set the temperatures printed on each spool. Real prints run a little longer.
+One Prusa i3 MK3S (bed 250 x 210 x 210 mm). Two materials: **Inland ASA Army Green** for every part seen from outside (it holds its colour and strength in sun and rain), **Inland PETG Black** for every part inside (black also stops light glowing through) (including `power_shelf`). Times and weights are PrusaSlicer's estimates from the current (v0.10, 3.5 x 5 in 2 mm pane) STLs with the stock `Original Prusa i3 MK3S & MK3S+` printer profile and the `Prusament ASA` or `Prusament PETG` material profile. `make slice` (or `scripts/slice.sh PART...`) re-slices with these settings and prints a table in this format; it finds PrusaSlicer on the PATH or in `/Applications` (`PRUSASLICER=/path/to/binary` otherwise). PrusaSlicer has no Inland profiles: start from `Generic ASA` and `Generic PETG` and set the temperatures printed on each spool. Real prints run a little longer.
 
 ## Settings
 

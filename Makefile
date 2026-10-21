@@ -3,7 +3,7 @@ OPENSCAD ?= openscad
 SCAD = projector_pi_case.scad
 OUT  = stl
 
-.PHONY: parts clean
+.PHONY: parts slice clean
 parts: $(OUT)/base_front.stl $(OUT)/base_rear.stl $(OUT)/lid_front.stl $(OUT)/lid_rear.stl \
      $(OUT)/window_frame.stl $(OUT)/pedestal.stl $(OUT)/hatch_cover.stl $(OUT)/power_shelf.stl \
      $(OUT)/sled_pi3.stl $(OUT)/sled_pi4.stl $(OUT)/sled_pi5.stl $(OUT)/sled_zero2w.stl $(OUT)/ir_holder.stl $(OUT)/cord_clamp.stl \
@@ -48,5 +48,9 @@ $(OUT)/fit_coupon.stl: $(SCAD) | $(OUT)
 $(OUT)/sled_%.stl: $(SCAD) | $(OUT)
 	$(OPENSCAD) -o $@ -D 'part="sled"' -D 'sled="$*"' $(SCAD)
 
+# Time and weight per part with PrusaSlicer's CLI (PRUSASLICER=/path/to/binary if not found)
+slice: parts
+	scripts/slice.sh
+
 clean:
-	rm -rf $(OUT)
+	rm -rf $(OUT) gcode
