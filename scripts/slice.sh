@@ -4,7 +4,7 @@
 #   scripts/slice.sh base_front pedestal
 # G-code goes to gcode/ (gitignored). Stock MK3S profiles, flattened from the vendor
 # bundle by scripts/prusa_profile.py; ASA for outside parts, PETG for inside ones, and
-# slicer/asa_tiles.ini (+ asa_base_front.ini) on the base and lid tiles. The four tiles
+# slicer/asa_tiles.ini (+ asa_base_front.ini on the two front tiles) on the base and lid tiles. The four tiles
 # slice at "0.30mm DRAFT @MK3" (layer_h = 0.3 in the SCAD), everything else at "0.20mm SPEED @MK3".
 # Env: PRUSASLICER (binary), PRUSA_BUNDLE (PrusaResearch.ini), PRINT_PROFILE (one profile for every part).
 set -euo pipefail
@@ -65,7 +65,7 @@ for arg in "$@"; do
   pp=${PRINT_PROFILE:-$pp}
   loads=(--load "$(profile "$m" "$pp")")
   case $p in base_*|lid_*) loads+=(--load slicer/asa_tiles.ini) ;; esac
-  [ "$p" = base_front ] && loads+=(--load slicer/asa_base_front.ini)
+  case $p in base_front|lid_front) loads+=(--load slicer/asa_base_front.ini) ;; esac
   "$PS" "${loads[@]}" --export-gcode --output "gcode/$p.gcode" "$stl" > "$tmp/$p.log" 2>&1 \
     || { cat "$tmp/$p.log" >&2; echo "$p: slicing failed" >&2; exit 1; }
   t=$(sed -n 's/^; estimated printing time (normal mode) = //p' "gcode/$p.gcode" | hm)
