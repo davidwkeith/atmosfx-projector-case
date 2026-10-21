@@ -1,4 +1,5 @@
 // Ground-standing projector + Raspberry Pi 3 case: rain-proof (not sealed), ventilated
+// v0.14 - window ribs 0.8 -> 4 mm thick (win_rib_t): PrusaSlicer flagged the 73 mm tall 0.8 mm ribs as a thin fragile part; cut them out after printing
 // v0.13 - sacrificial skin (hole_skin) over the floor holes: drains, speaker chimney and stake bores start one layer above the floor's underside
 //         so its first bridge layer is solid (PrusaSlicer flagged the hole rims as floating bridge anchors); punch it out after printing
 // v0.12 - mouse ears (ears, ear_d, ear_layers) on both base tiles' foot-rib ends (the base stands on ten 4 mm ribs, and base_rear's edge lifted in ASA)
@@ -78,7 +79,7 @@ floor_t = 6;
 foot_h = 6;        // ground clearance so rain drains out underneath
 foot_ribs = [-88, -68, -40, -15, 15, 40, 68, 88];   // inner front-to-back ribs; two more run under the side walls. Floor bridges <= max_bridge (asserted); channels drain/vent/route wires
 rib_t = 4;
-layer_h = 0.3;     // base and lid tiles' layer height (0.30mm DRAFT, docs/PRINTING.md): gap above the window's snap-out ribs
+layer_h = 0.3;     // base and lid tiles' layer height (0.30mm DRAFT, docs/PRINTING.md): gap above the window ribs
 clearance = 0.3;
 side_air = 25;     // gap each side of projector: clears the +/-10 deg pan sweep of the right face, the HDMI plug and the baffle; could shrink to about 19 mm (separate change)
 top_air  = 25;
@@ -193,6 +194,7 @@ max_bridge = 30;         // longest unsupported bridge under the floor
 ears = true;             // mouse ears against warping (cut or peel off after printing): base tiles on every foot-rib end, lid tiles and hatch cover on their corners
 ear_d = 18;              // ear diameter: half of each ear lies inside the tile, so only the outer ribs' ears widen it in X; ribs 20 mm apart, so 20 would make neighbouring ears touch (non-manifold)
 ear_layers = 2;          // ear thickness in layers of layer_h
+win_rib_t = 4;           // window ribs' thickness: they hold up the window's top bridge while printing; under 4 mm PrusaSlicer flags them (73 mm tall) as a thin fragile part
 hole_skin = 1;           // sacrificial layers (of layer_h) closing the floor holes from below, so the floor's first bridge layer has no floating rims; punch out after printing (0 = open)
 
 /* [Lid] */
@@ -473,9 +475,10 @@ module base_all(ribs=true) {
     }
     cuts();
   }
-  // snap-out ribs: cut the window's top bridge into thirds; one layer gap so they break away
-  if (ribs) for (sx=[-1,1]) translate([lens_x+sx*win_w/6-0.4, y_front, win_zc-win_h/2-0.1])
-    cube([0.8, fw-pane_t-0.5, win_h-layer_h+0.1]);
+  // window ribs: cut the window's top bridge into thirds; one layer gap at the top so they come away. Cut them
+  // off at the sill after printing
+  if (ribs) for (sx=[-1,1]) translate([lens_x+sx*win_w/6-win_rib_t/2, y_front, win_zc-win_h/2-0.1])
+    cube([win_rib_t, fw-pane_t-0.5, win_h-layer_h+0.1]);
 }
 
 // 45-degree gusset ledge on the side wall that carries the power shelf
