@@ -12,7 +12,7 @@ One Prusa i3 MK3S (bed 250 x 210 x 210 mm). Two materials: **Inland ASA Army Gre
   - **Perimeters 7**: the 3 mm `wall` then prints solid instead of two perimeters over infill. It is stronger, sheds rain better and stops the crosshatch showing through ([layers and perimeters](https://help.prusa3d.com/article/layers-and-perimeters_1748)).
   - **Top solid layers 7** (or minimum top shell thickness 1.4 mm) and **infill 25%**: the 6 mm floor bridges between `foot_ribs`, and the stock top layers do not cover the sag ([poor bridging](https://help.prusa3d.com/article/poor-bridging_1802), [infill problems](https://help.prusa3d.com/article/problems-with-infill_1994)). [Ironing](https://help.prusa3d.com/article/ironing_177488) on top surfaces is optional.
   - **Brim** against warping ([warping](https://help.prusa3d.com/article/warping_2011)): 5 mm on `base_rear` and the lid tiles; `base_front` has only 3 mm to spare on the 210 mm axis, so give it a brim of 1.5 mm at most or none.
-  - Times in the table below are the stock profile's: these settings make the base tiles slower. Re-slice before planning around them.
+  - The Parts table's times for the four tiles include these overrides (re-sliced 2026-10-21; about 0.5 kg of ASA more than the stock profile), with the base tiles at 0.30mm DRAFT.
 - `fit_coupon` is ASA because most of what it tests (keyholes, inserts in the base, the pane slot) lands in ASA parts. PETG shrinks less, so a fit that is tight in ASA is a little looser in PETG.
 - The front tiles lie flat as exported: `base_front` is 231 x 207 mm and `lid_front` 228 x 204 mm, wide side along the bed's 250 mm axis. 207 mm on the 210 mm axis leaves no room for a skirt: turn it off or keep it tight to the part.
 - The STLs are already in print orientation (lid roof-down, hatch cover ribs-up, window frame flat, caps plate-down).
@@ -58,11 +58,11 @@ After any change: `make parts`, then `scripts/check_clash.sh`. If you changed a 
 | `lid_front` | 1 | 12 h 17 m | ASA 198 g | Tile settings (9 h 14 m, 143 g stock) |
 | `base_rear` | 1 | 15 h 56 m | ASA 336 g | 0.30mm DRAFT and tile settings (24 h 7 m, 328 g at 0.20mm SPEED) |
 | `base_front` | 1 | **35 h 44 m** | ASA 782 g | 0.30mm DRAFT and tile settings (51 h 18 m, 744 g at 0.20mm SPEED, with `layer_h = 0.2`) |
-| **Total** | | **about 84 h** | **ASA about 1.5 kg, PETG about 0.12 kg** | Two 1 kg ASA spools leave about 0.5 kg, not enough to reprint a failed `base_front`, and one black PETG spool. The tile settings (7 perimeters, 25% infill, 7 top layers) add about 0.5 kg over the stock profile. ASA is less dense than PETG, so the same part weighs about 15% less. |
+| **Total** | | **about 84 h** | **ASA about 1.5 kg, PETG about 0.12 kg** | Two 1 kg ASA spools, but with the first `base_rear` (228 g) the ASA comes to about 1.7 kg, which leaves nothing for a failed `base_front` (782 g): buy a third. One black PETG spool. The tile settings (7 perimeters, 25% infill, 7 top layers) add about 0.5 kg over the stock profile. ASA is less dense than PETG, so the same part weighs about 15% less. |
 
 ## Order, on one printer
 
-Printed so far (2026-10-16): `fit_coupon`, `hatch_cover`, `cord_clamp`, `lid_rear`, all ASA. `cord_clamp` came before BRINGUP row 4: if the real cord changes `cord_d`, reprint it (44 m).
+Printed so far: `fit_coupon`, `hatch_cover`, `cord_clamp`, `lid_rear` (2026-10-16) and `base_rear` (by 2026-10-21), all ASA with the stock profile. `cord_clamp` and `base_rear` came before BRINGUP row 4: if the real cord or brick changes `cord_d`, `brick` or the shelf layout, reprint them. That `base_rear` showed the faults the ASA overrides above fix (a split corner, a lifted bottom edge, infill showing through the walls, a wavy floor) and is to be reprinted with `slicer/asa_tiles.ini` (owner, 2026-10-21); keep the old one for test-fitting the clamp, sled and shelf.
 
 
 The small parts first, so any fit problem shows up before a 36-hour print. Everything runs back to back on the one bed, so a failure anywhere delays everything behind it.
@@ -79,7 +79,7 @@ The small parts first, so any fit problem shows up before a 36-hour print. Every
 
 **Hold `power_shelf` and `base_rear` until BRINGUP row 4 has set `brick`, `cord_*` and the brick's placement; the provisional layout puts the brick across the cord opening and cannot be assembled.** The Parts table shows what the provisional model slices to, not what to print yet.
 
-About 84 h of printing, about 72 h of it still to go after the four parts already printed: 3 days of machine time and about a week of calendar time with plate changes and sleep, if nothing fails. A failed `base_front` costs the most: watch its first layers.
+About 84 h of printing, about 72 h of it still to go (everything but the parts printed so far, with `base_rear` reprinted): 3 days of machine time and about a week of calendar time with plate changes and sleep, if nothing fails. A failed `base_front` costs the most: watch its first layers.
 
 ## After printing
 
