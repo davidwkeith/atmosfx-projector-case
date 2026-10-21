@@ -1,5 +1,6 @@
 // Ground-standing projector + Raspberry Pi 3 case: rain-proof (not sealed), ventilated
-// v0.12 - mouse ears on both base tiles' foot-rib ends (ears, ear_d, ear_layers): the base stands on ten 4 mm ribs, and base_rear's edge lifted in ASA.
+// v0.12 - mouse ears (ears, ear_d, ear_layers) on both base tiles' foot-rib ends (the base stands on ten 4 mm ribs, and base_rear's edge lifted in ASA)
+//         and on the lid tiles' roof corners.
 // v0.11 - Pi sled fan: an upright plate on the Pi 3/4 sleds for a 30 mm 5 V fan blowing into the Pi-HAT gap (gpio-fan, GPIO 26);
 //         pi_fan keep-out and fan-<sled> clash pairs. The case itself still has no fans.
 // v0.10 - single supply: one desktop brick on the shelf (receptacle plate, barrier, second adapter and the PG9 gland replaced by a brick envelope, a rear-wall opening and a cord clamp).
@@ -185,7 +186,7 @@ pi_fan_t = 3.5;             // upright bracket plate the fan screws to
 /* [Printer] */
 bed = [250, 210, 210];   // print volume; every tile is asserted to fit (either way round)
 max_bridge = 30;         // longest unsupported bridge under the floor
-ears = true;             // base tiles: mouse ears on every foot-rib end against warping (cut or peel off after printing)
+ears = true;             // mouse ears against warping (cut or peel off after printing): base tiles on every foot-rib end, lid tiles on the roof corners
 ear_d = 18;              // ear diameter: half of each ear lies inside the tile, so only the outer ribs' ears widen it in X; ribs 20 mm apart, so 20 would make neighbouring ears touch (non-manifold)
 ear_layers = 2;          // ear thickness in layers of layer_h
 
@@ -307,6 +308,8 @@ assert(fits_bed(base_front_len, out_w + hood_d, base_h), str("base_front is ", b
 assert(fits_bed(out_w, out_d/2 - base_seam + (pir ? hood_d : 0), base_h), "base_rear does not fit the bed");
 assert(fits_bed(lid_seam + seam_t - (yfl - visor_len), lid_w, skirt_h + rise + lip_h), "lid_front does not fit the bed");
 assert(fits_bed(lid_d/2 - lid_seam + skirt_h + rise, lid_w, skirt_h + rise), "lid_rear does not fit the bed: the lid needs a third tile");
+assert(!ears || fits_bed(lid_seam + seam_t - (yfl - visor_len), lid_w + ear_d, skirt_h + rise + lip_h), "lid_front's mouse ears push it off the bed: shrink ear_d");
+assert(!ears || fits_bed(lid_d/2 - lid_seam + skirt_h + rise, lid_w + ear_d, skirt_h + rise), "lid_rear's mouse ears push it off the bed: shrink ear_d");
 assert(!ears || min([for (i=[1:len(ribs_x)-1]) ribs_x[i]-ribs_x[i-1]]) >= ear_d + 1, "mouse ears on neighbouring ribs touch or merge oddly: shrink ear_d");
 assert(!ears || fits_bed(base_front_len, out_w + max(hood_d, ear_d/2 - rib_t/2) + ear_d/2 - rib_t/2, base_h), "base_front's mouse ears push it off the bed: shrink ear_d");
 assert(!ears || fits_bed(out_w + ear_d - rib_t, out_d/2 - base_seam + (pir ? hood_d : 0), base_h), "base_rear's mouse ears push it off the bed: shrink ear_d");
@@ -332,10 +335,23 @@ module ears_tile(t) {
   }
 }
 
+// Mouse ears for a lid tile, which prints roof-down: thin discs at the roof's corners, lying in the roof
+// plane and reaching into the lid (up, as printed); kept inside the roof in Y, past the skirts in X.
+// The seam pair sits where the scarf meets the roof top, and lid_tile trims them there.
+function lid_scarf_c() = lid_seam + seam_t/2 - zp(lid_seam);
+function lid_seam_top() = (lid_scarf_c() + skirt_h + rise + rise*yfl/lid_d) / (1 + rise/lid_d);   // y - zp(y) = c on the roof top
+module ears_lid(t) {
+  intersection() {
+    for (sx=[-1,1], y=(t == "front") ? [yfl - visor_len, lid_seam_top()] : [lid_seam_top(), yfl + lid_d])
+      translate([sx*lid_w/2, y, zp(y)]) rotate([-lid_a,0,0]) translate([0, 0, -ear_layers*layer_h]) cylinder(d=ear_d, h=ear_layers*layer_h);
+    translate([-big/2, yfl - visor_len, -big/2]) cube([big, lid_d + visor_len, big]);
+  }
+}
+
 // Lid split with a 45-degree scarf: the front (uphill) tile laps over the rear one like a shingle,
 // and both print roof-down without supports. front = everything forward of the plane y - z = c.
 module lid_tile(t) {
-  c = lid_seam + seam_t/2 - zp(lid_seam);
+  c = lid_scarf_c();
   // trapezoid, sloped edge on the right: the old parallelogram crossed itself once c went negative (CGAL rejects that)
   module front_region() rotate([90,0,90]) linear_extrude(big, center=true)
     polygon([[-3*big, -big], [c-big, -big], [c+big, big], [-3*big, big]]);
@@ -770,7 +786,7 @@ module projector(pan=0, tilt=0) {
 
 if (part == "assembly") assembly();
 else if (part == "base") tile_cut(tile, base_seam) union() { base_all(); if (ears && tile != "all") ears_tile(tile); }
-else if (part == "lid") rotate([180,0,0]) rotate([lid_a,0,0]) lid_tile(tile) lid();
+else if (part == "lid") rotate([180,0,0]) rotate([lid_a,0,0]) lid_tile(tile) union() { lid(); if (ears && tile != "all") ears_lid(tile); }
 else if (part == "window_frame") rotate([90,0,0]) window_frame();
 else if (part == "pedestal") pedestal();
 else if (part == "power_shelf") power_shelf();
