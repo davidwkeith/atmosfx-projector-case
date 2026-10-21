@@ -62,7 +62,7 @@ After any change: `make parts`, then `scripts/check_clash.sh`. If you changed a 
 
 ## Order, on one printer
 
-Printed so far (2026-10-16): `fit_coupon`, `hatch_cover`, `cord_clamp`, `lid_rear`, all ASA. `cord_clamp` came before BRINGUP row 4: if the real cord changes `cord_d`, reprint it (44 m).
+Printed so far: `fit_coupon`, `hatch_cover`, `cord_clamp`, `lid_rear` (2026-10-16) and `base_rear` (by 2026-10-21), all ASA with the stock profile. `cord_clamp` and `base_rear` came before BRINGUP row 4: if the real cord or brick changes `cord_d`, `brick` or the shelf layout, reprint them. That `base_rear` showed the faults the ASA overrides above fix (a split corner, a lifted bottom edge, infill showing through the walls, a wavy floor): check the split corner for strength before relying on it, and reprint with `slicer/asa_tiles.ini` if it flexes.
 
 
 The small parts first, so any fit problem shows up before a 51-hour print. Everything runs back to back on the one bed, so a failure anywhere delays everything behind it.
