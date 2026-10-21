@@ -28,6 +28,8 @@ sled = "pi3";      // [pi3, pi4, pi5, zero2w] sled shown in the assembly / expor
 tile = "all";      // [all, front, rear] for base+lid
 explode = 0;       // [0:1:80]
 aim = [0, 0];      // [pan, tilt] deg of the ghost projector in the assembly preview
+step = 0;          // [0:1:14] assembly only: parts in place up to this docs/ASSEMBLY.md step (0 = all); the step's own parts are highlighted and pulled out by step_pull (scripts/render_assembly.sh)
+step_pull = 60;    // how far the step's parts sit from their final place
 
 /* [Projector (mm)] */
 // Verified 2026-10-05 from the projector's EDID (read on a Mac, docs/BRINGUP.md "Verified so far"):
@@ -604,27 +606,43 @@ module window_frame() {
   }
 }
 
+// One assembly step (step > 0): parts from step n on show from that step, in their print colour,
+// and on step n itself highlighted and moved by dir * step_pull.
+asa_c = "#5b6b3a"; petg_c = "#3a3a3a"; new_c = "#ff8c1a";
+module stage(n, mat, dir=[0,0,1]) {
+  if (step == 0) children();
+  else if (step == n) translate(dir*step_pull) color(new_c) children();
+  else if (step > n) color(mat) children();
+}
+
 module assembly() {
-  tile_cut(tile, base_seam) base_all();
-  translate([ped_x, ped_y, z_floor+boss_h]) pedestal();
-  translate([0, y_pi0+0.3, shelf_zz]) power_shelf();
-  cord_clamp_placed();
-  %translate([0, y_pi0+0.3, shelf_zz]) brick_env();
-  translate([lens_x, y0, win_zc]) window_frame();
-  translate([-out_w/2-cover_gasket-3, hatch_y, hatch_zz]) rotate([90,0,90]) hatch_cover();
-  translate([0, 0, lid_z0 + explode]) lid_tile(tile) lid();
-  translate([0, 0, z_floor+sled_pad]) pi_sled(sled);
-  for (v=vents) vent_cap_placed(v);
-  exhaust_cap_placed();
-  intake_cap_placed();
-  %pi_stack(sled);
-  %pi_fan(sled);
-  %pi_hdmi_plug(sled);
+  if (step == 0 || tile != "all") tile_cut(tile, base_seam) base_all();
+  else {
+    stage(2, asa_c) tile_cut("front", base_seam) base_all();
+    // the tiles stand apart until step 6; no highlight on step 5, as OpenCSG bleeds one tile's colour into the other
+    translate([0, step <= 5 ? step_pull : 0, 0]) stage(2, asa_c) tile_cut("rear", base_seam) base_all();
+  }
+  stage(8, petg_c, [0,0,2]) translate([ped_x, ped_y, z_floor+boss_h]) pedestal();
+  stage(9, petg_c, [0,0,2]) translate([0, y_pi0+0.3, shelf_zz]) power_shelf();
+  stage(9, asa_c, [0,1,0]) cord_clamp_placed();
+  if (step == 0 || step >= 9) %translate([0, y_pi0+0.3, shelf_zz + (step == 9 ? 2*step_pull : 0)]) brick_env();
+  stage(6, petg_c, [0,1,0]) translate([lens_x, y0, win_zc]) window_frame();
+  stage(13, asa_c, [-1,0,0]) translate([-out_w/2-cover_gasket-3, hatch_y, hatch_zz]) rotate([90,0,90]) hatch_cover();
+  stage(12, asa_c, [0,0,1.5]) translate([0, 0, lid_z0 + explode]) lid_tile(tile) lid();
+  stage(10, petg_c, [0,0,2]) translate([0, 0, z_floor+sled_pad]) pi_sled(sled);
+  stage(4, petg_c, [-1,0,0]) { for (v=vents) vent_cap_placed(v); exhaust_cap_placed(); intake_cap_placed(); }
+  if (step == 0 || step >= 10) translate([0, 0, step == 10 ? 2*step_pull : 0]) {
+    %pi_stack(sled);
+    %pi_fan(sled);
+    %pi_hdmi_plug(sled);
+  }
   // ghosts (preview only): ball head + projector
-  if (ped_mount == "shoe") %translate([ped_x, ped_y, z_floor+ped_top]) cylinder(d=24, h=shoe_rise);   // adapter ring
-  %translate([ped_x, ped_y, z_floor+head_z]) cylinder(d=32, h=ball_head_h);
-  %projector(aim[0], aim[1]);
-  %ir_holder_placed(aim[0], aim[1]);
+  if (step == 0 || step >= 8) {
+    if (ped_mount == "shoe") %translate([ped_x, ped_y, z_floor+ped_top]) cylinder(d=24, h=shoe_rise);   // adapter ring
+    %translate([ped_x, ped_y, z_floor+head_z]) cylinder(d=32, h=ball_head_h);
+    %projector(aim[0], aim[1]);
+    %ir_holder_placed(aim[0], aim[1]);
+  }
 }
 
 // Insect-screen cap: a shallow box that seats on the wall/floor all round, screen glued inside the
