@@ -1,4 +1,6 @@
 // Ground-standing projector + Raspberry Pi 3 case: rain-proof (not sealed), ventilated
+// v0.13 - sacrificial skin (hole_skin) over the floor holes: drains, speaker chimney and stake bores start one layer above the floor's underside
+//         so its first bridge layer is solid (PrusaSlicer flagged the hole rims as floating bridge anchors); punch it out after printing
 // v0.12 - mouse ears (ears, ear_d, ear_layers) on both base tiles' foot-rib ends (the base stands on ten 4 mm ribs, and base_rear's edge lifted in ASA)
 //         and on the lid tiles' roof corners and the hatch cover's corners.
 // v0.11 - Pi sled fan: an upright plate on the Pi 3/4 sleds for a 30 mm 5 V fan blowing into the Pi-HAT gap (gpio-fan, GPIO 26);
@@ -189,6 +191,7 @@ max_bridge = 30;         // longest unsupported bridge under the floor
 ears = true;             // mouse ears against warping (cut or peel off after printing): base tiles on every foot-rib end, lid tiles and hatch cover on their corners
 ear_d = 18;              // ear diameter: half of each ear lies inside the tile, so only the outer ribs' ears widen it in X; ribs 20 mm apart, so 20 would make neighbouring ears touch (non-manifold)
 ear_layers = 2;          // ear thickness in layers of layer_h
+hole_skin = 1;           // sacrificial layers (of layer_h) closing the floor holes from below, so the floor's first bridge layer has no floating rims; punch out after printing (0 = open)
 
 /* [Lid] */
 lid_clr = 0.6;
@@ -204,6 +207,7 @@ seam_rib = 4;      // extra roof thickness at the lid seam for the scarf joint
 /* [Hidden] */
 $fn = 48;
 z_floor = foot_h + floor_t;
+z_skin = hole_skin > 0 ? foot_h + hole_skin*layer_h : foot_h - 1;   // floor holes start here (above their sacrificial skin)
 head_z = ped_top + (ped_mount == "shoe" ? shoe_rise : 0);   // ball head base above floor
 proj_z0 = head_z + ball_head_h;           // projector underside above floor
 fw = wall + pane_t + 4;
@@ -402,12 +406,12 @@ module cuts() {
     polygon([[pass_x[0], z_floor+sled_pad], [pass_x[1], z_floor+sled_pad], [pass_x[1], shelf_zz+23],
              [(pass_x[0]+pass_x[1])/2, shelf_zz+23+(pass_x[1]-pass_x[0])/2], [pass_x[0], shelf_zz+23]]);
   // drains (exit into the gap under the floor)
-  for (sx=[-1,1], y=[y0+8, y_back-10]) translate([sx*55, y, foot_h-0.5]) cylinder(d=4, h=floor_t+1);
+  for (sx=[-1,1], y=[y0+8, y_back-10]) translate([sx*55, y, z_skin]) cylinder(d=4, h=z_floor-z_skin+1);
   // pedestal plate pilots
   for (sx=[-1,1], sy=[-1,1])
     translate([ped_x+sx*35, ped_y+sy*25, z_floor+boss_h-8]) cylinder(d=2.6, h=8.1);
   // speaker-wire chimney bore: wires come up from the gap under the floor
-  translate([spk_x, pi_cy, foot_h-1]) cylinder(d=spk_d, h=floor_t+spk_collar+2);
+  translate([spk_x, pi_cy, z_skin]) cylinder(d=spk_d, h=z_floor-z_skin+spk_collar+1);
   translate([spk_x, pi_cy, z_floor+spk_collar-1.5]) cylinder(d1=spk_d, d2=spk_d+3, h=1.6);   // chamfer so wires don't chafe
   // PIR: dome hole through the rear wall + M2 pilots in the bosses
   if (pir) {
@@ -419,7 +423,7 @@ module cuts() {
     translate([sx*(inner_w/2-collar_t/2), y_div-1, z_floor+z]) rotate([-90,0,0]) cylinder(d=3.4, h=div_t+1.1);
     translate([sx*(inner_w/2-collar_t/2), y_pi0-0.1, z_floor+z]) rotate([-90,0,0]) cylinder(d=2.6, h=collar_d-1);
   }
-  if (stakes) for (p=stake_pts) translate([p[0], p[1], -1]) cylinder(d=stake_d, h=z_floor+stake_collar+2);
+  if (stakes) for (p=stake_pts) translate([p[0], p[1], z_skin]) cylinder(d=stake_d, h=z_floor-z_skin+stake_collar+1);
   // hatch lock pilot: into the solid wall/floor corner below the hatch
   if (hatch_lock) translate([-out_w/2-0.1, hatch_y, hatch_zz-cover_s/2+5]) rotate([0,90,0]) cylinder(d=2.6, h=10);
   // sled thumbscrew insert
