@@ -4,14 +4,14 @@
 #   scripts/slice.sh base_front pedestal
 # G-code goes to gcode/ (gitignored). Stock MK3S profiles, flattened from the vendor
 # bundle by scripts/prusa_profile.py; ASA for outside parts, PETG for inside ones, and
-# slicer/asa_tiles.ini (+ asa_base_front.ini) on the base and lid tiles.
-# Env: PRUSASLICER (binary), PRUSA_BUNDLE (PrusaResearch.ini), PRINT_PROFILE
-# (default "0.20mm SPEED @MK3"; for "0.30mm DRAFT @MK3" set layer_h = 0.3 and re-export).
+# slicer/asa_tiles.ini (+ asa_base_front.ini) on the base and lid tiles. The base tiles
+# slice at "0.30mm DRAFT @MK3" (layer_h = 0.3 in the SCAD), everything else at "0.20mm SPEED @MK3".
+# Env: PRUSASLICER (binary), PRUSA_BUNDLE (PrusaResearch.ini), PRINT_PROFILE (one profile for every part).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 PRINTER="Original Prusa i3 MK3S & MK3S+"
-PRINT_PROFILE=${PRINT_PROFILE:-"0.20mm SPEED @MK3"}
+SPEED="0.20mm SPEED @MK3" DRAFT="0.30mm DRAFT @MK3"
 
 first() { for f in "$@"; do [ -n "$f" ] && [ -e "$f" ] && { echo "$f"; return; }; done; }
 
@@ -31,9 +31,12 @@ BUNDLE=${PRUSA_BUNDLE:-$(first \
 [ -n "$BUNDLE" ] || { echo "PrusaResearch.ini not found: set PRUSA_BUNDLE=/path/to/PrusaResearch.ini" >&2; exit 1; }
 
 tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
-for m in ASA PETG; do
-  scripts/prusa_profile.py "$BUNDLE" "printer:$PRINTER" "print:$PRINT_PROFILE" "filament:Prusament $m" > "$tmp/$m.ini"
-done
+# profile MATERIAL PRINT_PROFILE -> path of the flattened config (made once per pair)
+profile() {
+  local f="$tmp/$1 $2.ini"
+  [ -e "$f" ] || scripts/prusa_profile.py "$BUNDLE" "printer:$PRINTER" "print:$2" "filament:Prusament $1" > "$f"
+  echo "$f"
+}
 
 if [ $# -eq 0 ]; then
   set -- stl/*.stl
@@ -50,20 +53,22 @@ done
 
 mkdir -p gcode
 echo "$("$PS" --help | head -1)"
-echo "$(head -1 "$tmp/PETG.ini" | sed 's/^# //'), $PRINT_PROFILE"
+echo "$(head -1 "$(profile PETG "$SPEED")" | sed 's/^# //')"
 echo
-echo "| Part | Time | Material, weight |"
-echo "|---|---|---|"
+echo "| Part | Profile | Time | Material, weight |"
+echo "|---|---|---|---|"
 for arg in "$@"; do
   p=$(basename "$arg" .stl)
   stl=stl/$p.stl
   case $p in base_*|lid_*|hatch_cover|cord_clamp|fit_coupon) m=ASA ;; *) m=PETG ;; esac
-  loads=(--load "$tmp/$m.ini")
+  case $p in base_*) pp=$DRAFT ;; *) pp=$SPEED ;; esac
+  pp=${PRINT_PROFILE:-$pp}
+  loads=(--load "$(profile "$m" "$pp")")
   case $p in base_*|lid_*) loads+=(--load slicer/asa_tiles.ini) ;; esac
   [ "$p" = base_front ] && loads+=(--load slicer/asa_base_front.ini)
   "$PS" "${loads[@]}" --export-gcode --output "gcode/$p.gcode" "$stl" > "$tmp/$p.log" 2>&1 \
     || { cat "$tmp/$p.log" >&2; echo "$p: slicing failed" >&2; exit 1; }
   t=$(sed -n 's/^; estimated printing time (normal mode) = //p' "gcode/$p.gcode" | hm)
   g=$(sed -n 's/^; total filament used \[g\] = //p' "gcode/$p.gcode")
-  printf '| `%s` | %s | %s %.0f g |\n' "$p" "$t" "$m" "$g"
+  printf '| `%s` | %s | %s | %s %.0f g |\n' "$p" "${pp%% @*}" "$t" "$m" "$g"
 done

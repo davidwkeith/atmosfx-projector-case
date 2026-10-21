@@ -72,7 +72,7 @@ floor_t = 6;
 foot_h = 6;        // ground clearance so rain drains out underneath
 foot_ribs = [-88, -68, -40, -15, 15, 40, 68, 88];   // inner front-to-back ribs; two more run under the side walls. Floor bridges <= max_bridge (asserted); channels drain/vent/route wires
 rib_t = 4;
-layer_h = 0.2;     // print layer height: gap above the window's snap-out ribs
+layer_h = 0.3;     // base tiles' layer height (0.30mm DRAFT, docs/PRINTING.md): gap above the window's snap-out ribs
 clearance = 0.3;
 side_air = 25;     // gap each side of projector: clears the +/-10 deg pan sweep of the right face, the HDMI plug and the baffle; could shrink to about 19 mm (separate change)
 top_air  = 25;

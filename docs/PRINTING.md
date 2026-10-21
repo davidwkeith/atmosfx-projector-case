@@ -1,10 +1,10 @@
 # Printing plan
 
-One Prusa i3 MK3S (bed 250 x 210 x 210 mm). Two materials: **Inland ASA Army Green** for every part seen from outside (it holds its colour and strength in sun and rain), **Inland PETG Black** for every part inside (black also stops light glowing through) (including `power_shelf`). Times and weights are PrusaSlicer's estimates from the current (v0.11) STLs with the stock `Original Prusa i3 MK3S & MK3S+` printer profile and the `Prusament ASA` or `Prusament PETG` material profile, plus the ASA tile settings below on the base and lid tiles (re-sliced 2026-10-21 with `make slice`: PrusaSlicer 2.7.2, PrusaResearch bundle 1.11.12). `make slice` (or `scripts/slice.sh PART...`) re-slices with these settings and prints a table in this format; it finds PrusaSlicer on the PATH or in `/Applications` (`PRUSASLICER=/path/to/binary` otherwise). PrusaSlicer has no Inland profiles: start from `Generic ASA` and `Generic PETG` and set the temperatures printed on each spool. Real prints run a little longer.
+One Prusa i3 MK3S (bed 250 x 210 x 210 mm). Two materials: **Inland ASA Army Green** for every part seen from outside (it holds its colour and strength in sun and rain), **Inland PETG Black** for every part inside (black also stops light glowing through) (including `power_shelf`). Times and weights are PrusaSlicer's estimates from the current (v0.11) STLs with the stock `Original Prusa i3 MK3S & MK3S+` printer profile and the `Prusament ASA` or `Prusament PETG` material profile, plus the ASA tile settings below on the base and lid tiles (re-sliced 2026-10-21 with `make slice`: PrusaSlicer 2.7.2, PrusaResearch bundle 1.11.12). `make slice` (or `scripts/slice.sh PART...`) re-slices with these settings and prints a table of time and weight; it finds PrusaSlicer on the PATH or in `/Applications` (`PRUSASLICER=/path/to/binary` otherwise). PrusaSlicer has no Inland profiles: start from `Generic ASA` and `Generic PETG` and set the temperatures printed on each spool. Real prints run a little longer.
 
 ## Settings
 
-- Print profile **0.20mm SPEED @MK3** for everything. The window's snap-out ribs leave a gap of one layer (`layer_h` = 0.2 in the model). If you print the base at another layer height, set `layer_h` to match and re-export.
+- Print profile **0.20mm SPEED @MK3** for everything except `base_front` and `base_rear`, which print at **0.30mm DRAFT @MK3** (2026-10-21: about 24 h less for the Halloween deadline). The window's snap-out ribs leave a gap of one layer (`layer_h` = 0.3 in the model). If you print `base_front` at another layer height, set `layer_h` to match and re-export.
 - **No supports** anywhere: every part is designed support-free.
 - ASA on an open MK3S: it warps more than PETG and gives off styrene. Print in a ventilated room away from drafts (an enclosure, even a cardboard box over the printer, helps most on `base_front` and `base_rear`), keep the bed hot (Prusa's ASA profile uses 105 C first layer, 110 C after), and clean the sheet so the first layer holds.
 - ASA base and lid tiles: change these settings from the stock profile. [`slicer/asa_tiles.ini`](../slicer/asa_tiles.ini) holds them (plus [`slicer/asa_base_front.ini`](../slicer/asa_base_front.ini) for `base_front`'s brim): on the command line add `--load slicer/asa_tiles.ini` (then `--load slicer/asa_base_front.ini` for `base_front`) after the profile options; in the GUI, type the values from the file into the Print Settings and Filament Settings tabs and save them as your own presets. They come from the first `base` print (2026-10-21), which split at a corner, lifted at the bottom edge, showed its infill through the walls and printed a wavy floor.
@@ -19,7 +19,7 @@ One Prusa i3 MK3S (bed 250 x 210 x 210 mm). Two materials: **Inland ASA Army Gre
 
 ## Fit coupon
 
-`fit_coupon` tests every fit the case depends on in a 1.5-hour print, so a wrong tolerance shows up before a 51-hour one. Print it in ASA, let it cool for an hour, then work through the table. Results go in [BRINGUP.md](BRINGUP.md) row 1 and the `coupon` and `inserts` entries of [measurements.yaml](measurements.yaml).
+`fit_coupon` tests every fit the case depends on in a 1.5-hour print, so a wrong tolerance shows up before a 36-hour one. Print it in ASA, let it cool for an hour, then work through the table. Results go in [BRINGUP.md](BRINGUP.md) row 1 and the `coupon` and `inserts` entries of [measurements.yaml](measurements.yaml).
 
 What is on it:
 
@@ -41,7 +41,7 @@ After any change: `make parts`, then `scripts/check_clash.sh`. If you changed a 
 
 ## Parts
 
-| Part | Qty | Time (0.20 SPEED) | Material, weight | Notes |
+| Part | Qty | Time | Material, weight | Notes |
 |---|---|---|---|---|
 | `fit_coupon` | 1 | 1 h 32 m | ASA 16 g | **Print first.** Test inserts, pilots, the keyhole on an M5 bolt, the frame glazing in its slot, the ball head's hot-shoe adapter in its T-slot |
 | `pedestal` | 1 | 1 h 36 m | PETG 27 g | Hot-shoe T-slot on top for the ball head's adapter. PETG shrinks less than the ASA coupon, so the slot may be a touch looser: check the adapter can't wobble once the ring is tight |
@@ -56,30 +56,30 @@ After any change: `make parts`, then `scripts/check_clash.sh`. If you changed a 
 | `cord_clamp` | 1 | 43 m | ASA 9 g | Both halves in one print, flat, wall-face down. Holds the AC cord at the rear-wall opening |
 | `lid_rear` | 1 | 7 h 37 m | ASA 124 g | Tile settings. The one printed 2026-10-16 used the stock profile (6 h 21 m, 95 g) |
 | `lid_front` | 1 | 12 h 17 m | ASA 198 g | Tile settings (9 h 14 m, 143 g stock) |
-| `base_rear` | 1 | 24 h 7 m | ASA 328 g | Tile settings (18 h 32 m, 228 g stock). 15 h 56 m with 0.30mm DRAFT (336 g) |
-| `base_front` | 1 | **51 h 18 m** | ASA 744 g | Tile settings (36 h 32 m, 471 g stock). 35 h 44 m with 0.30mm DRAFT (782 g; set `layer_h = 0.3`) |
-| **Total** | | **about 108 h** | **ASA about 1.5 kg, PETG about 0.12 kg** | Two 1 kg ASA spools leave about 0.5 kg, not enough to reprint a failed `base_front`, and one black PETG spool. The tile settings (7 perimeters, 25% infill, 7 top layers) add about 25 h and 0.45 kg over the stock profile. ASA is less dense than PETG, so the same part weighs about 15% less. |
+| `base_rear` | 1 | 15 h 56 m | ASA 336 g | 0.30mm DRAFT and tile settings (24 h 7 m, 328 g at 0.20mm SPEED) |
+| `base_front` | 1 | **35 h 44 m** | ASA 782 g | 0.30mm DRAFT and tile settings (51 h 18 m, 744 g at 0.20mm SPEED, with `layer_h = 0.2`) |
+| **Total** | | **about 84 h** | **ASA about 1.5 kg, PETG about 0.12 kg** | Two 1 kg ASA spools leave about 0.5 kg, not enough to reprint a failed `base_front`, and one black PETG spool. The tile settings (7 perimeters, 25% infill, 7 top layers) add about 0.5 kg over the stock profile. ASA is less dense than PETG, so the same part weighs about 15% less. |
 
 ## Order, on one printer
 
 Printed so far (2026-10-16): `fit_coupon`, `hatch_cover`, `cord_clamp`, `lid_rear`, all ASA. `cord_clamp` came before BRINGUP row 4: if the real cord changes `cord_d`, reprint it (44 m).
 
 
-The small parts first, so any fit problem shows up before a 51-hour print. Everything runs back to back on the one bed, so a failure anywhere delays everything behind it.
+The small parts first, so any fit problem shows up before a 36-hour print. Everything runs back to back on the one bed, so a failure anywhere delays everything behind it.
 
 | Step | Print | Time | Why here |
 |---|---|---|---|
 | 1 | `fit_coupon`, then fix any tolerance in the SCAD and re-export | 1 h 32 m | Cheapest way to find a fit problem |
 | 2 | `pedestal`, `window_frame` (PETG), `hatch_cover` (ASA) | about 5 h 15 m | Small, critical, and quick to reprint |
-| 3 | `base_front` | **51 h 20 m** | The longest print and the one that gates assembly. Start it as soon as the coupon checks out, ideally on a weekend, and watch the first layers |
+| 3 | `base_front` | **35 h 45 m** | The longest print and the one that gates assembly. Start it as soon as the coupon checks out, ideally on a weekend, and watch the first layers |
 | 4 | `sled`, caps, `ir_holder` (if used), `cord_clamp` | about 3 h | Small fillers; the bed is free between the big prints |
-| 5 | `base_rear` | 24 h 7 m | |
+| 5 | `base_rear` | 15 h 56 m | |
 | 6 | `lid_front`, `lid_rear` | about 20 h | The lid is only needed at closing time, so it goes last |
 | 7 | `power_shelf` | 2 h 28 m | After BRINGUP row 4 (see below); slot it in wherever that lands |
 
 **Hold `power_shelf` and `base_rear` until BRINGUP row 4 has set `brick`, `cord_*` and the brick's placement; the provisional layout puts the brick across the cord opening and cannot be assembled.** The Parts table shows what the provisional model slices to, not what to print yet.
 
-About 108 h of printing, about 95 h of it still to go after the four parts already printed: 4 days of machine time and well over a week of calendar time with plate changes and sleep, if nothing fails. A failed `base_front` costs the most: watch its first layers, and consider the 0.30 DRAFT profile for it (about 15 h 30 m saved on `base_front`, 8 h on `base_rear`, which brings what is left near 72 h).
+About 84 h of printing, about 72 h of it still to go after the four parts already printed: 3 days of machine time and about a week of calendar time with plate changes and sleep, if nothing fails. A failed `base_front` costs the most: watch its first layers.
 
 ## After printing
 

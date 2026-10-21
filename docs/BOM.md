@@ -82,7 +82,7 @@ Amazon cart placed or about to be: 12 SKUs, $145.32 with tax (checkout PDF). Row
 
 | Item | Notes | Buy |
 |---|---|---|
-| Inland ASA Army Green, 2 x 1 kg | **Chosen (2026-10-15).** Outside parts: base and lid tiles, `hatch_cover`, `cord_clamp`, `fit_coupon`. They slice to about 1.5 kg with the ASA tile settings (PRINTING.md), so the second spool leaves about 0.5 kg, not enough to reprint a failed `base_front` (744 g) | [Micro Center: Inland ASA Army Green](https://www.microcenter.com/product/660561/inland-175mm-army-green-asa-3d-printer-filament-1kg-spool-%2822-lbs%29?storeid=195) |
+| Inland ASA Army Green, 2 x 1 kg | **Chosen (2026-10-15).** Outside parts: base and lid tiles, `hatch_cover`, `cord_clamp`, `fit_coupon`. They slice to about 1.5 kg with the ASA tile settings (PRINTING.md), so the second spool leaves about 0.5 kg, not enough to reprint a failed `base_front` (782 g) | [Micro Center: Inland ASA Army Green](https://www.microcenter.com/product/660561/inland-175mm-army-green-asa-3d-printer-filament-1kg-spool-%2822-lbs%29?storeid=195) |
 | Inland PETG Black, 1 kg | **Chosen (2026-10-15).** Inside parts: `pedestal`, `window_frame`, sled, screen caps, `ir_holder`, `power_shelf` (about 125 g) | [Micro Center: Inland PETG Black](https://www.microcenter.com/product/503745/inland-175mm-petg-3d-printer-filament-1kg-carboard-spool-(22-lbs)-black?storeid=195) |
 | Foam tape, 2 mm (lid rim) and 1.5 mm (hatch) | | [Amazon: EPDM 2 x 20 mm, 10 m](https://www.amazon.com/dp/B0DFXQS5BL); [Amazon: 1/16 in (1.5 mm) x 1 in, 33 ft](https://www.amazon.com/dp/B08HV48WQV) |
 | Neutral-cure outdoor silicone | Base seam, pane, PIR dome | [Amazon: GE Advanced Silicone 2, clear, 2.8 oz](https://www.amazon.com/dp/B001JK5R0I) |
