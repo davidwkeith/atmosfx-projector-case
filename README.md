@@ -38,7 +38,7 @@ Preview in OpenSCAD: open `projector_pi_case.scad`, set `part` and `tile` in the
 - STLs, PrusaSlicer 3MF projects (part on the MK3S bed with its print and filament settings) and the Pi image: download them from the repository's Releases (CI builds and attaches them for each version tag), or run `make parts` to write the STLs to `stl/`. Flashing the image: [pi/docs/install.md](pi/docs/install.md).
 - `docs/` - design log, [printing plan](docs/PRINTING.md), [bill of materials](docs/BOM.md), [assembly](docs/ASSEMBLY.md), [wiring](docs/WIRING.md), [aiming](docs/AIMING.md)
 - `preview/` - renders of the assembly, interior, aim hatch and power shelf
-- `scripts/` - `check_clash.sh`, `render_previews.sh`, `publish.sh`
+- `scripts/` - `check_clash.sh`, `render_previews.sh`, `render_assembly.sh` (step pictures in `docs/assembly/`), `publish.sh`
 - `docs/DESIGN_LOG.md` - decisions, dead ends, references
 - `CLAUDE.md` - context for Claude Code (`cd` here and run `claude`)
 

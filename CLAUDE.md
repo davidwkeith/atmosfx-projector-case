@@ -18,6 +18,7 @@ make 3mf                      # stl/ -> 3mf/ (gitignored): PrusaSlicer projects,
 # docs/PRINTING.md has sliced times (scripts/slice.sh: stock MK3S profiles, ASA/PETG per part, slicer/*.ini on the tiles); print fit_coupon first
 uv run scripts/check_measurements.py  # docs/measurements.yaml against the SCAD: UPDATE flags, shrink, throw ratio, site tilt
 scripts/render_previews.sh    # regenerate preview/*.png (needs a GL context; xvfb-run on headless Linux)
+scripts/render_assembly.sh    # regenerate docs/assembly/step-NN.png for docs/ASSEMBLY.md (part=assembly, step=N: parts up to that step, its own highlighted)
 uv run scripts/render_wiring.py  # regenerate docs/wiring-*.svg (Schemdraw schematics; deps come from the script header)
 scripts/publish.sh            # create the GitHub repo with gh and push (one-time bootstrap)
 cd pi && npx vitest run       # Pi tests; they bind 127.0.0.1 and a Unix socket, so run them outside Claude Code's sandbox
