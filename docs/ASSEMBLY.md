@@ -2,7 +2,7 @@
 
 In order. Parts are in [BOM.md](BOM.md); wiring is in [WIRING.md](WIRING.md) and must be followed exactly. Nothing here has been built yet, so expect to adjust.
 
-The pictures are the model built up to each step (`part="assembly"`, `step=N`). **Orange** is what that step adds, pulled out of its place; green is ASA, dark grey PETG, and see-through grey is bought hardware already fitted (projector, ball head, brick, AC cord, PIR, Pi and HAT). Regenerate them with `scripts/render_assembly.sh` after a model change.
+The pictures are the model built up to each step (`part="assembly"`, `step=N`). **Orange** is what that step adds, pulled out of its place (red for its wiring); green is ASA, dark grey PETG, and see-through grey is bought hardware already fitted (projector, ball head, brick, AC cord, PIR, Pi and HAT). Regenerate them with `scripts/render_assembly.sh` after a model change.
 
 ## 1. Fit coupon
 
@@ -90,7 +90,9 @@ Note: the shipped provisional brick layout cannot be assembled (the brick sits a
 
 ## 10. Pi sled
 
-![Pi sled with the Pi, HAT and fan](assembly/step-10.png)
+![Pi sled, HAT and fan with the Pi-zone wiring (red); shelf and brick left out](assembly/step-10.png)
+
+Red is the wiring, as routed below: HDMI forward through the divider, across the rear gap and up the right side gap to the projector; leg 2 and the PIR leads down the shelf's wire slot to the HAT; the fan lead; speaker wire down the chimney. The DigiAMP+'s jack and terminals are drawn at the USB end by guess.
 
 1. Mount the Pi on its sled (4x M2.5).
 2. On a Pi 3 or 4, stick the heatsink on the SoC, then screw the fan to the sled's upright plate (4x M2.5 x 16, nuts on the fan side), label facing the Pi so it blows into the gap under the HAT.
