@@ -13,7 +13,7 @@ Amazon cart placed or about to be: 12 SKUs, $145.32 with tax (checkout PDF). Row
 **Still to buy**
 - Safety-critical: the brick, its cord, the Y-splitter, and the weatherproof connection box.
 - Fasteners: M5 button-head bolts (owner has them), the M3 knurled thumbscrew, and (unless the hot-shoe slot works) the 1/4-20 insert and stud.
-- Pi fan parts (added 2026-10-15): the 30 mm fan, a heatsink, BC337, 1N5819, M2.5 x 16 screws and nuts (see "Sensors, control"). Not ordered.
+- Pi fan parts (added 2026-10-15): the 30 mm fan, a heatsink, BC337, 1N5819, M2.5 x 16 screws and nuts, plus a Dupont crimp kit and heat-shrink for the header leads (added 2026-10-21) (see "Sensors, control"). Not ordered.
 - Everything else outside the cart: the Pi, DigiAMP+, microSD, PIR, speakers and wire, HDMI cable and right-angle adapter, the 3.5 x 5 in frame, foam tape, silicone, screen, paint, filament.
 
 ## Core
@@ -58,6 +58,8 @@ Amazon cart placed or about to be: 12 SKUs, $145.32 with tax (checkout PDF). Row
 | 30 mm 5 V fan, 30 x 30 x 10, 2-pin | 1 | Pi 3/4 sled fan (not the Pi 5 or Zero 2 W). Added 2026-10-15 after the Pi tripped its over-temperature protection on a warm day. No LED: a lit fan would glow through the Pi vent at night. Its 2-pin connector is not Dupont: cut it off and crimp Dupont shells, or splice to jumper leads. **Not ordered.** $6.99, in stock (page read 2026-10-15) | [Amazon: Coolerguys 30 mm 5 V CG3010H05](https://www.amazon.com/dp/B08R97Y9ZT) |
 | Pi SoC heatsink, stick-on | 1 | On the SoC, under the DigiAMP+. Keep it under about 8 mm tall so it clears the HAT (check with the HAT on before peeling the tape). The 4-piece kit has spares for the USB/LAN chip. **Not ordered.** $3.49 (page read 2026-10-15). Micro Center Santa Clara's Adafruit 14 x 14 x 8 and Micro Connectors kit were both sold out that day | [Amazon: Easycargo heatsink kit, 4 pcs](https://www.amazon.com/dp/B079FV2RH3) |
 | BC337 NPN transistor + 1 k resistor + 1N5819 diode | 1 each | Fan switch: GPIO 26 through 1 k to the base, fan minus on the collector, the diode across the fan. Resistor from the same Inland pack as the IR LED's 150 R. **Not ordered.** | [Amazon: E-Projects BC337, 50 pcs](https://www.amazon.com/dp/B07YN77PTX), [Amazon: Chanzon 1N5819, 100 pcs](https://www.amazon.com/dp/B079KG1TN2), [Micro Center: resistors](https://www.microcenter.com/product/618896/inland-1-4-watt-1-resistors-610-pack?storeid=195) |
+| Dupont crimp kit: SN-28B ratcheting crimper, 2.54 mm housings (1-7 pin), male and female pins | 1 | Pi header leads: the fan harness (a 2-pin housing on pins 37 and 39, a 1-pin on pin 4, shared with the relay's VCC if fitted), and the PIR and relay/IR LED leads if you make your own. Crimps AWG 28-18. Alternative: female-female jumper wires cut in half and soldered on. **Not ordered.** (page opened 2026-10-21) | [Amazon: Taiss SN-28B kit, 600 pcs](https://www.amazon.com/dp/B0B11RLGDZ) |
+| Heat-shrink tubing, 2:1, black, 1/16-3/8 in | 1 kit | Fan harness: each joint, the 1N5819 legs, then one larger sleeve over the BC337 and 1 k so nothing shorts on the DigiAMP+. **Not ordered.** (page opened 2026-10-21) | [Amazon: Electriduct 170 pcs, 4 in lengths](https://www.amazon.com/dp/B00PHL2D5C) |
 | TSOP38238 IR receiver | 0-1 | Bench tool, optional: learns the remote's power code once; not fitted in the case. | The Amazon kit in the IR LED row |
 
 ## Fasteners
@@ -114,9 +116,9 @@ These are estimates from typical retail prices, not quotes; check current prices
 | Speakers (outdoor pair) + wire | 50-120 |
 | Ball head | 15-35 |
 | PIR | 5-10 |
-| Pi fan, heatsink, transistor, diode, screws | 15-25 |
+| Pi fan, heatsink, transistor, diode, screws, crimp kit, heat-shrink | 40-60 |
 | Power parts (brick, cord, Y-splitter, wire, connection box) | 45-70 |
 | Acrylic pane | 10-25 |
 | Inserts, screws, foam, silicone, screen, paint | 30-50 |
 | Filament: 2 kg ASA, 1 kg PETG | 45-60 |
-| **Total** | **about 275-485** |
+| **Total** | **about 300-520** |
