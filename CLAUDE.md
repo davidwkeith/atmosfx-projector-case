@@ -14,6 +14,7 @@ A parametric OpenSCAD design (`projector_pi_case.scad`, currently v0.12 in its o
 make parts                    # all STLs -> stl/ (gitignored). OPENSCAD=/path/to/openscad if not on PATH
 scripts/check_clash.sh        # interference checks incl. cover lift-off path, lid tiles, an aim sweep of the projector/plug/side-port/IR-holder against the case (baffle included), and the light cone. Must all say ok. Needs python3
 make slice                    # slice stl/ -> gcode/ (gitignored), print a time/weight table for PRINTING.md. scripts/slice.sh PART... for some; PRUSASLICER=/path if not found
+make 3mf                      # stl/ -> 3mf/ (gitignored): PrusaSlicer projects, part centred on the MK3S bed with the same printer/print/filament settings and slicer/*.ini overrides as make slice. scripts/slice.sh --3mf PART... for some
 # docs/PRINTING.md has sliced times (scripts/slice.sh: stock MK3S profiles, ASA/PETG per part, slicer/*.ini on the tiles); print fit_coupon first
 uv run scripts/check_measurements.py  # docs/measurements.yaml against the SCAD: UPDATE flags, shrink, throw ratio, site tilt
 scripts/render_previews.sh    # regenerate preview/*.png (needs a GL context; xvfb-run on headless Linux)
@@ -26,7 +27,7 @@ pi/image/build.sh [--generic]  # Pi image via pi-gen in Docker (about 10 min on 
 
 Single part by hand: `openscad -o out.stl -D "part=\"base\"" -D "tile=\"front\"" projector_pi_case.scad`
 
-`part` = assembly | base | lid | window_frame | pedestal | hatch_cover | power_shelf | cord_clamp | sled | ir_holder | vent_cap | intake_cap | exhaust_cap | fit_coupon. `sled` = pi3 | pi4 | pi5 | zero2w (assembly shows it; `make parts` builds all four). `tile` = all | front | rear (base and lid only). STLs are not committed: CI attaches them to a GitHub Release for each `v*` tag, together with the Pi tarball, the public Pi image (`image` job on `ubuntu-24.04-arm`) and `videofx-imager.json` (Raspberry Pi Imager OS list, so Imager offers the image with its first-boot options); `stl/` is regenerated output.
+`part` = assembly | base | lid | window_frame | pedestal | hatch_cover | power_shelf | cord_clamp | sled | ir_holder | vent_cap | intake_cap | exhaust_cap | fit_coupon. `sled` = pi3 | pi4 | pi5 | zero2w (assembly shows it; `make parts` builds all four). `tile` = all | front | rear (base and lid only). STLs and 3MFs are not committed: CI attaches them to a GitHub Release for each `v*` tag, together with the Pi tarball, the public Pi image (`image` job on `ubuntu-24.04-arm`) and `videofx-imager.json` (Raspberry Pi Imager OS list, so Imager offers the image with its first-boot options); `stl/` and `3mf/` are regenerated output. The CLI's `--export-3mf` leaves the settings out, so `slice.sh --3mf` adds `Metadata/Slic3r_PE.config` itself (`--save` of the same `--load` stack, as `; key = value` lines like the GUI writes) with `zip`.
 
 Versioning: one version for the whole repo. `pi/package.json` version = the git tag without the `v` (e.g. 0.8.1 / `v0.8.1`); `videofx-update` compares them. Bump both together. This is separate from the `projector_pi_case.scad` design changelog's own vN counter (see "What this is" above and `docs/DESIGN_LOG.md`), which tracks model revisions and can run ahead of the last tagged release.
 

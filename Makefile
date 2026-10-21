@@ -3,7 +3,7 @@ OPENSCAD ?= openscad
 SCAD = projector_pi_case.scad
 OUT  = stl
 
-.PHONY: parts slice clean
+.PHONY: parts slice 3mf clean
 parts: $(OUT)/base_front.stl $(OUT)/base_rear.stl $(OUT)/lid_front.stl $(OUT)/lid_rear.stl \
      $(OUT)/window_frame.stl $(OUT)/pedestal.stl $(OUT)/hatch_cover.stl $(OUT)/power_shelf.stl \
      $(OUT)/sled_pi3.stl $(OUT)/sled_pi4.stl $(OUT)/sled_pi5.stl $(OUT)/sled_zero2w.stl $(OUT)/ir_holder.stl $(OUT)/cord_clamp.stl \
@@ -52,5 +52,9 @@ $(OUT)/sled_%.stl: $(SCAD) | $(OUT)
 slice: parts
 	scripts/slice.sh
 
+# PrusaSlicer projects (3mf/): each part with its printer, print and filament settings
+3mf: parts
+	scripts/slice.sh --3mf
+
 clean:
-	rm -rf $(OUT) gcode
+	rm -rf $(OUT) gcode 3mf
