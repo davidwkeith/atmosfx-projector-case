@@ -1,5 +1,5 @@
 // Ground-standing projector + Raspberry Pi 3 case: rain-proof (not sealed), ventilated
-// v0.12 - mouse ears on base_front's foot-rib ends (ears, ear_d, ear_layers): the base stands on ten 4 mm ribs, and base_rear's edge lifted in ASA.
+// v0.12 - mouse ears on both base tiles' foot-rib ends (ears, ear_d, ear_layers): the base stands on ten 4 mm ribs, and base_rear's edge lifted in ASA.
 // v0.11 - Pi sled fan: an upright plate on the Pi 3/4 sleds for a 30 mm 5 V fan blowing into the Pi-HAT gap (gpio-fan, GPIO 26);
 //         pi_fan keep-out and fan-<sled> clash pairs. The case itself still has no fans.
 // v0.10 - single supply: one desktop brick on the shelf (receptacle plate, barrier, second adapter and the PG9 gland replaced by a brick envelope, a rear-wall opening and a cord clamp).
@@ -73,7 +73,7 @@ floor_t = 6;
 foot_h = 6;        // ground clearance so rain drains out underneath
 foot_ribs = [-88, -68, -40, -15, 15, 40, 68, 88];   // inner front-to-back ribs; two more run under the side walls. Floor bridges <= max_bridge (asserted); channels drain/vent/route wires
 rib_t = 4;
-layer_h = 0.2;     // print layer height: gap above the window's snap-out ribs
+layer_h = 0.3;     // base and lid tiles' layer height (0.30mm DRAFT, docs/PRINTING.md): gap above the window's snap-out ribs
 clearance = 0.3;
 side_air = 25;     // gap each side of projector: clears the +/-10 deg pan sweep of the right face, the HDMI plug and the baffle; could shrink to about 19 mm (separate change)
 top_air  = 25;
@@ -185,7 +185,7 @@ pi_fan_t = 3.5;             // upright bracket plate the fan screws to
 /* [Printer] */
 bed = [250, 210, 210];   // print volume; every tile is asserted to fit (either way round)
 max_bridge = 30;         // longest unsupported bridge under the floor
-ears = true;             // base_front only: mouse ears on every foot-rib end against warping (cut or peel off after printing)
+ears = true;             // base tiles: mouse ears on every foot-rib end against warping (cut or peel off after printing)
 ear_d = 18;              // ear diameter: half of each ear lies inside the tile, so only the outer ribs' ears widen it in X; ribs 20 mm apart, so 20 would make neighbouring ears touch (non-manifold)
 ear_layers = 2;          // ear thickness in layers of layer_h
 
@@ -309,6 +309,7 @@ assert(fits_bed(lid_seam + seam_t - (yfl - visor_len), lid_w, skirt_h + rise + l
 assert(fits_bed(lid_d/2 - lid_seam + skirt_h + rise, lid_w, skirt_h + rise), "lid_rear does not fit the bed: the lid needs a third tile");
 assert(!ears || min([for (i=[1:len(ribs_x)-1]) ribs_x[i]-ribs_x[i-1]]) >= ear_d + 1, "mouse ears on neighbouring ribs touch or merge oddly: shrink ear_d");
 assert(!ears || fits_bed(base_front_len, out_w + max(hood_d, ear_d/2 - rib_t/2) + ear_d/2 - rib_t/2, base_h), "base_front's mouse ears push it off the bed: shrink ear_d");
+assert(!ears || fits_bed(out_w + ear_d - rib_t, out_d/2 - base_seam + (pir ? hood_d : 0), base_h), "base_rear's mouse ears push it off the bed: shrink ear_d");
 big = 900;
 function zp(y) = skirt_h + rise*(1 - (y - yfl)/lid_d);
 
@@ -321,12 +322,13 @@ module tile_cut(t, seam_y) {
   }
 }
 
-// Mouse ears for base_front: thin half-discs at both ends of every foot rib, kept inside the tile in Y
-// (only 3 mm spare on the bed's 210 mm axis); the outer ribs' ears reach past the side walls in X.
-module ears_front() {
+// Mouse ears for a base tile: thin half-discs at both ends of every foot rib, kept inside the case in Y
+// (base_front has only 3 mm spare on the bed's 210 mm axis); the outer ribs' ears reach past the side walls in X.
+// tile_cut trims them at the seam.
+module ears_tile(t) {
   intersection() {
-    for (x=ribs_x, y=[y_front, base_seam]) translate([x, y, 0]) cylinder(d=ear_d, h=ear_layers*layer_h);
-    translate([-big/2, y_front, -1]) cube([big, base_seam - y_front + ear_d, ear_layers*layer_h + 2]);   // tile_cut trims the seam end
+    for (x=ribs_x, y=(t == "front") ? [y_front, base_seam] : [base_seam, out_d/2]) translate([x, y, 0]) cylinder(d=ear_d, h=ear_layers*layer_h);
+    translate([-big/2, y_front, -1]) cube([big, out_d, ear_layers*layer_h + 2]);
   }
 }
 
@@ -767,7 +769,7 @@ module projector(pan=0, tilt=0) {
 }
 
 if (part == "assembly") assembly();
-else if (part == "base") tile_cut(tile, base_seam) union() { base_all(); if (ears && tile == "front") ears_front(); }
+else if (part == "base") tile_cut(tile, base_seam) union() { base_all(); if (ears && tile != "all") ears_tile(tile); }
 else if (part == "lid") rotate([180,0,0]) rotate([lid_a,0,0]) lid_tile(tile) lid();
 else if (part == "window_frame") rotate([90,0,0]) window_frame();
 else if (part == "pedestal") pedestal();
