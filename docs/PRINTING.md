@@ -4,7 +4,7 @@ One Prusa i3 MK3S (bed 250 x 210 x 210 mm). Two materials: **Inland ASA Army Gre
 
 ## Settings
 
-- Print profile **0.20mm SPEED @MK3** for everything except the four base and lid tiles, which print at **0.30mm DRAFT @MK3** (2026-10-21: about 28 h less for the Halloween deadline). The window's snap-out ribs leave a gap of one layer (`layer_h` = 0.3 in the model). If you print `base_front` at another layer height, set `layer_h` to match and re-export.
+- Print profile **0.20mm SPEED @MK3** for everything except the four base and lid tiles, which print at **0.30mm DRAFT @MK3** (2026-10-21: about 28 h less for the Halloween deadline). The window ribs leave a gap of one layer (`layer_h` = 0.3 in the model). If you print `base_front` at another layer height, set `layer_h` to match and re-export.
 - **No supports** anywhere: every part is designed support-free.
 - ASA on an open MK3S: it warps more than PETG and gives off styrene. Print in a ventilated room away from drafts (an enclosure, even a cardboard box over the printer, helps most on `base_front` and `base_rear`), keep the bed hot (Prusa's ASA profile uses 105 C first layer, 110 C after), and clean the sheet so the first layer holds.
 - ASA base and lid tiles: change these settings from the stock profile. [`slicer/asa_tiles.ini`](../slicer/asa_tiles.ini) holds them (plus [`slicer/asa_base_front.ini`](../slicer/asa_base_front.ini) for the front tiles' brim): the 3MFs carry them; on the command line add `--load slicer/asa_tiles.ini` (then `--load slicer/asa_base_front.ini` for `base_front` and `lid_front`) after the profile options; in the GUI from an STL, type the values from the file into the Print Settings and Filament Settings tabs and save them as your own presets. They come from the first `base` print (2026-10-21), which split at a corner, lifted at the bottom edge, showed its infill through the walls and printed a wavy floor.
@@ -12,7 +12,7 @@ One Prusa i3 MK3S (bed 250 x 210 x 210 mm). Two materials: **Inland ASA Army Gre
   - **Perimeters 7**: the 3 mm `wall` then prints solid instead of two perimeters over infill. It is stronger, sheds rain better and stops the crosshatch showing through ([layers and perimeters](https://help.prusa3d.com/article/layers-and-perimeters_1748)).
   - **Top solid layers 7** (or minimum top shell thickness 1.4 mm) and **infill 25%**: the 6 mm floor bridges between `foot_ribs`, and the stock top layers do not cover the sag ([poor bridging](https://help.prusa3d.com/article/poor-bridging_1802), [infill problems](https://help.prusa3d.com/article/problems-with-infill_1994)). [Ironing](https://help.prusa3d.com/article/ironing_177488) on top surfaces is optional.
   - **Brim** against warping ([warping](https://help.prusa3d.com/article/warping_2011)): 5 mm on `base_rear` and `lid_rear`. The front tiles leave little room on the 210 mm axis (`base_front` 207 mm, `lid_front` 204 mm), so [`slicer/asa_base_front.ini`](../slicer/asa_base_front.ini) gives both a 1.5 mm brim and no skirt. All four tiles also have mouse ears in the model (`ears`, v0.12), 2 layers thick and 18 mm across: the base tiles at both ends of every foot rib, since the base stands on ten 4 mm ribs, and the lid tiles at the roof corners, which lie on the bed. The ASA `hatch_cover` has them at its four corners too (3 layers at its 0.20 mm, since the thickness is 0.6 mm for the tiles' 0.30 mm layers). Peel or cut them off after printing; set `ears = false` and re-export to drop them.
-  - **Floor holes closed from below** (`hole_skin`, v0.13): the drains, the speaker-wire chimney and the stake bores start one layer above the floor's underside, so the floor's first layer bridges solid between the foot ribs instead of hanging the hole rims in mid-air (PrusaSlicer's "Floating bridge anchors" warning). Punch the skin out after printing ([ASSEMBLY.md](ASSEMBLY.md) step 2). PrusaSlicer still warns about long bridging (the floor spans up to `max_bridge`, by design) and collapsing overhangs on both base tiles, and a thin fragile part on `base_front`: dismiss these, and don't enable supports (they would fill the drain channels under the floor).
+  - **Floor holes closed from below** (`hole_skin`, v0.13): the drains, the speaker-wire chimney and the stake bores start one layer above the floor's underside, so the floor's first layer bridges solid between the foot ribs instead of hanging the hole rims in mid-air (PrusaSlicer's "Floating bridge anchors" warning). Punch the skin out after printing ([ASSEMBLY.md](ASSEMBLY.md) step 2). PrusaSlicer still warns about long bridging (the floor spans up to `max_bridge`, by design) and collapsing overhangs (the floor's open ends, at the outer wall and the seam face, span between rib ends) on both base tiles: dismiss these, and don't enable supports (they would fill the drain channels under the floor).
   - The Parts table's times for the four tiles include these overrides (re-sliced 2026-10-21; about 0.5 kg of ASA more than the stock profile), all at 0.30mm DRAFT.
 - `fit_coupon` is ASA because most of what it tests (keyholes, inserts in the base, the pane slot) lands in ASA parts. PETG shrinks less, so a fit that is tight in ASA is a little looser in PETG.
 - The front tiles lie flat as exported: `base_front` is 231 x 207 mm and `lid_front` 228 x 204 mm, wide side along the bed's 250 mm axis. 207 mm on the 210 mm axis leaves no room for a skirt: turn it off or keep it tight to the part.
@@ -58,8 +58,8 @@ After any change: `make parts`, then `scripts/check_clash.sh`. If you changed a 
 | `lid_rear` | 1 | 6 h 2 m | ASA 137 g | 0.30mm DRAFT, tile settings and mouse ears (7 h 37 m, 124 g at 0.20mm SPEED). The one printed 2026-10-16 used the stock 0.20mm SPEED profile (6 h 21 m, 95 g) |
 | `lid_front` | 1 | 9 h 49 m | ASA 215 g | 0.30mm DRAFT, tile settings, mouse ears and the 1.5 mm brim (12 h 17 m, 198 g at 0.20mm SPEED) |
 | `base_rear` | 1 | 16 h 9 m | ASA 337 g | 0.30mm DRAFT, tile settings and mouse ears (24 h 7 m, 328 g at 0.20mm SPEED) |
-| `base_front` | 1 | **35 h 55 m** | ASA 784 g | 0.30mm DRAFT, tile settings and mouse ears (51 h 18 m, 744 g at 0.20mm SPEED, with `layer_h = 0.2`) |
-| **Total** | | **about 80 h** | **ASA about 1.5 kg, PETG about 0.12 kg** | Two 1 kg ASA spools, but with the first `base_rear` (228 g) the ASA comes to about 1.7 kg, which leaves nothing for a failed `base_front` (784 g): buy a third. One black PETG spool. The tile settings (7 perimeters, 25% infill, 7 top layers) add about 0.5 kg over the stock profile. ASA is less dense than PETG, so the same part weighs about 15% less. |
+| `base_front` | 1 | **36 h 8 m** | ASA 787 g | 0.30mm DRAFT, tile settings, mouse ears and 4 mm window ribs (v0.15; 51 h 18 m, 744 g at 0.20mm SPEED, with `layer_h = 0.2`) |
+| **Total** | | **about 80 h** | **ASA about 1.5 kg, PETG about 0.12 kg** | Two 1 kg ASA spools, but with the first `base_rear` (228 g) the ASA comes to about 1.7 kg, which leaves nothing for a failed `base_front` (787 g): buy a third. One black PETG spool. The tile settings (7 perimeters, 25% infill, 7 top layers) add about 0.5 kg over the stock profile. ASA is less dense than PETG, so the same part weighs about 15% less. |
 
 ## Order, on one printer
 
@@ -72,7 +72,7 @@ The small parts first, so any fit problem shows up before a 36-hour print. Every
 |---|---|---|---|
 | 1 | `fit_coupon`, then fix any tolerance in the SCAD and re-export | 1 h 32 m | Cheapest way to find a fit problem |
 | 2 | `pedestal`, `window_frame` (PETG), `hatch_cover` (ASA) | about 5 h 15 m | Small, critical, and quick to reprint |
-| 3 | `base_front` | **35 h 55 m** | The longest print and the one that gates assembly. Start it as soon as the coupon checks out, ideally on a weekend, and watch the first layers |
+| 3 | `base_front` | **36 h 8 m** | The longest print and the one that gates assembly. Start it as soon as the coupon checks out, ideally on a weekend, and watch the first layers |
 | 4 | `sled`, caps, `ir_holder` (if used), `cord_clamp` | about 3 h | Small fillers; the bed is free between the big prints |
 | 5 | `base_rear` | 16 h 10 m | |
 | 6 | `lid_front`, `lid_rear` | about 16 h | The lid is only needed at closing time, so it goes last |
@@ -84,6 +84,6 @@ About 80 h of printing, about 70 h of it still to go (everything but the parts p
 
 ## After printing
 
-- Snap out the two thin ribs in the window opening.
+- Cut out the two 4 mm ribs in the window opening at the sill and file it flush.
 - Heat-set inserts: M5 (hatch studs), M3 (sled thumbscrew); 1/4-20 only if the pedestal is built with `ped_mount = "insert"`. Use the sizes that fit the coupon.
 - Spray the inside of the case matte black (masking the window rebate and screw holes) so projector light doesn't glow through the vents at night.

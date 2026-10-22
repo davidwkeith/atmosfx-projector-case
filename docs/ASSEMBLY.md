@@ -19,7 +19,7 @@ The pictures are the model built up to each step (`part="assembly"`, `step=N`). 
 
 ![Base tiles from underneath](assembly/step-02.png)
 
-1. Snap out the two thin ribs in the window opening.
+1. Cut out the two ribs in the window opening (4 mm thick, `win_rib_t`): flush cutters or a fine saw at the sill, then file the sill flush. Their tops are free already (one-layer gap).
 2. From under each base tile, punch out the thin skin closing the floor holes (`hole_skin`): the drains (4 mm drill bit), the speaker-wire chimney and the stake bores. Check each is open from the floor through to the gap underneath.
 3. Mask the window rebate, insert holes and screw holes, then spray the inside of both base halves and the lid matte black.
 
