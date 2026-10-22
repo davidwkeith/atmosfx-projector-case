@@ -28,7 +28,7 @@
 // Print ASA (camo green) for outside parts, PETG (black) for inside parts. Lid prints roof-down. Base+lid split front/rear (MK3S bed 250x210x210); front pieces lie flat with X along the 250 mm axis.
 
 /* [Part] */
-part = "assembly"; // [assembly, base, lid, window_frame, pedestal, hatch_cover, power_shelf, sled, ir_holder, vent_cap, exhaust_cap, intake_cap, fit_coupon]
+part = "assembly"; // [assembly, base, lid, window_frame, pedestal, hatch_cover, power_shelf, sled, ir_holder, vent_cap, exhaust_cap, intake_cap, fit_coupon, split_test]
 sled = "pi3";      // [pi3, pi4, pi5, zero2w] sled shown in the assembly / exported by part="sled"
 tile = "all";      // [all, front, rear] for base+lid
 explode = 0;       // [0:1:80]
@@ -204,6 +204,8 @@ ears = true;             // mouse ears against warping (cut or peel off after pr
 ear_d = 18;              // ear diameter: half of each ear lies inside the tile, so only the outer ribs' ears widen it in X; ribs 20 mm apart, so 20 would make neighbouring ears touch (non-manifold)
 ear_layers = 3;          // ear thickness in layers of layer_h: 0.6 mm, so 3 layers on the base tiles and hatch cover (0.20 mm) and 2 on the lid tiles (0.30 mm)
 win_rib_t = 4;           // window ribs' thickness: they hold up the window's top bridge while printing; under 4 mm PrusaSlicer flags them (73 mm tall) as a thin fragile part
+split_test_d = 50;       // split_test: depth of the strip cut from the back of base_rear (full width, so the floor shrinks over the real 231 mm)
+split_test_h = 30;       // split_test: wall height above the floor top, past where the 2026-10-22 base_rear split
 hole_skin = 1;           // sacrificial layers (of layer_h) closing the floor holes from below, so the floor's first bridge layer has no floating rims; punch out after printing (0 = open)
 
 /* [Lid] */
@@ -351,6 +353,18 @@ module ears_tile(t) {
     for (x=ribs_x, y=(t == "front") ? [y_front, base_seam] : [base_seam, out_d/2]) translate([x, y, 0]) cylinder(d=ear_d, h=ear_layers*layer_h);
     translate([-big/2, y_front, -1]) cube([big, out_d, ear_layers*layer_h + 2]);
   }
+}
+
+// ASA stress test: the back split_test_d of base_rear, full width, cut split_test_h above the floor. Same ribs,
+// floor, rear wall, corners and stake tubes as the tile, so it splits where the tile would, in a few hours instead
+// of a day. Ears on both rib ends, including the cut ones.
+module split_test() {
+  y_cut = out_d/2 - split_test_d;
+  intersection() {
+    base_all();
+    translate([-big/2, y_cut, -1]) cube([big, split_test_d + 1, z_floor + split_test_h + 1]);
+  }
+  if (ears) for (x=ribs_x, y=[y_cut, out_d/2]) translate([x, y, 0]) cylinder(d=ear_d, h=ear_layers*layer_h);
 }
 
 // Mouse ears for a lid tile, which prints roof-down: thin discs at the roof's corners, lying in the roof
@@ -888,6 +902,7 @@ else if (part == "hatch_cover") rotate([180,0,0]) hatch_cover(ears);
 else if (part == "ir_holder") ir_holder();
 else if (part == "cord_clamp") cord_clamp();
 else if (part == "fit_coupon") fit_coupon();
+else if (part == "split_test") split_test();
 else if (part == "vent_cap") screen_cap(vent_open);
 else if (part == "exhaust_cap") screen_cap(exh_open);
 else if (part == "intake_cap") screen_cap(in_open);

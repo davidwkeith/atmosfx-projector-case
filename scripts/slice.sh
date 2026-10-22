@@ -58,11 +58,11 @@ done
 
 # loads PART -> "loads" (the --load options) and m, pp (material, print profile) for that part
 loads() {
-  case $1 in base_*|lid_*|hatch_cover|cord_clamp|fit_coupon) m=ASA ;; *) m=PETG ;; esac
+  case $1 in base_*|lid_*|hatch_cover|cord_clamp|fit_coupon|split_test) m=ASA ;; *) m=PETG ;; esac
   case $1 in lid_*) pp=$DRAFT ;; *) pp=$SPEED ;; esac
   pp=${PRINT_PROFILE:-$pp}
   loads=(--load "$(profile "$m" "$pp")")
-  case $1 in base_*|lid_*) loads+=(--load slicer/asa_tiles.ini) ;; esac
+  case $1 in base_*|lid_*|split_test) loads+=(--load slicer/asa_tiles.ini) ;; esac
   case $1 in base_front|lid_front) loads+=(--load slicer/asa_base_front.ini) ;; esac
 }
 
