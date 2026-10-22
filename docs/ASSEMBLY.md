@@ -2,7 +2,7 @@
 
 In order. Parts are in [BOM.md](BOM.md); wiring is in [WIRING.md](WIRING.md) and must be followed exactly. Nothing here has been built yet, so expect to adjust.
 
-The pictures are the model built up to each step (`part="assembly"`, `step=N`). **Orange** is what that step adds, pulled out of its place; green is ASA, dark grey PETG, and see-through grey is bought hardware (projector, ball head, brick, Pi and HAT). Regenerate them with `scripts/render_assembly.sh` after a model change.
+The pictures are the model built up to each step (`part="assembly"`, `step=N`). **Orange** is what that step adds, pulled out of its place (red for its wiring); green is ASA, dark grey PETG, and see-through grey is bought hardware already fitted (projector, ball head, brick, AC cord, PIR, Pi and HAT). Regenerate them with `scripts/render_assembly.sh` after a model change.
 
 ## 1. Fit coupon
 
@@ -56,7 +56,7 @@ The pictures are the model built up to each step (`part="assembly"`, `step=N`). 
 
 ## 7. PIR
 
-![Rear wall: PIR hole under its hood](assembly/step-07.png)
+![PIR going in from inside the rear wall](assembly/step-07.png)
 
 1. Push the dome through the rear-wall hole (under the hood) from inside.
 2. Screw the board on (2x M2).
@@ -76,7 +76,7 @@ The pictures are the model built up to each step (`part="assembly"`, `step=N`). 
 
 ## 9. Power
 
-![Power shelf, brick and cord clamp](assembly/step-09.png)
+![Power shelf, brick, AC cord and cord clamp](assembly/step-09.png)
 
 Note: the shipped provisional brick layout cannot be assembled (the brick sits across the cord opening); re-fit the shelf after BRINGUP row 4.
 
@@ -90,7 +90,9 @@ Note: the shipped provisional brick layout cannot be assembled (the brick sits a
 
 ## 10. Pi sled
 
-![Pi sled with the Pi, HAT and fan](assembly/step-10.png)
+![Pi sled, HAT and fan with the Pi-zone wiring (red); shelf and brick left out](assembly/step-10.png)
+
+Red is the wiring, as routed below: HDMI forward through the divider, across the rear gap and up the right side gap to the projector; leg 2 and the PIR leads down the shelf's wire slot to the HAT; the fan lead; speaker wire down the chimney. The DigiAMP+'s barrel jack and speaker terminals are on its edge facing the divider (from the product photo), so leg 2 goes in through a right-angle adapter.
 
 1. Mount the Pi on its sled (4x M2.5).
 2. On a Pi 3 or 4, stick the heatsink on the SoC, then screw the fan to the sled's upright plate (4x M2.5 x 16, nuts on the fan side), label facing the Pi so it blows into the gap under the HAT.
@@ -98,8 +100,8 @@ Note: the shipped provisional brick layout cannot be assembled (the brick sits a
 4. Plug the GPIO leads (PIR, the fan's switch, and the relay and IR LED only if built) into the DigiAMP+'s pass-through header per [pi/docs/wiring.md](../pi/docs/wiring.md).
 5. Set the sled on its pins and fit the thumbscrew.
 6. Plug the HDMI cable into the Pi straight through the low part of the divider pass-through (there is no room for the plug behind the divider). Route the cable from there along the side gap above the baffle to the right-face I/O strip, and check BRINGUP row 21 (the cable crossing the rear gap at full tilt and pan).
-7. Plug the Y-splitter's leg 2 into the DigiAMP+'s barrel jack.
-8. Feed the speaker wire down the chimney and plug the chimney round the wires with foam.
+7. Put a right-angle adapter (a second one from the 5-pack) in the DigiAMP+'s barrel jack, turned up: the jack faces the divider about 15 mm away, inside the pass-through. Plug the Y-splitter's leg 2 into it.
+8. Screw the speaker wire into the two terminal blocks on the same edge, run it round the USB end of the Pi, feed it down the chimney and plug the chimney round the wires with foam.
 
 ## 11. First power-up
 

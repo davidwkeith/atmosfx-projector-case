@@ -1,4 +1,7 @@
 // Ground-standing projector + Raspberry Pi 3 case: rain-proof (not sealed), ventilated
+// v0.14 - PIR hood raised: its 45 deg underside started 6 mm below the top of the dome, so the dome could not pass through (found by the new pir clash pair);
+//         amp_dc_plug() keep-out (the DigiAMP+'s jack faces the divider: leg 2 takes a right-angle adapter);
+//         pir_sensor(), ac_cord() and pi_wiring() ghosts for the assembly preview; assembly steps (step, step_pull) for docs/ASSEMBLY.md
 // v0.13 - sacrificial skin (hole_skin) over the floor holes: drains, speaker chimney and stake bores start one layer above the floor's underside
 //         so its first bridge layer is solid (PrusaSlicer flagged the hole rims as floating bridge anchors); punch it out after printing
 // v0.12 - mouse ears (ears, ear_d, ear_layers) on both base tiles' foot-rib ends (the base stands on ten 4 mm ribs, and base_rear's edge lifted in ASA)
@@ -136,6 +139,8 @@ pir_dz = 45;        // dome centre above the shelf's top face
 pir_dome_d = 23.5;  // lens dome; check yours
 pir_hole_sp = 28.7; // board mounting holes (M2), check yours
 pir_stand = 3;      // lens frame thickness: board sits this far off the wall
+pir_board = [32, 24, 1.6];  // board [X, Z, thickness] (HC-SR501 size; the preview ghost and clash check only)
+pir_dome_h = 9;     // how far the dome stands proud of the wall outside (dome radius less the wall; preview ghost and clash check)
 
 /* [Projector power fallback] */
 ir_angle = 30;      // IR LED tilt in the stick-on holder
@@ -183,6 +188,9 @@ hdmi_plug = [22, 45, 13];   // straight HDMI plug at the Pi, with strain relief:
 pass_x = [-40, 25];         // divider pass-through, left/right edge: spans every board's HDMI port
 pi_fan = [30, 10];          // 5 V axial fan on the Pi 3/4 sleds [frame side, thickness]: stands at the SD-card end, blows into the Pi-HAT gap (Pi 5: Active Cooler; Zero: no room past the thumbscrew)
 pi_fan_sp = 24;             // fan screw spacing (24 for 30 mm fans)
+amp_jack_x = 13;            // DigiAMP+ barrel jack centre from the HAT's pin-1 end (the Pi's SD-card end), on the edge opposite the GPIO header, facing the divider (scaled off the Raspberry Pi product photo)
+amp_jack_dz = 8;            // jack centre below the top of the Pi stack (guess: check yours)
+amp_spk_x = [30, 50];       // the two speaker terminal blocks on the same edge, from the pin-1 end (product photo)
 pi_fan_dy = -8;             // fan centre in Y from pi_cy: clear of the thumbscrew (pi_cy+18)
 pi_fan_gap = 4;             // fan outlet face to the board's SD-card end (the card sticks out about 2.5 mm)
 pi_fan_t = 3.5;             // upright bracket plate the fan screws to
@@ -299,6 +307,7 @@ cord_screws = [for (sx=[-1,1], sz=[-1,1]) [cord_x + sx*(cord_open[0]/2 + clamp_f
 assert(cord_x - clamp_w/2 >= -out_w/2, "move cord_x right: the cord clamp hangs off the rear wall's left edge");
 assert(cord_x - cord_open[0]/2 - 4 >= -inner_w/2, "move cord_x right: the cord opening must sit inside the left wall");
 assert(cord_dz - cord_open[1]/2 - clamp_flange >= 3, "raise cord_dz: the clamp's lower screws land on the shelf");
+assert(pir_zz + pir_dome_d/2 + hood_d + 4 <= lid_z0, "the PIR hood runs into the lid skirt: lower pir_dz");
 assert(cord_z + clamp_h/2 <= lid_z0 - 2, "lower cord_dz: the cord clamp runs into the lid skirt");
 assert(cord_d >= 5 && cord_d <= cord_open[1] - 6, "cord_d: measure the cord; it must fit the opening and the clamp channel");
 assert(brick_x0 + brick[0] + 3 <= pir_x - 6, "the brick runs into the PIR / wire slot: measure it, or shorten it");
@@ -465,7 +474,7 @@ module base_all(ribs=true) {
       hood();
       if (pir) {
         for (sx=[-1,1]) translate([pir_x+sx*pir_hole_sp/2, y_back+0.1, pir_zz]) rotate([90,0,0]) cylinder(d=5, h=pir_stand+0.1);
-        translate([pir_x-20, out_d/2, pir_zz+pir_dome_d/2+4]) rotate([90,0,90])   // 45 deg rain hood over the dome
+        translate([pir_x-20, out_d/2, pir_zz+pir_dome_d/2+hood_d+1]) rotate([90,0,90])   // 45 deg rain hood over the dome; its underside starts 1 mm above the dome
           linear_extrude(40) polygon([[-0.1, 3], [hood_d, 0], [-0.1, -hood_d]]);
       }
       translate([spk_x, pi_cy, z_floor-0.1]) cylinder(d=spk_d+4.8, h=spk_collar+0.1);   // speaker-wire chimney
@@ -499,6 +508,51 @@ module power_shelf() {
 // The brick's envelope on the shelf (shelf coordinates): preview ghost and clash keep-out
 module brick_env() {
   translate([brick_x0, brick_y0, 3]) cube(brick);
+}
+
+// The PIR as fitted (preview ghost, clash keep-out): board on the lens frame inside the rear wall, dome through the wall.
+module pir_sensor() {
+  translate([pir_x, 0, pir_zz]) {
+    translate([-pir_board[0]/2, y_back-pir_stand-pir_board[2], -pir_board[1]/2]) cube([pir_board[0], pir_board[2], pir_board[1]]);
+    translate([0, y_back-pir_stand, 0]) rotate([-90,0,0]) cylinder(d=pir_dome_d, h=pir_stand+wall);
+    translate([0, y_back+wall, 0]) scale([1, pir_dome_h/(pir_dome_d/2), 1]) difference() {
+      sphere(d=pir_dome_d);
+      translate([-pir_dome_d, -2*pir_dome_d, -pir_dome_d]) cube(2*pir_dome_d);
+    }
+  }
+}
+
+// The AC cord as routed (preview ghost): in through the clamp, then outside a drip loop below the clamp and down to the ground.
+module wire(pts, d) { for (i=[0:len(pts)-2]) hull() for (p=[pts[i], pts[i+1]]) translate(p) sphere(d=d, $fn=12); }
+module ac_cord() {
+  yo = y_back + wall + clamp_t;
+  wire([[cord_x, y_back-3, cord_z], [cord_x, yo+20, cord_z], [cord_x, yo+40, cord_z-20], [cord_x, yo+35, cord_z-clamp_h/2-20],
+        [cord_x, yo+60, cord_z-clamp_h/2-15], [cord_x, yo+90, cord_d/2]], cord_d);
+}
+
+// Pi-zone wiring as routed in docs/ASSEMBLY.md step 10 and docs/WIRING.md (preview ghost only; the DigiAMP+'s
+// jack and terminals are on its edge facing the divider, amp_jack_x, amp_spk_x): HDMI from the Pi forward through the divider
+// pass-through, across the rear gap, up the side gap and forward over the baffle to the projector's right-face plug;
+// the Y-splitter's leg 2 from the brick down the shelf's wire slot to the DigiAMP+; the PIR leads down the same slot
+// to the header; the fan lead; speaker wire down the floor chimney and out under the floor.
+module pi_wiring(s) {
+  top = z_board + sled_stack(s) + 2;                       // leads land on the HAT's top
+  hx = -42.5 + sled_hdmi_x(s);
+  hz = z_board + 1.6 + 3.2;
+  sx = proj_w/2 + side_cable_d/2;                          // side-gap run, inside the plug's cable keep-out
+  slot = [pir_x + 4, y_pi0 + 0.3 + shelf_d - wire_slot[1]/2];
+  wire([[hx, y_gpio-sled_board(s)[1]-hdmi_plug[1], hz], [hx, y_pf+proj_d+4, hz], [sx, y_pf+proj_d+4, hz],
+        [sx, y_pf+proj_d+4, z_pj+proj_h-side_port_h/2], [sx, y_pf+hdmi_y, z_pj+proj_h-side_port_h/2]], 7);   // HDMI
+  j = amp_jack(s);
+  wire([[brick_x0+brick[0], y_pi0+0.3+brick_y0+brick[1]-8, shelf_zz+3+brick[2]/2], [slot[0], slot[1], shelf_zz+10],
+        [slot[0], slot[1], top+6], [j[0], j[1]-port_depth/2, top+6], [j[0], j[1]-port_depth/2, j[2]+7]], 4);       // Y-splitter leg 2, into the right-angle adapter
+  wire([[pir_x, y_back-pir_stand-3, pir_zz-pir_board[1]/2], [slot[0]-4, slot[1], shelf_zz+6], [slot[0]-4, slot[1], top+8],
+        [0, y_gpio-3, top]], 2.5);                                                                                  // PIR leads
+  if (sled_fan(s)) wire([[pi_fan_x0+pi_fan[1]/2, pi_cy+pi_fan_dy+pi_fan[0]/2, z_floor+sled_pad+sled_t+pi_fan[0]],
+                         [-30, y_gpio-3, top]], 2.5);                                                               // fan
+  for (tx=amp_spk_x) wire([[-42.5+tx, y_gpio-56, top-6], [-42.5+tx, y_gpio-62, top-6], [spk_x, y_gpio-62, top],
+        [spk_x, pi_cy, top+5], [spk_x, pi_cy, z_floor+spk_collar+5], [spk_x, pi_cy, foot_h/2],
+        [spk_x, y_back+wall+30, foot_h/2]], 4);                                                                    // speaker wire
 }
 
 // Lip baffle on the right wall between the exhaust and the rear inlet: exhaust that stays in the case does not creep back to the
@@ -607,12 +661,17 @@ module window_frame() {
 }
 
 // One assembly step (step > 0): parts from step n on show from that step, in their print colour,
-// and on step n itself highlighted and moved by dir * step_pull.
-asa_c = "#5b6b3a"; petg_c = "#3a3a3a"; new_c = "#ff8c1a";
+// and on step n itself highlighted and moved by dir * step_pull. hw_stage is the same for bought hardware,
+// which is a % ghost except on its own step.
+asa_c = "#5b6b3a"; petg_c = "#3a3a3a"; new_c = "#ff8c1a"; wire_c = "#d0102a";   // wire_c: the step's wiring
 module stage(n, mat, dir=[0,0,1]) {
   if (step == 0) children();
   else if (step == n) translate(dir*step_pull) color(new_c) children();
   else if (step > n) color(mat) children();
+}
+module hw_stage(n, dir=[0,0,1], c=new_c) {
+  if (step == 0 || step > n) %children();
+  else if (step == n) translate(dir*step_pull) color(c) children();
 }
 
 module assembly() {
@@ -623,19 +682,19 @@ module assembly() {
     translate([0, step <= 5 ? step_pull : 0, 0]) stage(2, asa_c) tile_cut("rear", base_seam) base_all();
   }
   stage(8, petg_c, [0,0,2]) translate([ped_x, ped_y, z_floor+boss_h]) pedestal();
-  stage(9, petg_c, [0,0,2]) translate([0, y_pi0+0.3, shelf_zz]) power_shelf();
+  // step 10 leaves the shelf and brick out, so the picture shows the Pi zone under them
+  if (step != 10) stage(9, petg_c, [0,0,2]) translate([0, y_pi0+0.3, shelf_zz]) power_shelf();
   stage(9, asa_c, [0,1,0]) cord_clamp_placed();
-  if (step == 0 || step >= 9) %translate([0, y_pi0+0.3, shelf_zz + (step == 9 ? 2*step_pull : 0)]) brick_env();
+  if (step != 10) hw_stage(9, [0,0,2]) translate([0, y_pi0+0.3, shelf_zz]) brick_env();
+  hw_stage(9, [0,1,0]) ac_cord();
+  if (pir) hw_stage(7, [0,-0.4,1.3]) pir_sensor();   // up and in: behind the divider it would be hidden
   stage(6, petg_c, [0,1,0]) translate([lens_x, y0, win_zc]) window_frame();
   stage(13, asa_c, [-1,0,0]) translate([-out_w/2-cover_gasket-3, hatch_y, hatch_zz]) rotate([90,0,90]) hatch_cover();
   stage(12, asa_c, [0,0,1.5]) translate([0, 0, lid_z0 + explode]) lid_tile(tile) lid();
-  stage(10, petg_c, [0,0,2]) translate([0, 0, z_floor+sled_pad]) pi_sled(sled);
+  stage(10, petg_c, [0,0,0]) translate([0, 0, z_floor+sled_pad]) pi_sled(sled);   // in place, so the wiring meets it
   stage(4, petg_c, [-1,0,0]) { for (v=vents) vent_cap_placed(v); exhaust_cap_placed(); intake_cap_placed(); }
-  if (step == 0 || step >= 10) translate([0, 0, step == 10 ? 2*step_pull : 0]) {
-    %pi_stack(sled);
-    %pi_fan(sled);
-    %pi_hdmi_plug(sled);
-  }
+  hw_stage(10, [0,0,0]) { pi_stack(sled); pi_fan(sled); pi_hdmi_plug(sled); amp_dc_plug(sled); }
+  hw_stage(10, [0,0,0], wire_c) pi_wiring(sled);
   // ghosts (preview only): ball head + projector
   if (step == 0 || step >= 8) {
     if (ped_mount == "shoe") %translate([ped_x, ped_y, z_floor+ped_top]) cylinder(d=24, h=shoe_rise);   // adapter ring
@@ -744,6 +803,13 @@ module pi_fan(s) {
 module pi_hdmi_plug(s) {
   translate([-42.5+sled_hdmi_x(s)-hdmi_plug[0]/2, y_gpio-sled_board(s)[1]-hdmi_plug[1], z_board+1.6+3.2-hdmi_plug[2]/2])
     cube(hdmi_plug);
+}
+
+// Keep-out for the Y-splitter's leg 2 in the DigiAMP+'s jack: a right-angle adapter (port_depth out of the HAT's edge
+// toward the divider, the pass-through is open there) with the plug turned up
+function amp_jack(s) = [-42.5 + amp_jack_x, y_gpio - 56, z_board + sled_stack(s) - amp_jack_dz];
+module amp_dc_plug(s) {
+  translate(amp_jack(s) - [7, port_depth, 7]) cube([14, port_depth, 14]);
 }
 
 // Removable Pi sled: lifts out from the top (lid off, shelf out), located by two floor pins and held

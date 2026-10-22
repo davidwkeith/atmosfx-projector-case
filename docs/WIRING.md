@@ -81,7 +81,7 @@ The DigiAMP+ powers the Pi, so never also power the Pi by USB. The relay is only
 |---|---|---|
 | Brick DC cord into the Y-splitter | the cord's own | Plug-in; the cord is not cut. Tip must read centre + |
 | Y-splitter leg 1 to the projector | the splitter's own | **14 AWG leads (the chosen splitter), well above the supply's 6 A, so no fuse.** Ends in the right-angle 5.5 x 2.5 mm adapter on the projector's DC jack so the stock cable's bend runs along the rear face. **Do not connect it until row 4a passes.** If row 4a fails, a buck converter to 21 V goes between the splitter and the adapter on this leg only (at least 3.5 A out at 21 V, 30 V in or more; meter its output before it meets the projector) |
-| Y-splitter leg 2 to the DigiAMP+ | the splitter's own | Into the DigiAMP+'s 5.5 x 2.5 mm centre-positive barrel jack. 24 V is its stated ceiling |
+| Y-splitter leg 2 to the DigiAMP+ | the splitter's own | Into the DigiAMP+'s 5.5 x 2.5 mm centre-positive barrel jack through a right-angle adapter turned up: the jack is on the HAT's edge facing the divider, about 15 mm away (`amp_dc_plug`). 24 V is its stated ceiling |
 | Relay (CEC fallback only) | 18 AWG | Cut leg 1 a hand's width from the adapter and switch the **+** conductor only. Never switch the minus: the HDMI cable would carry the return. Use an **active-low** module: the Pi holds GPIO 27 high (relay open, projector off) from boot |
 | DigiAMP+ to speakers | 16 AWG zip cord | Out through the floor chimney; red/striped to + on both ends |
 
