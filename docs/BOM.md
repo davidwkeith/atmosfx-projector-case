@@ -65,7 +65,6 @@ Amazon cart placed or about to be: 12 SKUs, $145.32 with tax (checkout PDF). Row
 
 | Item | Qty | Where | Buy |
 |---|---|---|---|
-| 1/4-20 heat-set insert | 0 | **Not needed** (2026-10-15): the pedestal uses the hot-shoe slot. Only for `ped_mount = "insert"` (the Ktehloy kit is metric only). | [Amazon: ruthex 1/4-20 heat-set inserts, 20-pack](https://www.amazon.com/dp/B09MTS6ZZQ) |
 | M5 heat-set insert | 4 | Hatch studs. **Ordered** (Ktehloy 400-pc metric kit M2-M6, $15.97, has M5); the M5 hole is `stud_insert_d` 6.4: check it on the coupon against the kit's actual insert. | [Micro Center: Leo Sales heat-set insert kit (M3/M4/M5)](https://www.microcenter.com/product/675642/leo-sales-ltd-heat-set-insert-kit-%28m3-m4-m5%29?storeid=195) |
 | M3 heat-set insert | 1 | Sled thumbscrew Same Ktehloy kit. | Same kit |
 | M5 button-head (ISO 7380), 10-14 mm long | 4 | Hatch keyholes. **Owner has them.** Length: at least 10 mm (5 mm outside the wall face for the gasket, plate and head gap, plus about 5 mm in the insert) and at most about 14 mm (longer pokes through the inner boss); 12 is ideal. The keyholes are sized for a 9.5 mm head (`stud_head_d`) | Owner's stock |
