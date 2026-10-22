@@ -58,7 +58,7 @@ After any change: `make parts`, then `scripts/check_clash.sh`. If you changed a 
 | `lid_rear` | 1 | 6 h 2 m | ASA 137 g | 0.30mm DRAFT, tile settings and mouse ears (7 h 37 m, 124 g at 0.20mm SPEED). The one printed 2026-10-16 used the stock 0.20mm SPEED profile (6 h 21 m, 95 g) |
 | `lid_front` | 1 | 9 h 49 m | ASA 215 g | 0.30mm DRAFT, tile settings, mouse ears and the 1.5 mm brim (12 h 17 m, 198 g at 0.20mm SPEED) |
 | `base_rear` | 1 | 16 h 9 m | ASA 337 g | 0.30mm DRAFT, tile settings and mouse ears (24 h 7 m, 328 g at 0.20mm SPEED) |
-| `base_front` | 1 | **36 h 8 m** | ASA 787 g | 0.30mm DRAFT, tile settings, mouse ears and 4 mm window ribs (v0.14; 51 h 18 m, 744 g at 0.20mm SPEED, with `layer_h = 0.2`) |
+| `base_front` | 1 | **36 h 8 m** | ASA 787 g | 0.30mm DRAFT, tile settings, mouse ears and 4 mm window ribs (v0.15; 51 h 18 m, 744 g at 0.20mm SPEED, with `layer_h = 0.2`) |
 | **Total** | | **about 80 h** | **ASA about 1.5 kg, PETG about 0.12 kg** | Two 1 kg ASA spools, but with the first `base_rear` (228 g) the ASA comes to about 1.7 kg, which leaves nothing for a failed `base_front` (787 g): buy a third. One black PETG spool. The tile settings (7 perimeters, 25% infill, 7 top layers) add about 0.5 kg over the stock profile. ASA is less dense than PETG, so the same part weighs about 15% less. |
 
 ## Order, on one printer
