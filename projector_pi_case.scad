@@ -1,4 +1,5 @@
 // Ground-standing projector + Raspberry Pi 3 case: rain-proof (not sealed), ventilated
+// v0.16 - base tiles back to 0.20 mm layers (layer_h 0.3 -> 0.2: window-rib gap, floor-hole skin) after a 0.30 base_rear split above the floor; ear_layers 2 -> 3 keeps the ears 0.6 mm
 // v0.15 - window ribs 0.8 -> 4 mm thick (win_rib_t): PrusaSlicer flagged the 73 mm tall 0.8 mm ribs as a thin fragile part; cut them out after printing
 // v0.14 - PIR hood raised: its 45 deg underside started 6 mm below the top of the dome, so the dome could not pass through (found by the new pir clash pair);
 //         amp_dc_plug() keep-out (the DigiAMP+'s jack faces the divider: leg 2 takes a right-angle adapter);
@@ -82,7 +83,7 @@ floor_t = 6;
 foot_h = 6;        // ground clearance so rain drains out underneath
 foot_ribs = [-88, -68, -40, -15, 15, 40, 68, 88];   // inner front-to-back ribs; two more run under the side walls. Floor bridges <= max_bridge (asserted); channels drain/vent/route wires
 rib_t = 4;
-layer_h = 0.3;     // base and lid tiles' layer height (0.30mm DRAFT, docs/PRINTING.md): gap above the window ribs
+layer_h = 0.2;     // base tiles' layer height (0.20mm SPEED, docs/PRINTING.md): gap above the window ribs, floor-hole skin, ear thickness
 clearance = 0.3;
 side_air = 25;     // gap each side of projector: clears the +/-10 deg pan sweep of the right face, the HDMI plug and the baffle; could shrink to about 19 mm (separate change)
 top_air  = 25;
@@ -201,7 +202,7 @@ bed = [250, 210, 210];   // print volume; every tile is asserted to fit (either 
 max_bridge = 30;         // longest unsupported bridge under the floor
 ears = true;             // mouse ears against warping (cut or peel off after printing): base tiles on every foot-rib end, lid tiles and hatch cover on their corners
 ear_d = 18;              // ear diameter: half of each ear lies inside the tile, so only the outer ribs' ears widen it in X; ribs 20 mm apart, so 20 would make neighbouring ears touch (non-manifold)
-ear_layers = 2;          // ear thickness in layers of layer_h
+ear_layers = 3;          // ear thickness in layers of layer_h: 0.6 mm, so 3 layers on the base tiles and hatch cover (0.20 mm) and 2 on the lid tiles (0.30 mm)
 win_rib_t = 4;           // window ribs' thickness: they hold up the window's top bridge while printing; under 4 mm PrusaSlicer flags them (73 mm tall) as a thin fragile part
 hole_skin = 1;           // sacrificial layers (of layer_h) closing the floor holes from below, so the floor's first bridge layer has no floating rims; punch out after printing (0 = open)
 
