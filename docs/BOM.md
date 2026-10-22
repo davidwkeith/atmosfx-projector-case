@@ -12,7 +12,7 @@ Amazon cart placed or about to be: 12 SKUs, $145.32 with tax (checkout PDF). Row
 
 **Still to buy**
 - Safety-critical: the brick, its cord, the Y-splitter, and the weatherproof connection box.
-- Fasteners: M5 button-head bolts (owner has them), the M3 knurled thumbscrew, and (unless the hot-shoe slot works) the 1/4-20 insert and stud.
+- Fasteners: M5 button-head bolts (owner has them) and the M3 knurled thumbscrew.
 - Pi fan parts (added 2026-10-15): the 30 mm fan, a heatsink, BC337, 1N5819, M2.5 x 16 screws and nuts, plus a Dupont crimp kit and heat-shrink for the header leads (added 2026-10-21) (see "Sensors, control"). Not ordered.
 - Everything else outside the cart: the Pi, DigiAMP+, microSD, PIR, speakers and wire, HDMI cable and right-angle adapter, the 3.5 x 5 in frame, foam tape, silicone, screen, paint, filament.
 
