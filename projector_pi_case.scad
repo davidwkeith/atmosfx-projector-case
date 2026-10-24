@@ -1,4 +1,5 @@
 // Ground-standing projector + Raspberry Pi 3 case: rain-proof (not sealed), ventilated
+// v0.17 - rib feet (rib_foot_w, rib_foot_t): every foot rib flares to 10 mm on the bed with a 45 deg chamfer up to the 4 mm rib (outer ribs flare inward only), after base_front's corners lifted 6 mm
 // v0.16 - base tiles back to 0.20 mm layers (layer_h 0.3 -> 0.2: window-rib gap, floor-hole skin) after a 0.30 base_rear split above the floor; ear_layers 2 -> 3 keeps the ears 0.6 mm
 // v0.15 - window ribs 0.8 -> 4 mm thick (win_rib_t): PrusaSlicer flagged the 73 mm tall 0.8 mm ribs as a thin fragile part; cut them out after printing
 // v0.14 - PIR hood raised: its 45 deg underside started 6 mm below the top of the dome, so the dome could not pass through (found by the new pir clash pair);
@@ -202,6 +203,8 @@ bed = [250, 210, 210];   // print volume; every tile is asserted to fit (either 
 max_bridge = 30;         // longest unsupported bridge under the floor
 ears = true;             // mouse ears against warping (cut or peel off after printing): base tiles on every foot-rib end, lid tiles and hatch cover on their corners
 ear_d = 18;              // ear diameter: half of each ear lies inside the tile, so only the outer ribs' ears widen it in X; ribs 20 mm apart, so 20 would make neighbouring ears touch (non-manifold)
+rib_foot_w = 10;         // foot ribs' width on the bed: the 4 mm ribs flare to this with a 45 deg chamfer (outer ribs inward only), against warping (base_front's corners lifted 6 mm at Z 7, 2026-10-24)
+rib_foot_t = 0.6;        // flat height of that flare before the chamfer starts
 ear_layers = 3;          // ear thickness in layers of layer_h: 0.6 mm, so 3 layers on the base tiles and hatch cover (0.20 mm) and 2 on the lid tiles (0.30 mm)
 win_rib_t = 4;           // window ribs' thickness: they hold up the window's top bridge while printing; under 4 mm PrusaSlicer flags them (73 mm tall) as a thin fragile part
 split_test_d = 50;       // split_test: depth of the strip cut from the back of base_rear (full width, so the floor shrinks over the real 231 mm)
@@ -478,6 +481,13 @@ module base_all(ribs=true) {
       if (stakes) for (p=stake_pts) translate([p[0], p[1], z_floor-0.1]) cylinder(d=stake_d+5, h=stake_collar+0.1);
       for (p = cord_screws) translate([p[0], y_back - cord_boss, p[1]]) rotate([-90, 0, 0]) cylinder(d=8, h=cord_boss + 0.01);   // pilot bosses for the cord clamp
       for (x=ribs_x) translate([x-rib_t/2, y_front, 0]) cube([rib_t, out_d, foot_h+0.1]);   // feet
+      for (x=ribs_x) let(fl = (rib_foot_w-rib_t)/2,   // rib feet: wider on the bed, 45 deg up to the rib
+                         el = x < -inner_w/2 ? 0 : x > inner_w/2 ? 2*fl : fl,
+                         er = x < -inner_w/2 ? 2*fl : x > inner_w/2 ? 0 : fl)
+        hull() {
+          translate([x-rib_t/2-el, y_front, 0]) cube([rib_t+el+er, out_d, rib_foot_t]);
+          translate([x-rib_t/2, y_front, 0]) cube([rib_t, out_d, rib_foot_t+max(el, er)]);
+        }
       translate([-inner_w/2, y_div, z_floor-0.1]) cube([inner_w, div_t, base_h-z_floor+0.1]);   // divider
       for (sx=[-1,1], sy=[-1,1]) translate([ped_x+sx*35, ped_y+sy*25, z_floor-0.1]) cylinder(d=9, h=boss_h+0.1);
       for (sx=[-1,1], y=lid_screw_ys) hull() {   // lid screw blocks inside the wall tops, 45 deg underside
