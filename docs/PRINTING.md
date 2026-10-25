@@ -43,22 +43,22 @@ After any change: `make parts`, then `scripts/check_clash.sh`. If you changed a 
 
 | Part | Qty | Time | Material, weight | Notes |
 |---|---|---|---|---|
-| `fit_coupon` | 1 | 1 h 32 m | ASA 16 g | **Print first.** Test inserts, pilots, the keyhole on an M5 bolt, the frame glazing in its slot, the ball head's hot-shoe adapter in its T-slot |
+| `fit_coupon` | 1 | 1 h 34 m | PETG 19 g | **Print first.** Test inserts, pilots, the keyhole on an M5 bolt, the frame glazing in its slot, the ball head's hot-shoe adapter in its T-slot |
 | `pedestal` | 1 | 1 h 36 m | PETG 27 g | Hot-shoe T-slot on top for the ball head's adapter. The coupon passed in an earlier material; check the adapter can't wobble once the ring is tight |
 | `window_frame` | 1 | 1 h 18 m | PETG 20 g | |
-| `hatch_cover` | 1 | 2 h 25 m | ASA 39 g | Mouse ears at the four corners. The one printed 2026-10-16 has none |
+| `hatch_cover` | 1 | 2 h 35 m | PETG 46 g | Mouse ears at the four corners |
 | `sled_pi3` / `pi4` / `pi5` / `zero2w` | 1 | 1 h 7 m to 1 h 28 m | PETG 18-20 g | The one for your Pi. Pi 3/4 (1 h 28 m, 20 g) carry the upright fan plate; it prints standing, the diamond intake needs no supports |
 | `vent_cap` | 1 | 12 m | PETG 2 g | Pi-zone louver |
 | `intake_cap` | 1 | 14 m | PETG 3 g | Rear inlet bank, wall-mounted |
 | `exhaust_cap` | 1 | 21 m | PETG 4 g | Front exhaust bank; the opening is about 74 x 58 mm, the biggest of the three caps |
 | `ir_holder` | 0-1 | 10 m | PETG 1 g | Only for the relay + IR fallback |
 | `power_shelf` | 1 | 2 h 28 m | PETG 47 g | Prints flat. Carries the brick (provisional envelope) |
-| `cord_clamp` | 1 | 43 m | ASA 9 g | Both halves in one print, flat, wall-face down. Holds the AC cord at the rear-wall opening |
-| `lid_rear` | 1 | 6 h 2 m | ASA 137 g | 0.30mm DRAFT, tile settings and mouse ears (7 h 37 m, 124 g at 0.20mm SPEED). The one printed 2026-10-16 used the stock 0.20mm SPEED profile (6 h 21 m, 95 g) |
-| `lid_front` | 1 | 9 h 49 m | ASA 215 g | 0.30mm DRAFT, tile settings, mouse ears and the 1.5 mm brim (12 h 17 m, 198 g at 0.20mm SPEED) |
-| `base_rear` | 1 | 25 h 23 m | **PETG** 405 g | 0.20mm SPEED, `slicer/petg_base.ini`, mouse ears and rib feet (v0.17; PETG since 2026-10-25, see below) |
-| `base_front` | 1 | **54 h 38 m** | **PETG** 924 g | 0.20mm SPEED, `slicer/petg_base.ini`, mouse ears, rib feet and 4 mm window ribs (v0.17; PETG since 2026-10-25; 36 h 8 m, 787 g at 0.30mm DRAFT with `layer_h = 0.3`) |
-| **Total** | | **about 107 h** | **ASA about 0.4 kg, PETG about 1.45 kg** | With the base tiles in PETG (2026-10-25), `base_front` alone takes 924 g: a fresh 1 kg PETG spool for it, a second for `base_rear` (405 g) and the inside parts (about 125 g). The ASA already spent on failed tiles (about 0.9 kg) leaves enough for the lid tiles. The tile settings (7 perimeters, 25% infill, 7 top layers) add about 0.5 kg over the stock profile. ASA is less dense than PETG, so the same part weighs about 15% less. |
+| `cord_clamp` | 1 | 44 m | PETG 11 g | Both halves in one print, flat, wall-face down. Holds the AC cord at the rear-wall opening |
+| `lid_rear` | 1 | 6 h 32 m | PETG 162 g | 0.30mm DRAFT, tile settings and mouse ears |
+| `lid_front` | 1 | 10 h 31 m | PETG 255 g | 0.30mm DRAFT, tile settings, mouse ears and the 1.5 mm brim |
+| `base_rear` | 1 | 25 h 23 m | PETG 405 g | 0.20mm SPEED, tile settings, mouse ears and rib feet (v0.17) |
+| `base_front` | 1 | **54 h 38 m** | PETG 924 g | 0.20mm SPEED, tile settings, mouse ears, rib feet and 4 mm window ribs (v0.17) |
+| **Total** | | **about 110 h** | **PETG about 1.95 kg** | One `sled` and `ir_holder` counted, `split_test` not (7 h 39 m, 121 g). About 1.8 kg is the outside colour (`base_front` alone is 924 g) and 0.15 kg black for the inside parts: three 1 kg spools leave room for one failed small part, not a failed tile. The tile settings (7 perimeters, 25% infill, 7 top layers) add about 0.5 kg over the stock profile. |
 
 ## Order, on one printer
 
@@ -71,17 +71,17 @@ The small parts first, so any fit problem shows up before a 55-hour print. Every
 
 | Step | Print | Time | Why here |
 |---|---|---|---|
-| 1 | `fit_coupon`, then fix any tolerance in the SCAD and re-export | 1 h 32 m | Cheapest way to find a fit problem |
+| 1 | `fit_coupon`, then fix any tolerance in the SCAD and re-export | 1 h 34 m | Cheapest way to find a fit problem |
 | 2 | `pedestal`, `window_frame`, `hatch_cover` | about 5 h 15 m | Small, critical, and quick to reprint |
 | 3 | `base_front` | **54 h 38 m** | The longest print and the one that gates assembly. Start it as soon as the coupon checks out, ideally on a weekend, and watch the first layers |
 | 4 | `sled`, caps, `ir_holder` (if used), `cord_clamp` | about 3 h | Small fillers; the bed is free between the big prints |
 | 5 | `base_rear` | 25 h 23 m | |
-| 6 | `lid_front`, `lid_rear` | about 16 h | The lid is only needed at closing time, so it goes last |
+| 6 | `lid_front`, `lid_rear` | about 17 h | The lid is only needed at closing time, so it goes last |
 | 7 | `power_shelf` | 2 h 28 m | After BRINGUP row 4 (see below); slot it in wherever that lands |
 
 **Hold `power_shelf` and `base_rear` until BRINGUP row 4 has set `brick`, `cord_*` and the brick's placement; the provisional layout puts the brick across the cord opening and cannot be assembled.** The Parts table shows what the provisional model slices to, not what to print yet.
 
-About 107 h of printing, about 97 h of it still to go (everything but the parts printed so far, with `base_rear` reprinted): 4 days of machine time and 7-8 days of calendar time with plate changes and sleep, if nothing fails. A failed `base_front` costs the most: watch its first layers.
+About 110 h of printing, all still to go in PETG: 4.5 days of machine time and 7-8 days of calendar time with plate changes and sleep, if nothing fails. A failed `base_front` costs the most: watch its first layers.
 
 ## After printing
 

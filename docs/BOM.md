@@ -82,8 +82,8 @@ Amazon cart placed or about to be: 12 SKUs, $145.32 with tax (checkout PDF). Row
 
 | Item | Notes | Buy |
 |---|---|---|
-| Inland ASA Army Green, 2 x 1 kg | **Chosen (2026-10-15).** Outside parts: base and lid tiles, `hatch_cover`, `cord_clamp`, `fit_coupon`. They slice to about 1.5 kg with the ASA tile settings (PRINTING.md), about 1.7 kg with the first `base_rear` (to be reprinted), so two spools leave nothing for a failed `base_front` (782 g): buy a third | [Micro Center: Inland ASA Army Green](https://www.microcenter.com/product/660561/inland-175mm-army-green-asa-3d-printer-filament-1kg-spool-%2822-lbs%29?storeid=195) |
-| Inland PETG Black, 2 x 1 kg | **Chosen (2026-10-15); a second spool from 2026-10-25.** Inside parts: `pedestal`, `window_frame`, sled, screen caps, `ir_holder`, `power_shelf` (about 125 g), and since 2026-10-25 both base tiles (`base_front` 924 g, `base_rear` 405 g) after ASA lifted off the bed: about 1.45 kg in all | [Micro Center: Inland PETG Black](https://www.microcenter.com/product/503745/inland-175mm-petg-3d-printer-filament-1kg-carboard-spool-(22-lbs)-black?storeid=195) |
+| PETG in the outside colour, 2 x 1 kg | **Chosen (2026-10-25).** Outside parts: base and lid tiles, `hatch_cover`, `cord_clamp`, `fit_coupon`: about 1.8 kg with the tile settings (PRINTING.md), `base_front` alone 924 g. Any colour; a muted green blends in best | Same Inland PETG line as the black below, in the colour you want |
+| Inland PETG Black, 1 kg | **Chosen (2026-10-15).** Inside parts: `pedestal`, `window_frame`, sled, screen caps, `ir_holder`, `power_shelf` (about 150 g) | [Micro Center: Inland PETG Black](https://www.microcenter.com/product/503745/inland-175mm-petg-3d-printer-filament-1kg-carboard-spool-(22-lbs)-black?storeid=195) |
 | Foam tape, 2 mm (lid rim) and 1.5 mm (hatch) | | [Amazon: EPDM 2 x 20 mm, 10 m](https://www.amazon.com/dp/B0DFXQS5BL); [Amazon: 1/16 in (1.5 mm) x 1 in, 33 ft](https://www.amazon.com/dp/B08HV48WQV) |
 | Neutral-cure outdoor silicone | Base seam, pane, PIR dome | [Amazon: GE Advanced Silicone 2, clear, 2.8 oz](https://www.amazon.com/dp/B001JK5R0I) |
 | Insect screen, mosquito grade (about 18 x 16 mesh) | Caps | [Amazon: fiberglass window screen, charcoal](https://www.amazon.com/dp/B0CP2PY26C) (any hardware store roll works) |
@@ -99,7 +99,7 @@ Printing takes about 4 days on one printer (a week of calendar time) and bring-u
 |---|---|---|
 | Picture frame (glazing) | Same day at a craft or discount store, or a few days from Amazon | Any time |
 | Zero 2 W (if used) | 2-5 days | Now |
-| Filament (2 x 1 kg Inland ASA Army Green, 1 kg Inland PETG Black), fasteners, wire, silicone, screen | 1-3 days | Now |
+| Filament (2 x 1 kg PETG in the outside colour, 1 kg Inland PETG Black), fasteners, wire, silicone, screen | 1-3 days | Now |
 
 Micro Center Santa Clara had the Pi boards, DigiAMP+, microSD, filament, PIR, relay, IR board, insert kit, hook-up wire, thin HDMI cable and cable ties in stock on 2026-10-05, so one trip covers those.
 
@@ -118,5 +118,5 @@ These are estimates from typical retail prices, not quotes; check current prices
 | Power parts (brick, cord, Y-splitter, wire, connection box) | 45-70 |
 | Acrylic pane | 10-25 |
 | Inserts, screws, foam, silicone, screen, paint | 30-50 |
-| Filament: 2 kg ASA, 1 kg PETG | 45-60 |
+| Filament: 3 kg PETG | 45-60 |
 | **Total** | **about 300-520** |
