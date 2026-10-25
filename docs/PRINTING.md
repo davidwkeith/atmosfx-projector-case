@@ -51,7 +51,7 @@ After any change: `make parts`, then `scripts/check_clash.sh`. If you changed a 
 | `vent_cap` | 1 | 12 m | PETG 2 g | Pi-zone louver |
 | `intake_cap` | 1 | 14 m | PETG 3 g | Rear inlet bank, wall-mounted |
 | `exhaust_cap` | 1 | 21 m | PETG 4 g | Front exhaust bank; the opening is about 74 x 58 mm, the biggest of the three caps |
-| `ir_holder` | 0-1 | 10 m | PETG 1 g | Only for the relay + IR fallback |
+| `ir_holder` | 1 | 10 m | PETG 1 g | Needed: the projector has no CEC (BRINGUP row 9, 2026-10-25), so the IR LED sends its power code |
 | `power_shelf` | 1 | 2 h 28 m | PETG 47 g | Prints flat. Carries the brick (provisional envelope) |
 | `cord_clamp` | 1 | 44 m | PETG 11 g | Both halves in one print, flat, wall-face down. Holds the AC cord at the rear-wall opening |
 | `lid_rear` | 1 | 6 h 32 m | PETG 162 g | 0.30mm DRAFT, tile settings and mouse ears |
@@ -74,7 +74,7 @@ The small parts first, so any fit problem shows up before a 55-hour print. Every
 | 1 | `fit_coupon`, then fix any tolerance in the SCAD and re-export | 1 h 34 m | Cheapest way to find a fit problem |
 | 2 | `pedestal`, `window_frame`, `hatch_cover` | about 5 h 15 m | Small, critical, and quick to reprint |
 | 3 | `base_front` | **54 h 38 m** | The longest print and the one that gates assembly. Start it as soon as the coupon checks out, ideally on a weekend, and watch the first layers |
-| 4 | `sled`, caps, `ir_holder` (if used), `cord_clamp` | about 3 h | Small fillers; the bed is free between the big prints |
+| 4 | `sled`, caps, `ir_holder`, `cord_clamp` | about 3 h | Small fillers; the bed is free between the big prints |
 | 5 | `base_rear` | 25 h 23 m | |
 | 6 | `lid_front`, `lid_rear` | about 17 h | The lid is only needed at closing time, so it goes last |
 | 7 | `power_shelf` | 2 h 28 m | After BRINGUP row 4 (see below); slot it in wherever that lands |

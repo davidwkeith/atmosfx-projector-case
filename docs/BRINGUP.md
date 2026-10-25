@@ -10,6 +10,8 @@ Everything below has only been tested in software. Work through it on the bench 
 - **Printed (owner, 2026-10-16, before the switch to PETG):** `hatch_cover`, `cord_clamp`, `lid_rear`. None is fitted yet (no base tile). The hatch keyholes match the coupon's, which passed on the M5 bolts; the clamp's channel uses `cord_d` 9, a guess until row 4.
 - **Fit coupon, part of row 1 (owner, 2026-10-15).** The M5 hatch fit (bolt in the keyhole, heat-set insert in `stud_insert_d` 6.4), the M3 heat-set insert (`m3_insert_d` 4.0) and the 3.5 x 5 in frame glazing in its slot (`pane_t` + 0.5) all fit as modelled: no parameter changes. Later the same day the rest of the coupon passed too: the 1/4-20 insert (`insert_d` 8.2), screws in the M3/M2.5/M2 pilots, and the UTEBIT hot-shoe adapter in the T-slot (holds with the ring tight). Still open from row 1: the 118 mm strip's measured length (`coupon.strip_len`) for the shrink check, The pedestal now uses the same T-slot (`ped_mount`, 2026-10-15).
 
+- **Bench results (owner, 2026-10-25).** The brick (Auplf, 24 V 6 A) is here; measurements for row 4 still to come. **Row 4a passes:** the projector runs from the brick with no problem. **Row 9 fails:** the projector does not answer HDMI-CEC, so the relay + IR fallback has to be built (`Projector power` = `relay-ir`; relay on the projector's + DC leg, IR LED on GPIO 16 through 150 R in `ir_holder`, power code learned with the bench TSOP38238; see [projector.md](../pi/docs/projector.md) and [WIRING.md](WIRING.md)). **Row 6 passes:** the Pi image boots and plays.
+
 ## Before the big prints
 
 | # | Test | Pass | If not |
