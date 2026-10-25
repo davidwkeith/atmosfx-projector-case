@@ -1,4 +1,6 @@
 // Ground-standing projector + Raspberry Pi 3 case: rain-proof (not sealed), ventilated
+// v0.19 - cord opening 40 x 40 (cord_dz 33) for the captive cord's 3-pin plug;
+//         brick calipered (135 x 57 x 46) and placed AC end left with room for the plug and the cord's turn (ac_plug_l, ac_bend); cord opening to cord_x -80; cord_d 6
 // v0.18 - base tiles back to 0.30 mm layers in PETG (layer_h 0.2 -> 0.3; ear_layers 3 -> 2 keeps the ears 0.6 mm), about 26 h less
 // v0.17 - rib feet (rib_foot_w, rib_foot_t): every foot rib flares to 10 mm on the bed with a 45 deg chamfer up to the 4 mm rib (outer ribs flare inward only), after base_front's corners lifted 6 mm
 // v0.16 - base tiles back to 0.20 mm layers (layer_h 0.3 -> 0.2: window-rib gap, floor-hole skin) after a 0.30 base_rear split above the floor; ear_layers 2 -> 3 keeps the ears 0.6 mm
@@ -113,18 +115,21 @@ hatch_lock = true;   // optional M3 (security) screw through the cover's bottom 
 shelf_z = 60;       // power shelf height above floor: clears the tallest sled stack (asserted)
 ledge_w = 9;        // shelf ledge on the side walls
 tie_gap = 34;       // zip-tie slot spacing across the shelf (module sits between)
-cord_x = -75;       // centre of the AC cord opening in the rear wall: the opening, its bosses and the clamp all have to sit inside the left wall (asserted)
-cord_dz = 30;       // opening centre above the shelf's top face: the clamp's lower screws clear the shelf, the clamp's top clears the lid skirt (asserted)
-cord_open = [40, 30];   // rear-wall opening [X, Z]: passes a molded IEC plug (a C13 body is about 28 x 21 mm) with room; the clamp covers it
-cord_d = 9;             // AC cord jacket diameter: PROVISIONAL, measure the cord you use
+cord_x = -80;       // centre of the AC cord opening (beside the brick's AC end) in the rear wall: the opening, its bosses and the clamp all have to sit inside the left wall (asserted)
+cord_dz = 33;       // opening centre above the shelf's top face: the clamp's lower screws clear the shelf, the clamp's top clears the lid skirt (asserted)
+cord_open = [40, 40];   // rear-wall opening [X, Z]: the brick's captive AC cord threads out through it, so it must pass the 3-pin wall plug (about 30 mm, owner 2026-10-25); the clamp covers it
+cord_d = 6;             // AC cord jacket diameter (owner, 2026-10-25)
 clamp_t = 6;            // clamp half thickness
 clamp_flange = 10;      // each half overlaps the opening by this much all round
 cord_boss = 5;          // pilot bosses inside the wall, at the clamp's four screws (must stay <= brick_gap, or they hit the brick: checked)
 // Supply (spec 2026-10-06, rev 2): the Auplf XGM-2406 24 V 6 A desktop brick lies on the shelf under a velcro strap, fed by a
 // standard cord that plugs into its AC inlet; its DC cord goes uncut into a 5.5 x 2.5 mm Y-splitter. The stock 21 V adapter is
 // retired from the case. Its size is the Amazon listing's (2026-10-12), not yet calipered.
-brick = [170, 71, 41];   // PROVISIONAL (Amazon listing: 6.7 x 2.8 x 1.6 in): length along X, width along Y, height. Caliper the real one (Task 7)
-brick_gap = 5;           // PROVISIONAL strap gap only between the brick and the rear wall; 5 mm cannot hold the connector and its cord bend. The real cord path and placement are set in BRINGUP row 4 / plan Task 7
+brick = [135, 57, 46];   // calipered (owner, 2026-10-25): length along X, width along Y, height
+brick_gap = 5;           // strap gap between the brick and the rear wall
+ac_plug_l = 20;          // the captive AC cord's molded strain relief (12 x 12 mm), centred on the brick's left end (owner, 2026-10-25)
+dc_plug_l = 20;          // the DC cord's strain relief, out of the right end low and off-centre: lay the brick so it is toward the shelf's front edge, away from the PIR
+ac_bend = 3*cord_d;      // room past the plug for the cord to turn back to the rear-wall opening
 wire_slot = [20, 14];    // shelf slot for the DigiAMP+ leg and the PIR wires: the DC barrel plug (about 11 x 16) must pass; check with the real splitter
 
 /* [Audio] */
@@ -298,7 +303,7 @@ assert(pi_fan_x0 - pi_fan_t >= sled_x[0] - 0.01, "the Pi fan bracket hangs off t
 assert(pi_cy + pi_fan_dy + pi_fan[0]/2 + 5 <= sled_pts[2][1], "the Pi fan crowds the sled thumbscrew: lower pi_fan_dy");
 shelf_w = inner_w - 1;
 shelf_d = pi_zone_d - 1;
-brick_x0 = -shelf_w/2 + 3;                 // the brick's left end, against the left wall side of the shelf
+brick_x0 = -shelf_w/2 + ac_plug_l + ac_bend;   // the brick's left end (AC inlet), leaving room for the plug and the cord's turn; DC cord out the right end
 brick_y0 = shelf_d - brick[1] - brick_gap; // its front edge: it sits toward the rear wall
 
 lid_w = out_w + 2*(lid_clr + wall);
@@ -321,6 +326,7 @@ assert(cord_z + clamp_h/2 <= lid_z0 - 2, "lower cord_dz: the cord clamp runs int
 assert(cord_d >= 5 && cord_d <= cord_open[1] - 6, "cord_d: measure the cord; it must fit the opening and the clamp channel");
 assert(brick_x0 + brick[0] + 3 <= pir_x - 6, "the brick runs into the PIR / wire slot: measure it, or shorten it");
 assert(brick_y0 >= 0 && brick[1] + brick_gap <= shelf_d, "the brick is deeper than the shelf");
+assert(cord_x - cord_open[0]/2 <= brick_x0 - ac_plug_l && cord_x + cord_open[0]/2 >= -shelf_w/2 + 6, "the cord opening must sit beside the brick's AC end, where the plugged-in cord turns back to the wall: move cord_x");
 assert(shelf_zz + 3 + brick[2] + 2 <= lid_z0, "the brick hits the lid skirt: raise top_air (or lower shelf_z)");
 assert(pane_top_clear >= pane_t + clearance + 2.5, "raise pane_top_clear: the rebate's 45 deg ceiling would cut through the base rim");
 
@@ -537,6 +543,8 @@ module power_shelf() {
 // The brick's envelope on the shelf (shelf coordinates): preview ghost and clash keep-out
 module brick_env() {
   translate([brick_x0, brick_y0, 3]) cube(brick);
+  translate([brick_x0 - ac_plug_l, brick_y0 + brick[1]/2 - 7, 3 + brick[2]/2 - 7]) cube([ac_plug_l + 0.1, 14, 14]);   // AC cord's strain relief, centred on the left end
+  translate([brick_x0 + brick[0] - 0.1, brick_y0 + 3, 3 + 3]) cube([dc_plug_l + 0.1, 14, 14]);   // DC cord's strain relief, low and toward the front on the right end
 }
 
 // The PIR as fitted (preview ghost, clash keep-out): board on the lens frame inside the rear wall, dome through the wall.

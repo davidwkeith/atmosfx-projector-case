@@ -10,7 +10,7 @@ One diagram per side of the power shelf: [AC supply](#ac-supply) (the cord, the 
 
 ## AC supply
 
-![AC supply schematic: GFCI outlet, standard AC cord through the cord clamp into the 24 V brick's inlet; the brick's DC cord out](wiring-hv.svg)
+![AC supply schematic: GFCI outlet, the brick's captive AC cord through the cord clamp into the 24 V brick; the brick's DC cord out](wiring-hv.svg)
 
 ```mermaid
 flowchart LR
@@ -24,22 +24,22 @@ flowchart LR
     CLAMP["Cord clamp<br/>grips the jacket, foam gasket"]
   end
   subgraph SHELF["Power shelf"]
-    BRICK["Auplf brick<br/>24 V 6 A, 144 W<br/>cord plugs into its inlet"]
+    BRICK["Auplf brick<br/>24 V 6 A, 144 W<br/>captive AC and DC cords"]
   end
-  GFCI -- "standard cord, molded plugs, not cut" --> BOX --> LOOP --> CLAMP --> BRICK
+  GFCI -- "the brick's own AC cord, molded plug, not cut" --> BOX --> LOOP --> CLAMP --> BRICK
   BRICK -- "24 V DC cord, not cut" --> DC["Y-splitter (below)"]
 ```
 
-Nothing is hand-wired on the AC side: no stripped conductors, no spade terminals, no fuse holder. The cord's molded connector goes straight into the brick's inlet.
+Nothing is hand-wired on the AC side: no stripped conductors, no spade terminals, no fuse holder. The brick's AC cord is captive (molded into the brick, 6 mm jacket); only its wall plug is a joint.
 
 1. **Supply.** Plug into an outdoor GFCI outlet with an in-use weatherproof cover and test its button. Keep every plug-and-socket joint off the ground and out of puddles, in the weatherproof connection box.
-2. **The cord.** A standard detachable cord with the right connector for the brick's inlet (read the inlet type off the brick's label: IEC C8, C14, C6 and so on). It is **not outdoor-rated**: the owner accepts that for the Halloween 2026 run (about a month outside) and replaces it if the jacket is damaged. Inspect the whole length daily; unplug and replace at the first nick, crack or soft spot.
-3. **Entry.** The connector passes through the opening in the rear wall into the case and plugs into the brick; then the two halves of the cord clamp close round the jacket over a 2 mm foam gasket and screw into the wall's bosses (4x M3 x 16 self-tapping). The clamp is meant to take the pull; prove it with BRINGUP row 17a before the lid goes on. Leave a drip loop outside, below the clamp. Pull test before the lid goes on: a firm tug along and across the cord must not move the connector in the brick (BRINGUP row 17a).
-4. **The brick** lies on the shelf under a velcro strap through the shelf slots, toward the rear wall. Its DC cord is not cut.
-5. **No AC fuse.** There is no hand-wired AC conductor left to protect: the cord and brick are molded parts. The brick must be UL/ETL listed (check its label) and has its own protection, and the GFCI/branch breaker is upstream. If you would rather have one, buy an inline-fused cord for the brick's inlet type.
-6. **Earth.** If the brick has a 3-pin inlet, use the 3-wire cord. A 2-pin Class II inlet needs none.
+2. **The cord.** The brick's own captive AC cord; nothing to buy. It is **not outdoor-rated**: the owner accepts that for the Halloween 2026 run (about a month outside) and replaces it if the jacket is damaged. Inspect the whole length daily; unplug and replace at the first nick, crack or soft spot.
+3. **Entry.** With the brick inside, thread the cord's wall plug out through the opening in the rear wall (40 x 40 mm, sized for its 3-pin plug); then the two halves of the cord clamp close round the jacket over a 2 mm foam gasket and screw into the wall's bosses (4x M3 x 16 self-tapping). The clamp is meant to take the pull; prove it with BRINGUP row 17a before the lid goes on. Leave a drip loop outside, below the clamp. Pull test before the lid goes on: a firm tug along and across the cord must not move the brick or its strain relief (BRINGUP row 17a).
+4. **The brick** lies on the shelf under a velcro strap through the shelf slots, toward the rear wall, AC end to the left wall and its DC cord (captive, not cut) toward the shelf's front edge. It is labelled **"For indoor use only"**: it lives inside the rain-shedding case, never outside it.
+5. **No AC fuse.** There is no hand-wired AC conductor left to protect: the cord and brick are molded parts. The brick is CSA C/US marked (label, 2026-10-25; confirm the model in CSA's online product listing) and has its own protection, and the GFCI/branch breaker is upstream.
+6. **Earth.** Whatever the captive cord's plug has: a 3-pin plug carries earth, a 2-pin one means a Class II brick that needs none.
 
-Mains is still present inside the printed box (the cord's connector and the brick's inlet). The shelf is plain PETG: the owner dropped flame-retardant filament (2026-10-15), since the brick's own shell is flame-retardant ABS+PC per its listing and the cords and boards around it would burn anyway.
+Mains is still present inside the printed box (the captive cord and the brick). The shelf is plain PETG: the owner dropped flame-retardant filament (2026-10-15), since the brick's own shell is flame-retardant ABS+PC per its listing and the cords and boards around it would burn anyway.
 
 ## Low-voltage side
 
@@ -126,7 +126,7 @@ Trick-or-treaters walk through the yard in the dark. Run the power cord and spea
 
 ## Protection
 
-**No AC fuse and no DC fuse in the baseline.** The AC side has no hand-wired conductor to protect (see "AC supply"). The brick limits its own output and carries its own short-circuit protection. The one place a fault could heat a wire is the Y-splitter's leads: a 6 A supply can overheat leads rated for less. The chosen splitter is 14 AWG pure copper throughout (the listing states a wire diameter of 1.63 mm and no amp rating; the barrel connectors themselves are typically good for about 5 A, and the loads are about 3 A together), so it is not the weak point. If you swap in a thinner one, it needs leads rated for 6 A or a small inline fuse in each leg sized to that leg's lead rating. The chosen brick has no UL/ETL listing (owner accepted 2026-10-12): read its label on arrival, and keep the total load under its 144 W.
+**No AC fuse and no DC fuse in the baseline.** The AC side has no hand-wired conductor to protect (see "AC supply"). The brick limits its own output and carries its own short-circuit protection. The one place a fault could heat a wire is the Y-splitter's leads: a 6 A supply can overheat leads rated for less. The chosen splitter is 14 AWG pure copper throughout (the listing states a wire diameter of 1.63 mm and no amp rating; the barrel connectors themselves are typically good for about 5 A, and the loads are about 3 A together), so it is not the weak point. If you swap in a thinner one, it needs leads rated for 6 A or a small inline fuse in each leg sized to that leg's lead rating. The brick's label shows a CSA C/US mark (2026-10-25; confirm it in CSA's listing). Keep the total load under its 144 W.
 
 ## Before first power-up
 

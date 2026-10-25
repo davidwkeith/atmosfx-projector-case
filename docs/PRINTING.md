@@ -52,17 +52,17 @@ After any change: `make parts`, then `scripts/check_clash.sh`. If you changed a 
 | `intake_cap` | 1 | 14 m | PETG 3 g | Rear inlet bank, wall-mounted |
 | `exhaust_cap` | 1 | 21 m | PETG 4 g | Front exhaust bank; the opening is about 74 x 58 mm, the biggest of the three caps |
 | `ir_holder` | 1 | 10 m | PETG 1 g | Needed: the projector has no CEC (BRINGUP row 9, 2026-10-25), so the IR LED sends its power code |
-| `power_shelf` | 1 | 2 h 28 m | PETG 47 g | Prints flat. Carries the brick (provisional envelope) |
-| `cord_clamp` | 1 | 44 m | PETG 11 g | Both halves in one print, flat, wall-face down. Holds the AC cord at the rear-wall opening |
+| `power_shelf` | 1 | 2 h 29 m | PETG 47 g | Prints flat. Carries the calipered brick (v0.19) |
+| `cord_clamp` | 1 | 49 m | PETG 13 g | Both halves in one print, flat, wall-face down. Holds the AC cord at the rear-wall opening (v0.19: taller for the 40 x 40 mm opening; the one printed 2026-10-16 no longer fits) |
 | `lid_rear` | 1 | 6 h 32 m | PETG 162 g | 0.30mm DRAFT, tile settings and mouse ears |
 | `lid_front` | 1 | 10 h 31 m | PETG 255 g | 0.30mm DRAFT, tile settings, mouse ears and the 1.5 mm brim |
-| `base_rear` | 1 | 17 h 8 m | PETG 416 g | 0.30mm DRAFT, tile settings, mouse ears and rib feet (v0.18) |
+| `base_rear` | 1 | 17 h 12 m | PETG 414 g | 0.30mm DRAFT, tile settings, mouse ears and rib feet (v0.19: calipered brick, 40 x 40 mm cord opening) |
 | `base_front` | 1 | **38 h 47 m** | PETG 971 g | 0.30mm DRAFT, tile settings, mouse ears, rib feet and 4 mm window ribs (v0.18) |
 | **Total** | | **about 86 h** | **PETG about 2 kg** | One `sled` and `ir_holder` counted, `split_test` not (5 h 34 m, 126 g). About 1.85 kg is the outside colour (`base_front` alone is 971 g) and 0.15 kg black for the inside parts: three 1 kg spools leave room for one failed small part, not a failed tile. The tile settings (7 perimeters, 25% infill, 7 top layers) add about 0.5 kg over the stock profile. |
 
 ## Order, on one printer
 
-Printed so far, before the switch to PETG: `fit_coupon`, `hatch_cover`, `cord_clamp`, `lid_rear` (2026-10-16) and an early `base_rear` (by 2026-10-21). The owner reuses `hatch_cover`, `cord_clamp` and `lid_rear` for 2026 (reprint them in PETG later). The early `base_rear` is for test-fitting only: it has the old PIR hood (the dome cannot pass) and predates the brick layout; [DESIGN_LOG.md](DESIGN_LOG.md) has what went wrong with the base tiles before PETG. `cord_clamp` and `base_rear` also came before BRINGUP row 4: if the real cord or brick changes `cord_d`, `brick` or the shelf layout, they change anyway.
+Printed so far, before the switch to PETG: `fit_coupon`, `hatch_cover`, `cord_clamp`, `lid_rear` (2026-10-16) and an early `base_rear` (by 2026-10-21). The owner reuses `hatch_cover` and `lid_rear` for 2026 (reprint them in PETG later); `cord_clamp` has to be reprinted, since v0.19's larger cord opening needs a taller clamp. The early `base_rear` is for test-fitting only: it has the old PIR hood (the dome cannot pass) and predates the brick layout; [DESIGN_LOG.md](DESIGN_LOG.md) has what went wrong with the base tiles before PETG. `cord_clamp` and `base_rear` also came before BRINGUP row 4: if the real cord or brick changes `cord_d`, `brick` or the shelf layout, they change anyway.
 
 `split_test` is an optional check before committing two days to a base tile (PETG, same profile and `slicer/tiles.ini` as the base tiles; `make parts` builds it). It is the back 50 mm of `base_rear` at full width (`split_test_d`): the same ribs, floor, rear wall, corners and stake tubes, cut 30 mm above the floor (`split_test_h`), so the floor shrinks over the real 231 mm and the walls leave it the way they do on the tile. Let it cool, then look for a crack along the first wall layers above the floor and at the corners, and try to snap a corner off by hand: layers that bonded tear through the plastic, not along a layer line. At 50 mm deep it cannot show warping across the 207 mm of `base_front`'s floor; watch the corners of the first base tile through the floor layers (Z 6-12) for that.
 
@@ -75,11 +75,11 @@ The small parts first, so any fit problem shows up before a 39-hour print. Every
 | 2 | `pedestal`, `window_frame`, `hatch_cover` | about 5 h 15 m | Small, critical, and quick to reprint |
 | 3 | `base_front` | **38 h 47 m** | The longest print and the one that gates assembly. Start it as soon as the coupon checks out, ideally on a weekend, and watch the first layers |
 | 4 | `sled`, caps, `ir_holder`, `cord_clamp` | about 3 h | Small fillers; the bed is free between the big prints |
-| 5 | `base_rear` | 17 h 8 m | |
+| 5 | `base_rear` | 17 h 12 m | |
 | 6 | `lid_front`, `lid_rear` | about 17 h | The lid is only needed at closing time, so it goes last |
 | 7 | `power_shelf` | 2 h 28 m | After BRINGUP row 4 (see below); slot it in wherever that lands |
 
-**Hold `power_shelf` and `base_rear` until BRINGUP row 4 has set `brick`, `cord_*` and the brick's placement; the provisional layout puts the brick across the cord opening and cannot be assembled.** The Parts table shows what the provisional model slices to, not what to print yet.
+**`power_shelf` and `base_rear` are cleared to print (v0.19, 2026-10-25):** the brick is calipered (135 x 57 x 46 mm) and lies with its AC inlet toward the left wall, the cord's plug and turn beside it and the rear-wall opening behind that, so the cord no longer runs into the brick.
 
 About 86 h of printing in all. Reusing the parts already printed for this year (`hatch_cover`, `cord_clamp`, `lid_rear`; owner, 2026-10-25) leaves about 74 h: `base_front`, `base_rear`, `lid_front` and the small inside parts, 3 days of machine time and 4-5 days of calendar time with plate changes and sleep, if nothing fails. A failed `base_front` costs the most: watch its first layers.
 

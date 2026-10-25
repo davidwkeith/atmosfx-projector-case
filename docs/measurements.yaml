@@ -242,23 +242,23 @@ ball_head:
     tol: 1
 
 brick:
-  # Auplf XGM-2406, 24 V 6 A 144 W, 5.5 x 2.5 mm (chosen 2026-10-12, not yet bought). BRINGUP row 4.
+  # Auplf XGM-2406, 24 V 6 A 144 W, 5.5 x 2.5 mm (in hand 2026-10-25; runs the projector, BRINGUP row 4a). BRINGUP row 4.
   brick_l:
     # Length (X on the shelf). Listing: 6.7 in.
     param: brick[0]
-    measured:
+    measured: 135
     spec: 170
     tol: 2
   brick_w:
     # Width (Y on the shelf). Listing: 2.8 in.
     param: brick[1]
-    measured:
+    measured: 57
     spec: 71
     tol: 2
   brick_h:
     # Height (Z). Listing: 1.6 in.
     param: brick[2]
-    measured:
+    measured: 46
     spec: 41
     tol: 2
   output_v:
@@ -271,17 +271,17 @@ brick:
     unit: V
   output_a:
     # Rated output current, from the label.
-    measured:
+    measured: 6
     spec: 6
     unit: A
   input_a:
     # Rated input current, from the label (no AC fuse is fitted).
-    measured:
+    measured: 1.6
     unit: A
   cord_d:
     # Outer diameter of the standard molded AC cord where it passes the rear-wall opening and the
     # clamp. PROVISIONAL in the model.
-    measured:
+    measured: 6
     tol: 0.5
   cord_open_x:
     # Cord opening in the rear wall (X). Must pass the cord's molded connector with room (a C13 body
@@ -544,10 +544,10 @@ observations:
   brick:
     polarity:
       # Centre + or centre -, from the label, then confirm with a meter.
-      answer:
+      answer: centre positive (label symbol, owner photo 2026-10-25); confirm with a meter
     ac_inlet:
       # C7 / C5 / C13 or captive cord. Buy a cord with the matching molded connector (BRINGUP row 4).
-      answer:
+      answer: captive AC cord (no inlet), centred on one end; DC cord out the opposite end, low and off-centre; each strain relief 12 x 12 mm and about 20 mm long (owner, 2026-10-25)
     listing: >-
       Claims FCC/CE/RoHS only (no UL/ETL) and mentions a cooling fan: check the label and whether the fan
       runs (BRINGUP row 4).
