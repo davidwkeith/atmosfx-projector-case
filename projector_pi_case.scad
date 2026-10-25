@@ -1,5 +1,6 @@
 // Ground-standing projector + Raspberry Pi 3 case: rain-proof (not sealed), ventilated
-// v0.19 - brick calipered (135 x 57 x 46) and placed AC end left with room for the plug and the cord's turn (ac_plug_l, ac_bend); cord opening to cord_x -80; cord_d 6
+// v0.19 - cord opening 40 x 40 (cord_dz 33) for the captive cord's 3-pin plug;
+//         brick calipered (135 x 57 x 46) and placed AC end left with room for the plug and the cord's turn (ac_plug_l, ac_bend); cord opening to cord_x -80; cord_d 6
 // v0.18 - base tiles back to 0.30 mm layers in PETG (layer_h 0.2 -> 0.3; ear_layers 3 -> 2 keeps the ears 0.6 mm), about 26 h less
 // v0.17 - rib feet (rib_foot_w, rib_foot_t): every foot rib flares to 10 mm on the bed with a 45 deg chamfer up to the 4 mm rib (outer ribs flare inward only), after base_front's corners lifted 6 mm
 // v0.16 - base tiles back to 0.20 mm layers (layer_h 0.3 -> 0.2: window-rib gap, floor-hole skin) after a 0.30 base_rear split above the floor; ear_layers 2 -> 3 keeps the ears 0.6 mm
@@ -115,8 +116,8 @@ shelf_z = 60;       // power shelf height above floor: clears the tallest sled s
 ledge_w = 9;        // shelf ledge on the side walls
 tie_gap = 34;       // zip-tie slot spacing across the shelf (module sits between)
 cord_x = -80;       // centre of the AC cord opening (beside the brick's AC end) in the rear wall: the opening, its bosses and the clamp all have to sit inside the left wall (asserted)
-cord_dz = 30;       // opening centre above the shelf's top face: the clamp's lower screws clear the shelf, the clamp's top clears the lid skirt (asserted)
-cord_open = [40, 30];   // rear-wall opening [X, Z]: passes a molded IEC plug (a C13 body is about 28 x 21 mm) with room; the clamp covers it
+cord_dz = 33;       // opening centre above the shelf's top face: the clamp's lower screws clear the shelf, the clamp's top clears the lid skirt (asserted)
+cord_open = [40, 40];   // rear-wall opening [X, Z]: the brick's captive AC cord threads out through it, so it must pass the 3-pin wall plug (about 30 mm, owner 2026-10-25); the clamp covers it
 cord_d = 6;             // AC cord jacket diameter (owner, 2026-10-25)
 clamp_t = 6;            // clamp half thickness
 clamp_flange = 10;      // each half overlaps the opening by this much all round
