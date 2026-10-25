@@ -93,9 +93,9 @@ def draw_hv(path):
     d.add(elm.Line().at((x_cord, yE)).to((x_wall, yE)).color(EARTH).linestyle('--'))
     note(d, (x_cord + 0.15, yL + 0.2), 'L  inside the molded cord', halign='left', color=LIVE)
     note(d, (x_cord + 0.15, yN + 0.2), 'N  inside the molded cord', halign='left', color=NEUTRAL)
-    note(d, (x_cord + 0.15, yE + 0.5), 'E  inside the molded cord\n(if the inlet has earth)', halign='left', color=EARTH)
+    note(d, (x_cord + 0.15, yE + 0.5), 'E  inside the molded cord\n(if the plug has earth)', halign='left', color=EARTH)
     note(d, (x_wall - 5.0, 2.8),
-         "Standard cord with the brick's molded plug, not cut. Not outdoor-rated:\n"
+         "The brick's captive AC cord, molded plug, not cut. Not outdoor-rated:\n"
          'owner accepts it for Halloween 2026; inspect daily, replace if damaged.\n'
          'Every plug joint in a weatherproof box, off the ground. Drip loop.')
 
@@ -106,7 +106,7 @@ def draw_hv(path):
     note(d, (x_wall - 0.4, 3.7), 'OUTSIDE', halign='right')
     note(d, (x_wall + 0.4, 3.7), 'INSIDE: power shelf', halign='left')
 
-    # the brick: the cord's molded plug goes straight into its inlet; nothing hand-wired
+    # the brick: its AC cord is captive; nothing hand-wired
     x_br = 11.8
     d.add(elm.Line().at((x_wall + 0.3, yL)).to((x_br, yL)).color(LIVE))
     d.add(elm.Line().at((x_wall + 0.3, yN)).to((x_br, yN)).color(NEUTRAL))
@@ -117,7 +117,7 @@ def draw_hv(path):
                    pin('E', 'L', 'E', pos=0.5 + (yE - yN) / (H - 1)),
                    pin('+', 'R', 'pos', pos=0.7), pin('-', 'R', 'neg', pos=0.3)],
                   size=(4.4, H)).at((x_br, yN)).anchor('N')
-               .label('Auplf brick\n24 V 6 A, 144 W\nAC inlet (type: read the label)', fontsize=FSS))
+               .label('Auplf brick\n24 V 6 A, 144 W\ncaptive AC cord; indoor only', fontsize=FSS))
     d.add(elm.Line().at(br.pos).right(1.6).color(POS))
     d.add(elm.Line().at(br.neg).right(1.6).color(NEG))
     note(d, (br.pos[0] + 1.7, br.pos[1]), '24 V +', halign='left', color=POS, fontsize=FS)

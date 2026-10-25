@@ -271,12 +271,12 @@ brick:
     unit: V
   output_a:
     # Rated output current, from the label.
-    measured:
+    measured: 6
     spec: 6
     unit: A
   input_a:
     # Rated input current, from the label (no AC fuse is fitted).
-    measured:
+    measured: 1.6
     unit: A
   cord_d:
     # Outer diameter of the standard molded AC cord where it passes the rear-wall opening and the
@@ -544,10 +544,10 @@ observations:
   brick:
     polarity:
       # Centre + or centre -, from the label, then confirm with a meter.
-      answer:
+      answer: centre positive (label symbol, owner photo 2026-10-25); confirm with a meter
     ac_inlet:
       # C7 / C5 / C13 or captive cord. Buy a cord with the matching molded connector (BRINGUP row 4).
-      answer: inlet on one end, DC cord out the opposite end; the cord's molded connector is 12 x 12 mm and sticks out about 20 mm with its strain relief (owner, 2026-10-25)
+      answer: captive AC cord (no inlet), centred on one end; DC cord out the opposite end, low and off-centre; each strain relief 12 x 12 mm and about 20 mm long (owner, 2026-10-25)
     listing: >-
       Claims FCC/CE/RoHS only (no UL/ETL) and mentions a cooling fan: check the label and whether the fan
       runs (BRINGUP row 4).
