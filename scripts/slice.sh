@@ -5,9 +5,8 @@
 #   scripts/slice.sh --3mf [PART...]  # PrusaSlicer projects instead: 3mf/PART.3mf with the settings below
 # G-code goes to gcode/ and projects to 3mf/ (both gitignored). Stock MK3S profiles, flattened from the vendor
 # bundle by scripts/prusa_profile.py; every part in PETG, with slicer/tiles.ini (+ front_tiles.ini on the two
-# front tiles) on the base and lid tiles and split_test. The two lid tiles
-# slice at "0.30mm DRAFT @MK3", everything else at "0.20mm SPEED @MK3" (layer_h = 0.2 in the SCAD; the base
-# tiles went back to 0.20 after a DRAFT base_rear split above the floor, 2026-10-22).
+# front tiles) on the base and lid tiles and split_test. The four tiles and split_test
+# slice at "0.30mm DRAFT @MK3" (layer_h = 0.3 in the SCAD), everything else at "0.20mm SPEED @MK3".
 # Env: PRUSASLICER (binary), PRUSA_BUNDLE (PrusaResearch.ini), PRINT_PROFILE (one profile for every part).
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -59,7 +58,7 @@ done
 # loads PART -> "loads" (the --load options) and m, pp (material, print profile) for that part
 loads() {
   m=PETG
-  case $1 in lid_*) pp=$DRAFT ;; *) pp=$SPEED ;; esac
+  case $1 in base_*|lid_*|split_test) pp=$DRAFT ;; *) pp=$SPEED ;; esac
   pp=${PRINT_PROFILE:-$pp}
   loads=(--load "$(profile "$m" "$pp")")
   case $1 in base_*|lid_*|split_test) loads+=(--load slicer/tiles.ini) ;; esac

@@ -1,4 +1,5 @@
 // Ground-standing projector + Raspberry Pi 3 case: rain-proof (not sealed), ventilated
+// v0.18 - base tiles back to 0.30 mm layers in PETG (layer_h 0.2 -> 0.3; ear_layers 3 -> 2 keeps the ears 0.6 mm), about 26 h less
 // v0.17 - rib feet (rib_foot_w, rib_foot_t): every foot rib flares to 10 mm on the bed with a 45 deg chamfer up to the 4 mm rib (outer ribs flare inward only), after base_front's corners lifted 6 mm
 // v0.16 - base tiles back to 0.20 mm layers (layer_h 0.3 -> 0.2: window-rib gap, floor-hole skin) after a 0.30 base_rear split above the floor; ear_layers 2 -> 3 keeps the ears 0.6 mm
 // v0.15 - window ribs 0.8 -> 4 mm thick (win_rib_t): PrusaSlicer flagged the 73 mm tall 0.8 mm ribs as a thin fragile part; cut them out after printing
@@ -84,7 +85,7 @@ floor_t = 6;
 foot_h = 6;        // ground clearance so rain drains out underneath
 foot_ribs = [-88, -68, -40, -15, 15, 40, 68, 88];   // inner front-to-back ribs; two more run under the side walls. Floor bridges <= max_bridge (asserted); channels drain/vent/route wires
 rib_t = 4;
-layer_h = 0.2;     // base tiles' layer height (0.20mm SPEED, docs/PRINTING.md): gap above the window ribs, floor-hole skin, ear thickness
+layer_h = 0.3;     // base and lid tiles' layer height (0.30mm DRAFT, docs/PRINTING.md): gap above the window ribs, floor-hole skin, ear thickness
 clearance = 0.3;
 side_air = 25;     // gap each side of projector: clears the +/-10 deg pan sweep of the right face, the HDMI plug and the baffle; could shrink to about 19 mm (separate change)
 top_air  = 25;
@@ -205,7 +206,7 @@ ears = true;             // mouse ears against warping (cut or peel off after pr
 ear_d = 18;              // ear diameter: half of each ear lies inside the tile, so only the outer ribs' ears widen it in X; ribs 20 mm apart, so 20 would make neighbouring ears touch (non-manifold)
 rib_foot_w = 10;         // foot ribs' width on the bed: the 4 mm ribs flare to this with a 45 deg chamfer (outer ribs inward only), against warping (base_front's corners lifted 6 mm at Z 7, 2026-10-24)
 rib_foot_t = 0.6;        // flat height of that flare before the chamfer starts
-ear_layers = 3;          // ear thickness in layers of layer_h: 0.6 mm, so 3 layers on the base tiles and hatch cover (0.20 mm) and 2 on the lid tiles (0.30 mm)
+ear_layers = 2;          // ear thickness in layers of layer_h: 0.6 mm, so 2 layers on the tiles (0.30 mm) and 3 on the hatch cover (0.20 mm)
 win_rib_t = 4;           // window ribs' thickness: they hold up the window's top bridge while printing; under 4 mm PrusaSlicer flags them (73 mm tall) as a thin fragile part
 split_test_d = 50;       // split_test: depth of the strip cut from the back of base_rear (full width, so the floor shrinks over the real 231 mm)
 split_test_h = 30;       // split_test: wall height above the floor top, past where the 2026-10-22 base_rear split
