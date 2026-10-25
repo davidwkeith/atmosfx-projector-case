@@ -7,7 +7,7 @@
 //         pir_sensor(), ac_cord() and pi_wiring() ghosts for the assembly preview; assembly steps (step, step_pull) for docs/ASSEMBLY.md
 // v0.13 - sacrificial skin (hole_skin) over the floor holes: drains, speaker chimney and stake bores start one layer above the floor's underside
 //         so its first bridge layer is solid (PrusaSlicer flagged the hole rims as floating bridge anchors); punch it out after printing
-// v0.12 - mouse ears (ears, ear_d, ear_layers) on both base tiles' foot-rib ends (the base stands on ten 4 mm ribs, and base_rear's edge lifted in ASA)
+// v0.12 - mouse ears (ears, ear_d, ear_layers) on both base tiles' foot-rib ends (the base stands on ten 4 mm ribs, and base_rear's edge lifted)
 //         and on the lid tiles' roof corners and the hatch cover's corners.
 // v0.11 - Pi sled fan: an upright plate on the Pi 3/4 sleds for a 30 mm 5 V fan blowing into the Pi-HAT gap (gpio-fan, GPIO 26);
 //         pi_fan keep-out and fan-<sled> clash pairs. The case itself still has no fans.
@@ -26,7 +26,7 @@
 //        a wire splice feeds the projector's barrel plug and the DigiAMP+ HAT (which powers the Pi).
 // v0.4 - quick-aim hatch on the left (-X) wall: reach the ball head with the lid on, tool-free
 // sized for a ~171x134x75 mm mini projector (0.72 kg) on an internal ball head
-// Print ASA (camo green) for outside parts, PETG (black) for inside parts. Lid prints roof-down. Base+lid split front/rear (MK3S bed 250x210x210); front pieces lie flat with X along the 250 mm axis.
+// Print everything in PETG. Lid prints roof-down. Base+lid split front/rear (MK3S bed 250x210x210); front pieces lie flat with X along the 250 mm axis.
 
 /* [Part] */
 part = "assembly"; // [assembly, base, lid, window_frame, pedestal, hatch_cover, power_shelf, sled, ir_holder, vent_cap, exhaust_cap, intake_cap, fit_coupon, split_test]
@@ -358,7 +358,7 @@ module ears_tile(t) {
   }
 }
 
-// ASA stress test: the back split_test_d of base_rear, full width, cut split_test_h above the floor. Same ribs,
+// Warp and layer-bond test: the back split_test_d of base_rear, full width, cut split_test_h above the floor. Same ribs,
 // floor, rear wall, corners and stake tubes as the tile, so it splits where the tile would, in a few hours instead
 // of a day. Ears on both rib ends, including the cut ones.
 module split_test() {
@@ -691,7 +691,7 @@ module window_frame() {
 // One assembly step (step > 0): parts from step n on show from that step, in their print colour,
 // and on step n itself highlighted and moved by dir * step_pull. hw_stage is the same for bought hardware,
 // which is a % ghost except on its own step.
-asa_c = "#5b6b3a"; petg_c = "#3a3a3a"; new_c = "#ff8c1a"; wire_c = "#d0102a";   // wire_c: the step's wiring
+out_c = "#5b6b3a"; petg_c = "#3a3a3a"; new_c = "#ff8c1a"; wire_c = "#d0102a";   // wire_c: the step's wiring
 module stage(n, mat, dir=[0,0,1]) {
   if (step == 0) children();
   else if (step == n) translate(dir*step_pull) color(new_c) children();
@@ -705,20 +705,20 @@ module hw_stage(n, dir=[0,0,1], c=new_c) {
 module assembly() {
   if (step == 0 || tile != "all") tile_cut(tile, base_seam) base_all();
   else {
-    stage(2, asa_c) tile_cut("front", base_seam) base_all();
+    stage(2, out_c) tile_cut("front", base_seam) base_all();
     // the tiles stand apart until step 6; no highlight on step 5, as OpenCSG bleeds one tile's colour into the other
-    translate([0, step <= 5 ? step_pull : 0, 0]) stage(2, asa_c) tile_cut("rear", base_seam) base_all();
+    translate([0, step <= 5 ? step_pull : 0, 0]) stage(2, out_c) tile_cut("rear", base_seam) base_all();
   }
   stage(8, petg_c, [0,0,2]) translate([ped_x, ped_y, z_floor+boss_h]) pedestal();
   // step 10 leaves the shelf and brick out, so the picture shows the Pi zone under them
   if (step != 10) stage(9, petg_c, [0,0,2]) translate([0, y_pi0+0.3, shelf_zz]) power_shelf();
-  stage(9, asa_c, [0,1,0]) cord_clamp_placed();
+  stage(9, out_c, [0,1,0]) cord_clamp_placed();
   if (step != 10) hw_stage(9, [0,0,2]) translate([0, y_pi0+0.3, shelf_zz]) brick_env();
   hw_stage(9, [0,1,0]) ac_cord();
   if (pir) hw_stage(7, [0,-0.4,1.3]) pir_sensor();   // up and in: behind the divider it would be hidden
   stage(6, petg_c, [0,1,0]) translate([lens_x, y0, win_zc]) window_frame();
-  stage(13, asa_c, [-1,0,0]) translate([-out_w/2-cover_gasket-3, hatch_y, hatch_zz]) rotate([90,0,90]) hatch_cover();
-  stage(12, asa_c, [0,0,1.5]) translate([0, 0, lid_z0 + explode]) lid_tile(tile) lid();
+  stage(13, out_c, [-1,0,0]) translate([-out_w/2-cover_gasket-3, hatch_y, hatch_zz]) rotate([90,0,90]) hatch_cover();
+  stage(12, out_c, [0,0,1.5]) translate([0, 0, lid_z0 + explode]) lid_tile(tile) lid();
   stage(10, petg_c, [0,0,0]) translate([0, 0, z_floor+sled_pad]) pi_sled(sled);   // in place, so the wiring meets it
   stage(4, petg_c, [-1,0,0]) { for (v=vents) vent_cap_placed(v); exhaust_cap_placed(); intake_cap_placed(); }
   hw_stage(10, [0,0,0]) { pi_stack(sled); pi_fan(sled); pi_hdmi_plug(sled); amp_dc_plug(sled); }
