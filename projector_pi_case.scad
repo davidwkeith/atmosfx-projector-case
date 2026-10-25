@@ -126,7 +126,8 @@ cord_boss = 5;          // pilot bosses inside the wall, at the clamp's four scr
 // retired from the case. Its size is the Amazon listing's (2026-10-12), not yet calipered.
 brick = [135, 57, 46];   // calipered (owner, 2026-10-25): length along X, width along Y, height
 brick_gap = 5;           // strap gap between the brick and the rear wall
-ac_plug_l = 20;          // the AC cord's molded connector and strain relief, out from the brick's inlet end (owner, 2026-10-25)
+ac_plug_l = 20;          // the captive AC cord's molded strain relief (12 x 12 mm), centred on the brick's left end (owner, 2026-10-25)
+dc_plug_l = 20;          // the DC cord's strain relief, out of the right end low and off-centre: lay the brick so it is toward the shelf's front edge, away from the PIR
 ac_bend = 3*cord_d;      // room past the plug for the cord to turn back to the rear-wall opening
 wire_slot = [20, 14];    // shelf slot for the DigiAMP+ leg and the PIR wires: the DC barrel plug (about 11 x 16) must pass; check with the real splitter
 
@@ -541,7 +542,8 @@ module power_shelf() {
 // The brick's envelope on the shelf (shelf coordinates): preview ghost and clash keep-out
 module brick_env() {
   translate([brick_x0, brick_y0, 3]) cube(brick);
-  translate([brick_x0 - ac_plug_l, brick_y0 + brick[1]/2 - 7, 3 + brick[2]/2 - 7]) cube([ac_plug_l + 0.1, 14, 14]);   // AC plug in the inlet end (12 x 12 mm molded body)
+  translate([brick_x0 - ac_plug_l, brick_y0 + brick[1]/2 - 7, 3 + brick[2]/2 - 7]) cube([ac_plug_l + 0.1, 14, 14]);   // AC cord's strain relief, centred on the left end
+  translate([brick_x0 + brick[0] - 0.1, brick_y0 + 3, 3 + 3]) cube([dc_plug_l + 0.1, 14, 14]);   // DC cord's strain relief, low and toward the front on the right end
 }
 
 // The PIR as fitted (preview ghost, clash keep-out): board on the lens frame inside the rear wall, dome through the wall.
