@@ -79,7 +79,7 @@ The small parts first, so any fit problem shows up before a 39-hour print. Every
 | 6 | `lid_front`, `lid_rear` | about 17 h | The lid is only needed at closing time, so it goes last |
 | 7 | `power_shelf` | 2 h 28 m | After BRINGUP row 4 (see below); slot it in wherever that lands |
 
-**Hold `power_shelf` and `base_rear` until BRINGUP row 4 has set `brick`, `cord_*` and the brick's placement; the provisional layout puts the brick across the cord opening and cannot be assembled.** The Parts table shows what the provisional model slices to, not what to print yet.
+**`power_shelf` and `base_rear` are cleared to print (v0.19, 2026-10-25):** the brick is calipered (135 x 57 x 46 mm) and lies with its AC inlet toward the left wall, the cord's plug and turn beside it and the rear-wall opening behind that, so the cord no longer runs into the brick.
 
 About 86 h of printing in all. Reusing the parts already printed for this year (`hatch_cover`, `cord_clamp`, `lid_rear`; owner, 2026-10-25) leaves about 74 h: `base_front`, `base_rear`, `lid_front` and the small inside parts, 3 days of machine time and 4-5 days of calendar time with plate changes and sleep, if nothing fails. A failed `base_front` costs the most: watch its first layers.
 
