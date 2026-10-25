@@ -2,7 +2,7 @@
 
 In order. Parts are in [BOM.md](BOM.md); wiring is in [WIRING.md](WIRING.md) and must be followed exactly. Nothing here has been built yet, so expect to adjust.
 
-The pictures are the model built up to each step (`part="assembly"`, `step=N`). **Orange** is what that step adds, pulled out of its place (red for its wiring); green is ASA, dark grey PETG, and see-through grey is bought hardware already fitted (projector, ball head, brick, AC cord, PIR, Pi and HAT). Regenerate them with `scripts/render_assembly.sh` after a model change.
+The pictures are the model built up to each step (`part="assembly"`, `step=N`). **Orange** is what that step adds, pulled out of its place (red for its wiring); green is the outside parts, dark grey the inside ones, and see-through grey is bought hardware already fitted (projector, ball head, brick, AC cord, PIR, Pi and HAT). Regenerate them with `scripts/render_assembly.sh` after a model change.
 
 ## 1. Fit coupon
 

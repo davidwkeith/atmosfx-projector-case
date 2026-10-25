@@ -4,10 +4,9 @@
 #   scripts/slice.sh base_front pedestal
 #   scripts/slice.sh --3mf [PART...]  # PrusaSlicer projects instead: 3mf/PART.3mf with the settings below
 # G-code goes to gcode/ and projects to 3mf/ (both gitignored). Stock MK3S profiles, flattened from the vendor
-# bundle by scripts/prusa_profile.py; ASA for the lid tiles and small outside parts, PETG for the base tiles and inside parts, and
-# slicer/asa_tiles.ini (+ asa_base_front.ini on the two front tiles) on the lid tiles, slicer/petg_base.ini on the base tiles. The two lid tiles
-# slice at "0.30mm DRAFT @MK3", everything else at "0.20mm SPEED @MK3" (layer_h = 0.2 in the SCAD; the base
-# tiles went back to 0.20 after a DRAFT base_rear split above the floor, 2026-10-22).
+# bundle by scripts/prusa_profile.py; every part in PETG, with slicer/tiles.ini (+ front_tiles.ini on the two
+# front tiles) on the base and lid tiles and split_test. The four tiles and split_test
+# slice at "0.30mm DRAFT @MK3" (layer_h = 0.3 in the SCAD), everything else at "0.20mm SPEED @MK3".
 # Env: PRUSASLICER (binary), PRUSA_BUNDLE (PrusaResearch.ini), PRINT_PROFILE (one profile for every part).
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -58,12 +57,12 @@ done
 
 # loads PART -> "loads" (the --load options) and m, pp (material, print profile) for that part
 loads() {
-  case $1 in lid_*|hatch_cover|cord_clamp|fit_coupon|split_test) m=ASA ;; *) m=PETG ;; esac   # base tiles PETG since 2026-10-25
-  case $1 in lid_*) pp=$DRAFT ;; *) pp=$SPEED ;; esac
+  m=PETG
+  case $1 in base_*|lid_*|split_test) pp=$DRAFT ;; *) pp=$SPEED ;; esac
   pp=${PRINT_PROFILE:-$pp}
   loads=(--load "$(profile "$m" "$pp")")
-  case $1 in lid_*|split_test) loads+=(--load slicer/asa_tiles.ini) ;; base_*) loads+=(--load slicer/petg_base.ini) ;; esac
-  case $1 in base_front|lid_front) loads+=(--load slicer/asa_base_front.ini) ;; esac
+  case $1 in base_*|lid_*|split_test) loads+=(--load slicer/tiles.ini) ;; esac
+  case $1 in base_front|lid_front) loads+=(--load slicer/front_tiles.ini) ;; esac
 }
 
 # Projects: the part on the MK3S bed with its printer, print and filament settings (tile overrides

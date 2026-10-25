@@ -1,4 +1,5 @@
 // Ground-standing projector + Raspberry Pi 3 case: rain-proof (not sealed), ventilated
+// v0.18 - base tiles back to 0.30 mm layers in PETG (layer_h 0.2 -> 0.3; ear_layers 3 -> 2 keeps the ears 0.6 mm), about 26 h less
 // v0.17 - rib feet (rib_foot_w, rib_foot_t): every foot rib flares to 10 mm on the bed with a 45 deg chamfer up to the 4 mm rib (outer ribs flare inward only), after base_front's corners lifted 6 mm
 // v0.16 - base tiles back to 0.20 mm layers (layer_h 0.3 -> 0.2: window-rib gap, floor-hole skin) after a 0.30 base_rear split above the floor; ear_layers 2 -> 3 keeps the ears 0.6 mm
 // v0.15 - window ribs 0.8 -> 4 mm thick (win_rib_t): PrusaSlicer flagged the 73 mm tall 0.8 mm ribs as a thin fragile part; cut them out after printing
@@ -7,7 +8,7 @@
 //         pir_sensor(), ac_cord() and pi_wiring() ghosts for the assembly preview; assembly steps (step, step_pull) for docs/ASSEMBLY.md
 // v0.13 - sacrificial skin (hole_skin) over the floor holes: drains, speaker chimney and stake bores start one layer above the floor's underside
 //         so its first bridge layer is solid (PrusaSlicer flagged the hole rims as floating bridge anchors); punch it out after printing
-// v0.12 - mouse ears (ears, ear_d, ear_layers) on both base tiles' foot-rib ends (the base stands on ten 4 mm ribs, and base_rear's edge lifted in ASA)
+// v0.12 - mouse ears (ears, ear_d, ear_layers) on both base tiles' foot-rib ends (the base stands on ten 4 mm ribs, and base_rear's edge lifted)
 //         and on the lid tiles' roof corners and the hatch cover's corners.
 // v0.11 - Pi sled fan: an upright plate on the Pi 3/4 sleds for a 30 mm 5 V fan blowing into the Pi-HAT gap (gpio-fan, GPIO 26);
 //         pi_fan keep-out and fan-<sled> clash pairs. The case itself still has no fans.
@@ -26,7 +27,7 @@
 //        a wire splice feeds the projector's barrel plug and the DigiAMP+ HAT (which powers the Pi).
 // v0.4 - quick-aim hatch on the left (-X) wall: reach the ball head with the lid on, tool-free
 // sized for a ~171x134x75 mm mini projector (0.72 kg) on an internal ball head
-// Print ASA (camo green) for outside parts, PETG (black) for inside parts. Lid prints roof-down. Base+lid split front/rear (MK3S bed 250x210x210); front pieces lie flat with X along the 250 mm axis.
+// Print everything in PETG. Lid prints roof-down. Base+lid split front/rear (MK3S bed 250x210x210); front pieces lie flat with X along the 250 mm axis.
 
 /* [Part] */
 part = "assembly"; // [assembly, base, lid, window_frame, pedestal, hatch_cover, power_shelf, sled, ir_holder, vent_cap, exhaust_cap, intake_cap, fit_coupon, split_test]
@@ -84,7 +85,7 @@ floor_t = 6;
 foot_h = 6;        // ground clearance so rain drains out underneath
 foot_ribs = [-88, -68, -40, -15, 15, 40, 68, 88];   // inner front-to-back ribs; two more run under the side walls. Floor bridges <= max_bridge (asserted); channels drain/vent/route wires
 rib_t = 4;
-layer_h = 0.2;     // base tiles' layer height (0.20mm SPEED, docs/PRINTING.md): gap above the window ribs, floor-hole skin, ear thickness
+layer_h = 0.3;     // base and lid tiles' layer height (0.30mm DRAFT, docs/PRINTING.md): gap above the window ribs, floor-hole skin, ear thickness
 clearance = 0.3;
 side_air = 25;     // gap each side of projector: clears the +/-10 deg pan sweep of the right face, the HDMI plug and the baffle; could shrink to about 19 mm (separate change)
 top_air  = 25;
@@ -205,7 +206,7 @@ ears = true;             // mouse ears against warping (cut or peel off after pr
 ear_d = 18;              // ear diameter: half of each ear lies inside the tile, so only the outer ribs' ears widen it in X; ribs 20 mm apart, so 20 would make neighbouring ears touch (non-manifold)
 rib_foot_w = 10;         // foot ribs' width on the bed: the 4 mm ribs flare to this with a 45 deg chamfer (outer ribs inward only), against warping (base_front's corners lifted 6 mm at Z 7, 2026-10-24)
 rib_foot_t = 0.6;        // flat height of that flare before the chamfer starts
-ear_layers = 3;          // ear thickness in layers of layer_h: 0.6 mm, so 3 layers on the base tiles and hatch cover (0.20 mm) and 2 on the lid tiles (0.30 mm)
+ear_layers = 2;          // ear thickness in layers of layer_h: 0.6 mm, so 2 layers on the tiles (0.30 mm) and 3 on the hatch cover (0.20 mm)
 win_rib_t = 4;           // window ribs' thickness: they hold up the window's top bridge while printing; under 4 mm PrusaSlicer flags them (73 mm tall) as a thin fragile part
 split_test_d = 50;       // split_test: depth of the strip cut from the back of base_rear (full width, so the floor shrinks over the real 231 mm)
 split_test_h = 30;       // split_test: wall height above the floor top, past where the 2026-10-22 base_rear split
@@ -358,7 +359,7 @@ module ears_tile(t) {
   }
 }
 
-// ASA stress test: the back split_test_d of base_rear, full width, cut split_test_h above the floor. Same ribs,
+// Warp and layer-bond test: the back split_test_d of base_rear, full width, cut split_test_h above the floor. Same ribs,
 // floor, rear wall, corners and stake tubes as the tile, so it splits where the tile would, in a few hours instead
 // of a day. Ears on both rib ends, including the cut ones.
 module split_test() {
@@ -691,7 +692,7 @@ module window_frame() {
 // One assembly step (step > 0): parts from step n on show from that step, in their print colour,
 // and on step n itself highlighted and moved by dir * step_pull. hw_stage is the same for bought hardware,
 // which is a % ghost except on its own step.
-asa_c = "#5b6b3a"; petg_c = "#3a3a3a"; new_c = "#ff8c1a"; wire_c = "#d0102a";   // wire_c: the step's wiring
+out_c = "#5b6b3a"; petg_c = "#3a3a3a"; new_c = "#ff8c1a"; wire_c = "#d0102a";   // wire_c: the step's wiring
 module stage(n, mat, dir=[0,0,1]) {
   if (step == 0) children();
   else if (step == n) translate(dir*step_pull) color(new_c) children();
@@ -705,20 +706,20 @@ module hw_stage(n, dir=[0,0,1], c=new_c) {
 module assembly() {
   if (step == 0 || tile != "all") tile_cut(tile, base_seam) base_all();
   else {
-    stage(2, asa_c) tile_cut("front", base_seam) base_all();
+    stage(2, out_c) tile_cut("front", base_seam) base_all();
     // the tiles stand apart until step 6; no highlight on step 5, as OpenCSG bleeds one tile's colour into the other
-    translate([0, step <= 5 ? step_pull : 0, 0]) stage(2, asa_c) tile_cut("rear", base_seam) base_all();
+    translate([0, step <= 5 ? step_pull : 0, 0]) stage(2, out_c) tile_cut("rear", base_seam) base_all();
   }
   stage(8, petg_c, [0,0,2]) translate([ped_x, ped_y, z_floor+boss_h]) pedestal();
   // step 10 leaves the shelf and brick out, so the picture shows the Pi zone under them
   if (step != 10) stage(9, petg_c, [0,0,2]) translate([0, y_pi0+0.3, shelf_zz]) power_shelf();
-  stage(9, asa_c, [0,1,0]) cord_clamp_placed();
+  stage(9, out_c, [0,1,0]) cord_clamp_placed();
   if (step != 10) hw_stage(9, [0,0,2]) translate([0, y_pi0+0.3, shelf_zz]) brick_env();
   hw_stage(9, [0,1,0]) ac_cord();
   if (pir) hw_stage(7, [0,-0.4,1.3]) pir_sensor();   // up and in: behind the divider it would be hidden
   stage(6, petg_c, [0,1,0]) translate([lens_x, y0, win_zc]) window_frame();
-  stage(13, asa_c, [-1,0,0]) translate([-out_w/2-cover_gasket-3, hatch_y, hatch_zz]) rotate([90,0,90]) hatch_cover();
-  stage(12, asa_c, [0,0,1.5]) translate([0, 0, lid_z0 + explode]) lid_tile(tile) lid();
+  stage(13, out_c, [-1,0,0]) translate([-out_w/2-cover_gasket-3, hatch_y, hatch_zz]) rotate([90,0,90]) hatch_cover();
+  stage(12, out_c, [0,0,1.5]) translate([0, 0, lid_z0 + explode]) lid_tile(tile) lid();
   stage(10, petg_c, [0,0,0]) translate([0, 0, z_floor+sled_pad]) pi_sled(sled);   // in place, so the wiring meets it
   stage(4, petg_c, [-1,0,0]) { for (v=vents) vent_cap_placed(v); exhaust_cap_placed(); intake_cap_placed(); }
   hw_stage(10, [0,0,0]) { pi_stack(sled); pi_fan(sled); pi_hdmi_plug(sled); amp_dc_plug(sled); }
