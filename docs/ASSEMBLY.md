@@ -74,34 +74,37 @@ The pictures are the model built up to each step (`part="assembly"`, `step=N`). 
 6. If BRINGUP row 4a passed, plug the Y-splitter's leg 1 into it; if it failed, fit the buck converter first (WIRING.md); otherwise leave leg 1 unplugged.
 7. If the IR fallback is built: stick the `ir_holder` (LED in it) on the projector's front face above the Tkisko logo, about 35 mm right of centre and 50 mm above the underside, body pointing toward the window. Run the IR LED lead up and back over the projector's top, held with tape, then through the right side gap past the baffle to the Pi.
 
-## 9. Power
+## 9. Pi sled
 
-![Power shelf, brick, AC cord and cord clamp](assembly/step-09.png)
+![Pi sled, HAT and fan with the Pi-zone wiring (red)](assembly/step-09.png)
+
+The sled goes in before the shelf, which covers it about 60 mm up. Work from the top, lid off. Red is the wiring once everything is in: HDMI forward through the divider, across the rear gap and up the right side gap to the projector; leg 2 and the PIR leads down the shelf's wire slot to the HAT; the fan lead; speaker wire down the chimney. The DigiAMP+'s barrel jack and speaker terminals are on its edge facing the divider (from the product photo), so leg 2 goes in through a right-angle adapter.
+
+1. Mount the Pi on its sled (4x M2.5).
+2. On a Pi 3 or 4, stick the heatsink on the SoC, then screw the fan to the sled's upright plate (4x M2.5 x 16, nuts on the fan side), label facing the Pi so it blows into the gap under the HAT.
+3. Fit the DigiAMP+ (a Zero 2 W needs a 40-pin header soldered first).
+4. Plug the GPIO leads (the fan's switch, and the PIR, relay and IR LED leads if they are in already) into the DigiAMP+'s pass-through header per [pi/docs/wiring.md](../pi/docs/wiring.md).
+5. Set the sled on its pins and fit the thumbscrew.
+6. Plug the HDMI cable into the Pi straight through the low part of the divider pass-through (there is no room for the plug behind the divider). Route the cable from there along the side gap above the baffle to the right-face I/O strip, and check BRINGUP row 21 (the cable crossing the rear gap at full tilt and pan).
+7. Put a right-angle adapter (a second one from the 5-pack) in the DigiAMP+'s barrel jack, elbow pointing up: the jack faces the divider about 15 mm away, inside the pass-through, so leg 2 drops into it from above in step 10.
+8. Screw the speaker wire into the two terminal blocks (they pull off: wire them on the bench and push them back on from above) on the same edge, run it round the USB end of the Pi, feed it down the chimney and plug the chimney round the wires with foam.
+
+## 10. Power
+
+![Power shelf, brick, AC cord and cord clamp](assembly/step-10.png)
 
 Note: the shipped provisional brick layout cannot be assembled (the brick sits across the cord opening); re-fit the shelf after BRINGUP row 4.
 
 1. Lid off, projector aside if needed.
-2. Seat the shelf on its ledges and lay the brick on it toward the rear wall, under the velcro strap.
+2. Thread the PIR leads and the Y-splitter's leg 2 (plug first) down through the shelf's wire slot, then seat the shelf on its ledges over the sled and lay the brick on it toward the rear wall, under the velcro strap.
 3. Pass the AC cord's connector in through the opening in the rear wall and plug it fully into the brick's inlet.
 4. Close the `cord_clamp` over its foam gasket (4x M3 x 16 self-tapping into the wall bosses) and pull-test it (BRINGUP row 17a).
 5. Leave a drip loop outside, below the clamp.
 6. Plug the brick's DC cord into the Y-splitter and meter both legs (centre +) before connecting anything.
 7. If the relay fallback is built, cut leg 1 and splice the relay as in WIRING.md.
+8. Plug leg 2 into the DigiAMP+'s elbow adapter and the PIR leads into the header ([pi/docs/wiring.md](../pi/docs/wiring.md)).
 
-## 10. Pi sled
-
-![Pi sled, HAT and fan with the Pi-zone wiring (red); shelf and brick left out](assembly/step-10.png)
-
-Red is the wiring, as routed below: HDMI forward through the divider, across the rear gap and up the right side gap to the projector; leg 2 and the PIR leads down the shelf's wire slot to the HAT; the fan lead; speaker wire down the chimney. The DigiAMP+'s barrel jack and speaker terminals are on its edge facing the divider (from the product photo), so leg 2 goes in through a right-angle adapter.
-
-1. Mount the Pi on its sled (4x M2.5).
-2. On a Pi 3 or 4, stick the heatsink on the SoC, then screw the fan to the sled's upright plate (4x M2.5 x 16, nuts on the fan side), label facing the Pi so it blows into the gap under the HAT.
-3. Fit the DigiAMP+ (a Zero 2 W needs a 40-pin header soldered first).
-4. Plug the GPIO leads (PIR, the fan's switch, and the relay and IR LED only if built) into the DigiAMP+'s pass-through header per [pi/docs/wiring.md](../pi/docs/wiring.md).
-5. Set the sled on its pins and fit the thumbscrew.
-6. Plug the HDMI cable into the Pi straight through the low part of the divider pass-through (there is no room for the plug behind the divider). Route the cable from there along the side gap above the baffle to the right-face I/O strip, and check BRINGUP row 21 (the cable crossing the rear gap at full tilt and pan).
-7. Put a right-angle adapter (a second one from the 5-pack) in the DigiAMP+'s barrel jack, turned up: the jack faces the divider about 15 mm away, inside the pass-through. Plug the Y-splitter's leg 2 into it.
-8. Screw the speaker wire into the two terminal blocks on the same edge, run it round the USB end of the Pi, feed it down the chimney and plug the chimney round the wires with foam.
+To take the sled out later: unplug leg 2, unstrap the brick and tip the shelf up off its ledges (the AC cord stays clamped).
 
 ## 11. First power-up
 

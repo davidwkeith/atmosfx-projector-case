@@ -1,4 +1,6 @@
 // Ground-standing projector + Raspberry Pi 3 case: rain-proof (not sealed), ventilated
+// v0.20 - shelf vent slots (shelf_vent) right of the brick, under the Pi vent: the sled fan's air had no way out from under the shelf;
+//         assembly steps 9/10 swapped (sled before shelf: the shelf covers it)
 // v0.19 - cord opening 40 x 40 (cord_dz 33) for the captive cord's 3-pin plug;
 //         brick calipered (135 x 57 x 46) and placed AC end left with room for the plug and the cord's turn (ac_plug_l, ac_bend); cord opening to cord_x -80; cord_d 6
 // v0.18 - base tiles back to 0.30 mm layers in PETG (layer_h 0.2 -> 0.3; ear_layers 3 -> 2 keeps the ears 0.6 mm), about 26 h less
@@ -131,6 +133,7 @@ ac_plug_l = 20;          // the captive AC cord's molded strain relief (12 x 12 
 dc_plug_l = 20;          // the DC cord's strain relief, out of the right end low and off-centre: lay the brick so it is toward the shelf's front edge, away from the PIR
 ac_bend = 3*cord_d;      // room past the plug for the cord to turn back to the rear-wall opening
 wire_slot = [20, 14];    // shelf slot for the DigiAMP+ leg and the PIR wires: the DC barrel plug (about 11 x 16) must pass; check with the real splitter
+shelf_vent = [4, 8];     // shelf vent slots right of the brick, under the Pi vent, so the sled fan's air rises out [width, pitch]
 
 /* [Audio] */
 spk_x = 58;         // speaker-wire chimney: beside the Pi's USB end, clear of the drains
@@ -537,6 +540,8 @@ module power_shelf() {
       translate([x-10, y, -1]) cube([20, 3, 5]);
     for (x=[-70:20:70], sy=[-1,1]) if (x > brick_x0 + brick[0] + 6) translate([x-1.6, shelf_d/2+sy*tie_gap/2-3, -1]) cube([3.2, 6, 5]);   // zip-tie slots (low-voltage side)
     translate([pir_x-6, shelf_d-wire_slot[1], -1]) cube([wire_slot[0], wire_slot[1]+1, 5]);   // PIR wires and the DigiAMP+ leg (with its plug) down to the Pi
+    for (y=[4:shelf_vent[1]:shelf_d-wire_slot[1]-4-shelf_vent[0]])   // vent slots: the Pi zone's air rises past the brick's right end to the Pi vent
+      translate([brick_x0+brick[0]+4, y, -1]) cube([shelf_w/2-ledge_w-2-(brick_x0+brick[0]+4), shelf_vent[0], 5]);
   }
 }
 
@@ -567,7 +572,7 @@ module ac_cord() {
         [cord_x, yo+60, cord_z-clamp_h/2-15], [cord_x, yo+90, cord_d/2]], cord_d);
 }
 
-// Pi-zone wiring as routed in docs/ASSEMBLY.md step 10 and docs/WIRING.md (preview ghost only; the DigiAMP+'s
+// Pi-zone wiring as routed in docs/ASSEMBLY.md steps 9-10 and docs/WIRING.md (preview ghost only; the DigiAMP+'s
 // jack and terminals are on its edge facing the divider, amp_jack_x, amp_spk_x): HDMI from the Pi forward through the divider
 // pass-through, across the rear gap, up the side gap and forward over the baffle to the projector's right-face plug;
 // the Y-splitter's leg 2 from the brick down the shelf's wire slot to the DigiAMP+; the PIR leads down the same slot
@@ -719,19 +724,19 @@ module assembly() {
     translate([0, step <= 5 ? step_pull : 0, 0]) stage(2, out_c) tile_cut("rear", base_seam) base_all();
   }
   stage(8, petg_c, [0,0,2]) translate([ped_x, ped_y, z_floor+boss_h]) pedestal();
-  // step 10 leaves the shelf and brick out, so the picture shows the Pi zone under them
-  if (step != 10) stage(9, petg_c, [0,0,2]) translate([0, y_pi0+0.3, shelf_zz]) power_shelf();
-  stage(9, out_c, [0,1,0]) cord_clamp_placed();
-  if (step != 10) hw_stage(9, [0,0,2]) translate([0, y_pi0+0.3, shelf_zz]) brick_env();
-  hw_stage(9, [0,1,0]) ac_cord();
+  // the sled (step 9) goes in before the shelf (step 10), which covers it
+  stage(10, petg_c, [0,0,2]) translate([0, y_pi0+0.3, shelf_zz]) power_shelf();
+  stage(10, out_c, [0,1,0]) cord_clamp_placed();
+  hw_stage(10, [0,0,2]) translate([0, y_pi0+0.3, shelf_zz]) brick_env();
+  hw_stage(10, [0,1,0]) ac_cord();
   if (pir) hw_stage(7, [0,-0.4,1.3]) pir_sensor();   // up and in: behind the divider it would be hidden
   stage(6, petg_c, [0,1,0]) translate([lens_x, y0, win_zc]) window_frame();
   stage(13, out_c, [-1,0,0]) translate([-out_w/2-cover_gasket-3, hatch_y, hatch_zz]) rotate([90,0,90]) hatch_cover();
   stage(12, out_c, [0,0,1.5]) translate([0, 0, lid_z0 + explode]) lid_tile(tile) lid();
-  stage(10, petg_c, [0,0,0]) translate([0, 0, z_floor+sled_pad]) pi_sled(sled);   // in place, so the wiring meets it
+  stage(9, petg_c, [0,0,0]) translate([0, 0, z_floor+sled_pad]) pi_sled(sled);   // in place, so the wiring meets it
   stage(4, petg_c, [-1,0,0]) { for (v=vents) vent_cap_placed(v); exhaust_cap_placed(); intake_cap_placed(); }
-  hw_stage(10, [0,0,0]) { pi_stack(sled); pi_fan(sled); pi_hdmi_plug(sled); amp_dc_plug(sled); }
-  hw_stage(10, [0,0,0], wire_c) pi_wiring(sled);
+  hw_stage(9, [0,0,0]) { pi_stack(sled); pi_fan(sled); pi_hdmi_plug(sled); amp_dc_plug(sled); }
+  hw_stage(9, [0,0,0], wire_c) pi_wiring(sled);
   // ghosts (preview only): ball head + projector
   if (step == 0 || step >= 8) {
     if (ped_mount == "shoe") %translate([ped_x, ped_y, z_floor+ped_top]) cylinder(d=24, h=shoe_rise);   // adapter ring
