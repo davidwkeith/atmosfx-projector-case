@@ -1,6 +1,6 @@
 import { api, el, json, restartService, run, toast } from "../api.js";
 import { chart, peak } from "../health.js";
-import { lastUpdateNote, systemNotesOf } from "../notes.js";
+import { lastUpdateNote, systemNotesOf, upgradeFinished } from "../notes.js";
 import { refreshStatus } from "../state.js";
 
 export function mount(root) {
@@ -192,27 +192,47 @@ export function mount(root) {
       }
     }),
   );
+  let latest = null;
+  let lastAt = null;
   upgradeGo.addEventListener("click", () =>
     run(async () => {
       upgradeGo.disabled = true;
+      const target = latest;
+      const before = lastAt;
       try {
         await api("/api/update/upgrade", json("POST", {}));
       } catch (err) {
         upgradeGo.disabled = false;
         throw err;
       }
-      toast("Upgrading. The Pi restarts; this page reloads when it is back.");
-      waitForReturn();
+      showUpgrading(target);
+      waitForReturn(target, before);
     }),
   );
 
-  /** The Pi goes away while it installs: reload once it answers again after a gap. */
-  function waitForReturn() {
+  /** Covers the whole page: nothing on it works while the Pi installs and reboots. */
+  function showUpgrading(target) {
+    document.body.append(
+      el(
+        "div",
+        { className: "upgrading", role: "status", "aria-live": "polite" },
+        el("div", { className: "spinner", "aria-hidden": "true" }),
+        el("p", {}, target ? `Upgrading to version ${target}` : "Upgrading"),
+      ),
+    );
+  }
+
+  /**
+   * The Pi goes away while it installs: reload once it answers again after a gap,
+   * or as soon as the status shows the new version or a finished (or failed) run.
+   */
+  function waitForReturn(target, before) {
     let wasDown = false;
     const timer = setInterval(async () => {
       try {
         const res = await fetch("/api/status", { cache: "no-store" });
-        if (res.ok && wasDown) {
+        if (!res.ok) throw new Error(String(res.status));
+        if (wasDown || upgradeFinished(await res.json(), { target, before })) {
           clearInterval(timer);
           location.reload();
         }
@@ -249,6 +269,8 @@ export function mount(root) {
       // Upgrading is gated by the page password: without one, anyone on the LAN could press it.
       needsPassword.hidden = Boolean(st.web?.passwordSet);
       upgradeGo.hidden = !st.web?.passwordSet;
+      latest = v?.latest ?? null;
+      lastAt = v?.last?.at ?? null;
       upgradeTitle.textContent = v?.available ? `Upgrade to ${v.latest}` : "Upgrade";
       if (v?.error) version.textContent += ` · last check failed: ${v.error}`;
       const last = lastUpdateNote(v?.last);
