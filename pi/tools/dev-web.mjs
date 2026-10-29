@@ -83,7 +83,7 @@ const selfCheck = new SelfCheck({
       pir: { enabled: true, available: true, running: true, seen: allOk },
       thermal: { temp: 48.2, warnC: 70, throttled: allOk ? 0 : 0x50000 },
       network: status().network,
-      clock: { synced: true },
+      clock: { synced: true, timeZone: "America/Los_Angeles" },
       media: { problem: null, mode: "loop", clips: 2 },
     };
   },
@@ -117,7 +117,7 @@ const status = () => ({
   storage: { maintenance: false, dataMounted: true, state: "ok" },
   usb: usb.status,
   web: { passwordSet: settings.passwordSet },
-  clock: { synced: true },
+  clock: { synced: true, timeZone: "America/Los_Angeles" },
   quiet: { active: false },
   version: { version: "0.9.0", sha: "dev", available: false, latest: null, checkedAt: Date.now() },
   checks: selfCheck.last && { at: selfCheck.last.at, ...selfCheck.last.summary },

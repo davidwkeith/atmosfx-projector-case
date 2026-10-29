@@ -2,7 +2,8 @@
 process.env.TZ = "America/Los_Angeles";
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { DEFAULT_SCHEDULE, Scheduler, eventsForDay, missedEvent, nextEvent, parseSchedule, sunset } from "../src/schedule.js";
+import { sunsetTimes } from "../public/sun.js";
+import { DAYS, DEFAULT_SCHEDULE, Scheduler, eventsForDay, missedEvent, nextEvent, parseSchedule, sunset } from "../src/schedule.js";
 
 const week = (on, off) => ({
   enabled: true,
@@ -31,6 +32,29 @@ describe("sunset (NOAA)", () => {
     expect(sunset(2026, 12, 21, 78.22, 15.65)).toBeNull(); // Longyearbyen, winter
     expect(sunset(2026, 6, 1, 69.65, 18.96)).toBeNull(); // Tromsø, early June
     expect(sunset(2026, 12, 21, -77.85, 166.67)).toBeNull(); // McMurdo, southern summer
+  });
+});
+
+describe("sunsetTimes (Schedule screen)", () => {
+  const sunday = new Date(Date.UTC(2026, 5, 21, 19)); // noon in San Francisco
+  const sf = { lat: 37.7749, lon: -122.4194, locale: "en-GB" };
+  const minutes = (hhmm) => Number(hhmm.slice(0, 2)) * 60 + Number(hhmm.slice(3));
+
+  it("gives each weekday's on time in the Pi's time zone, offset included", () => {
+    const t = sunsetTimes(sunday, { ...sf, offsetMin: 15, timeZone: "America/Los_Angeles" });
+    expect(Object.keys(t).sort()).toEqual([...DAYS].sort());
+    expect(Math.abs(minutes(t.sun) - (20 * 60 + 50))).toBeLessThan(5); // 20:35 PDT + 15 min
+  });
+
+  it("starts from today in the Pi's time zone, not the browser's", () => {
+    // 01:00 Monday in Tokyo is still Sunday in San Francisco; same place, same instant
+    const t = sunsetTimes(new Date(Date.UTC(2026, 5, 21, 16)), { ...sf, timeZone: "Asia/Tokyo" });
+    expect(Math.abs(minutes(t.mon) - (12 * 60 + 35))).toBeLessThan(5); // Monday's 03:35 UTC sunset, 12:35 JST
+  });
+
+  it("marks days with no sunset, and falls back to the browser's zone for a bad one", () => {
+    expect(sunsetTimes(sunday, { lat: 78.22, lon: 15.65, timeZone: "Arctic/Longyearbyen" }).sun).toBeNull();
+    expect(() => sunsetTimes(sunday, { ...sf, timeZone: "Not/AZone" })).not.toThrow();
   });
 });
 

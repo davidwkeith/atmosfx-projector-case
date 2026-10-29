@@ -1,6 +1,7 @@
 import { el } from "../api.js";
 import { advancedShown, effective, locateCard, pending, rowOf, safeToRebuild, visibleItems } from "../settings-form.js";
 import { setting, state } from "../state.js";
+import { sunsetTimes } from "../sun.js";
 
 const DAY_NAMES = { mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat", sun: "Sun" };
 const has = (v) => v !== null && v !== undefined && v !== "";
@@ -106,10 +107,20 @@ export function mount(root) {
     drawSunsetLabels();
   }
 
+  // each sunset day shows its next on time, worked out like the Pi does, in the Pi's time zone
   function drawSunsetLabels() {
     const n = Number(sunOffset.value || 0);
-    const text = n ? `Sunset ${n > 0 ? "+" : "\u2212"}${Math.abs(n)} min` : "Sunset";
-    for (const span of schedDays.querySelectorAll(".sunset")) span.textContent = text;
+    const what = n ? `sunset ${n > 0 ? "+" : "\u2212"}${Math.abs(n)} min` : "sunset";
+    const lat = Number(effective("latitude"));
+    const lon = Number(effective("longitude"));
+    const located = has(effective("latitude")) && has(effective("longitude")) && Number.isFinite(lat) && Number.isFinite(lon);
+    const times = located ? sunsetTimes(new Date(), { lat, lon, offsetMin: n, timeZone: state.status?.clock?.timeZone }) : {};
+    for (const row of schedDays.children) {
+      const span = row.querySelector(".sunset");
+      if (!located) span.textContent = what[0].toUpperCase() + what.slice(1);
+      else if (times[row.dataset.day] === null) span.textContent = "No sunset";
+      else span.textContent = `${times[row.dataset.day]} (${what})`;
+    }
   }
 
   function drawQuiet() {
@@ -141,6 +152,7 @@ export function mount(root) {
   function updateGeo() {
     const lat = effective("latitude");
     const lon = effective("longitude");
+    drawSunsetLabels();
     geo.textContent = has(lat) && has(lon) ? `Sunset for ${lat}, ${lon}. Days with no sunset (polar summer or winter) have no on time.` : "For sunset, set Latitude and Longitude below.";
   }
   const offPending = pending.subscribe(updateGeo);
@@ -149,6 +161,7 @@ export function mount(root) {
     helpSlug: () => "schedule",
     unmount: offPending,
     update(s) {
+      drawSunsetLabels(); // the Pi's time zone comes with the status
       if (s.settings === lastSettings || !safeToRebuild(root)) return; // not under someone who is typing
       lastSettings = s.settings;
       drawSchedule();
