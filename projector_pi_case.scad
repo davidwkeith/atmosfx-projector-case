@@ -1,4 +1,6 @@
 // Ground-standing projector + Raspberry Pi 3 case: rain-proof (not sealed), ventilated
+// v0.22 - tilt_jack: a screw jack under the middle of the front tilts the whole case back (about 15-24 deg) for more upward aim
+//         (owner, 2026-10-30: the projector hit the lid before the image cleared the window, and the case went up on a brick)
 // v0.21 - shelf zip-tie slots actually cut: since v0.19's brick they were all filtered out. Now pairs in the strip ahead of
 //         the brick (tie_slot, tie_gap, tie_edge, tie_pitch -> tie_x), where the Y-splitter and leg 1 run to the pass-through
 // v0.20 - shelf vent slots (shelf_vent) right of the brick, under the Pi vent: the sled fan's air had no way out from under the shelf;
@@ -36,7 +38,7 @@
 // Print everything in PETG. Lid prints roof-down. Base+lid split front/rear (MK3S bed 250x210x210); front pieces lie flat with X along the 250 mm axis.
 
 /* [Part] */
-part = "assembly"; // [assembly, base, lid, window_frame, pedestal, hatch_cover, power_shelf, sled, ir_holder, vent_cap, exhaust_cap, intake_cap, fit_coupon, split_test]
+part = "assembly"; // [assembly, base, lid, window_frame, pedestal, hatch_cover, power_shelf, sled, ir_holder, vent_cap, exhaust_cap, intake_cap, fit_coupon, split_test, tilt_jack]
 sled = "pi3";      // [pi3, pi4, pi5, zero2w] sled shown in the assembly / exported by part="sled"
 tile = "all";      // [all, front, rear] for base+lid
 explode = 0;       // [0:1:80]
@@ -172,6 +174,20 @@ stakes = true;       // sealed stake tubes inside the four corners: drive tent s
 stake_d = 9;         // bore for 8 mm tent stakes / 1/4 in pins
 stake_collar = 15;   // tube rises this far above the floor so water can't reach the bore
 stake_x = 78;        // inside the channel between the +/-68 and +/-88 ribs
+
+/* [Tilt jack] */
+// Past +11 deg (cone_tilt) the image clips the window top and visor, and past aim_max the body hits the lid: for more
+// upward aim the whole case tilts on a screw jack under the middle of its front. The rear feet stay on the ground, so the
+// case stands on three points. Turning the knob raises the saddle; the ribs rest on its round top at any tilt.
+jack_bolt = [8, 50];    // hex bolt [diameter, length under the head]: M8 x 50
+jack_hex = 13;          // bolt head and nut across flats
+jack_head_h = 5.5;
+jack_nut_h = 6.5;
+jack_y = 40;            // saddle centre behind the case's front edge, where it is set down
+jack_w = 96;            // saddle length across X: carries the ribs at +/-15 and +/-40
+jack_r = 10;            // radius of the saddle's round top
+jack_knob = [50, 14];   // knurled knob [diameter, height]; the nut sits in it
+jack_base_d = [70, 30]; // base cone [bottom, top] diameter
 
 /* [Insect screen] */
 cap_h = 3;          // screen caps stand this far off the wall/floor; screen glues inside the plate
@@ -360,6 +376,15 @@ assert(!ears || fits_bed(lid_d/2 - lid_seam + skirt_h + rise, lid_w + ear_d, ski
 assert(!ears || min([for (i=[1:len(ribs_x)-1]) ribs_x[i]-ribs_x[i-1]]) >= ear_d + 1, "mouse ears on neighbouring ribs touch or merge oddly: shrink ear_d");
 assert(!ears || fits_bed(base_front_len, out_w + max(hood_d, ear_d/2 - rib_t/2) + ear_d/2 - rib_t/2, base_h), "base_front's mouse ears push it off the bed: shrink ear_d");
 assert(!ears || fits_bed(out_w + ear_d - rib_t, out_d/2 - base_seam + (pir ? hood_d : 0), base_h), "base_rear's mouse ears push it off the bed: shrink ear_d");
+jack_base_h = jack_bolt[1] - jack_knob[1];   // screwed right down, the bolt's tip just clears the ground
+jack_lo = jack_base_h + jack_knob[1] + 1 + jack_r;   // saddle's round-top centre height: lowest
+jack_hi = jack_lo + jack_bolt[1] - jack_nut_h - 3;   // and highest (2 mm of thread past the nut)
+jack_yc = y_front + jack_y;
+// Case tilt with the saddle's round top at height h: the underside, a line through the rear bottom edge, is tangent to it
+function jack_tilt(h) = let(A = jack_yc - out_d/2, R = sqrt(A*A + h*h)) 180 + asin(jack_r/R) - atan2(h, A);
+assert(len([for (x=foot_ribs) if (abs(x) + rib_t/2 + 2 <= jack_w/2) x]) >= 4 && jack_w/2 <= stake_x - stake_d/2 - 2, "jack_w: the saddle must carry at least two ribs a side and stay clear of the stake bores");
+assert(jack_yc - jack_r*sin(jack_tilt(jack_hi)) >= out_d/2 - out_d*cos(jack_tilt(jack_hi)) + 8, "tilt jack: at full height the case's front edge passes the saddle; raise jack_y");
+assert(jack_hex*1.16 + 3 <= 2*jack_r, "tilt jack: the bolt head does not fit the saddle; raise jack_r");
 big = 900;
 function zp(y) = skirt_h + rise*(1 - (y - yfl)/lid_d);
 
@@ -826,6 +851,44 @@ module ir_holder() {
 // Cord clamp: two halves split on the cord's axis, M3 into the bosses inside the rear wall. The channel is cord_d - 0.6 so the
 // halves bite the jacket (strain relief: the pull goes into the wall, not into the IEC joint). Lay a 2 mm foam gasket under it.
 // Each half prints wall-face down on the bed; the channel runs through the thickness.
+// Tilt jack: saddle (bolt head pressed into its underside), knob (nut pressed into its top) and base cone. The bolt can't
+// turn (the case holds the saddle), so turning the knob screws the bolt and saddle up or down; the bolt's tail drops into
+// the base's bore. Each piece prints as it stands.
+module tilt(a) { translate([0, out_d/2, 0]) rotate([-a, 0, 0]) translate([0, -out_d/2, 0]) children(); }
+module jack_saddle() {   // as it stands: bottom at z = 0, round top's centre at z = jack_r
+  difference() {
+    translate([-jack_w/2, 0, 0]) rotate([90, 0, 90]) linear_extrude(jack_w)
+      union() { translate([-jack_r, 0]) square([2*jack_r, jack_r]); translate([0, jack_r]) circle(r=jack_r, $fn=96); }
+    translate([0, 0, -1]) cylinder(d=jack_hex/cos(30), h=jack_head_h + 1, $fn=6);   // head pocket: press fit
+  }
+}
+module jack_knob() {
+  difference() {
+    cylinder(d=jack_knob[0], h=jack_knob[1], $fn=96);
+    for (i=[0:15]) rotate(i*360/16) translate([jack_knob[0]/2 + 1, 0, -1]) cylinder(d=6, h=jack_knob[1] + 2, $fn=24);   // knurls
+    translate([0, 0, -1]) cylinder(d=jack_bolt[0] + 1, h=jack_knob[1] + 2, $fn=32);
+    translate([0, 0, jack_knob[1] - jack_nut_h]) cylinder(d=jack_hex/cos(30), h=jack_nut_h + 1, $fn=6);   // nut pocket: press fit
+  }
+}
+module jack_base() {
+  difference() {
+    cylinder(d1=jack_base_d[0], d2=jack_base_d[1], h=jack_base_h, $fn=96);
+    translate([0, 0, -1]) cylinder(d=jack_bolt[0] + 1.5, h=jack_base_h + 2, $fn=32);   // open at the bottom: water drains
+  }
+}
+module tilt_jack_placed(h=jack_lo) {   // ground frame, saddle round-top centre at height h
+  translate([0, jack_yc, 0]) {
+    jack_base();
+    translate([0, 0, jack_base_h]) jack_knob();
+    translate([0, 0, h - jack_r]) jack_saddle();
+  }
+}
+module tilt_jack() {   // the three pieces on one plate, as printed
+  jack_base();
+  translate([jack_base_d[0]/2 + jack_knob[0]/2 + 5, 0, 0]) jack_knob();
+  translate([jack_w/2 - jack_base_d[0]/2, jack_base_d[0]/2 + jack_r + 5, 0]) jack_saddle();
+}
+
 module cord_clamp_half() {
   h = clamp_h / 2;
   difference() {
@@ -940,6 +1003,7 @@ else if (part == "power_shelf") power_shelf();
 else if (part == "hatch_cover") rotate([180,0,0]) hatch_cover(ears);
 else if (part == "ir_holder") ir_holder();
 else if (part == "cord_clamp") cord_clamp();
+else if (part == "tilt_jack") tilt_jack();
 else if (part == "fit_coupon") fit_coupon();
 else if (part == "split_test") split_test();
 else if (part == "vent_cap") screen_cap(vent_open);
