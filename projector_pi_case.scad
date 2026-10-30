@@ -1,5 +1,5 @@
 // Ground-standing projector + Raspberry Pi 3 case: rain-proof (not sealed), ventilated
-// v0.22 - tilt_riser: two identical wedges under the front corners tilt the whole case back riser_a (10 deg) for more upward aim
+// v0.22 - tilt_riser: stackable 5 deg wedges (riser_a), one to three under each front corner, tilt the whole case back for more upward aim
 //         (owner, 2026-10-30: the projector hit the lid before the image cleared the window, and the case went up on a brick)
 // v0.21 - shelf zip-tie slots actually cut: since v0.19's brick they were all filtered out. Now pairs in the strip ahead of
 //         the brick (tie_slot, tie_gap, tie_edge, tie_pitch -> tie_x), where the Y-splitter and leg 1 run to the pass-through
@@ -177,11 +177,13 @@ stake_x = 78;        // inside the channel between the +/-68 and +/-88 ribs
 
 /* [Tilt riser] */
 // Past +11 deg (cone_tilt) the image clips the window top and visor, and past aim_max the body hits the lid: for more
-// upward aim the whole case tilts. Two copies of tilt_riser go under the front corners; the rear feet stay on the ground.
-riser_a = 10;          // case tilt, front up; total upward aim is about riser_a + cone_tilt
+// upward aim the whole case tilts. Stacks of tilt_riser go under the front corners; the rear feet stay on the ground.
+riser_a = 5;           // tilt per riser, front up; total upward aim is about (risers per corner) x riser_a + cone_tilt
+riser_n = 3;           // most risers per corner (checks and print count)
 riser_d = 60;          // how far the riser reaches under the case from its front edge
+riser_nose = 6;        // riser in front of the tongue
 riser_x = [84, 118];   // X span on each side: inside edge clear of the front stake bore, outside edge past the side-wall rib
-riser_lip = [4, 10];   // stop in front of the case's front wall [thickness, height above the underside]
+riser_lip = [4, 10];   // tongue: stop in front of the case's front wall, and the key into the riser above [thickness, height]
 
 /* [Insect screen] */
 cap_h = 3;          // screen caps stand this far off the wall/floor; screen glues inside the plate
@@ -371,7 +373,8 @@ assert(!ears || min([for (i=[1:len(ribs_x)-1]) ribs_x[i]-ribs_x[i-1]]) >= ear_d 
 assert(!ears || fits_bed(base_front_len, out_w + max(hood_d, ear_d/2 - rib_t/2) + ear_d/2 - rib_t/2, base_h), "base_front's mouse ears push it off the bed: shrink ear_d");
 assert(!ears || fits_bed(out_w + ear_d - rib_t, out_d/2 - base_seam + (pir ? hood_d : 0), base_h), "base_rear's mouse ears push it off the bed: shrink ear_d");
 assert(riser_x[0] >= stake_x + stake_d/2 + 1 && riser_x[1] >= out_w/2, "riser_x: keep the inside edge off the front stake bore and the outside edge past the side wall");
-assert(fits_bed(riser_d + riser_lip[0] + 5, out_d*sin(riser_a) + riser_lip[1] + 5, riser_x[1] - riser_x[0]), "tilt_riser is off the bed: lower riser_a");
+assert(fits_bed(riser_d + riser_lip[0] + riser_nose + 5, (out_d + riser_lip[0] + riser_nose)*sin(riser_a) + riser_lip[1] + 1, riser_x[1] - riser_x[0]), "tilt_riser is off the bed: lower riser_a");
+assert(riser_lip[1] + clearance + 3 <= out_d*sin(riser_a), "tilt_riser: the groove for the tongue cuts nearly through the riser; raise riser_a or lower riser_lip[1]");
 big = 900;
 function zp(y) = skirt_h + rise*(1 - (y - yfl)/lid_d);
 
@@ -838,19 +841,26 @@ module ir_holder() {
 // Cord clamp: two halves split on the cord's axis, M3 into the bosses inside the rear wall. The channel is cord_d - 0.6 so the
 // halves bite the jacket (strain relief: the pull goes into the wall, not into the IEC joint). Lay a 2 mm foam gasket under it.
 // Each half prints wall-face down on the bed; the channel runs through the thickness.
-// Tilt riser: the case rotates about its rear bottom edge by riser_a; the riser fills the wedge under the front of the
-// outer two ribs, with a lip in front of the front wall so the case can't slide off. A prism along X, so the left and
-// right risers are the same part (print two). Prints on its side: the wedge profile flat on the bed.
-module case_tilt() { translate([0, out_d/2, 0]) rotate([-riser_a, 0, 0]) translate([0, -out_d/2, 0]) children(); }
-module tilt_riser_placed(sx=1) {   // ground frame, under the tilted case
-  w = riser_x[1] - riser_x[0];
-  intersection() {
-    case_tilt() mirror([sx < 0 ? 1 : 0, 0, 0]) translate([riser_x[0], y_front - riser_lip[0], -out_d]) union() {
-      translate([0, riser_lip[0], 0]) cube([w, riser_d, out_d]);   // under the ribs, up to the underside
-      cube([w, riser_lip[0], out_d + riser_lip[1]]);               // lip
+// Tilt risers: the case rotates about its rear bottom edge. Each riser is a riser_a sector about that edge, under the front
+// of the outer two ribs, so identical risers stack: one, two or three per corner tilt the case 1x, 2x or 3x riser_a. A tongue
+// on top of each sits in the groove under the next; the top one's tongue stops the case's front wall. A prism along X, so
+// left and right are the same part. Prints on its side: the profile flat on the bed.
+module tilt(a) { translate([0, out_d/2, 0]) rotate([-a, 0, 0]) translate([0, -out_d/2, 0]) children(); }
+module riser_profile() {   // u = forward from the pivot edge, v = up; the faces at 0 and riser_a are planes through the pivot
+  r0 = out_d - riser_d;
+  r1 = out_d + riser_lip[0] + riser_nose;
+  difference() {
+    union() {
+      polygon([[r0, 0], [r1, 0], [r1*cos(riser_a), r1*sin(riser_a)], [r0*cos(riser_a), r0*sin(riser_a)]]);
+      rotate(riser_a) translate([out_d, -1]) square([riser_lip[0], riser_lip[1] + 1]);                 // tongue
     }
-    translate([-out_w, -out_d, 0]) cube([2*out_w, 2*out_d, out_d]);
+    translate([out_d - clearance, -1]) square([riser_lip[0] + 2*clearance, riser_lip[1] + clearance + 1]);   // groove
   }
+}
+module tilt_riser_placed(sx=1, k=0) {   // ground frame: the k-th riser up in a corner stack (0 = on the ground)
+  tilt(k*riser_a) mirror([sx < 0 ? 1 : 0, 0, 0])
+    multmatrix([[0, 0, -1, riser_x[1]], [-1, 0, 0, out_d/2], [0, 1, 0, 0], [0, 0, 0, 1]])
+      linear_extrude(riser_x[1] - riser_x[0]) riser_profile();
 }
 module tilt_riser() { translate([0, out_d/2, riser_x[1]]) rotate([0, 90, 0]) tilt_riser_placed(); }   // as printed
 

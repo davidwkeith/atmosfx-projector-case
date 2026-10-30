@@ -17,7 +17,7 @@ The projector sits on a ball head inside the case. You reach it through the aim 
 | Pan (left/right) only | +/-10 deg (beyond this the image clips the window frame; turn the case instead) |
 | Tilt (up/down) only | +/-11 deg (the image starts clipping on the window or visor beyond this) |
 | Pan and tilt together | +/-8 deg each |
-| More upward tilt | Put the case on the two `tilt_riser`s (below): adds 10 deg, so up to about +21 deg |
+| More upward tilt | Stack `tilt_riser`s under the front corners (below): 5 deg each, up to three, so up to about +26 deg |
 
 These assume the Tkisko TO2's short throw (about 0.95:1, derived from its manual) with the image centred on the lens. Measure both (`throw_ratio`, `lens_offset`) and rerun the light-cone check: a shorter throw means a wider cone and less pan, and a projector that throws the image upward ("offset") trades downward tilt for upward.
 
@@ -25,11 +25,17 @@ Past that, the projector hits the window frame, the lid or the Pi divider. Get t
 
 ## Tilting the case
 
-The ball head can tilt further than the case lets it: past about +11 deg the image clips the top of the window and the visor, and the projector body reaches the lid. For a higher target, tilt the whole case instead. Print two `tilt_riser`s (the same part) and slide one under each front corner, lip against the front wall, so the outer two feet sit on its sloped top and the rear feet stay on the ground. That lifts the front about 52 mm and tilts the case back 10 deg (`riser_a`; reprint with a different angle if you need more or less).
+The ball head can tilt further than the case lets it: past about +11 deg the image clips the top of the window and the visor, and the projector body reaches the lid. For a higher target, tilt the whole case instead, on stacks of `tilt_riser` under the two front corners. Each riser is a 5 deg wedge (`riser_a`); they are all the same part and stack, so one, two or three per corner tilt the case back 5, 10 or 15 deg. The ball head covers everything in between.
+
+1. Put the same number of risers under each corner. Each one's tongue (the raised strip at the front) goes in the groove under the one above.
+2. Lift the front of the case and set it down with its outer feet on the top risers and the front wall against the top tongue. The rear feet stay on the ground.
+3. Too high or too low: take a riser out of each stack or add one, then fine-tune with the ball head.
+
+Print six (three per corner) for the full range. For 2026 a brick under the front does the same job (2026-10-30); the risers are for 2027.
 
 - Put the risers on firm, level ground; the front stakes still go down through their tubes beside them.
 - Water on the floor runs to the rear drains, through the divider pass-through into the Pi zone. The sled stands on pads, so it stays dry, but keep the rear drains and the gap under the rear of the case clear.
-- A brick or a block of wood does the same job for now (that is how it was first aimed, 2026-10-30); keep it under the front feet only, so the gap under the floor stays open.
+- With a brick or a block of wood instead, keep it under the front feet only, so the gap under the floor stays open.
 
 ## Steps
 

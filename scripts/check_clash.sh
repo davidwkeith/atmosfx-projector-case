@@ -69,7 +69,8 @@ run screen-caps   "intersection(){ base_all(); union(){ for (v=vents) vent_cap_p
 run cord-clamp     "intersection(){ cord_clamp_placed(); union(){ base_all(); $LID; } }"   # clamp against the rear wall and lid skirt: contact only
 run brick          "intersection(){ translate([0, y_pi0+0.3, shelf_zz]) brick_env(); union(){ base_all(); $LID; translate([0, y_pi0+0.3, shelf_zz]) power_shelf(); } }"   # the brick on the shelf vs case, lid roof and shelf
 run pir            "intersection(){ pir_sensor(); union(){ base_all(); translate([0, y_pi0+0.3, shelf_zz]) { power_shelf(); brick_env(); } } }"   # board and dome vs case, shelf and brick (the dome passes through its hole)
-run tilt-riser     "intersection(){ union(){ tilt_riser_placed(1); tilt_riser_placed(-1); } case_tilt() union(){ base_all(); $LID; translate([lens_x, y0, win_zc]) window_frame(); } }"   # the risers under the tilted case: contact only
+run tilt-riser     "intersection(){ union(){ for (sx=[-1,1], k=[0:riser_n-1]) tilt_riser_placed(sx, k); } tilt(riser_n*riser_a) union(){ base_all(); $LID; translate([lens_x, y0, win_zc]) window_frame(); } }"   # full stacks under the tilted case: contact only
+run riser-stack    "intersection(){ tilt_riser_placed(1, 0); tilt_riser_placed(1, 1); }"   # tongue in groove: contact only
 run cord-base      "intersection(){ ac_cord(); base_all(); }"   # the cord through its opening
 run aim-sweep      "intersection(){ union(){ base_all(); $LID; translate([lens_x, y0, win_zc]) window_frame(); exhaust_cap_placed(); intake_cap_placed(); }
                       for (a=[[1,0],[0,1],[1,1],[1,-1]], sg=[-1,1])
