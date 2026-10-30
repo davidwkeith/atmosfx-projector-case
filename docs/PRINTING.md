@@ -54,6 +54,7 @@ After any change: `make parts`, then `scripts/check_clash.sh`. If you changed a 
 | `ir_holder` | 1 | 10 m | PETG 1 g | Needed: the projector has no CEC (BRINGUP row 9, 2026-10-25), so the IR LED sends its power code |
 | `power_shelf` | 1 | 2 h 29 m | PETG 47 g | Prints flat. Carries the calipered brick (v0.19); v0.20 adds vent slots right of the brick, v0.21 zip-tie pairs ahead of it (time and weight are v0.19's) |
 | `cord_clamp` | 1 | 49 m | PETG 13 g | Both halves in one print, flat, wall-face down. Holds the AC cord at the rear-wall opening (v0.19: taller for the 40 x 40 mm opening; the one printed 2026-10-16 no longer fits) |
+| `tilt_riser` | 2 | not sliced yet | PETG, about 60 g each (estimate) | Only if the target is above +11 deg (see [AIMING.md](AIMING.md#tilting-the-case)). Prints on its side, wedge profile flat on the bed; both are the same part. Outside colour |
 | `lid_rear` | 1 | 6 h 32 m | PETG 162 g | 0.30mm DRAFT, tile settings and mouse ears |
 | `lid_front` | 1 | 10 h 31 m | PETG 255 g | 0.30mm DRAFT, tile settings, mouse ears and the 1.5 mm brim |
 | `base_rear` | 1 | 17 h 12 m | PETG 414 g | 0.30mm DRAFT, tile settings, mouse ears and rib feet (v0.19: calipered brick, 40 x 40 mm cord opening) |

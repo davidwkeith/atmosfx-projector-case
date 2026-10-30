@@ -17,10 +17,19 @@ The projector sits on a ball head inside the case. You reach it through the aim 
 | Pan (left/right) only | +/-10 deg (beyond this the image clips the window frame; turn the case instead) |
 | Tilt (up/down) only | +/-11 deg (the image starts clipping on the window or visor beyond this) |
 | Pan and tilt together | +/-8 deg each |
+| More upward tilt | Put the case on the two `tilt_riser`s (below): adds 10 deg, so up to about +21 deg |
 
 These assume the Tkisko TO2's short throw (about 0.95:1, derived from its manual) with the image centred on the lens. Measure both (`throw_ratio`, `lens_offset`) and rerun the light-cone check: a shorter throw means a wider cone and less pan, and a projector that throws the image upward ("offset") trades downward tilt for upward.
 
-Past that, the projector hits the window frame or the Pi divider. Get the case close first and use the ball head for fine adjustment.
+Past that, the projector hits the window frame, the lid or the Pi divider. Get the case close first and use the ball head for fine adjustment.
+
+## Tilting the case
+
+The ball head can tilt further than the case lets it: past about +11 deg the image clips the top of the window and the visor, and the projector body reaches the lid. For a higher target, tilt the whole case instead. Print two `tilt_riser`s (the same part) and slide one under each front corner, lip against the front wall, so the outer two feet sit on its sloped top and the rear feet stay on the ground. That lifts the front about 52 mm and tilts the case back 10 deg (`riser_a`; reprint with a different angle if you need more or less).
+
+- Put the risers on firm, level ground; the front stakes still go down through their tubes beside them.
+- Water on the floor runs to the rear drains, through the divider pass-through into the Pi zone. The sled stands on pads, so it stays dry, but keep the rear drains and the gap under the rear of the case clear.
+- A brick or a block of wood does the same job for now (that is how it was first aimed, 2026-10-30); keep it under the front feet only, so the gap under the floor stays open.
 
 ## Steps
 
@@ -42,7 +51,7 @@ Past that, the projector hits the window frame or the Pi divider. Get the case c
 | Problem | Fix |
 |---|---|
 | Image cut off or dark at one edge | The window is clipping it: recentre the projector and move the case. |
-| Can't reach the target | Turn the case for pan. For tilt, shim under the front or rear feet and keep the gap under the floor open. |
+| Can't reach the target | Turn the case for pan. For more upward tilt, use the tilt risers (above); for less, shim under the rear feet. Keep the gap under the floor open. |
 | Image droops over time | Retighten the ball head. Check the pedestal screws and the hot-shoe adapter's ring are tight. |
 | Image is trapezoidal | Use the projector's keystone setting. Square up the case first, since keystone correction softens the image. |
 | Cover won't seat | A bolt is too tight against the wall: back it out half a turn so the head clears the cover. |

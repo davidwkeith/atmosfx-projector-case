@@ -1,4 +1,6 @@
 // Ground-standing projector + Raspberry Pi 3 case: rain-proof (not sealed), ventilated
+// v0.22 - tilt_riser: two identical wedges under the front corners tilt the whole case back riser_a (10 deg) for more upward aim
+//         (owner, 2026-10-30: the projector hit the lid before the image cleared the window, and the case went up on a brick)
 // v0.21 - shelf zip-tie slots actually cut: since v0.19's brick they were all filtered out. Now pairs in the strip ahead of
 //         the brick (tie_slot, tie_gap, tie_edge, tie_pitch -> tie_x), where the Y-splitter and leg 1 run to the pass-through
 // v0.20 - shelf vent slots (shelf_vent) right of the brick, under the Pi vent: the sled fan's air had no way out from under the shelf;
@@ -36,7 +38,7 @@
 // Print everything in PETG. Lid prints roof-down. Base+lid split front/rear (MK3S bed 250x210x210); front pieces lie flat with X along the 250 mm axis.
 
 /* [Part] */
-part = "assembly"; // [assembly, base, lid, window_frame, pedestal, hatch_cover, power_shelf, sled, ir_holder, vent_cap, exhaust_cap, intake_cap, fit_coupon, split_test]
+part = "assembly"; // [assembly, base, lid, window_frame, pedestal, hatch_cover, power_shelf, sled, ir_holder, vent_cap, exhaust_cap, intake_cap, fit_coupon, split_test, tilt_riser]
 sled = "pi3";      // [pi3, pi4, pi5, zero2w] sled shown in the assembly / exported by part="sled"
 tile = "all";      // [all, front, rear] for base+lid
 explode = 0;       // [0:1:80]
@@ -172,6 +174,14 @@ stakes = true;       // sealed stake tubes inside the four corners: drive tent s
 stake_d = 9;         // bore for 8 mm tent stakes / 1/4 in pins
 stake_collar = 15;   // tube rises this far above the floor so water can't reach the bore
 stake_x = 78;        // inside the channel between the +/-68 and +/-88 ribs
+
+/* [Tilt riser] */
+// Past +11 deg (cone_tilt) the image clips the window top and visor, and past aim_max the body hits the lid: for more
+// upward aim the whole case tilts. Two copies of tilt_riser go under the front corners; the rear feet stay on the ground.
+riser_a = 10;          // case tilt, front up; total upward aim is about riser_a + cone_tilt
+riser_d = 60;          // how far the riser reaches under the case from its front edge
+riser_x = [84, 118];   // X span on each side: inside edge clear of the front stake bore, outside edge past the side-wall rib
+riser_lip = [4, 10];   // stop in front of the case's front wall [thickness, height above the underside]
 
 /* [Insect screen] */
 cap_h = 3;          // screen caps stand this far off the wall/floor; screen glues inside the plate
@@ -360,6 +370,8 @@ assert(!ears || fits_bed(lid_d/2 - lid_seam + skirt_h + rise, lid_w + ear_d, ski
 assert(!ears || min([for (i=[1:len(ribs_x)-1]) ribs_x[i]-ribs_x[i-1]]) >= ear_d + 1, "mouse ears on neighbouring ribs touch or merge oddly: shrink ear_d");
 assert(!ears || fits_bed(base_front_len, out_w + max(hood_d, ear_d/2 - rib_t/2) + ear_d/2 - rib_t/2, base_h), "base_front's mouse ears push it off the bed: shrink ear_d");
 assert(!ears || fits_bed(out_w + ear_d - rib_t, out_d/2 - base_seam + (pir ? hood_d : 0), base_h), "base_rear's mouse ears push it off the bed: shrink ear_d");
+assert(riser_x[0] >= stake_x + stake_d/2 + 1 && riser_x[1] >= out_w/2, "riser_x: keep the inside edge off the front stake bore and the outside edge past the side wall");
+assert(fits_bed(riser_d + riser_lip[0] + 5, out_d*sin(riser_a) + riser_lip[1] + 5, riser_x[1] - riser_x[0]), "tilt_riser is off the bed: lower riser_a");
 big = 900;
 function zp(y) = skirt_h + rise*(1 - (y - yfl)/lid_d);
 
@@ -826,6 +838,22 @@ module ir_holder() {
 // Cord clamp: two halves split on the cord's axis, M3 into the bosses inside the rear wall. The channel is cord_d - 0.6 so the
 // halves bite the jacket (strain relief: the pull goes into the wall, not into the IEC joint). Lay a 2 mm foam gasket under it.
 // Each half prints wall-face down on the bed; the channel runs through the thickness.
+// Tilt riser: the case rotates about its rear bottom edge by riser_a; the riser fills the wedge under the front of the
+// outer two ribs, with a lip in front of the front wall so the case can't slide off. A prism along X, so the left and
+// right risers are the same part (print two). Prints on its side: the wedge profile flat on the bed.
+module case_tilt() { translate([0, out_d/2, 0]) rotate([-riser_a, 0, 0]) translate([0, -out_d/2, 0]) children(); }
+module tilt_riser_placed(sx=1) {   // ground frame, under the tilted case
+  w = riser_x[1] - riser_x[0];
+  intersection() {
+    case_tilt() mirror([sx < 0 ? 1 : 0, 0, 0]) translate([riser_x[0], y_front - riser_lip[0], -out_d]) union() {
+      translate([0, riser_lip[0], 0]) cube([w, riser_d, out_d]);   // under the ribs, up to the underside
+      cube([w, riser_lip[0], out_d + riser_lip[1]]);               // lip
+    }
+    translate([-out_w, -out_d, 0]) cube([2*out_w, 2*out_d, out_d]);
+  }
+}
+module tilt_riser() { translate([0, out_d/2, riser_x[1]]) rotate([0, 90, 0]) tilt_riser_placed(); }   // as printed
+
 module cord_clamp_half() {
   h = clamp_h / 2;
   difference() {
@@ -940,6 +968,7 @@ else if (part == "power_shelf") power_shelf();
 else if (part == "hatch_cover") rotate([180,0,0]) hatch_cover(ears);
 else if (part == "ir_holder") ir_holder();
 else if (part == "cord_clamp") cord_clamp();
+else if (part == "tilt_riser") tilt_riser();
 else if (part == "fit_coupon") fit_coupon();
 else if (part == "split_test") split_test();
 else if (part == "vent_cap") screen_cap(vent_open);
