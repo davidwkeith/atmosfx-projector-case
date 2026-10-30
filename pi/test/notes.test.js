@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { UPDATE_STALE_MS, alarmsOf, badgesOf, checksSummaryText, lastUpdateNote, systemNotesOf } from "../public/notes.js";
+import { UPDATE_STALE_MS, alarmsOf, badgesOf, checksSummaryText, lastUpdateNote, systemNotesOf, upgradeFinished } from "../public/notes.js";
 
 const calm = { thermal: { enabled: true, alarms: [] }, storage: { dataMounted: true, state: "ok" }, web: { passwordSet: true }, clock: { synced: true }, version: { available: false } };
 
@@ -65,5 +65,20 @@ describe("lastUpdateNote", () => {
     const running = { state: "running", at, message: "resumed after the maintenance reboot" };
     expect(lastUpdateNote(running, t + 60_000)).toMatchObject({ level: "info", text: expect.stringMatching(/^Update in progress/) });
     expect(lastUpdateNote(running, t + UPDATE_STALE_MS + 1)).toMatchObject({ level: "warn", text: expect.stringMatching(/never finished.*last step was: resumed/) });
+  });
+});
+
+describe("upgradeFinished", () => {
+  const before = "2026-10-28T10:00:00Z";
+  const st = (version, last) => ({ version: { version, last } });
+  it("waits while the old version answers with the old record or a running one", () => {
+    expect(upgradeFinished(null, { target: "0.12.0", before })).toBe(false);
+    expect(upgradeFinished(st("0.11.0", { state: "done", at: before }), { target: "0.12.0", before })).toBe(false);
+    expect(upgradeFinished(st("0.11.0", { state: "running", at: "2026-10-29T10:00:00Z" }), { target: "0.12.0", before })).toBe(false);
+  });
+  it("is done when the new version answers or a new outcome is recorded", () => {
+    expect(upgradeFinished(st("0.12.0", null), { target: "0.12.0", before })).toBe(true);
+    expect(upgradeFinished(st("0.11.0", { state: "failed", at: "2026-10-29T10:00:00Z" }), { target: "0.12.0", before })).toBe(true);
+    expect(upgradeFinished(st("0.11.0", { state: "stopped", at: "2026-10-29T10:00:00Z" }), { target: "0.12.0", before: null })).toBe(true);
   });
 });

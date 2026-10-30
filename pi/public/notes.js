@@ -87,3 +87,17 @@ export function lastUpdateNote(last, now = Date.now()) {
       return null;
   }
 }
+
+/**
+ * Whether an upgrade to version `target` has finished, from a fresh /api/status: the
+ * new version answers, or videofx-update recorded an outcome (done, failed, stopped,
+ * up-to-date) other than the one on record when the button was pressed (`before`,
+ * that record's `at`; compared as-is so the Pi's and browser's clocks never meet).
+ */
+export function upgradeFinished(st, { target, before }) {
+  const v = st?.version;
+  if (!v) return false;
+  if (target && v.version === target) return true;
+  const last = v.last;
+  return !!last?.state && last.state !== "running" && (last.at ?? null) !== (before ?? null);
+}
