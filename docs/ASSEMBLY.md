@@ -71,14 +71,14 @@ The pictures are the model built up to each step (`part="assembly"`, `step=N`). 
 3. Mount the projector on the ball head.
 4. Fit the right-angle HDMI plug in the right-face I/O strip, cable pointing rearward.
 5. Fit the right-angle 5.5 x 2.5 mm adapter in the DC jack at the rear top-right corner, pointing back, above the intake.
-6. If BRINGUP row 4a passed, plug the Y-splitter's leg 1 into it; if it failed, fit the buck converter first (WIRING.md); otherwise leave leg 1 unplugged.
+6. Leave it unplugged for now: the stock wall-wart's cord, through the relay extension, goes into it in the power-shelf steps. Never the brick's cord (BRINGUP row 4a).
 7. If the IR fallback is built: stick the `ir_holder` (LED in it) on the projector's front face above the Tkisko logo, about 35 mm right of centre and 50 mm above the underside, body pointing toward the window. Run the IR LED lead up and back over the projector's top, held with tape, then through the right side gap past the baffle to the Pi.
 
 ## 9. Pi sled
 
 ![Pi sled, HAT and fan with the Pi-zone wiring (red)](assembly/step-09.png)
 
-The sled goes in before the shelf, which covers it about 60 mm up. Work from the top, lid off. Red is the wiring once everything is in: HDMI forward through the divider, across the rear gap and up the right side gap to the projector; leg 2 and the PIR leads down the shelf's wire slot to the HAT; the fan lead; speaker wire down the chimney. The DigiAMP+'s barrel jack and speaker terminals are on its edge facing the divider (from the product photo), so leg 2 goes in through a right-angle adapter.
+The sled goes in before the shelf, which covers it about 60 mm up. Work from the top, lid off. Red is the wiring once everything is in: HDMI forward through the divider, across the rear gap and up the right side gap to the projector; the brick's DC cord and the PIR leads down the shelf's wire slot to the HAT; the fan lead; speaker wire down the chimney. The DigiAMP+'s barrel jack and speaker terminals are on its edge facing the divider (from the product photo), so the brick's DC plug goes in through a right-angle adapter.
 
 1. Mount the Pi on its sled (4x M2.5).
 2. On a Pi 3 or 4, stick the heatsink on the SoC, then screw the fan to the sled's upright plate (4x M2.5 x 16, nuts on the fan side), label facing the Pi so it blows into the gap under the HAT.
@@ -86,7 +86,7 @@ The sled goes in before the shelf, which covers it about 60 mm up. Work from the
 4. Plug the GPIO leads (the fan's switch, and the PIR, relay and IR LED leads if they are in already) into the DigiAMP+'s pass-through header per [pi/docs/wiring.md](../pi/docs/wiring.md).
 5. Set the sled on its pins and fit the thumbscrew.
 6. Plug the HDMI cable into the Pi straight through the low part of the divider pass-through (there is no room for the plug behind the divider). Route the cable from there along the side gap above the baffle to the right-face I/O strip, and check BRINGUP row 21 (the cable crossing the rear gap at full tilt and pan).
-7. Put a right-angle adapter (a second one from the 5-pack) in the DigiAMP+'s barrel jack, elbow pointing up: the jack faces the divider about 15 mm away, inside the pass-through, so leg 2 drops into it from above in step 10.
+7. Put a right-angle adapter (a second one from the 5-pack) in the DigiAMP+'s barrel jack, elbow pointing up: the jack faces the divider about 15 mm away, inside the pass-through, so the brick's DC plug drops into it from above in step 10.
 8. Screw the speaker wire into the two terminal blocks (they pull off: wire them on the bench and push them back on from above) on the same edge, run it round the USB end of the Pi, feed it down the chimney and plug the chimney round the wires with foam.
 
 ## 10. Power
@@ -96,15 +96,15 @@ The sled goes in before the shelf, which covers it about 60 mm up. Work from the
 Note: the shipped provisional brick layout cannot be assembled (the brick sits across the cord opening); re-fit the shelf after BRINGUP row 4.
 
 1. Lid off, projector aside if needed.
-2. Thread the PIR leads and the Y-splitter's leg 2 (plug first) down through the shelf's wire slot, then seat the shelf on its ledges over the sled and lay the brick on it toward the rear wall, under the velcro strap.
+2. Thread the PIR leads and the brick's DC plug (plug first) down through the shelf's wire slot, then seat the shelf on its ledges over the sled and lay the brick on it toward the rear wall, under the velcro strap.
 3. Pass the AC cord's connector in through the opening in the rear wall and plug it fully into the brick's inlet.
 4. Close the `cord_clamp` over its foam gasket (4x M3 x 16 self-tapping into the wall bosses) and pull-test it (BRINGUP row 17a).
-5. Leave a drip loop outside, below the clamp.
-6. Plug the brick's DC cord into the Y-splitter and meter both legs (centre +) before connecting anything. Lay the splitter and leg 1 along the strip in front of the brick toward the divider pass-through and tie them through the zip-tie pairs there.
-7. If the relay fallback is built, cut leg 1 and splice the relay as in WIRING.md.
-8. Plug leg 2 into the DigiAMP+'s elbow adapter and the PIR leads into the header ([pi/docs/wiring.md](../pi/docs/wiring.md)).
+5. Thread the stock wall-wart's DC cord in through the same opening before the clamp closes (step 4), foam packed round both cords; leave a drip loop on each outside, below the clamp.
+6. Meter the brick's plug (24 V) and the wall-wart's (about 21 V), both centre +, before connecting anything. Label them: they are the same size.
+7. Splice the relay into the short 5.5 x 2.5 mm extension as in WIRING.md; wall-wart cord into the extension, extension into the projector's right-angle adapter. Lay the extension and the relay along the strip in front of the brick toward the divider pass-through and tie them through the zip-tie pairs there.
+8. Plug the brick's DC cord into the DigiAMP+'s elbow adapter and the PIR leads into the header ([pi/docs/wiring.md](../pi/docs/wiring.md)).
 
-To take the sled out later: unplug leg 2, unstrap the brick and tip the shelf up off its ledges (the AC cord stays clamped).
+To take the sled out later: unplug the brick's DC cord from the DigiAMP+, unstrap the brick and tip the shelf up off its ledges (the AC cord stays clamped).
 
 ## 11. First power-up
 
