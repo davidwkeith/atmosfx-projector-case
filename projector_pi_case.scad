@@ -1,4 +1,6 @@
 // Ground-standing projector + Raspberry Pi 3 case: rain-proof (not sealed), ventilated
+// v0.21 - shelf zip-tie slots actually cut: since v0.19's brick they were all filtered out. Now pairs in the strip ahead of
+//         the brick (tie_slot, tie_gap, tie_edge, tie_pitch -> tie_x), where the Y-splitter and leg 1 run to the pass-through
 // v0.20 - shelf vent slots (shelf_vent) right of the brick, under the Pi vent: the sled fan's air had no way out from under the shelf;
 //         assembly steps 9/10 swapped (sled before shelf: the shelf covers it)
 // v0.19 - cord opening 40 x 40 (cord_dz 33) for the captive cord's 3-pin plug;
@@ -116,7 +118,10 @@ hatch_lock = true;   // optional M3 (security) screw through the cover's bottom 
 /* [Power] */
 shelf_z = 60;       // power shelf height above floor: clears the tallest sled stack (asserted)
 ledge_w = 9;        // shelf ledge on the side walls
-tie_gap = 34;       // zip-tie slot spacing across the shelf (module sits between)
+tie_slot = [6, 3.2];   // zip-tie slot [across the tie, along it]: 8 in UV ties are about 4.8 mm wide
+tie_gap = 10;       // centre spacing of a tie-slot pair across the leads (Y): about 6.8 mm between the slots for the splitter's leads
+tie_edge = 4;       // the front slot's centre from the shelf's front edge (the strip ahead of the brick, where leg 1 runs to the pass-through)
+tie_pitch = 25;     // largest spacing of the pairs along X
 cord_x = -80;       // centre of the AC cord opening (beside the brick's AC end) in the rear wall: the opening, its bosses and the clamp all have to sit inside the left wall (asserted)
 cord_dz = 33;       // opening centre above the shelf's top face: the clamp's lower screws clear the shelf, the clamp's top clears the lid skirt (asserted)
 cord_open = [40, 40];   // rear-wall opening [X, Z]: the brick's captive AC cord threads out through it, so it must pass the 3-pin wall plug (about 30 mm, owner 2026-10-25); the clamp covers it
@@ -308,6 +313,12 @@ shelf_w = inner_w - 1;
 shelf_d = pi_zone_d - 1;
 brick_x0 = -shelf_w/2 + ac_plug_l + ac_bend;   // the brick's left end (AC inlet), leaving room for the plug and the cord's turn; DC cord out the right end
 brick_y0 = shelf_d - brick[1] - brick_gap; // its front edge: it sits toward the rear wall
+// Zip-tie pairs in the strip ahead of the brick (shelf coordinates): from just right of leg 2's elbow (it rises toward the
+// shelf's underside, where a tie's band would sit) to the brick's right end, short of the vent slots
+tie_x0 = -42.5 + amp_jack_x + 7 + tie_slot[0]/2 + 3;
+tie_x1 = brick_x0 + brick[0] - tie_slot[0]/2;
+tie_n = floor((tie_x1 - tie_x0)/tie_pitch) + 1;
+tie_x = [for (i=[0:tie_n]) tie_x0 + i*(tie_x1 - tie_x0)/tie_n];
 
 lid_w = out_w + 2*(lid_clr + wall);
 lid_d = out_d + 2*(lid_clr + wall);
@@ -329,6 +340,9 @@ assert(cord_z + clamp_h/2 <= lid_z0 - 2, "lower cord_dz: the cord clamp runs int
 assert(cord_d >= 5 && cord_d <= cord_open[1] - 6, "cord_d: measure the cord; it must fit the opening and the clamp channel");
 assert(brick_x0 + brick[0] + 3 <= pir_x - 6, "the brick runs into the PIR / wire slot: measure it, or shorten it");
 assert(brick_y0 >= 0 && brick[1] + brick_gap <= shelf_d, "the brick is deeper than the shelf");
+assert(tie_x1 > tie_x0 && tie_edge - tie_slot[1]/2 >= 1.5 && tie_edge + tie_gap + tie_slot[1]/2 + 2 <= brick_y0 - 4,
+       "the zip-tie slots do not fit between the shelf's front edge and the strap slots: shrink tie_gap or tie_edge");
+assert(tie_x1 + tie_slot[0]/2 + 2 <= brick_x0 + brick[0] + 4, "the zip-tie slots run into the shelf vent slots");
 assert(cord_x - cord_open[0]/2 <= brick_x0 - ac_plug_l && cord_x + cord_open[0]/2 >= -shelf_w/2 + 6, "the cord opening must sit beside the brick's AC end, where the plugged-in cord turns back to the wall: move cord_x");
 assert(shelf_zz + 3 + brick[2] + 2 <= lid_z0, "the brick hits the lid skirt: raise top_air (or lower shelf_z)");
 assert(pane_top_clear >= pane_t + clearance + 2.5, "raise pane_top_clear: the rebate's 45 deg ceiling would cut through the base rim");
@@ -538,7 +552,8 @@ module power_shelf() {
     translate([-shelf_w/2, 0, 0]) cube([shelf_w, shelf_d, 3]);
     for (x=[brick_x0 + brick[0]*0.3, brick_x0 + brick[0]*0.7], y=[brick_y0 - 4, brick_y0 + brick[1] + 1])   // velcro strap slots round the brick
       translate([x-10, y, -1]) cube([20, 3, 5]);
-    for (x=[-70:20:70], sy=[-1,1]) if (x > brick_x0 + brick[0] + 6) translate([x-1.6, shelf_d/2+sy*tie_gap/2-3, -1]) cube([3.2, 6, 5]);   // zip-tie slots (low-voltage side)
+    for (x=tie_x, y=[tie_edge, tie_edge+tie_gap])   // zip-tie pairs ahead of the brick: the Y-splitter and leg 1 on their way to the pass-through
+      translate([x-tie_slot[0]/2, y-tie_slot[1]/2, -1]) cube([tie_slot[0], tie_slot[1], 5]);
     translate([pir_x-6, shelf_d-wire_slot[1], -1]) cube([wire_slot[0], wire_slot[1]+1, 5]);   // PIR wires and the DigiAMP+ leg (with its plug) down to the Pi
     for (y=[4:shelf_vent[1]:shelf_d-wire_slot[1]-4-shelf_vent[0]])   // vent slots: the Pi zone's air rises past the brick's right end to the Pi vent
       translate([brick_x0+brick[0]+4, y, -1]) cube([shelf_w/2-ledge_w-2-(brick_x0+brick[0]+4), shelf_vent[0], 5]);
