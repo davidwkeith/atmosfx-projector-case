@@ -17,7 +17,7 @@ The projector sits on a ball head inside the case. You reach it through the aim 
 | Pan (left/right) only | +/-10 deg (beyond this the image clips the window frame; turn the case instead) |
 | Tilt (up/down) only | +/-11 deg (the image starts clipping on the window or visor beyond this) |
 | Pan and tilt together | +/-8 deg each |
-| More upward tilt | Stack `tilt_riser`s under the front corners (below): 5 deg each, up to three, so up to about +26 deg |
+| More upward tilt | Stand the front on the `tilt_jack` (below): it tilts the case back 16-24 deg, so the image can go from about +5 to +35 deg |
 
 These assume the Tkisko TO2's short throw (about 0.95:1, derived from its manual) with the image centred on the lens. Measure both (`throw_ratio`, `lens_offset`) and rerun the light-cone check: a shorter throw means a wider cone and less pan, and a projector that throws the image upward ("offset") trades downward tilt for upward.
 
@@ -25,17 +25,16 @@ Past that, the projector hits the window frame, the lid or the Pi divider. Get t
 
 ## Tilting the case
 
-The ball head can tilt further than the case lets it: past about +11 deg the image clips the top of the window and the visor, and the projector body reaches the lid. For a higher target, tilt the whole case instead, on stacks of `tilt_riser` under the two front corners. Each riser is a 5 deg wedge (`riser_a`); they are all the same part and stack, so one, two or three per corner tilt the case back 5, 10 or 15 deg. The ball head covers everything in between.
+The ball head can tilt further than the case lets it: past about +11 deg the image clips the top of the window and the visor, and the projector body reaches the lid. For a higher target, tilt the whole case on the `tilt_jack`, a screw jack under the middle of the front. The rear feet stay on the ground, so the case stands on three points and doesn't rock on uneven ground.
 
-1. Put the same number of risers under each corner. Each one's tongue (the raised strip at the front) goes in the groove under the one above.
-2. Lift the front of the case and set it down with its outer feet on the top risers and the front wall against the top tongue. The rear feet stay on the ground.
-3. Too high or too low: take a riser out of each stack or add one, then fine-tune with the ball head.
+1. **Build it once.** Press the M8 bolt's head into the saddle's underside and the M8 nut into the knob's top (a vise or a few taps; a drop of CA glue if they're loose). Thread the knob onto the bolt, nut side up, and drop the bolt's tail into the base.
+2. **Screw it right down** (knob against the saddle) and set the base on firm ground, centred under the front about 40 mm in from the front edge (`jack_y`), saddle running side to side.
+3. **Lower the case onto it**, so the inner feet rest on the saddle's round top.
+4. **Turn the knob** to raise or lower the front: from about 16 deg screwed down to about 24 deg fully up (about 40 mm of travel). The ball head covers the rest, so set the jack roughly and fine-tune inside.
 
-Print six (three per corner) for the full range. For 2026 a brick under the front does the same job (2026-10-30); the risers are for 2027.
-
-- Put the risers on firm, level ground; the front stakes still go down through their tubes beside them.
+- The front stakes still go down through their tubes; the jack sits between them.
 - Water on the floor runs to the rear drains, through the divider pass-through into the Pi zone. The sled stands on pads, so it stays dry, but keep the rear drains and the gap under the rear of the case clear.
-- With a brick or a block of wood instead, keep it under the front feet only, so the gap under the floor stays open.
+- With a brick or a block of wood instead (2026), keep it under the front feet only, so the gap under the floor stays open. The jack is for 2027.
 
 ## Steps
 
@@ -57,7 +56,7 @@ Print six (three per corner) for the full range. For 2026 a brick under the fron
 | Problem | Fix |
 |---|---|
 | Image cut off or dark at one edge | The window is clipping it: recentre the projector and move the case. |
-| Can't reach the target | Turn the case for pan. For more upward tilt, use the tilt risers (above); for less, shim under the rear feet. Keep the gap under the floor open. |
+| Can't reach the target | Turn the case for pan. For more upward tilt, use the tilt jack (above); for less, shim under the rear feet. Keep the gap under the floor open. |
 | Image droops over time | Retighten the ball head. Check the pedestal screws and the hot-shoe adapter's ring are tight. |
 | Image is trapezoidal | Use the projector's keystone setting. Square up the case first, since keystone correction softens the image. |
 | Cover won't seat | A bolt is too tight against the wall: back it out half a turn so the head clears the cover. |

@@ -78,6 +78,7 @@ Amazon cart placed or about to be: 12 SKUs, $145.32 with tax (checkout PDF). Row
 | M3 knurled thumbscrew, 8 mm | 1 | Sled **Not ordered.** | [Amazon: MECCANIXITY M3 x 8 stainless thumb screws, 10-pack](https://www.amazon.com/dp/B0FC6FS6M3) |
 | M2.5 x 16 socket screw + nut | 4 | Fan to the sled's fan plate: 3.5 mm plate + 10 mm fan, nut on the fan's outlet side. **Not ordered.** | [Amazon: M2.5 stainless screw and nut kit, 210 pcs (6-20 mm)](https://www.amazon.com/dp/B0D9HK4ZBR) |
 | M2.5 x 6 self-tapping | 4 | Pi to sled Same Mikniri assortment (lengths unconfirmed). | [Amazon: uxcell M2.5 x 6 stainless self-tapping, 100-pack](https://www.amazon.com/dp/B01L7PDGXO) |
+| M8 x 50 hex bolt + M8 hex nut | 1 each | `tilt_jack` (2027; only for targets above +11 deg). Head and nut press into the saddle and knob, 13 mm across flats (`jack_hex`): check yours before printing | Any hardware store |
 | M2 x 6 self-tapping | 10 | Screen caps (6), PIR (2) Same Mikniri assortment (lengths unconfirmed). | [Amazon: M1.7-M3 small self-tapping assortment](https://www.amazon.com/dp/B0GF1CHDVV) |
 
 ## Consumables
