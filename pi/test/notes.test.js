@@ -21,6 +21,7 @@ describe("systemNotesOf", () => {
     expect(ids({ storage: { dataMounted: true, state: "degraded" } })).toEqual(["power"]);
     expect(ids({ web: { passwordSet: false } })).toEqual(["password"]);
     expect(ids({ clock: { synced: false } })).toEqual(["clock"]);
+    expect(ids({ schedule: { enabled: true, needsLocation: true } })).toEqual(["location"]);
   });
 });
 

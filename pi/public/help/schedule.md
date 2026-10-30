@@ -2,7 +2,7 @@
 
 ## Weekly schedule
 
-Pick an on and an off time for each weekday, or tick **At sunset** to switch on at sunset. Times are local to the Pi. An off time earlier than the on time means after midnight. Out of the box every day runs from sunset + 30 minutes to 22:00; tick **Use the schedule** to turn it on.
+Pick an on and an off time for each weekday, or tick **At sunset** to switch on at sunset. Times are local to the Pi. An off time earlier than the on time means after midnight. Out of the box the schedule is on, every day from sunset + 30 minutes to 22:00. Set **Latitude** and **Longitude** below for the sunset times; untick **Use the schedule** to switch it off.
 
 The schedule only acts at these times. If you switch on or off by hand, that holds until the next scheduled time.
 
