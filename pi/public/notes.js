@@ -27,6 +27,9 @@ export function systemNotesOf(st) {
   if (st.clock && !st.clock.synced) {
     notes.push({ id: "clock", text: "Time not synced yet: the schedule and sunset wait until the Pi has the correct time from the network." });
   }
+  if (st.schedule?.needsLocation) {
+    notes.push({ id: "location", text: "The schedule switches on at sunset, but the Pi does not know where it is: set Latitude and Longitude in Schedule." });
+  }
   return notes;
 }
 

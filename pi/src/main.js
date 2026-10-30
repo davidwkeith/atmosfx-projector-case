@@ -862,7 +862,12 @@ const webHandler = createWebHandler({
       projector: projector.state,
       dmx: { enabled: get("dmxEnabled"), inControl: dmx.inControl, values: dmx.values, ...receiver.status() },
       thermal: { enabled: get("thermalEnabled"), ...thermalState, tripped: guard.blocked },
-      schedule: { enabled: get("schedule").enabled, waitingForClock: scheduler.waitingForClock, next: next && { at: new Date(next.at).toISOString(), on: next.on, label: next.label } },
+      schedule: {
+        enabled: get("schedule").enabled,
+        needsLocation: get("schedule").enabled && Object.values(get("schedule").days).some((d) => d.on === "sunset") && (get("latitude") === null || get("longitude") === null),
+        waitingForClock: scheduler.waitingForClock,
+        next: next && { at: new Date(next.at).toISOString(), on: next.on, label: next.label },
+      },
       clock: { synced: clockSynced(), now: new Date().toISOString(), timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone },
       quiet: { active: quietNow(get("quietHours"), new Date(), { clockOk: clockSynced() }), cap: get("quietHours").volumeCap, noScares: get("quietHours").disableScares },
       version: versionStatus(),

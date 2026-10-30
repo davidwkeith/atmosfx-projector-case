@@ -12,7 +12,7 @@ export { sunset };
 export const DAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"]; // Date#getDay order
 
 export const DEFAULT_SCHEDULE = Object.freeze({
-  enabled: false,
+  enabled: true,
   sunsetOffsetMin: 30,
   days: Object.fromEntries(DAYS.map((d) => [d, { on: "sunset", off: "22:00" }])), // sunset + 30 min to 10 PM
 });
