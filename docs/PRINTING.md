@@ -52,7 +52,7 @@ After any change: `make parts`, then `scripts/check_clash.sh`. If you changed a 
 | `intake_cap` | 1 | 14 m | PETG 3 g | Rear inlet bank, wall-mounted |
 | `exhaust_cap` | 1 | 21 m | PETG 4 g | Front exhaust bank; the opening is about 74 x 58 mm, the biggest of the three caps |
 | `ir_holder` | 1 | 10 m | PETG 1 g | Needed: the projector has no CEC (BRINGUP row 9, 2026-10-25), so the IR LED sends its power code |
-| `power_shelf` | 1 | 2 h 29 m | PETG 47 g | Prints flat. Carries the calipered brick (v0.19); v0.20 adds vent slots right of the brick (time and weight are v0.19's) |
+| `power_shelf` | 1 | 2 h 29 m | PETG 47 g | Prints flat. Carries the calipered brick (v0.19); v0.20 adds vent slots right of the brick, v0.21 zip-tie pairs ahead of it (time and weight are v0.19's) |
 | `cord_clamp` | 1 | 49 m | PETG 13 g | Both halves in one print, flat, wall-face down. Holds the AC cord at the rear-wall opening (v0.19: taller for the 40 x 40 mm opening; the one printed 2026-10-16 no longer fits) |
 | `lid_rear` | 1 | 6 h 32 m | PETG 162 g | 0.30mm DRAFT, tile settings and mouse ears |
 | `lid_front` | 1 | 10 h 31 m | PETG 255 g | 0.30mm DRAFT, tile settings, mouse ears and the 1.5 mm brim |

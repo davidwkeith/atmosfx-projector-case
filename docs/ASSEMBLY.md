@@ -100,7 +100,7 @@ Note: the shipped provisional brick layout cannot be assembled (the brick sits a
 3. Pass the AC cord's connector in through the opening in the rear wall and plug it fully into the brick's inlet.
 4. Close the `cord_clamp` over its foam gasket (4x M3 x 16 self-tapping into the wall bosses) and pull-test it (BRINGUP row 17a).
 5. Leave a drip loop outside, below the clamp.
-6. Plug the brick's DC cord into the Y-splitter and meter both legs (centre +) before connecting anything.
+6. Plug the brick's DC cord into the Y-splitter and meter both legs (centre +) before connecting anything. Lay the splitter and leg 1 along the strip in front of the brick toward the divider pass-through and tie them through the zip-tie pairs there.
 7. If the relay fallback is built, cut leg 1 and splice the relay as in WIRING.md.
 8. Plug leg 2 into the DigiAMP+'s elbow adapter and the PIR leads into the header ([pi/docs/wiring.md](../pi/docs/wiring.md)).
 
