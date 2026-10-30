@@ -1,6 +1,6 @@
 // The now-playing header on every screen: poster frame, clip, elapsed time and a Play/Pause
 // button (Play switches on when off; while on, it freezes the current frame with the projector
-// still on). Tapping the rest of it goes to the Dashboard. The functions at the top are
+// still on), with the speaker volume and mute under it. Tapping the rest of it goes to the Dashboard. The functions at the top are
 // DOM-free so the tests can import them.
 
 /** 75 -> "1:15", 3725 -> "1:02:05". */
@@ -52,6 +52,21 @@ export function nowView(st, sinceMs) {
   };
 }
 
+/** The volume row: level, mute and whether DMX holds it. Null until a status with volume arrives. */
+export function volumeView(st) {
+  const v = st?.volume;
+  if (!v) return null;
+  const cap = st.quiet?.active ? ` (quiet hours: at most ${st.quiet.cap}%)` : "";
+  return {
+    level: v.level,
+    text: `${v.level}%`,
+    muted: !!v.muted,
+    mute: v.muted ? "Unmute" : "Mute",
+    disabled: !!st.dmx?.inControl,
+    title: `Speaker volume${cap}`,
+  };
+}
+
 export function mountNowBar({ icon, api, json, run, refreshStatus, state }) {
   const $ = (id) => document.getElementById(id);
   const img = $("now-poster");
@@ -61,6 +76,12 @@ export function mountNowBar({ icon, api, json, run, refreshStatus, state }) {
   const play = icon("play");
   const pause = icon("pause");
   toggle.append(play, pause);
+  const slider = $("vol-slider");
+  const out = $("vol-out");
+  const mute = $("vol-mute");
+  const speaker = icon("speaker");
+  const muted = icon("muted");
+  mute.append(speaker, muted);
 
   let shown = null; // status the clock counts from
   let received = 0;
@@ -83,6 +104,14 @@ export function mountNowBar({ icon, api, json, run, refreshStatus, state }) {
     }),
   );
 
+  async function setVolume(change) {
+    await api("/api/volume", json("POST", change));
+    await refreshStatus();
+  }
+  slider.addEventListener("input", () => (out.textContent = `${slider.value}%`));
+  slider.addEventListener("change", () => run(() => setVolume({ level: Number(slider.value) })));
+  mute.addEventListener("click", () => run(() => setVolume({ muted: !state.status.volume.muted })));
+
   function render() {
     const st = state.status;
     if (st !== shown) ((shown = st), (received = performance.now()));
@@ -104,6 +133,22 @@ export function mountNowBar({ icon, api, json, run, refreshStatus, state }) {
     toggle.classList.toggle("on", v.toggle.icon === "pause");
     play.style.display = v.toggle.icon === "play" ? "" : "none";
     pause.style.display = v.toggle.icon === "pause" ? "" : "none";
+
+    const vol = volumeView(st);
+    if (vol) {
+      if (document.activeElement !== slider) {
+        slider.value = vol.level;
+        out.textContent = vol.text;
+      }
+      slider.disabled = mute.disabled = vol.disabled;
+      slider.title = vol.title;
+      mute.setAttribute("aria-label", vol.mute);
+      mute.title = vol.mute;
+      mute.setAttribute("aria-pressed", String(vol.muted));
+      slider.parentElement.classList.toggle("muted", vol.muted);
+      speaker.style.display = vol.muted ? "none" : "";
+      muted.style.display = vol.muted ? "" : "none";
+    }
   }
 
   setInterval(() => document.visibilityState === "visible" && render(), 1000);

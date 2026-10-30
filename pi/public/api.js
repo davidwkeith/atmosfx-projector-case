@@ -63,6 +63,8 @@ const ICONS = {
   play: ["M7 4v16l13-8z"],
   pause: ["M8 5v14", "M16 5v14"],
   chevron: ["M9 6l6 6-6 6"],
+  speaker: ["M11 5 6 9H2v6h4l5 4z", "M15.5 8.5a5 5 0 0 1 0 7", "M19 5a10 10 0 0 1 0 14"],
+  muted: ["M11 5 6 9H2v6h4l5 4z", "M22 9l-6 6", "M16 9l6 6"],
 };
 
 export function icon(name) {
