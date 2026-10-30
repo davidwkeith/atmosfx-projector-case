@@ -125,11 +125,6 @@ details summary { cursor: pointer; color: var(--muted); padding: 8px 0; }
   border-radius: 10px;
 }
 
-.volume { display: flex; align-items: center; gap: 12px; }
-.volume input { flex: 1; min-width: 0; height: 44px; accent-color: var(--accent); }
-.volume output { width: 3.5em; text-align: right; font-variant-numeric: tabular-nums; }
-.volume.muted output { color: var(--muted); text-decoration: line-through; }
-
 .banner { border: 1px solid var(--accent); border-radius: 10px; padding: 8px 12px; margin: 8px 0 12px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 .banner p { margin: 0; flex: 1; }
 .group { margin: 16px 0 0; }
@@ -215,6 +210,11 @@ button.now-toggle.on { background: transparent; color: var(--text); border-color
 button.now-toggle .icon-svg { width: 24px; height: 24px; }
 button.now-toggle:not(.on) .icon-svg { fill: currentColor; }
 button.now-toggle.on .icon-svg { stroke-width: 3; }
+.now-vol { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+.now-vol input { flex: 1; min-width: 0; height: 32px; accent-color: var(--accent); }
+.now-vol output { width: 3em; text-align: right; font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.now-vol.muted output { text-decoration: line-through; }
+.now-vol.muted #vol-mute { color: var(--danger); }
 .titlebar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 12px 0 0; }
 .titlebar h2 { font-size: 1.25rem; margin: 0; }
 .titlebar .tools { display: flex; align-items: center; gap: 12px; }

@@ -40,11 +40,6 @@ export function mount(root) {
   const scareNow = el("button", { type: "button", className: "big scare", hidden: true }, "Scare now");
   const scareState = el("p", { className: "hint", hidden: true });
 
-  const slider = el("input", { type: "range", min: 0, max: 100, step: 1, value: 30, disabled: true, attrs: { "aria-label": "Speaker volume" } });
-  const out = el("output", {}, "…");
-  const mute = el("button", { type: "button", disabled: true }, "Mute");
-  const volume = el("div", { className: "volume" }, slider, out, mute);
-
   const projector = tile("Projector", "#/settings/projector");
   const schedule = tile("Schedule", "#/schedule");
   const network = tile("Network", "#/docs/networks"); // Wi-Fi is set in Raspberry Pi Imager, not on this page
@@ -57,7 +52,6 @@ export function mount(root) {
   root.append(
     dmx, alarms, notes,
     el("section", {}, el("h3", {}, "Playback"), problem, power, scareNow, scareState),
-    el("section", {}, el("h3", {}, "Speaker volume"), volume),
     el("div", { className: "tiles" }, projector.box, schedule.box, network.box, heat.box),
     el("section", {}, el("h3", {}, "Setup checks"), checksSummary, checksList, runChecks),
   );
@@ -96,10 +90,6 @@ export function mount(root) {
     }),
   );
 
-  async function setVolume(change) {
-    await api("/api/volume", json("POST", change));
-    await refreshStatus();
-  }
   power.addEventListener("click", () =>
     run(async () => {
       power.disabled = true;
@@ -111,9 +101,6 @@ export function mount(root) {
       }
     }),
   );
-  slider.addEventListener("input", () => (out.textContent = `${slider.value}%`));
-  slider.addEventListener("change", () => run(() => setVolume({ level: Number(slider.value) })));
-  mute.addEventListener("click", () => run(() => setVolume({ muted: !state.status.volume.muted })));
   scareNow.addEventListener("click", () =>
     run(async () => {
       const r = await api("/api/scare", json("POST", {}));
@@ -150,17 +137,6 @@ export function mount(root) {
       scareState.textContent =
         (p.scareActive ? "Scare playing…" : p.cooldownLeftMs > 0 ? `Cooling down: ${Math.ceil(p.cooldownLeftMs / 1000)} s${seams}` : `Ready${seams}`) +
         (st.quiet?.active ? ` · quiet hours (volume ≤ ${st.quiet.cap}%${st.quiet.noScares ? ", no scares" : ""})` : "");
-
-      const v = st.volume;
-      if (v) {
-        if (document.activeElement !== slider) slider.value = v.level;
-        slider.disabled = locked;
-        out.textContent = `${v.level}%`;
-        mute.disabled = locked;
-        mute.textContent = v.muted ? "Unmute" : "Mute";
-        mute.setAttribute("aria-pressed", String(v.muted));
-        volume.classList.toggle("muted", v.muted);
-      }
 
       const pr = st.projector ?? {};
       projector.value.textContent = pr.power ?? "unknown";

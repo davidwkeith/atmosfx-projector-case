@@ -4,7 +4,7 @@ import { request } from "node:http";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { clipTitle, clock, elapsed, nowView } from "../public/now.js";
+import { clipTitle, clock, elapsed, nowView, volumeView } from "../public/now.js";
 import { createMediaStore } from "../src/media.js";
 import { Player } from "../src/player.js";
 import { createPosterCache, posterArgs } from "../src/poster.js";
@@ -48,6 +48,16 @@ describe("now-playing header", () => {
     const v = nowView({ on: true, now: { file: "a.mp4", position: 10, duration: 60 }, player: { paused: true } }, 5000);
     expect(v.time).toBe("0:10 / 1:00 · paused");
     expect(v.toggle).toMatchObject({ action: "resume", icon: "play", label: "Resume" });
+  });
+
+  it("shows the volume and mute, locked under DMX, with the quiet-hours cap", () => {
+    expect(volumeView(null)).toBeNull();
+    expect(volumeView({ volume: { level: 40, muted: false } })).toEqual({ level: 40, text: "40%", muted: false, mute: "Mute", disabled: false, title: "Speaker volume" });
+    expect(volumeView({ volume: { level: 10, muted: true }, dmx: { inControl: true }, quiet: { active: true, cap: 10 } })).toMatchObject({
+      mute: "Unmute",
+      disabled: true,
+      title: "Speaker volume (quiet hours: at most 10%)",
+    });
   });
 
   it("marks a scare", () => {

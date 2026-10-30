@@ -1,10 +1,10 @@
 # Dashboard
 
-This is the screen for the night itself: start and stop the show, fire a scare, change the volume, and see at a glance that everything is healthy.
+This is the screen for the night itself: start and stop the show, fire a scare and see at a glance that everything is healthy.
 
 ## Now-playing header
 
-The bar at the top of every screen shows the clip on screen: a frame from it, its name, how far in it is and its length. The button on the right is **Play** while everything is off (it switches on, like the button below) and **Pause** while a clip plays: pause freezes the picture with the projector still on, and **Resume** carries on from there. Scares wait while paused, and switching off, a power cut or a DMX desk taking over always resumes. Use **Stop** below to switch off. Tap anywhere else on the bar to come back here. The frame is grabbed from the clip the first time it plays and kept until the file changes; until then a plain icon stands in.
+The bar at the top of every screen shows the clip on screen: a frame from it, its name, how far in it is and its length. The button on the right is **Play** while everything is off (it switches on, like the button below) and **Pause** while a clip plays: pause freezes the picture with the projector still on, and **Resume** carries on from there. Scares wait while paused, and switching off, a power cut or a DMX desk taking over always resumes. Use **Stop** below to switch off. Under it, the slider sets the speaker volume and the speaker button mutes; during quiet hours the volume is capped, whoever asks, and while DMX is in control both are locked. Tap anywhere else on the bar to come back here. The frame is grabbed from the clip the first time it plays and kept until the file changes; until then a plain icon stands in.
 
 ## Play and Stop
 
@@ -13,10 +13,6 @@ The bar at the top of every screen shows the clip on screen: a frame from it, it
 ## Scare now
 
 Shown only in scare mode while playing. It plays one scare clip, then goes back to the calm clip. A cooldown follows each scare and is counted down under the button.
-
-## Volume
-
-The slider and **Mute** control the speakers. During quiet hours the volume is capped, whoever asks.
 
 ## Tiles
 

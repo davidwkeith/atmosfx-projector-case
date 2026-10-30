@@ -12,7 +12,7 @@ export const VIEWS = [
 export const GROUP_VIEW = {
   Device: "settings",
   Projector: "settings",
-  Audio: "dashboard", // volume and mute: the Dashboard slider is their only control
+  Audio: "dashboard", // volume and mute: the header slider on every screen is their only control
   Display: "settings",
   DMX: "settings",
   Cooling: "settings",
