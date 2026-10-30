@@ -2,13 +2,13 @@
 
 ## Weekly schedule
 
-Pick an on and an off time for each weekday, or tick **At sunset** to switch on at sunset. Times are local to the Pi. An off time earlier than the on time means after midnight.
+Pick an on and an off time for each weekday, or tick **At sunset** to switch on at sunset. Times are local to the Pi. An off time earlier than the on time means after midnight. Out of the box every day runs from sunset + 30 minutes to 22:00; tick **Use the schedule** to turn it on.
 
 The schedule only acts at these times. If you switch on or off by hand, that holds until the next scheduled time.
 
 ## Sunset
 
-Sunset is worked out on the Pi from **Latitude** and **Longitude** (north and east are positive, so west is negative). The **offset** moves the time: a negative number is before sunset. Days with no sunset, in polar summer or winter, get no on time.
+Sunset is worked out on the Pi from **Latitude** and **Longitude** (north and east are positive, so west is negative). The **offset** moves the time: a negative number is before sunset. Each sunset day shows its next on time, offset included, in the Pi's time zone. Days with no sunset, in polar summer or winter, get no on time.
 
 **Use this device's location** fills both in from your phone or computer, rounded to about 1 km; press **Apply** to keep them. Browsers only share location with HTTPS pages, so on the Pi's own address the button is greyed out. Instead, drop a pin in a map app, copy its coordinates (like `37.77, -122.42` or `37.77° N, 122.42° W`) and paste them into **Latitude**: both fields fill in.
 

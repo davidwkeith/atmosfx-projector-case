@@ -1,8 +1,8 @@
 # Schedule
 
-On the page: an on time and an off time per weekday. The on time can be **At sunset**, plus or minus an offset. An off time earlier than the on time means after midnight.
+On the page: an on time and an off time per weekday. The on time can be **At sunset**, plus or minus an offset. An off time earlier than the on time means after midnight. Out of the box every day is sunset + 30 minutes to 22:00, with the schedule switched off until you tick **Use the schedule** (set Latitude/Longitude first).
 
-- Sunset is computed on the Pi from Schedule > Latitude/Longitude, using NOAA's general solar position equations (tested within 5 minutes of published times). Days with no sunset (polar summer or winter) get no on event.
+- Sunset is computed on the Pi from Schedule > Latitude/Longitude, using NOAA's general solar position equations (tested within 5 minutes of published times). Days with no sunset (polar summer or winter) get no on event. The page shows each sunset day's next on time, worked out the same way in the Pi's time zone.
 - Times use the Pi's time zone (`sudo raspi-config` > Localisation). Tested across both DST changes: a time in the spring-forward gap fires once, at 03:30; a time in the fall-back hour fires once.
 - **The schedule only acts at its event times.** Switching on or off by hand (Home, the page) holds until the next scheduled event. The page shows the next event.
 - **After a power cut** the "After a power cut" setting applies first. Then, once the clock is set, an event that passed while the power was out is caught up: a cut across "on at sunset" still gets you a show. A change you made by hand after the last event is left alone.

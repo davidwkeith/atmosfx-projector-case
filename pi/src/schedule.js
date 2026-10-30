@@ -1,15 +1,20 @@
 // Weekly on/off schedule with optional "on at sunset + N minutes".
 // Times are local (the system time zone); sunset comes from NOAA's general solar
-// position equations, computed here, no network. The schedule acts only at its
-// event times, so a manual change holds until the next scheduled event. An event
-// that passed while the Pi had no power is caught up at boot (missedEvent).
+// position equations (public/sun.js, shared with the Schedule screen), no network.
+// The schedule acts only at its event times, so a manual change holds until the
+// next scheduled event. An event that passed while the Pi had no power is caught
+// up at boot (missedEvent).
+
+import { sunset } from "../public/sun.js";
+
+export { sunset };
 
 export const DAYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"]; // Date#getDay order
 
 export const DEFAULT_SCHEDULE = Object.freeze({
   enabled: false,
-  sunsetOffsetMin: 0,
-  days: Object.fromEntries(DAYS.map((d) => [d, { on: "", off: "" }])),
+  sunsetOffsetMin: 30,
+  days: Object.fromEntries(DAYS.map((d) => [d, { on: "sunset", off: "22:00" }])), // sunset + 30 min to 10 PM
 });
 
 const TIME = /^([01][0-9]|2[0-3]):([0-5][0-9])$/;
@@ -40,37 +45,6 @@ export function parseSchedule(v) {
     out.days[day] = { on, off };
   }
   return out;
-}
-
-const rad = Math.PI / 180;
-
-/**
- * Sunset (sun's upper limb at the horizon, 90.833° zenith) for a calendar date,
- * as epoch ms, or null when the sun doesn't set (midnight sun) or doesn't rise
- * (polar night). lon: degrees east positive. NOAA general solar position.
- */
-export function sunset(year, month, day, lat, lon) {
-  const leap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
-  const doy = Math.round((Date.UTC(year, month - 1, day) - Date.UTC(year, 0, 1)) / 86_400_000) + 1;
-  let minutes = 720 - 4 * lon + 360; // first guess: 18:00 local solar time, in UTC minutes
-  for (let i = 0; i < 2; i++) {
-    const g = ((2 * Math.PI) / (leap ? 366 : 365)) * (doy - 1 + (minutes / 60 - 12) / 24);
-    const eqtime =
-      229.18 * (0.000075 + 0.001868 * Math.cos(g) - 0.032077 * Math.sin(g) - 0.014615 * Math.cos(2 * g) - 0.040849 * Math.sin(2 * g));
-    const decl =
-      0.006918 -
-      0.399912 * Math.cos(g) +
-      0.070257 * Math.sin(g) -
-      0.006758 * Math.cos(2 * g) +
-      0.000907 * Math.sin(2 * g) -
-      0.002697 * Math.cos(3 * g) +
-      0.00148 * Math.sin(3 * g);
-    const cosH = Math.cos(90.833 * rad) / (Math.cos(lat * rad) * Math.cos(decl)) - Math.tan(lat * rad) * Math.tan(decl);
-    if (cosH < -1 || cosH > 1) return null;
-    const ha = Math.acos(cosH) / rad;
-    minutes = 720 - 4 * (lon - ha) - eqtime;
-  }
-  return Date.UTC(year, month - 1, day) + Math.round(minutes * 60_000);
 }
 
 const localAt = (y, m, d, hhmm) => {
