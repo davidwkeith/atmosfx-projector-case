@@ -6,7 +6,7 @@ This case is rain-shedding and ventilated, not waterproof, and not certified for
 
 ## Overview
 
-One diagram per side of the power shelf: [AC supply](#ac-supply) (the cord, the clamp and the 24 V brick) and [low voltage](#low-voltage-side) (on the shelf and down to the sled, drawn as the one DC rail and then the Pi's signals). Each comes twice: a schematic (`docs/wiring-*.svg`, drawn by `scripts/render_wiring.py` with [Schemdraw](https://schemdraw.readthedocs.io/); click one for full size) and a flowchart of the same connections. Red is live or +, grey is neutral or -, green is earth, blue is a signal. Pin numbers are the Pi header's physical pins; GPIO assignments and the reasoning behind them are in [pi/docs/wiring.md](../pi/docs/wiring.md).
+One diagram per side of the power shelf: [AC supply](#ac-supply) (the cord, the clamp and the 24 V brick) and [low voltage](#low-voltage-side) (on the shelf and down to the sled, drawn as the two DC supplies and then the Pi's signals). Each comes twice: a schematic (`docs/wiring-*.svg`, drawn by `scripts/render_wiring.py` with [Schemdraw](https://schemdraw.readthedocs.io/); click one for full size) and a flowchart of the same connections. Red is live or +, grey is neutral or -, green is earth, blue is a signal. Pin numbers are the Pi header's physical pins; GPIO assignments and the reasoning behind them are in [pi/docs/wiring.md](../pi/docs/wiring.md).
 
 ## AC supply
 
@@ -18,6 +18,7 @@ flowchart LR
     direction LR
     GFCI["Outdoor GFCI outlet<br/>in-use cover; test its button"]
     BOX["Weatherproof connection box<br/>(any plug joint, off the ground)"]
+    WW["Stock 21 V wall-wart (2026 build)<br/>plugged in inside the box"]
     LOOP["Drip loop<br/>below the clamp"]
   end
   subgraph WALL["Rear wall, rear-left"]
@@ -27,14 +28,15 @@ flowchart LR
     BRICK["Auplf brick<br/>24 V 6 A, 144 W<br/>captive AC and DC cords"]
   end
   GFCI -- "the brick's own AC cord, molded plug, not cut" --> BOX --> LOOP --> CLAMP --> BRICK
-  BRICK -- "24 V DC cord, not cut" --> DC["Y-splitter (below)"]
+  BRICK -- "24 V DC cord, not cut" --> DC["DigiAMP+ (below)"]
+  GFCI --> WW -- "21 V DC cord, through the same clamp" --> PROJ["Projector (below)"]
 ```
 
 Nothing is hand-wired on the AC side: no stripped conductors, no spade terminals, no fuse holder. The brick's AC cord is captive (molded into the brick, 6 mm jacket); only its wall plug is a joint.
 
 1. **Supply.** Plug into an outdoor GFCI outlet with an in-use weatherproof cover and test its button. Keep every plug-and-socket joint off the ground and out of puddles, in the weatherproof connection box.
 2. **The cord.** The brick's own captive AC cord; nothing to buy. It is **not outdoor-rated**: the owner accepts that for the Halloween 2026 run (about a month outside) and replaces it if the jacket is damaged. Inspect the whole length daily; unplug and replace at the first nick, crack or soft spot.
-3. **Entry.** With the brick inside, thread the cord's wall plug out through the opening in the rear wall (40 x 40 mm, sized for its 3-pin plug); then the two halves of the cord clamp close round the jacket over a 2 mm foam gasket and screw into the wall's bosses (4x M3 x 16 self-tapping). The clamp is meant to take the pull; prove it with BRINGUP row 17a before the lid goes on. Leave a drip loop outside, below the clamp. Pull test before the lid goes on: a firm tug along and across the cord must not move the brick or its strain relief (BRINGUP row 17a).
+3. **Entry.** With the brick inside, thread the cord's wall plug out through the opening in the rear wall (40 x 40 mm, sized for its 3-pin plug); then the two halves of the cord clamp close round the jacket over a 2 mm foam gasket and screw into the wall's bosses (4x M3 x 16 self-tapping). The clamp is meant to take the pull; prove it with BRINGUP row 17a before the lid goes on. 2026 build: the stock wall-wart's DC cord comes in through the same opening beside the AC cord; pack the foam round both so the clamp still bears on the AC jacket, and give the DC cord its own drip loop. Leave a drip loop outside, below the clamp. Pull test before the lid goes on: a firm tug along and across the cord must not move the brick or its strain relief (BRINGUP row 17a).
 4. **The brick** lies on the shelf under a velcro strap through the shelf slots, toward the rear wall, AC end to the left wall and its DC cord (captive, not cut) toward the shelf's front edge. It is labelled **"For indoor use only"**: it lives inside the rain-shedding case, never outside it.
 5. **No AC fuse.** There is no hand-wired AC conductor left to protect: the cord and brick are molded parts. The brick is CSA C/US marked (label, 2026-10-25; confirm the model in CSA's online product listing) and has its own protection, and the GFCI/branch breaker is upstream.
 6. **Earth.** Whatever the captive cord's plug has: a 3-pin plug carries earth, a 2-pin one means a Class II brick that needs none.
@@ -45,17 +47,18 @@ Mains is still present inside the printed box (the captive cord and the brick). 
 
 On the shelf, and down to the Pi sled.
 
-### DC rail
+### DC supplies
 
-![DC rail schematic: the 24 V brick's cord into a 5.5 x 2.5 mm Y-splitter, one leg to the projector's right-angle adapter (through a relay contact and a buck converter only if needed), the other to the DigiAMP+'s barrel jack, which powers the Pi and the speakers](wiring-lv-power.svg)
+**2026 build: two supplies (2026-10-30).** The first projector shut off inside the case after running on the brick's 24 V and no longer powers on even from its stock supply. The backup projector runs from its own stock 21 V wall-wart; the brick feeds only the DigiAMP+, and the Y-splitter is not used. **Never connect the brick to the projector.** Whether 24 V or heat in the case killed the first one is unknown, so watch the backup closely (BRINGUP row 4a).
+
+![DC schematic: the stock 21 V wall-wart's cord through the relay contact to the projector's right-angle adapter; the 24 V brick's cord to the DigiAMP+'s barrel jack, which powers the Pi and the speakers](wiring-lv-power.svg)
 
 ```mermaid
 flowchart TB
   BR["Auplf brick, 24 V 6 A<br/>DC cord NOT cut; tip centre + (confirm with a meter)"]
-  SPL(["5.5 x 2.5 mm Y-splitter<br/>one female in, two males out"])
+  WW["Stock wall-wart, 21 V 2.28 A<br/>outside, in the weatherproof box<br/>DC cord in through the cord opening"]
   subgraph PJ["Projector (label 21 V)"]
-    BUCK["Buck converter to 21 V, ONLY if row 4a fails"]
-    RELAY["Relay contact, ONLY if CEC fails<br/>cut this leg; + line only"]
+    RELAY["Relay contact (CEC fails, so built)<br/>in a 5.5 x 2.5 extension; + line only"]
     ADP["Right-angle 5.5 x 2.5 adapter<br/>on the projector's DC jack"]
   end
   subgraph PIZ["Pi sled, below the shelf"]
@@ -63,26 +66,24 @@ flowchart TB
     PI["Raspberry Pi<br/>5 V from the DigiAMP+ via the header<br/>no USB power"]
     SPK["Speakers behind the projection<br/>16 AWG zip cord, stripe to +<br/>out through the floor chimney"]
   end
-  BR --> SPL
-  SPL -- "leg 1" --> RELAY --> BUCK --> ADP
-  SPL -- "leg 2" --> AMP
+  WW --> RELAY --> ADP
+  BR --> AMP
   AMP --> PI
   AMP --> SPK
-  linkStyle 0,1,2,3,4,5,6 stroke:#c62828,stroke-width:2px
+  linkStyle 0,1,2,3,4,5 stroke:#c62828,stroke-width:2px
 ```
 
-One rail, one return: the Y-splitter joins both loads' minuses at the supply, so there is no second rail to tie in and no ground path through the HDMI shield. Nothing on the DC side is cut or spliced in the baseline build. The projector's label says 21 V and the brick makes 24 V: **leg 1 is not connected to the projector until BRINGUP row 4a (projector on 24 V) has passed.**
+Two supplies, two returns: the projector's minus and the Pi's minus meet only through the HDMI cable's shield. Both supplies have isolated outputs, so that is the one tie and it carries no load current as long as the relay switches the **+** line only. Do not cut the wall-wart's stock cord: put the relay in a short 5.5 x 2.5 mm male-to-female extension between the cord and the right-angle adapter, and cut that instead.
 
-**Check the polarity before connecting either load.** With the brick plugged in and nothing else connected, meter each Y-splitter leg's tip: it must read 24 V with the **centre positive** (the brick's label, the projector's label symbol and the DigiAMP+'s jack all say centre +). If either leg reads negative, stop: the splitter is wired the wrong way round for this supply.
+**Check the polarity before connecting either load.** With nothing connected, meter each supply's plug: the brick must read 24 V and the wall-wart about 21 V, both **centre positive** (the labels, the projector's label symbol and the DigiAMP+'s jack all say centre +). If either reads negative, stop. Then check that the extension's plug at the projector end reads 21 V with the relay closed and nothing with it open.
 
-The DigiAMP+ powers the Pi, so never also power the Pi by USB. The relay is only needed if the projector lacks HDMI-CEC (see [pi/docs/projector.md](../pi/docs/projector.md)). It is also the only way the Pi can cut the projector's power if the Pi itself overheats: with CEC alone it can only ask for standby. **If you fit it:** cut leg 1 a hand's width from the adapter, put the relay's COM and NO in the **+** conductor only, and splice with the lever connectors (BOM relay row). Never switch the minus: the HDMI cable would carry the return. Use an **active-low** module: the Pi holds GPIO 27 high (relay open, projector off) from boot.
+The DigiAMP+ powers the Pi, so never also power the Pi by USB. The relay is only needed if the projector lacks HDMI-CEC (see [pi/docs/projector.md](../pi/docs/projector.md)). It is also the only way the Pi can cut the projector's power if the Pi itself overheats: with CEC alone it can only ask for standby. **Fitting it:** cut the extension a hand's width from the adapter, put the relay's COM and NO in the **+** conductor only, and splice with the lever connectors (BOM relay row). Never switch the minus: the HDMI cable would carry the return. Use an **active-low** module: the Pi holds GPIO 27 high (relay open, projector off) from boot.
 
 | Circuit | Wire | Notes |
 |---|---|---|
-| Brick DC cord into the Y-splitter | the cord's own | Plug-in; the cord is not cut. Tip must read centre + |
-| Y-splitter leg 1 to the projector | the splitter's own | **14 AWG leads (the chosen splitter), well above the supply's 6 A, so no fuse.** Ends in the right-angle 5.5 x 2.5 mm adapter on the projector's DC jack so the stock cable's bend runs along the rear face. **Do not connect it until row 4a passes.** If row 4a fails, a buck converter to 21 V goes between the splitter and the adapter on this leg only (at least 3.5 A out at 21 V, 30 V in or more; meter its output before it meets the projector) |
-| Y-splitter leg 2 to the DigiAMP+ | the splitter's own | Into the DigiAMP+'s 5.5 x 2.5 mm centre-positive barrel jack through a right-angle adapter turned up: the jack is on the HAT's edge facing the divider, about 15 mm away (`amp_dc_plug`). 24 V is its stated ceiling |
-| Relay (CEC fallback only) | 18 AWG | Cut leg 1 a hand's width from the adapter and switch the **+** conductor only. Never switch the minus: the HDMI cable would carry the return. Use an **active-low** module: the Pi holds GPIO 27 high (relay open, projector off) from boot |
+| Wall-wart DC cord to the projector | the cord's own, then the extension | The wall-wart plugs in inside the weatherproof box; its DC cord comes in through the cord opening beside the brick's AC cord (pack the clamp's foam round both). Into the relay extension, then the right-angle 5.5 x 2.5 mm adapter on the projector's DC jack so the bend runs along the rear face. **Never the brick's 24 V** |
+| Brick DC cord to the DigiAMP+ | the cord's own | Plug-in; the cord is not cut. Tip must read centre +. Into the DigiAMP+'s 5.5 x 2.5 mm centre-positive barrel jack through a right-angle adapter turned up: the jack is on the HAT's edge facing the divider, about 15 mm away (`amp_dc_plug`). 24 V is its stated ceiling |
+| Relay (built: no CEC) | 18 AWG | Cut the extension a hand's width from the adapter and switch the **+** conductor only. Never switch the minus: the HDMI cable would carry the return. Use an **active-low** module: the Pi holds GPIO 27 high (relay open, projector off) from boot |
 | DigiAMP+ to speakers | 16 AWG zip cord | Out through the floor chimney; red/striped to + on both ends |
 
 Pass low-voltage wires from the shelf to the Pi through the wire slot at the back of the shelf; the DigiAMP+ leg's barrel plug must fit it (BRINGUP row 4).
@@ -126,12 +127,12 @@ Trick-or-treaters walk through the yard in the dark. Run the power cord and spea
 
 ## Protection
 
-**No AC fuse and no DC fuse in the baseline.** The AC side has no hand-wired conductor to protect (see "AC supply"). The brick limits its own output and carries its own short-circuit protection. The one place a fault could heat a wire is the Y-splitter's leads: a 6 A supply can overheat leads rated for less. The chosen splitter is 14 AWG pure copper throughout (the listing states a wire diameter of 1.63 mm and no amp rating; the barrel connectors themselves are typically good for about 5 A, and the loads are about 3 A together), so it is not the weak point. If you swap in a thinner one, it needs leads rated for 6 A or a small inline fuse in each leg sized to that leg's lead rating. The brick's label shows a CSA C/US mark (2026-10-25; confirm it in CSA's listing). Keep the total load under its 144 W.
+**No AC fuse and no DC fuse in the baseline.** The AC side has no hand-wired conductor to protect (see "AC supply"). The brick limits its own output and carries its own short-circuit protection. 2026 build: the Y-splitter is not used (each supply has its own cord, and the wall-wart's 2.28 A is far below its cord's rating). With the splitter, the one place a fault could heat a wire is its leads: a 6 A supply can overheat leads rated for less. The chosen splitter is 14 AWG pure copper throughout (the listing states a wire diameter of 1.63 mm and no amp rating; the barrel connectors themselves are typically good for about 5 A, and the loads are about 3 A together), so it is not the weak point. If you swap in a thinner one, it needs leads rated for 6 A or a small inline fuse in each leg sized to that leg's lead rating. The brick's label shows a CSA C/US mark (2026-10-25; confirm it in CSA's listing). Keep the total load under its 144 W.
 
 ## Before first power-up
 
 1. With nothing plugged in, check the cord's continuity end to end and that the connector seats fully in the brick.
-2. Brick plugged in, loads unplugged: meter each Y-splitter leg's tip (24 V, centre +).
-3. Projector tested on the brick on the bench (BRINGUP row 4a) before leg 1 is connected.
+2. Supplies plugged in, loads unplugged: meter the brick's plug (24 V, centre +) and the wall-wart's (about 21 V, centre +).
+3. Check the brick's plug is the one at the DigiAMP+ and the wall-wart's the one at the projector: they are the same 5.5 x 2.5 mm size and swap easily. Label both.
 4. Connect the DigiAMP+ (the Pi should boot), then the projector. On the bench, check the Pi fan once: `pinctrl set 26 op dh` runs it, `pinctrl set 26 op dl` stops it (the kernel takes it back at the next temperature change).
 5. Close the lid, then test the GFCI outlet's trip button with the case running: everything must go dark.

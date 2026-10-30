@@ -71,7 +71,7 @@ The pictures are the model built up to each step (`part="assembly"`, `step=N`). 
 3. Mount the projector on the ball head.
 4. Fit the right-angle HDMI plug in the right-face I/O strip, cable pointing rearward.
 5. Fit the right-angle 5.5 x 2.5 mm adapter in the DC jack at the rear top-right corner, pointing back, above the intake.
-6. If BRINGUP row 4a passed, plug the Y-splitter's leg 1 into it; if it failed, fit the buck converter first (WIRING.md); otherwise leave leg 1 unplugged.
+6. Leave it unplugged for now: the stock wall-wart's cord, through the relay extension, goes into it in the power-shelf steps. Never the brick's cord (BRINGUP row 4a).
 7. If the IR fallback is built: stick the `ir_holder` (LED in it) on the projector's front face above the Tkisko logo, about 35 mm right of centre and 50 mm above the underside, body pointing toward the window. Run the IR LED lead up and back over the projector's top, held with tape, then through the right side gap past the baffle to the Pi.
 
 ## 9. Pi sled
@@ -96,13 +96,13 @@ The sled goes in before the shelf, which covers it about 60 mm up. Work from the
 Note: the shipped provisional brick layout cannot be assembled (the brick sits across the cord opening); re-fit the shelf after BRINGUP row 4.
 
 1. Lid off, projector aside if needed.
-2. Thread the PIR leads and the Y-splitter's leg 2 (plug first) down through the shelf's wire slot, then seat the shelf on its ledges over the sled and lay the brick on it toward the rear wall, under the velcro strap.
+2. Thread the PIR leads and the brick's DC plug (plug first) down through the shelf's wire slot, then seat the shelf on its ledges over the sled and lay the brick on it toward the rear wall, under the velcro strap.
 3. Pass the AC cord's connector in through the opening in the rear wall and plug it fully into the brick's inlet.
 4. Close the `cord_clamp` over its foam gasket (4x M3 x 16 self-tapping into the wall bosses) and pull-test it (BRINGUP row 17a).
-5. Leave a drip loop outside, below the clamp.
-6. Plug the brick's DC cord into the Y-splitter and meter both legs (centre +) before connecting anything.
-7. If the relay fallback is built, cut leg 1 and splice the relay as in WIRING.md.
-8. Plug leg 2 into the DigiAMP+'s elbow adapter and the PIR leads into the header ([pi/docs/wiring.md](../pi/docs/wiring.md)).
+5. Thread the stock wall-wart's DC cord in through the same opening before the clamp closes (step 4), foam packed round both cords; leave a drip loop on each outside, below the clamp.
+6. Meter the brick's plug (24 V) and the wall-wart's (about 21 V), both centre +, before connecting anything. Label them: they are the same size.
+7. Splice the relay into the short 5.5 x 2.5 mm extension as in WIRING.md; wall-wart cord into the extension, extension into the projector's right-angle adapter.
+8. Plug the brick's DC cord into the DigiAMP+'s elbow adapter and the PIR leads into the header ([pi/docs/wiring.md](../pi/docs/wiring.md)).
 
 To take the sled out later: unplug leg 2, unstrap the brick and tip the shelf up off its ledges (the AC cord stays clamped).
 

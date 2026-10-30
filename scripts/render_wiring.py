@@ -10,7 +10,7 @@
 Three drawings, matching the sections of docs/WIRING.md:
 
     wiring-hv.svg          mains: outlet, AC cord (molded plugs, not cut), cord clamp, the 24 V desktop brick
-    wiring-lv-power.svg    the one DC rail: Y-splitter, projector, DigiAMP+ (relay contact only as the CEC fallback)
+    wiring-lv-power.svg    the two DC supplies: stock 21 V wall-wart to the projector (through the relay), brick to the DigiAMP+
     wiring-lv-signals.svg  the Pi header: every GPIO used (PIR, Pi fan); relay and IR LED are CEC fallbacks
 
 The supply is the Auplf XGM-2406 24 V 6 A desktop brick, ASIN B0H32DNLP3 (label values to be read on arrival). Keep this file in step with
@@ -122,7 +122,7 @@ def draw_hv(path):
     d.add(elm.Line().at(br.neg).right(1.6).color(NEG))
     note(d, (br.pos[0] + 1.7, br.pos[1]), '24 V +', halign='left', color=POS, fontsize=FS)
     note(d, (br.neg[0] + 1.7, br.neg[1]), '24 V -', halign='left', color=NEG, fontsize=FS)
-    note(d, (br.pos[0] + 1.7, br.neg[1] - 1.4), 'DC cord, not cut:\nplugs into the Y-splitter\n(wiring-lv-power.svg)', halign='left')
+    note(d, (br.pos[0] + 1.7, br.neg[1] - 1.4), 'DC cord, not cut:\nplugs into the DigiAMP+\n(wiring-lv-power.svg)', halign='left')
     note(d, (x_wall + 0.4, -8.9),
          'No AC fuse and no hand-wired AC: the cord and the brick are molded parts; the brick must be UL/ETL listed (check its label); the GFCI is upstream.', halign='left')
     d.save(str(path))
@@ -134,47 +134,38 @@ def draw_hv(path):
 def draw_lv_power(path):
     d = drawing()
 
-    w1 = d.add(ic([pin('+', 'R', 'pos', pos=0.72), pin('-', 'R', 'neg', pos=0.28)],
+    # 2026 build: the projector runs from its stock 21 V wall-wart; the brick feeds only the DigiAMP+
+    ww = d.add(ic([pin('+', 'R', 'pos', pos=0.72), pin('-', 'R', 'neg', pos=0.28)],
                   size=(3.8, 2.4)).at((0, 0.6)).anchor('pos')
-               .label('Auplf brick\n24 V 6 A', fontsize=FSS))
-    note(d, (w1.center[0] - 1.9, w1.center[1] - 2.2), 'DC cord NOT cut. Tip is centre +:\nmeter both Y-splitter legs before connecting', halign='left')
-    yp, yn = w1.pos[1], w1.neg[1]
-    x_s = 4.4            # + side of the Y-splitter
-    x_n = x_s + 1.6      # - side
-    x_load = x_n + 9.0
-    d.add(elm.Line().at(w1.pos).to((x_s, yp)).color(POS))
-    d.add(elm.Dot().at((x_s, yp)).color(POS))
-    d.add(elm.Line().at(w1.neg).to((x_n, yn)).color(NEG))
-    d.add(elm.Dot().at((x_n, yn)).color(NEG))
-    note(d, (x_n + 0.4, yp - 2.0), '5.5 x 2.5 mm Y-splitter\n(14 AWG leads)', halign='left')
-
-    # projector leg: + through the optional relay contact and the optional buck converter, - straight through
-    d.add(elm.Line().at((x_s, yp)).right(1.4).color(POS))
-    d.add(elm.Switch().right().color(POS).linestyle('--')
-          .label('K1 relay, ONLY if CEC fails\n(cut this leg; never in the -)', loc='top', fontsize=FSS - 1, ofst=0.15))
-    d.add(elm.Line().right(0.8).color(POS))
-    d.add(elm.Resistor().right().length(1.6).color(POS).linestyle('--')
-          .label('buck to 21 V, ONLY if row 4a fails', loc='bottom', fontsize=FSS - 1, ofst=0.25))
+               .label('Stock wall-wart\n21 V 2.28 A\n(outside, in the box)', fontsize=FSS))
+    note(d, (ww.center[0] - 1.9, ww.center[1] - 2.2), 'DC cord in through the cord opening.\nStock cord NOT cut: the relay goes\nin a 5.5 x 2.5 extension', halign='left')
+    yp = ww.pos[1]
+    x_load = 15.0
+    d.add(elm.Line().at(ww.pos).right(1.4).color(POS))
+    d.add(elm.Switch().right().color(POS)
+          .label('K1 relay (CEC fails: built)\n+ only; never in the -', loc='top', fontsize=FSS - 1, ofst=0.15))
     d.add(elm.Line().to((x_load, yp)).color(POS))
     proj = d.add(ic([pin('+', 'L', 'pos', pos=0.75), pin('-', 'L', 'neg', pos=0.25)], size=(3.2, 2.6))
                  .at((x_load, yp)).anchor('pos')
                  .label('Projector\nvia right-angle\n5.5 x 2.5 adapter', fontsize=FSS))
-    d.add(elm.Dot().at((x_n, proj.neg[1])).color(NEG))
-    d.add(elm.Line().at((x_n, proj.neg[1])).to(proj.neg).color(NEG))
+    d.add(elm.Line().at(ww.neg).to(proj.neg).color(NEG))
     note(d, (proj.neg[0] - 0.3, proj.neg[1] - 0.3), '- straight through', halign='right', fontsize=FSS - 2)
 
+    br = d.add(ic([pin('+', 'R', 'pos', pos=0.72), pin('-', 'R', 'neg', pos=0.28)],
+                  size=(3.8, 2.4)).at((0, -7.0)).anchor('pos')
+               .label('Auplf brick\n24 V 6 A', fontsize=FSS))
+    note(d, (br.center[0] - 1.9, br.center[1] - 2.2), 'DC cord NOT cut. Tip is centre +:\nmeter it before connecting', halign='left')
+    ya = br.pos[1]
+    x_n = 6.0
     # DigiAMP+ leg; the DigiAMP+ powers the Pi over the header; speakers out
-    ya = -7.0
-    d.add(elm.Line().at((x_s, yp)).to((x_s, ya)).color(POS))
-    d.add(elm.Dot().at((x_s, ya)).color(POS))
-    d.add(elm.Line().at((x_s, ya)).to((x_load, ya)).color(POS))
+    d.add(elm.Line().at(br.pos).to((x_load, ya)).color(POS))
     amp = d.add(ic([pin('+', 'L', 'pos', pos=0.82), pin('-', 'L', 'neg', pos=0.62),
                     pin('5 V', 'R', 'v5', pos=0.86), pin('GND', 'R', 'gnd', pos=0.68),
                     pin('SPK+', 'R', 'spkp', pos=0.28), pin('SPK-', 'R', 'spkn', pos=0.12)],
                    size=(4.6, 4.0)).at((x_load, ya)).anchor('pos'))
     note(d, (amp.center[0], amp.center[1] + 2.6), 'Raspberry Pi DigiAMP+, 5.5 x 2.5 mm barrel jack,\ncentre + (12-24 V; 24 V is its ceiling)')
-    d.add(elm.Line().at((x_n, proj.neg[1])).to((x_n, amp.neg[1])).color(NEG))
-    d.add(elm.Dot().at((x_n, amp.neg[1])).color(NEG))
+    d.add(elm.Line().at(br.neg).to((x_n, br.neg[1])).color(NEG))
+    d.add(elm.Line().at((x_n, br.neg[1])).to((x_n, amp.neg[1])).color(NEG))
     d.add(elm.Line().at((x_n, amp.neg[1])).to(amp.neg).color(NEG))
     pi = d.add(ic([pin('5 V', 'L', 'v5', pos=0.72), pin('GND', 'L', 'gnd', pos=0.28)], size=(3.4, 1.6))
                .at((amp.v5[0] + 1.8, amp.v5[1])).anchor('v5')
@@ -191,7 +182,7 @@ def draw_lv_power(path):
     note(d, (amp.spkp[0] + 1.2, amp.spkn[1] - 2.0),
          '16 AWG zip cord, stripe to +,\nout through the floor chimney', halign='left')
     note(d, (x_load - 4.0, amp.spkn[1] - 3.2),
-         'Do not connect the brick to the projector until BRINGUP row 4a passes (its label says 21 V).', halign='left')
+         'Never connect the brick to the projector: the first one died after running on it in the case (2026-10-30). Two supplies: their minuses meet only through the HDMI shield.', halign='left')
     d.save(str(path))
 
 
@@ -236,7 +227,7 @@ def draw_lv_signals(path):
     # relay coil side, straight off GPIO27, in the far column so the wire passes under the PIR
     relay = d.add(ic([pin('IN', 'R', 'inp'),
                       pin('VCC', 'L', 'vcc', pos=0.88, pin='5 V, pin 4'), pin('GND', 'L', 'gnd', pos=0.63, pin='GND, pin 14'),
-                      pin('COM', 'L', 'com', pos=0.37, pin='+ from the Y-splitter leg'), pin('NO', 'L', 'no', pos=0.12, pin='+ to projector')],
+                      pin('COM', 'L', 'com', pos=0.37, pin='+ from the 21 V wall-wart'), pin('NO', 'L', 'no', pos=0.12, pin='+ to projector')],
                      size=(3.0, 3.2)).at((XL2, y(13))).anchor('inp'))
     note(d, (relay.center[0], relay.center[1] + 2.4), 'Relay module, ONLY if CEC fails\n5 V coil, opto in, ACTIVE-LOW')
     wire([(XLW, y(13)), relay.inp])

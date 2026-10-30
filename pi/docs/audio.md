@@ -1,6 +1,6 @@
 # Audio
 
-A **Raspberry Pi DigiAMP+** (TAS5756M, 2 channels) drives 4-8 Ω speakers behind the projection. It runs from the Y-splitter's second leg (12-24 V, through its P5 hard-wire header or the 5.5 x 2.5 mm centre-positive barrel jack) and **powers the Pi through the header** at 5.1 V / 2.5 A. Up to 35 W per channel, rated for 0-50 °C ambient ([product brief](https://pip-assets.raspberrypi.com/categories/765-raspberry-pi-digiamp/documents/RP-008138-DS-1-digiamp-plus-hat-product-brief.pdf)): the Pi zone has to stay under that with only a passive louver, and the brief says not to cover a case it sits in, which is what the louvers are for (bring-up logs the shelf temperature).
+A **Raspberry Pi DigiAMP+** (TAS5756M, 2 channels) drives 4-8 Ω speakers behind the projection. It runs from the 24 V brick (12-24 V, through its P5 hard-wire header or the 5.5 x 2.5 mm centre-positive barrel jack) and **powers the Pi through the header** at 5.1 V / 2.5 A. Up to 35 W per channel, rated for 0-50 °C ambient ([product brief](https://pip-assets.raspberrypi.com/categories/765-raspberry-pi-digiamp/documents/RP-008138-DS-1-digiamp-plus-hat-product-brief.pdf)): the Pi zone has to stay under that with only a passive louver, and the brief says not to cover a case it sits in, which is what the louvers are for (bring-up logs the shelf temperature).
 
 - **Speakers:** speaker wire from the DigiAMP+'s terminals, same polarity on both speakers; the outputs can't be bridged.
 - **Power budget:** the brick must supply the projector, the Pi and the amp at once. Check its label.
